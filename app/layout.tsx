@@ -29,6 +29,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Runtime environment variables - loaded at runtime, not build time */}
+        <Script
+          src="/api/env"
+          strategy="beforeInteractive"
+        />
         {/* Ethereum safeguard - prevents wallet extension conflicts */}
         <Script
           src="/ethereum-safeguard.js"
