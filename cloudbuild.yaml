@@ -40,6 +40,6 @@ images:
   - 'gcr.io/$PROJECT_ID/financial-planner:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/financial-planner:latest'
 
+timeout: '1200s'
 options:
   machineType: 'N1_HIGHCPU_8'
-  timeout: '1200s'
