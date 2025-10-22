@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jarvis Voice Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            background: #3a3a3a;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        #transcript, #response {
+            margin: 15px 0;
+            padding: 15px;
+            background: #3a3a3a;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+        .label {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        .error {
+            color: #ff4444;
+        }
+        .success {
+            color: #44ff44;
+        }
+        .info {
+            color: #4444ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Jarvis Voice Assistant Test</h1>
+        
+        <div>
+            <button id="startBtn" onclick="startTest()">🎤 Start Speaking</button>
+            <button id="testApiBtn" onclick="testApis()">🔧 Test APIs</button>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+
+        <div id="status">Status: Ready</div>
+
+        <div class="label">Transcript:</div>
+        <div id="transcript">Waiting for speech...</div>
+
+        <div class="label">AI Response:</div>
+        <div id="response">No response yet</div>
+
+        <div class="label">Console Log:</div>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let recognition = null;
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(text, color = '#fff') {
+            const status = document.getElementById('status');
+            status.textContent = 'Status: ' + text;
+            status.style.color = color;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('transcript').textContent = 'Waiting for speech...';
+            document.getElementById('response').textContent = 'No response yet';
+        }
+
+        async function testApis() {
+            log('🔧 Testing API endpoints...', 'info');
+            
+            try {
+                // Test STT-LLM
+                log('Testing /api/stt-llm...', 'info');
+                const sttResponse = await fetch('/api/stt-llm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: 'hello test' })
+                });
+                
+                if (!sttResponse.ok) {
+                    log(`❌ STT-LLM API failed: ${sttResponse.status}`, 'error');
+                    return;
+                }
+                
+                const sttData = await sttResponse.json();
+                log(`✅ STT-LLM API working: ${sttData.text.substring(0, 50)}...`, 'success');
+                
+                // Test TTS
+                log('Testing /api/tts...', 'info');
+                const ttsResponse = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: 'test audio' })
+                });
+                
+                if (!ttsResponse.ok) {
+                    log(`❌ TTS API failed: ${ttsResponse.status}`, 'error');
+                    return;
+                }
+                
+                const audioBlob = await ttsResponse.blob();
+                log(`✅ TTS API working: ${audioBlob.size} bytes`, 'success');
+                
+                // Test audio playback
+                log('Testing audio playback...', 'info');
+                const audio = new Audio(URL.createObjectURL(audioBlob));
+                audio.play();
+                log('✅ Audio playback started', 'success');
+                
+            } catch (error) {
+                log(`❌ API test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function startTest() {
+            log('🎤 Starting speech recognition test...', 'info');
+            setStatus('Initializing...', '#ffaa00');
+            
+            // Check if Speech Recognition is available
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                log('❌ Speech Recognition not supported in this browser', 'error');
+                setStatus('Error: Speech API not supported', '#ff0000');
+                alert('Speech Recognition not supported. Use Chrome, Edge, or Safari.');
+                return;
+            }
+            
+            log('✅ Speech Recognition API available', 'success');
+            
+            try {
+                // Request microphone permission
+                log('Requesting microphone access...', 'info');
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('✅ Microphone access granted', 'success');
+                stream.getTracks().forEach(track => track.stop()); // Stop stream after permission check
+                
+                // Start recognition
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = () => {
+                    log('🎤 Listening... Speak now!', 'success');
+                    setStatus('Listening - Speak now!', '#00ff00');
+                    document.getElementById('startBtn').disabled = true;
+                };
+                
+                recognition.onresult = async (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    log(`📝 Transcript received: "${transcript}"`, 'success');
+                    document.getElementById('transcript').textContent = transcript;
+                    setStatus('Processing...', '#00aaff');
+                    
+                    await processTranscript(transcript);
+                };
+                
+                recognition.onerror = (event) => {
+                    log(`❌ Speech recognition error: ${event.error}`, 'error');
+                    setStatus(`Error: ${event.error}`, '#ff0000');
+                    document.getElementById('startBtn').disabled = false;
+                };
+                
+                recognition.onend = () => {
+                    log('🎤 Recognition ended', 'info');
+                    document.getElementById('startBtn').disabled = false;
+                };
+                
+                recognition.start();
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                setStatus('Error: ' + error.message, '#ff0000');
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+
+        async function processTranscript(text) {
+            try {
+                setStatus('Calling AI...', '#ffaa00');
+                log('🤖 Calling /api/stt-llm...', 'info');
+                
+                const response = await fetch('/api/stt-llm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                
+                log(`🤖 API response status: ${response.status}`, 'info');
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`❌ API error: ${errorText}`, 'error');
+                    setStatus('API Error', '#ff0000');
+                    return;
+                }
+                
+                const data = await response.json();
+                const aiResponse = data.text || data.response || 'No response';
+                
+                log(`✅ AI response received: ${aiResponse.substring(0, 100)}...`, 'success');
+                document.getElementById('response').textContent = aiResponse;
+                
+                // Speak response
+                await speakResponse(aiResponse);
+                
+            } catch (error) {
+                log(`❌ Process error: ${error.message}`, 'error');
+                setStatus('Error: ' + error.message, '#ff0000');
+            }
+        }
+
+        async function speakResponse(text) {
+            try {
+                setStatus('Generating speech...', '#ffaa00');
+                log('🔊 Calling /api/tts...', 'info');
+                
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                
+                log(`🔊 TTS response status: ${response.status}`, 'info');
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`❌ TTS error: ${errorText}`, 'error');
+                    setStatus('TTS Error', '#ff0000');
+                    return;
+                }
+                
+                const audioBlob = await response.blob();
+                log(`🔊 Audio blob received: ${audioBlob.size} bytes, type: ${audioBlob.type}`, 'success');
+                
+                if (audioBlob.size === 0) {
+                    log('❌ Empty audio blob!', 'error');
+                    setStatus('Error: Empty audio', '#ff0000');
+                    return;
+                }
+                
+                setStatus('Playing audio...', '#00ff00');
+                log('🔊 Playing audio...', 'info');
+                
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                
+                audio.onplay = () => {
+                    log('✅ Audio playback started', 'success');
+                };
+                
+                audio.onended = () => {
+                    log('✅ Audio playback finished', 'success');
+                    setStatus('Complete!', '#00ff00');
+                    URL.revokeObjectURL(audioUrl);
+                };
+                
+                audio.onerror = (e) => {
+                    log(`❌ Audio playback error: ${e}`, 'error');
+                    setStatus('Playback error', '#ff0000');
+                };
+                
+                await audio.play();
+                
+            } catch (error) {
+                log(`❌ Speak error: ${error.message}`, 'error');
+                setStatus('Error: ' + error.message, '#ff0000');
+            }
+        }
+
+        // Initial log
+        log('Jarvis Voice Test Page loaded', 'success');
+        log('Click "Test APIs" to verify endpoints', 'info');
+        log('Click "Start Speaking" to test full voice flow', 'info');
+    </script>
+</body>
+</html>
