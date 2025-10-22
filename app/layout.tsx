@@ -12,6 +12,10 @@ import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
 import Script from "next/script";
 
+// Force dynamic rendering for all pages (disable static generation)
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export const metadata: Metadata = {
   title: "Money Hub - Financial Management App",
   description: "Comprehensive financial dashboard for tracking cash, savings, investments, and expenses",
