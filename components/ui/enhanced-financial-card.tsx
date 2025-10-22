@@ -14,8 +14,8 @@ interface HoverPreviewProps {
 
 function HoverPreview({ title, children }: HoverPreviewProps) {
   return (
-    <div className="ease-[cubic-bezier(0.6, 0.6, 0, 1)] absolute inset-0 z-[10000] flex w-[356px] translate-y-full items-start justify-center bg-transparent p-4 transition-transform duration-500 group-hover/animated-card:translate-y-0 pointer-events-none">
-      <div className="ease-[cubic-bezier(0.6, 0, 1)] rounded-md border border-zinc-200 bg-white/95 backdrop-blur-sm p-3 opacity-0 transition-opacity duration-500 group-hover/animated-card:opacity-100 dark:border-zinc-800 dark:bg-black/95 max-h-[280px] overflow-y-auto shadow-xl pointer-events-auto">
+    <div className="ease-[cubic-bezier(0.6, 0.6, 0, 1)] absolute inset-0 z-[10002] flex w-[356px] translate-y-full items-start justify-center bg-transparent p-4 transition-transform duration-500 group-hover/animated-card:translate-y-0 pointer-events-none">
+      <div className="ease-[cubic-bezier(0.6, 0.6, 0, 1)] rounded-md border border-zinc-200 bg-white/95 backdrop-blur-sm p-3 opacity-0 transition-opacity duration-500 group-hover/animated-card:opacity-100 dark:border-zinc-800 dark:bg-black/95 max-h-[280px] overflow-y-auto shadow-xl pointer-events-auto" style={{ position: 'relative', zIndex: 10002 }}>
         <div className="space-y-2">
           <h4 className="text-xs font-semibold text-gray-900 dark:text-white">{title}</h4>
           <div className="text-xs text-gray-700 dark:text-gray-300">
@@ -80,7 +80,7 @@ export function EnhancedFinancialCard({
     <>
       <DraggableCardBody>
         <CardContainer className="inter-var">
-          <AnimatedCard className="w-[356px] min-w-[356px] max-w-[356px] group relative">
+          <AnimatedCard className="w-[356px] min-w-[356px] max-w-[356px] group relative" style={{ isolation: 'isolate' }}>
             <CardItem translateZ={50} className="w-full cursor-pointer" onClick={handleVisualClick} data-visual-click>
               <Visual3
                 mainColor={mainColor}
