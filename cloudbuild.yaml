@@ -1,0 +1,45 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/financial-planner:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/financial-planner:latest'
+      - '.'
+    
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/financial-planner:$COMMIT_SHA'
+      
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/financial-planner:latest'
+
+# Optional: Deploy to Cloud Run
+# Uncomment the following step if you want to automatically deploy to Cloud Run
+#  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#    entrypoint: gcloud
+#    args:
+#      - 'run'
+#      - 'deploy'
+#      - 'financial-planner'
+#      - '--image'
+#      - 'gcr.io/$PROJECT_ID/financial-planner:$COMMIT_SHA'
+#      - '--region'
+#      - 'us-central1'
+#      - '--platform'
+#      - 'managed'
+#      - '--allow-unauthenticated'
+
+images:
+  - 'gcr.io/$PROJECT_ID/financial-planner:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/financial-planner:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  timeout: '1200s'
