@@ -1,10 +1,11 @@
 # 3D Card Hover Tooltip Z-Index Fix
 
 ## Issue
-The hover tooltip on the 3D card modal was appearing **behind the graph** in the production environment. The tooltip would slide up from the bottom of the card but get hidden behind other card elements like the hologram and chart components.
+The hover tooltip on the 3D card modal was appearing **behind the graph** and **below the black card body** in the production environment. The tooltip would slide up from the bottom of the card but get hidden behind other card elements like the hologram and chart components, and wasn't properly positioned over the card content area.
 
 ## Root Cause
-The tooltip container (`HoverPreview`) had a z-index of `z-[10000]` while the hologram in the card's `Layer2` component had a higher z-index of `z-[10001]`, causing the tooltip to be rendered behind the hologram and other card elements.
+1. The tooltip container (`HoverPreview`) had a z-index of `z-[10000]` while the hologram in the card's `Layer2` component had a higher z-index of `z-[10001]`, causing the tooltip to be rendered behind the hologram and other card elements.
+2. The tooltip was positioned with `inset-0` and sliding from `translate-y-full` to `translate-y-0`, which placed it at the very bottom of the card instead of overlaying the black card body content.
 
 ## Solution
 
@@ -18,7 +19,14 @@ The tooltip container (`HoverPreview`) had a z-index of `z-[10000]` while the ho
      - Chart/graph components
      - Any other visual elements
 
-2. **Added Isolation Context** (Line 83)
+2. **Fixed Tooltip Positioning** (Line 17)
+   - Changed from `absolute inset-0` to `absolute bottom-0 left-0 right-0`
+   - Changed alignment from `items-start` to `items-end`
+   - Added padding adjustment `pb-2` for better spacing
+   - Changed opacity animation to make it visible directly on hover
+   - Tooltip now appears **on top of the black card body** instead of sliding from outside
+
+3. **Added Isolation Context** (Line 83)
    - Added `style={{ isolation: 'isolate' }}` to `AnimatedCard`
    - Creates a new stacking context for the card
    - Prevents internal z-index values from interfering with external elements
@@ -29,19 +37,19 @@ The tooltip container (`HoverPreview`) had a z-index of `z-[10000]` while the ho
 // Before
 function HoverPreview({ title, children }: HoverPreviewProps) {
   return (
-    <div className="... z-[10000] ...">
-      <div className="...">
+    <div className="... absolute inset-0 z-[10000] translate-y-full ...">
+      <div className="... opacity-0 ...">
         {/* content */}
       </div>
     </div>
   );
 }
 
-// After
+// After - Now appears on top of black card body
 function HoverPreview({ title, children }: HoverPreviewProps) {
   return (
-    <div className="... z-[10002] ...">
-      <div className="..." style={{ position: 'relative', zIndex: 10002 }}>
+    <div className="... absolute bottom-0 left-0 right-0 z-[10002] items-end opacity-0 group-hover/animated-card:opacity-100 ...">
+      <div className="... transform translate-y-2 group-hover/animated-card:translate-y-0 ..." style={{ position: 'relative', zIndex: 10002 }}>
         {/* content */}
       </div>
     </div>
@@ -96,6 +104,8 @@ function HoverPreview({ title, children }: HoverPreviewProps) {
 ## Benefits
 
 ✅ **Tooltip always visible** - No longer hidden behind graphs or holograms
+✅ **Proper positioning** - Appears on top of the black card body section
+✅ **Smooth animation** - Fades in and slides up subtly on hover
 ✅ **Proper stacking** - Clear z-index hierarchy prevents conflicts
 ✅ **Isolation context** - Card's internal elements don't affect external layout
 ✅ **Performance** - No layout recalculations needed

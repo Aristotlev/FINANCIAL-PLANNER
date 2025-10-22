@@ -14,8 +14,8 @@ interface HoverPreviewProps {
 
 function HoverPreview({ title, children }: HoverPreviewProps) {
   return (
-    <div className="ease-[cubic-bezier(0.6, 0.6, 0, 1)] absolute inset-0 z-[10002] flex w-[356px] translate-y-full items-start justify-center bg-transparent p-4 transition-transform duration-500 group-hover/animated-card:translate-y-0 pointer-events-none">
-      <div className="ease-[cubic-bezier(0.6, 0.6, 0, 1)] rounded-md border border-zinc-200 bg-white/95 backdrop-blur-sm p-3 opacity-0 transition-opacity duration-500 group-hover/animated-card:opacity-100 dark:border-zinc-800 dark:bg-black/95 max-h-[280px] overflow-y-auto shadow-xl pointer-events-auto" style={{ position: 'relative', zIndex: 10002 }}>
+    <div className="ease-[cubic-bezier(0.6, 0.6, 0, 1)] absolute bottom-0 left-0 right-0 z-[10002] flex w-[356px] items-end justify-center bg-transparent p-4 pb-2 transition-all duration-500 opacity-0 group-hover/animated-card:opacity-100 pointer-events-none">
+      <div className="ease-[cubic-bezier(0.6, 0.6, 0, 1)] rounded-md border border-zinc-200 bg-white/95 backdrop-blur-sm p-3 transition-all duration-500 dark:border-zinc-800 dark:bg-black/95 max-h-[280px] overflow-y-auto shadow-xl pointer-events-auto transform translate-y-2 group-hover/animated-card:translate-y-0" style={{ position: 'relative', zIndex: 10002 }}>
         <div className="space-y-2">
           <h4 className="text-xs font-semibold text-gray-900 dark:text-white">{title}</h4>
           <div className="text-xs text-gray-700 dark:text-gray-300">
