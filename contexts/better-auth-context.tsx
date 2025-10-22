@@ -70,13 +70,6 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
           name: sessionData.user.name || sessionData.user.email.split('@')[0],
           avatarUrl: '/api/auth/avatar',
         });
-        
-        // Redirect back to original location after OAuth
-        const returnTo = sessionStorage.getItem('auth_return_to');
-        if (returnTo) {
-          sessionStorage.removeItem('auth_return_to');
-          window.location.href = returnTo;
-        }
       }
     } catch (error: any) {
       console.error('Session check failed:', error);
@@ -109,15 +102,8 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
 
   const loginWithGoogle = async () => {
     try {
-      // Save current URL to return after OAuth
-      const returnTo = window.location.pathname + window.location.search;
-      if (returnTo !== '/') {
-        sessionStorage.setItem('auth_return_to', returnTo);
-      }
-      
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: window.location.origin,
       });
     } catch (error: any) {
       console.error('Google login error:', error);
