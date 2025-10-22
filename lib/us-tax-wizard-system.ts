@@ -317,12 +317,12 @@ export function getUSSmartSuggestions(profile: USTaxProfile, calculation: USTaxC
   }
   
   // Retirement contributions
-  if ((profile.retirementContributions || 0) < 10000 && calculation.grossIncome > 50000) {
+  if ((profile.retirementContributions || 0) < 10000 && calculation.breakdown.grossIncome > 50000) {
     suggestions.push('💡 Maximize retirement contributions (401k, IRA) to reduce taxable income and save for the future.');
   }
   
   // LLC considerations
-  if (profile.businessType === 'llc' && stateConfig.llcTaxTreatment.annualFees > 500) {
+  if (profile.businessType === 'llc' && stateConfig.llcTaxTreatment.annualFees && stateConfig.llcTaxTreatment.annualFees > 500) {
     suggestions.push(`⚠️ ${profile.state} charges $${stateConfig.llcTaxTreatment.annualFees}/year for LLCs. Consider if this structure is optimal.`);
   }
   
