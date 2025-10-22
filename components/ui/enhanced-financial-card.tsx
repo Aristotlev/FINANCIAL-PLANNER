@@ -81,7 +81,7 @@ export function EnhancedFinancialCard({
       <DraggableCardBody>
         <CardContainer className="inter-var">
           <AnimatedCard className="w-[356px] min-w-[356px] max-w-[356px] group relative">
-            <CardItem translateZ="50" className="w-full cursor-pointer" onClick={handleVisualClick} data-visual-click>
+            <CardItem translateZ={50} className="w-full cursor-pointer" onClick={handleVisualClick} data-visual-click>
               <Visual3
                 mainColor={mainColor}
                 secondaryColor={secondaryColor}
@@ -100,50 +100,54 @@ export function EnhancedFinancialCard({
             </CardItem>
             
             {/* Hover Preview Content */}
-            <CardItem translateZ="100" className="w-full">
-              <HoverPreview title={`${title} Overview`}>
-                {hoverContent}
-              </HoverPreview>
-            </CardItem>
+            <HoverPreview title={title}>
+              {hoverContent}
+            </HoverPreview>
 
-            <CardBody onClick={handleVisualClick} className="cursor-pointer">
-              <div className="flex items-center justify-between">
-                <CardItem translateZ="60" className="flex items-center gap-2">
-                  <div style={{ color: mainColor }}>
-                    <Icon className="w-5 h-5" />
+            <CardItem translateZ={100} className="w-full">
+              <CardBody onClick={handleVisualClick} className="cursor-pointer">
+                <div className="flex justify-between items-start w-full">
+                  <div className="flex-1 min-w-0">
+                    <CardItem translateZ={60} className="flex items-center gap-2">
+                      <div style={{ color: mainColor }}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <CardTitle>{title}</CardTitle>
+                    </CardItem>
                   </div>
-                  <CardTitle>{title}</CardTitle>
+                  <CardItem translateZ={40} className="flex items-center gap-2">
+                    <div className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
+                      {change}
+                    </div>
+                  </CardItem>
+                </div>
+
+                <CardItem translateZ={50}>
+                  <CardDescription>{description}</CardDescription>
                 </CardItem>
-                <CardItem translateZ="40" className="flex items-center gap-2">
-                  <div className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
-                    {change}
-                  </div>
+                
+                <CardItem translateZ={70} className="text-2xl font-bold text-black dark:text-white break-words overflow-hidden">
+                  <span className="truncate">{amount}</span>
                 </CardItem>
-              </div>
-              
-              <CardItem translateZ="50">
-                <CardDescription>{description}</CardDescription>
-              </CardItem>
-              
-              <CardItem translateZ="70" className="text-2xl font-bold text-black dark:text-white break-words overflow-hidden">
-                <div className="truncate max-w-full text-black dark:text-white">{amount}</div>
-              </CardItem>
-              
-              <CardItem translateZ="30" className="flex gap-2 mt-2 flex-wrap overflow-hidden">
-                {stats.map((stat, index) => (
-                  <div key={index} className="flex items-center gap-1 text-xs shrink-0">
-                    <div 
-                      className="w-2 h-2 rounded-full shrink-0" 
-                      style={{ backgroundColor: stat.color }}
-                    />
-                    <span className="text-neutral-600 dark:text-neutral-400 truncate">{stat.label}: {stat.value}</span>
-                  </div>
-                ))}
-              </CardItem>
-            </CardBody>
+                
+                <CardItem translateZ={30} className="flex gap-2 mt-2 flex-wrap overflow-hidden">
+                  {stats.map((stat, index) => (
+                    <div key={index} className="flex items-center gap-1 text-xs shrink-0">
+                      <div 
+                        className="w-2 h-2 rounded-full shrink-0" 
+                        style={{ backgroundColor: stat.color }}
+                      />
+                      <span className="text-neutral-600 dark:text-neutral-400 truncate">{stat.label}: {stat.value}</span>
+                    </div>
+                  ))}
+                </CardItem>
+              </CardBody>
+            </CardItem>
           </AnimatedCard>
         </CardContainer>
-      </DraggableCardBody>      <Modal
+      </DraggableCardBody>
+      
+      <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={`${title} - Detailed Analysis`}
