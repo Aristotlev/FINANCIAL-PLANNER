@@ -351,7 +351,7 @@ function AddPositionModal({
                 <div>
                   <div className="font-semibold text-gray-900 dark:text-white">{stock.name}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {stock.symbol} • ${formatNumber(stock.currentPrice)} • {stock.sector}
+                    {stock.symbol} • {stock.sector}
                   </div>
                 </div>
               </button>
@@ -367,7 +367,7 @@ function AddPositionModal({
               <div>
                 <div className="font-semibold text-gray-900 dark:text-white">{selectedStock.name} ({selectedStock.symbol})</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Current Price: ${formatNumber(selectedStock.currentPrice)} • {selectedStock.sector}
+                  {selectedStock.sector}
                 </div>
               </div>
             </div>

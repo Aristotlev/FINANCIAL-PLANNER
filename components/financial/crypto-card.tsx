@@ -408,7 +408,7 @@ function AddPositionModal({
                 <div>
                   <div className="font-semibold text-gray-900 dark:text-white">{crypto.name}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {crypto.symbol} • ${formatNumber(crypto.currentPrice)}
+                    {crypto.symbol}
                   </div>
                 </div>
               </button>
@@ -423,9 +423,6 @@ function AddPositionModal({
               <CryptoIcon symbol={selectedCrypto.symbol} />
               <div>
                 <div className="font-semibold text-gray-900 dark:text-white">{selectedCrypto.name} ({selectedCrypto.symbol})</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Current Price: ${formatNumber(selectedCrypto.currentPrice)}
-                </div>
               </div>
             </div>
           </div>
