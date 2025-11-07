@@ -1,0 +1,153 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security scan every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run npm audit
+        run: |
+          echo "🔍 Running npm audit..."
+          npm audit --audit-level=moderate || true
+          
+          # Fail on high/critical vulnerabilities
+          if npm audit --audit-level=high | grep -q "found"; then
+            echo "❌ High or critical vulnerabilities found!"
+            npm audit --audit-level=high
+            exit 1
+          else
+            echo "✅ No high or critical vulnerabilities found"
+          fi
+      
+      - name: Check for exposed secrets
+        run: |
+          echo "🔍 Checking for exposed API keys..."
+          
+          # Check for Google API key pattern
+          if git grep -E "AIza[0-9A-Za-z_-]{35}" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "example\|test\|\.md"; then
+            echo "❌ Found hardcoded Google API key!"
+            exit 1
+          fi
+          
+          # Check for ElevenLabs API key pattern
+          if git grep -E "sk_[a-f0-9]{32}" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "example\|test\|\.md"; then
+            echo "❌ Found hardcoded ElevenLabs API key!"
+            exit 1
+          fi
+          
+          # Check for Replicate token pattern
+          if git grep -E "r8_[a-zA-Z0-9]{40}" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "example\|test\|\.md"; then
+            echo "❌ Found hardcoded Replicate token!"
+            exit 1
+          fi
+          
+          # Check for NEXT_PUBLIC_ API keys that should be server-side
+          if git grep "NEXT_PUBLIC_GOOGLE_AI_API_KEY\|NEXT_PUBLIC_ELEVENLABS_API_KEY" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "// ❌\|// ✅\|/\*\|\.md"; then
+            echo "❌ Found client-side exposure of sensitive API keys!"
+            exit 1
+          fi
+          
+          echo "✅ No exposed secrets found"
+      
+      - name: Check environment file patterns
+        run: |
+          echo "🔍 Verifying .gitignore configuration..."
+          
+          if ! grep -q "\.env\.local" .gitignore; then
+            echo "❌ .env.local not in .gitignore!"
+            exit 1
+          fi
+          
+          if git ls-files | grep -q "\.env\.local$"; then
+            echo "❌ .env.local is tracked by git!"
+            exit 1
+          fi
+          
+          echo "✅ Environment files properly gitignored"
+      
+      - name: Check security headers
+        run: |
+          echo "🔍 Checking security headers in middleware..."
+          
+          if [ ! -f "middleware.ts" ]; then
+            echo "❌ middleware.ts not found!"
+            exit 1
+          fi
+          
+          required_headers=(
+            "X-Content-Type-Options"
+            "X-Frame-Options"
+            "X-XSS-Protection"
+            "Content-Security-Policy"
+            "Referrer-Policy"
+          )
+          
+          for header in "${required_headers[@]}"; do
+            if ! grep -q "$header" middleware.ts; then
+              echo "❌ Security header '$header' not found in middleware!"
+              exit 1
+            fi
+          done
+          
+          echo "✅ All required security headers present"
+      
+      - name: TypeScript type check
+        run: |
+          echo "🔍 Running TypeScript type check..."
+          npx tsc --noEmit
+      
+      - name: Lint check
+        run: |
+          echo "🔍 Running ESLint..."
+          npm run lint
+      
+      - name: Summary
+        if: success()
+        run: |
+          echo "✅ All security checks passed!"
+          echo ""
+          echo "Checks completed:"
+          echo "  ✅ Dependency vulnerabilities"
+          echo "  ✅ Exposed secrets"
+          echo "  ✅ Environment file configuration"
+          echo "  ✅ Security headers"
+          echo "  ✅ TypeScript compilation"
+          echo "  ✅ Linting"
+
+  # Dependabot alerts (requires GitHub Advanced Security)
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          deny-licenses: GPL-3.0, AGPL-3.0

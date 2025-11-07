@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refresh Profile Picture</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0f1419;
+            color: #fff;
+        }
+        .container {
+            background: #1a1f2e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            color: #60a5fa;
+            margin-top: 0;
+        }
+        button {
+            background: #60a5fa;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #3b82f6;
+        }
+        button:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .status.success {
+            background: #065f46;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+        }
+        .hidden {
+            display: none;
+        }
+        pre {
+            background: #0f1419;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Profile Picture Refresh</h1>
+        <p>Click the button below to refresh your Google profile picture.</p>
+        
+        <button id="refreshBtn" onclick="refreshAvatar()">
+            🔄 Refresh Profile Picture
+        </button>
+        
+        <div id="status" class="status hidden"></div>
+        
+        <h2>Instructions:</h2>
+        <ol>
+            <li>Make sure you're signed in with Google</li>
+            <li>Click the refresh button above</li>
+            <li>Wait for the success message</li>
+            <li>Reload your dashboard to see the updated picture</li>
+        </ol>
+        
+        <h3>Alternative: Browser Console</h3>
+        <p>You can also open your browser console (F12) and run:</p>
+        <pre>fetch('/api/auth/force-refresh-avatar', { method: 'POST' })
+  .then(r => r.json())
+  .then(console.log);</pre>
+    </div>
+
+    <script>
+        async function refreshAvatar() {
+            const btn = document.getElementById('refreshBtn');
+            const status = document.getElementById('status');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Refreshing...';
+            status.className = 'status info';
+            status.classList.remove('hidden');
+            status.textContent = 'Fetching your profile picture from Google...';
+            
+            try {
+                const response = await fetch('/api/auth/force-refresh-avatar', {
+                    method: 'POST',
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'status success';
+                    status.innerHTML = `
+                        <strong>✅ Success!</strong><br>
+                        Email: ${data.data.email}<br>
+                        Name: ${data.data.name}<br>
+                        Picture URL: ${data.data.picture}<br><br>
+                        <button onclick="location.reload()">Reload Page</button>
+                    `;
+                } else {
+                    status.className = 'status error';
+                    status.innerHTML = `
+                        <strong>❌ Error:</strong> ${data.error}<br>
+                        ${data.hint ? `<br><em>${data.hint}</em>` : ''}
+                    `;
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = '❌ Error: ' + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Refresh Profile Picture';
+            }
+        }
+    </script>
+</body>
+</html>
