@@ -1,0 +1,38 @@
+#!/bin/sh
+# Pre-commit hook to prevent committing secrets
+# To install: chmod +x .git-hooks/pre-commit && git config core.hooksPath .git-hooks
+
+echo "🔍 Checking for secrets in staged files..."
+
+# Check for common API key patterns
+if git diff --cached --name-only | xargs grep -nE "(AIza[0-9A-Za-z_-]{35}|sk_[a-f0-9]{32}|r8_[a-zA-Z0-9]{40}|eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,})" 2>/dev/null | grep -v "\.md\|example\|test"; then
+    echo ""
+    echo "❌ ERROR: Potential API key or secret detected in staged files!"
+    echo ""
+    echo "Please remove hardcoded secrets before committing."
+    echo "Secrets should be stored in .env.local (which is gitignored)."
+    echo ""
+    exit 1
+fi
+
+# Check if .env.local or .env is being committed
+if git diff --cached --name-only | grep -E "^\.env\.local$|^\.env$"; then
+    echo ""
+    echo "❌ ERROR: Attempting to commit .env.local or .env file!"
+    echo ""
+    echo "These files contain secrets and should never be committed."
+    echo "Please unstage: git reset HEAD .env.local .env"
+    echo ""
+    exit 1
+fi
+
+# Check for TODO or FIXME with security implications
+if git diff --cached | grep -i "TODO.*\(password\|secret\|key\|token\)"; then
+    echo ""
+    echo "⚠️  WARNING: Found TODO/FIXME related to security."
+    echo "Please ensure all security TODOs are addressed before committing."
+    echo ""
+fi
+
+echo "✅ No secrets detected in commit"
+exit 0
