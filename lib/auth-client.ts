@@ -4,8 +4,9 @@ import { createAuthClient } from "better-auth/client";
 const getBaseURL = () => {
   if (typeof window !== 'undefined') {
     // In production, always use omnifolio.app regardless of how user accessed the site
+    // Handle both www.omnifolio.app and omnifolio.app
     if (window.location.hostname.includes('run.app') || 
-        window.location.hostname === 'omnifolio.app') {
+        window.location.hostname.includes('omnifolio.app')) {
       return 'https://omnifolio.app';
     }
     return window.location.origin;
