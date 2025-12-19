@@ -1,10 +1,20 @@
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-
-// Initialize OpenNext Cloudflare for local development
-initOpenNextCloudflareForDev();
+// Only initialize OpenNext Cloudflare in non-Docker environments
+// The DOCKER_BUILD env var is set in cloudbuild.yaml/Dockerfile
+if (process.env.NODE_ENV === 'development' && !process.env.DOCKER_BUILD) {
+  try {
+    const { initOpenNextCloudflareForDev } = await import("@opennextjs/cloudflare");
+    initOpenNextCloudflareForDev();
+  } catch (e) {
+    // Silently ignore if the package is not available
+    console.log('OpenNext Cloudflare not available, skipping initialization');
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Use standalone output for Docker/Cloud Run deployment
+  output: process.env.DOCKER_BUILD ? 'standalone' : undefined,
+  
   // Empty turbopack config to silence the warning (Next.js 16 uses Turbopack by default)
   turbopack: {},
   
