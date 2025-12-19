@@ -2,14 +2,29 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  
+  // Redirect www to non-www for consistency
+  if (url.hostname === 'www.omnifolio.app') {
+    url.hostname = 'omnifolio.app';
+    return NextResponse.redirect(url, 301);
+  }
+  
   const response = NextResponse.next();
   
-  // Handle CORS for www -> non-www requests
+  // Handle CORS for cross-origin requests (including Cloud Run URLs)
   const origin = request.headers.get('origin');
-  if (origin === 'https://www.omnifolio.app' || origin === 'https://omnifolio.app') {
+  const allowedOrigins = [
+    'https://omnifolio.app',
+    'https://www.omnifolio.app',
+    'https://financial-planner-629380503119.europe-west1.run.app',
+    'http://localhost:3000',
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
   }
   

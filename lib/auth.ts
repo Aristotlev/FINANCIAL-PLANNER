@@ -9,6 +9,13 @@ const pool = new Pool({
   },
 });
 
+// Determine the base URL for auth - always use non-www in production
+const getAuthBaseURL = () => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // Normalize www to non-www
+  return appUrl.replace('://www.', '://');
+};
+
 export const auth = betterAuth({
   database: pool,
   
@@ -21,13 +28,18 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirectURI: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/callback/google`,
+      // Use the normalized base URL for redirect
+      redirectURI: `${getAuthBaseURL()}/api/auth/callback/google`,
     },
   },
 
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // Update session every 24 hours
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 minutes cache
+    },
   },
 
   user: {
@@ -40,7 +52,7 @@ export const auth = betterAuth({
     },
   },
 
-  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: getAuthBaseURL(),
 
   trustedOrigins: [
     "https://omnifolio.app",
@@ -54,7 +66,8 @@ export const auth = betterAuth({
     cookiePrefix: "money-hub",
     useSecureCookies: process.env.NODE_ENV === "production",
     crossSubDomainCookies: {
-      enabled: false,
+      enabled: true,
+      domain: ".omnifolio.app", // Allow cookies across subdomains
     },
   },
 
