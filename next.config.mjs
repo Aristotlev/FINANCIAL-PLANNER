@@ -1,9 +1,13 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Initialize OpenNext Cloudflare for local development
+initOpenNextCloudflareForDev();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // Empty turbopack config to silence the warning (Next.js 16 uses Turbopack by default)
+  turbopack: {},
   
-  // Browser compatibility - target modern browsers
-  swcMinify: true,
   compiler: {
     // Remove console.log in production
     removeConsole: process.env.NODE_ENV === 'production' ? {
@@ -68,44 +72,6 @@ const nextConfig = {
       'jspdf',
       'jspdf-autotable',
     ],
-  },
-  
-  // Webpack optimizations for better chunking
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Split vendor chunks more aggressively
-      config.optimization.splitChunks = {
-        ...config.optimization.splitChunks,
-        chunks: 'all',
-        minSize: 20000,
-        maxSize: 244000, // Keep chunks under 244kb for better caching
-        cacheGroups: {
-          ...config.optimization.splitChunks?.cacheGroups,
-          // Separate recharts into its own chunk (heavy library)
-          recharts: {
-            test: /[\\/]node_modules[\\/]recharts[\\/]/,
-            name: 'recharts',
-            priority: 30,
-            reuseExistingChunk: true,
-          },
-          // Separate framer-motion into its own chunk
-          framer: {
-            test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-            name: 'framer-motion',
-            priority: 30,
-            reuseExistingChunk: true,
-          },
-          // Separate icons into their own chunk
-          icons: {
-            test: /[\\/]node_modules[\\/](lucide-react|react-icons)[\\/]/,
-            name: 'icons',
-            priority: 20,
-            reuseExistingChunk: true,
-          },
-        },
-      };
-    }
-    return config;
   },
   
   // Security headers are managed in middleware.ts to avoid conflicts
