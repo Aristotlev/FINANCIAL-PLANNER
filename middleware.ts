@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
     "font-src 'self' data: https://fonts.gstatic.com https://maps.gstatic.com",
     isDev
       ? "connect-src 'self' https: http: ws: wss:"
-      : "connect-src 'self' https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co https://accounts.google.com",
+      : "connect-src 'self' https://omnifolio.app https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co https://accounts.google.com",
     "media-src 'self' blob: data: https://api.elevenlabs.io https://replicate.delivery",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
