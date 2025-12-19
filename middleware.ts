@@ -3,6 +3,23 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
+  
+  // Handle CORS for www -> non-www requests
+  const origin = request.headers.get('origin');
+  if (origin === 'https://www.omnifolio.app' || origin === 'https://omnifolio.app') {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  // Handle preflight requests
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, {
+      status: 200,
+      headers: response.headers,
+    });
+  }
 
   // More permissive CSP in development
   const isDev = process.env.NODE_ENV === 'development';
@@ -22,7 +39,7 @@ export function middleware(request: NextRequest) {
     "font-src 'self' data: https://fonts.gstatic.com https://maps.gstatic.com",
     isDev
       ? "connect-src 'self' https: http: ws: wss:"
-      : "connect-src 'self' https://omnifolio.app https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co https://accounts.google.com",
+      : "connect-src 'self' https://omnifolio.app https://www.omnifolio.app https://api.exchangerate-api.com https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co https://accounts.google.com",
     "media-src 'self' blob: data: https://api.elevenlabs.io https://replicate.delivery",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
