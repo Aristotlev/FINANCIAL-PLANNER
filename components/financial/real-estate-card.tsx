@@ -25,6 +25,7 @@ import { TbBuilding } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, ConditionalThemedStatBox, ThemedContainer, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { formatNumber } from "../../lib/utils";
 import { useCurrency } from "../../contexts/currency-context";
 
@@ -1594,24 +1595,27 @@ function RealEstateModalContent() {
       {activeTab === 'properties' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-lime-50 dark:bg-lime-900/20 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-lime-500/50 dark:hover:shadow-lime-500/30">
-              <div className="text-xl font-bold text-lime-600 mb-1">${formatNumber(totalValue)}</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">Total Value</div>
-            </div>
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30">
-              <div className="text-xl font-bold text-green-600 mb-1">${formatNumber(totalEquity)}</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">Total Equity</div>
-            </div>
-            <div className={`p-4 rounded-xl transition-all duration-200 hover:shadow-lg ${totalAppreciation >= 0 ? 'bg-green-50 dark:bg-green-900/20 hover:shadow-green-500/50 dark:hover:shadow-green-500/30' : 'bg-red-50 dark:bg-red-900/20 hover:shadow-red-500/50 dark:hover:shadow-red-500/30'}`}>
-              <div className={`text-xl font-bold mb-1 ${totalAppreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {totalAppreciation >= 0 ? '+' : ''}${formatNumber(totalAppreciation)}
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">Appreciation</div>
-            </div>
-            <div className="bg-lime-50 dark:bg-lime-900/20 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-lime-500/50 dark:hover:shadow-lime-500/30">
-              <div className="text-xl font-bold text-lime-600 mb-1">{properties.length}</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">Properties</div>
-            </div>
+            <ThemedStatBox
+              themeColor={CARD_THEME_COLORS.realEstate}
+              value={`$${formatNumber(totalValue)}`}
+              label="Total Value"
+            />
+            <ThemedStatBox
+              themeColor={CARD_THEME_COLORS.realEstate}
+              value={`$${formatNumber(totalEquity)}`}
+              label="Total Equity"
+            />
+            <ConditionalThemedStatBox
+              themeColor={CARD_THEME_COLORS.realEstate}
+              value={`${totalAppreciation >= 0 ? '+' : ''}$${formatNumber(totalAppreciation)}`}
+              label="Appreciation"
+              valueType={totalAppreciation >= 0 ? 'positive' : 'negative'}
+            />
+            <ThemedStatBox
+              themeColor={CARD_THEME_COLORS.realEstate}
+              value={properties.length}
+              label="Properties"
+            />
           </div>
 
           <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-2">
@@ -1702,7 +1706,7 @@ function RealEstateModalContent() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-lime-50 dark:bg-lime-900/20 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-lime-500/50 dark:hover:shadow-lime-500/30">
+            <ThemedContainer themeColor={CARD_THEME_COLORS.realEstate}>
               <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Portfolio Metrics</h4>
               <div className="space-y-3 text-sm text-gray-900 dark:text-white">
                 <div className="flex justify-between">
@@ -1720,9 +1724,9 @@ function RealEstateModalContent() {
                   </span>
                 </div>
               </div>
-            </div>
+            </ThemedContainer>
 
-            <div className="bg-green-50 dark:bg-green-900/20 p-5 rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30 cursor-pointer">
+            <ThemedContainer themeColor={CARD_THEME_COLORS.realEstate}>
               <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Color Management</h4>
               <div className="space-y-3">
                 {properties.slice(0, 4).map((property, index) => (
@@ -1742,7 +1746,7 @@ function RealEstateModalContent() {
                   </div>
                 ))}
               </div>
-            </div>
+            </ThemedContainer>
           </div>
 
           <div>
@@ -1758,24 +1762,21 @@ function RealEstateModalContent() {
           <div>
             <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Performance Metrics</h3>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-lime-50 dark:bg-lime-900/20 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-lime-500/50 dark:hover:shadow-lime-500/30">
-                <div className="text-xl font-bold text-lime-600 mb-1">
-                  {properties.length > 0 ? ((totalAppreciation / properties.reduce((sum, prop) => sum + prop.purchasePrice, 0)) * 100).toFixed(2) : 0}%
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Total Return</div>
-              </div>
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30">
-                <div className="text-xl font-bold text-green-600 mb-1">
-                  {properties.length > 0 ? ((monthlyRentalIncome * 12 / totalValue) * 100).toFixed(2) : 0}%
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Annual Yield</div>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30">
-                <div className="text-xl font-bold text-blue-600 mb-1">
-                  {totalEquity > 0 ? ((totalEquity / totalValue) * 100).toFixed(2) : 0}%
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Equity Ratio</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.realEstate}
+                value={`${properties.length > 0 ? ((totalAppreciation / properties.reduce((sum, prop) => sum + prop.purchasePrice, 0)) * 100).toFixed(2) : 0}%`}
+                label="Total Return"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.realEstate}
+                value={`${properties.length > 0 ? ((monthlyRentalIncome * 12 / totalValue) * 100).toFixed(2) : 0}%`}
+                label="Annual Yield"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.realEstate}
+                value={`${totalEquity > 0 ? ((totalEquity / totalValue) * 100).toFixed(2) : 0}%`}
+                label="Equity Ratio"
+              />
             </div>
           </div>
 

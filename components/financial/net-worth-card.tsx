@@ -997,6 +997,47 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
 };
 
 function NetWorthBreakdown({ assets, pieChartData, portfolio }: { assets: any[]; pieChartData: any[]; portfolio: any }) {
+  
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (!active || !payload || !payload.length) return null;
+
+    const data = payload[0].payload;
+    
+    return (
+      <div 
+        className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700"
+        style={{ 
+          pointerEvents: 'auto',
+          position: 'relative'
+        }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <div 
+            className="w-4 h-4 rounded-full" 
+            style={{ backgroundColor: data.color }}
+          />
+          <span className="text-sm font-bold text-gray-900 dark:text-white">
+            {data.name}
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between gap-4">
+            <span className="text-xs text-gray-600 dark:text-gray-400">Percentage:</span>
+            <span className="text-xs font-bold text-gray-900 dark:text-white">
+              {Number(data.value).toFixed(1)}%
+            </span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-xs text-gray-600 dark:text-gray-400">Value:</span>
+            <span className="text-xs font-bold text-gray-900 dark:text-white">
+              ${formatNumber(data.actualValue || 0)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Asset Allocation</h3>
@@ -1004,47 +1045,47 @@ function NetWorthBreakdown({ assets, pieChartData, portfolio }: { assets: any[];
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="relative">
           <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Portfolio Distribution</h4>
-          <div className="h-64 relative" style={{ overflow: 'visible', padding: '30px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+          <div className="h-[300px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
+            <ResponsiveContainer width="100%" height="100%" debounce={200}>
+              <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <Pie
                   data={pieChartData}
+                  dataKey="value"
+                  nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={80}
+                  outerRadius={90}
+                  innerRadius={0}
                   fill="#8884d8"
-                  dataKey="value"
-                  label={CustomPieLabel}
+                  paddingAngle={2}
                   isAnimationActive={false}
                   animationDuration={0}
+                  animationBegin={0}
+                  animationEasing="linear"
+                  label={false}
+                  labelLine={false}
+                  activeShape={false as any}
                 >
                   {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.color}
+                      stroke="#fff"
+                      strokeWidth={2}
+                    />
                   ))}
                 </Pie>
                 <Tooltip 
-                  cursor={false}
-                  allowEscapeViewBox={{ x: true, y: true }}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white dark:bg-gray-800 backdrop-blur-sm px-4 py-3 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-600" style={{ zIndex: 999999, position: 'relative' }}>
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {payload[0].name}: {Number(payload[0].value).toFixed(1)}% (${formatNumber(payload[0].payload.actualValue)})
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
+                  content={<CustomPieTooltip />}
+                  trigger="hover"
                   wrapperStyle={{ 
-                    zIndex: 999999, 
+                    zIndex: 50,
                     pointerEvents: 'none',
-                    position: 'absolute'
+                    visibility: 'visible'
                   }}
-                  isAnimationActive={true}
-                  animationDuration={200}
-                  animationEasing="ease-out"
+                  allowEscapeViewBox={{ x: true, y: true }}
+                  isAnimationActive={false}
+                  animationDuration={0}
                 />
               </PieChart>
             </ResponsiveContainer>

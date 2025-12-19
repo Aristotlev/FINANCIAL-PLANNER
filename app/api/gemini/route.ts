@@ -1,11 +1,15 @@
 /**
  * Gemini API endpoint for text generation
  * Uses Gemini 1.5 Flash via REST API
+ * Protected by authentication and rate limiting
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { rateLimit, getClientIP, RateLimitConfigs } from "@/lib/rate-limit";
 
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY;
+const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 interface GeminiRequest {
@@ -100,6 +104,44 @@ async function callGeminiWithRetry(
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Authenticate user
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in to use AI features' },
+        { status: 401 }
+      );
+    }
+
+    // ✅ Rate limiting - prevent API abuse
+    const headersList = await headers();
+    const identifier = session.user?.id || getClientIP(headersList);
+    const rateLimitResult = await rateLimit(identifier, RateLimitConfigs.AI_STRICT);
+
+    if (!rateLimitResult.success) {
+      const resetDate = new Date(rateLimitResult.reset);
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded. Please try again later.',
+          limit: rateLimitResult.limit,
+          remaining: rateLimitResult.remaining,
+          reset: resetDate.toISOString(),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     if (!GEMINI_API_KEY) {
       console.error('[LLM] GEMINI_API_KEY not configured');
       return NextResponse.json(

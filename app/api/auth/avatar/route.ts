@@ -17,7 +17,10 @@ export async function GET() {
       headers: await headers(),
     });
 
+    console.log('🎨 Avatar endpoint called, session exists:', !!session);
+
     if (!session) {
+      console.log('⚠️ No session - returning default avatar');
       // Return a default avatar SVG
       return new NextResponse(
         `<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
@@ -27,11 +30,15 @@ export async function GET() {
         {
           headers: {
             'Content-Type': 'image/svg+xml',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }
       );
     }
+
+    console.log('👤 User ID:', session.user.id);
 
     // Get user's image URL from database
     const result = await pool.query(
@@ -40,6 +47,7 @@ export async function GET() {
     );
 
     let imageUrl = result.rows.length > 0 ? result.rows[0].image : null;
+    console.log('📸 Image URL from DB:', imageUrl || 'None');
 
     // If no image in database, try to fetch from Google
     if (!imageUrl) {
@@ -78,10 +86,13 @@ export async function GET() {
     }
 
     if (!imageUrl) {
+      console.log('⚠️ No image URL - returning initials avatar');
       // Return a personalized default avatar with user's initials
       const initials = session.user.name 
         ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
         : session.user.email.slice(0, 2).toUpperCase();
+      
+      console.log('🔤 Generated initials:', initials);
       
       return new NextResponse(
         `<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
@@ -91,12 +102,16 @@ export async function GET() {
         {
           headers: {
             'Content-Type': 'image/svg+xml',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         }
       );
     }
 
+    console.log('✅ Found image URL, proxying...');
+    
     // If it's a Google profile picture, proxy it to avoid CORS issues
     if (imageUrl.includes('googleusercontent.com')) {
       try {
@@ -113,14 +128,18 @@ export async function GET() {
         const imageBuffer = await imageResponse.arrayBuffer();
         const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
 
+        console.log('✅ Successfully proxied Google image');
+
         return new NextResponse(imageBuffer, {
           headers: {
             'Content-Type': contentType,
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         });
       } catch (error) {
-        console.error('Error proxying Google image:', error);
+        console.error('❌ Error proxying Google image:', error);
         // Fall through to return initials avatar
         const initials = session.user.name 
           ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -134,17 +153,20 @@ export async function GET() {
           {
             headers: {
               'Content-Type': 'image/svg+xml',
-              'Cache-Control': 'public, max-age=3600',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
             },
           }
         );
       }
     }
 
+    console.log('🔀 Redirecting to external image URL');
     // For other image URLs, redirect to them
     return NextResponse.redirect(imageUrl);
   } catch (error) {
-    console.error("Error fetching avatar:", error);
+    console.error("❌ Error fetching avatar:", error);
     
     // Return default avatar on error
     return new NextResponse(
@@ -155,7 +177,9 @@ export async function GET() {
       {
         headers: {
           'Content-Type': 'image/svg+xml',
-          'Cache-Control': 'public, max-age=3600',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       }
     );

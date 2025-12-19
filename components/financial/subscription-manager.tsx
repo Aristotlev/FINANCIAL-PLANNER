@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { formatNumber } from "../../lib/utils";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
+import { ThemedStatBox, ThemedContainer, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 
 export interface SubscriptionItem {
   id: string;
@@ -548,14 +549,14 @@ function AddEditSubscriptionModal({
           </div>
 
           {/* Yearly Cost Preview */}
-          <div className="bg-cyan-50 dark:bg-cyan-900/20 p-3 rounded-lg">
+          <ThemedContainer themeColor={CARD_THEME_COLORS.expenses}>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700 dark:text-gray-300">Yearly Cost</span>
-              <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+              <span className="text-lg font-bold" style={{ color: CARD_THEME_COLORS.expenses }}>
                 ${formatNumber(yearlyCost)}
               </span>
             </div>
-          </div>
+          </ThemedContainer>
 
         </form>
         
@@ -778,45 +779,29 @@ export function SubscriptionManager({ onSubscriptionsChange }: SubscriptionManag
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-cyan-50 dark:bg-cyan-900/20 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-cyan-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Cost</span>
-          </div>
-          <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
-            ${formatNumber(totalMonthly)}
-          </div>
-        </div>
+        <ThemedStatBox
+          themeColor={CARD_THEME_COLORS.expenses}
+          value={`$${formatNumber(totalMonthly)}`}
+          label="Monthly Cost"
+        />
 
-        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="w-4 h-4 text-purple-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Yearly Cost</span>
-          </div>
-          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            ${formatNumber(totalYearly)}
-          </div>
-        </div>
+        <ThemedStatBox
+          themeColor={CARD_THEME_COLORS.expenses}
+          value={`$${formatNumber(totalYearly)}`}
+          label="Yearly Cost"
+        />
 
-        <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-orange-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Upcoming (30d)</span>
-          </div>
-          <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-            {upcomingSubscriptions.length}
-          </div>
-        </div>
+        <ThemedStatBox
+          themeColor={CARD_THEME_COLORS.expenses}
+          value={upcomingSubscriptions.length}
+          label="Upcoming (30d)"
+        />
 
-        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <CreditCard className="w-4 h-4 text-green-600" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Active</span>
-          </div>
-          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {subscriptions.length}
-          </div>
-        </div>
+        <ThemedStatBox
+          themeColor={CARD_THEME_COLORS.expenses}
+          value={subscriptions.length}
+          label="Active"
+        />
       </div>
 
       {/* View Toggle and Add Button */}

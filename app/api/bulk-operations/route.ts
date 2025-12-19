@@ -1,12 +1,16 @@
 /**
  * Bulk Operations API
  * Add/Remove multiple assets at once + AI-powered bulk operations
+ * Protected by authentication and rate limiting
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseDataService } from '@/lib/supabase/supabase-data-service';
 import { enhancedMarketService } from '@/lib/enhanced-market-service';
 import { getAssetColor } from '@/lib/asset-color-database';
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { rateLimit, getClientIP, RateLimitConfigs } from "@/lib/rate-limit";
 
 export interface BulkAddRequest {
   type: 'stocks' | 'crypto' | 'cash' | 'savings' | 'properties' | 'items';
@@ -43,6 +47,46 @@ export interface BulkOperationResponse {
  */
 export async function POST(request: NextRequest) {
   try {
+    // ✅ Authenticate user
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized - Please sign in to perform bulk operations' },
+        { status: 401 }
+      );
+    }
+
+    console.log('[BULK-OPS] Processing authenticated request from user:', session.user.id);
+
+    // ✅ Rate limiting - Bulk operations can be resource-intensive
+    const headersList = await headers();
+    const identifier = session.user?.id || getClientIP(headersList);
+    const rateLimitResult = await rateLimit(identifier, RateLimitConfigs.AI_LENIENT);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Rate limit exceeded. Please try again later.',
+          limit: rateLimitResult.limit,
+          remaining: rateLimitResult.remaining,
+          reset: new Date(rateLimitResult.reset).toISOString(),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { operation, data } = body;
 

@@ -21,6 +21,7 @@ import {
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { INTERNATIONAL_BANKS, BankInfo, searchBanks, getBanksByCountry, getBanksByContinent, getAllCountries, getAllContinents } from "../../lib/banks-database";
 import { formatNumber } from "../../lib/utils";
 import { useCurrency } from "../../contexts/currency-context";
@@ -1099,22 +1100,26 @@ function SavingsModalContent() {
 
             {/* Performance Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2 -mx-2 py-2 -my-2">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-blue-600">${totalMonthlyContribution.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Monthly Savings</div>
-              </div>
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/50 dark:hover:shadow-indigo-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-indigo-600">{averageAPY.toFixed(2)}%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Average APY</div>
-              </div>
-              <div className="bg-sky-50 dark:bg-sky-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-sky-500/50 dark:hover:shadow-sky-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-sky-600">${totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Saved</div>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-blue-600">{savingsGoals.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Active Goals</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.savings}
+                value={`$${totalMonthlyContribution.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
+                label="Monthly Savings"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.savings}
+                value={`${averageAPY.toFixed(2)}%`}
+                label="Average APY"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.savings}
+                value={`$${totalSavings.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
+                label="Total Saved"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.savings}
+                value={savingsGoals.length}
+                label="Active Goals"
+              />
             </div>
           </div>
         )}

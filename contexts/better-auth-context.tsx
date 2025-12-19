@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { SupabaseDataService } from '@/lib/supabase/supabase-data-service';
 
 interface User {
   id: string;
@@ -48,6 +49,8 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     try {
       setError(null);
       const response = await authClient.getSession();
+      console.log('🔍 Raw session response:', response);
+      
       if (response.data && 'user' in response.data && response.data.user) {
         const sessionData = response.data;
         
@@ -56,20 +59,27 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
           email: sessionData.user.email,
           name: sessionData.user.name,
           image: sessionData.user.image,
+          createdAt: sessionData.user.createdAt,
+          updatedAt: sessionData.user.updatedAt,
         });
         
-        // Always use the avatar proxy endpoint - it handles all cases:
+        // Always use the avatar proxy endpoint with cache busting - it handles all cases:
         // - Proxies Google images (avoids CORS)
         // - Returns initials SVG if no image
         // - Returns default icon if not authenticated
-        console.log('📸 Using avatar endpoint: /api/auth/avatar');
+        // Add timestamp to force reload and avoid browser cache
+        const avatarUrl = `/api/auth/avatar?t=${Date.now()}`;
+        console.log('📸 Using avatar endpoint with cache bust:', avatarUrl);
+        console.log('📸 Image from session:', sessionData.user.image);
         
         setUser({
           id: sessionData.user.id,
           email: sessionData.user.email,
           name: sessionData.user.name || sessionData.user.email.split('@')[0],
-          avatarUrl: '/api/auth/avatar',
+          avatarUrl: avatarUrl,
         });
+      } else {
+        console.log('❌ No valid session data:', response);
       }
     } catch (error: any) {
       console.error('Session check failed:', error);
@@ -134,6 +144,8 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     try {
       await authClient.signOut();
       setUser(null);
+      // Clear cached user ID in data service
+      SupabaseDataService.clearUserCache();
     } catch (error) {
       console.error('Logout error:', error);
     }

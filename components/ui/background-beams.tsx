@@ -1,38 +1,64 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 export const BackgroundBeams = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseX = useRef<number>(0);
   const mouseY = useRef<number>(0);
+  const [isVisible, setIsVisible] = useState(true);
+  const frameCountRef = useRef(0);
+
+  // Pause animation when tab is not visible to save CPU
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsVisible(!document.hidden);
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !isVisible) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
     let animationFrameId: number;
 
-    // Set canvas size
+    // Set canvas size with devicePixelRatio for crisp rendering
     const resizeCanvas = () => {
-      // Set canvas to match viewport size
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap at 2x for performance
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      ctx.scale(dpr, dpr);
     };
     resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-
-    // Mouse move handler
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.current = e.clientX;
-      mouseY.current = e.clientY;
+    
+    // Debounced resize handler
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resizeCanvas, 150);
     };
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("resize", handleResize);
 
-    // Beam class
+    // Throttled mouse move handler
+    let lastMouseUpdate = 0;
+    const handleMouseMove = (e: MouseEvent) => {
+      const now = Date.now();
+      if (now - lastMouseUpdate > 50) { // Max 20 updates per second
+        mouseX.current = e.clientX;
+        mouseY.current = e.clientY;
+        lastMouseUpdate = now;
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+
+    // Beam class - reduced count for better performance
     class Beam {
       x: number;
       y: number;
@@ -44,13 +70,13 @@ export const BackgroundBeams = React.memo(() => {
       color: string;
 
       constructor() {
-        this.x = Math.random() * (canvas?.width || window.innerWidth);
-        this.y = Math.random() * (canvas?.height || window.innerHeight);
+        this.x = Math.random() * window.innerWidth;
+        this.y = Math.random() * window.innerHeight;
         this.angle = Math.random() * Math.PI * 2;
         this.length = Math.random() * 200 + 100;
-        this.speed = Math.random() * 2 + 1;
+        this.speed = Math.random() * 1.5 + 0.5; // Slightly slower for smoother feel
         this.opacity = Math.random() * 0.5 + 0.2;
-        this.fadeSpeed = Math.random() * 0.01 + 0.005;
+        this.fadeSpeed = Math.random() * 0.008 + 0.004; // Slower fade
         
         // Random colors for beams
         const colors = ['rgba(139, 92, 246, ', 'rgba(59, 130, 246, ', 'rgba(34, 211, 238, '];
@@ -69,8 +95,8 @@ export const BackgroundBeams = React.memo(() => {
 
         // Reset if beam goes off screen
         if (this.y + this.length < 0) {
-          this.y = (canvas?.height || window.innerHeight) + this.length;
-          this.x = Math.random() * (canvas?.width || window.innerWidth);
+          this.y = window.innerHeight + this.length;
+          this.x = Math.random() * window.innerWidth;
         }
       }
 
@@ -97,21 +123,26 @@ export const BackgroundBeams = React.memo(() => {
       }
     }
 
-    // Create beams
+    // Create fewer beams for better performance (12 instead of 20)
     const beams: Beam[] = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 12; i++) {
       beams.push(new Beam());
     }
 
-    // Animation loop
+    // Animation loop with frame skipping for performance
     const animate = () => {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      frameCountRef.current++;
+      
+      // Skip every other frame for 30fps instead of 60fps - still smooth, half the CPU
+      if (frameCountRef.current % 2 === 0) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-      beams.forEach((beam) => {
-        beam.update();
-        beam.draw();
-      });
+        beams.forEach((beam) => {
+          beam.update();
+          beam.draw();
+        });
+      }
 
       animationFrameId = requestAnimationFrame(animate);
     };
@@ -119,11 +150,12 @@ export const BackgroundBeams = React.memo(() => {
 
     // Cleanup
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(animationFrameId);
+      clearTimeout(resizeTimeout);
     };
-  }, []);
+  }, [isVisible]);
 
   return (
     <canvas

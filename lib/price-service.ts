@@ -52,6 +52,8 @@ class PriceService {
     'SHIB': 'shiba-inu',
     'TRX': 'tron',
     'DAI': 'dai',
+    'USDT': 'tether',
+    'USDC': 'usd-coin',
     'WBTC': 'wrapped-bitcoin',
     'AAVE': 'aave',
     'CRO': 'crypto-com-chain',
@@ -65,7 +67,7 @@ class PriceService {
     try {
       // Use our API route to avoid CORS issues
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout (increased)
 
       const response = await fetch('/api/crypto-prices', {
         method: 'POST',
@@ -74,6 +76,8 @@ class PriceService {
         },
         body: JSON.stringify({ symbols }),
         signal: controller.signal,
+        // Ensure fresh request
+        cache: 'no-store',
       });
 
       clearTimeout(timeoutId);
@@ -111,8 +115,13 @@ class PriceService {
           return this.getFallbackCryptoPrices([symbol])[0];
         }
       });
-    } catch (error) {
-      console.error('Error fetching crypto prices:', error);
+    } catch (error: any) {
+      // Only log if it's not an abort error or network failure (which are expected during development)
+      if (error?.name !== 'AbortError' && !error?.message?.includes('Failed to fetch')) {
+        console.error('Error fetching crypto prices:', error);
+      } else if (process.env.NODE_ENV === 'development') {
+        console.debug('Crypto price fetch failed, using fallback:', error?.message);
+      }
       // Return fallback data instead of failing completely
       return this.getFallbackCryptoPrices(symbols);
     }
@@ -121,13 +130,20 @@ class PriceService {
   async fetchStockPrices(symbols: string[]): Promise<AssetPrice[]> {
     try {
       // Use our API route to avoid CORS issues
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
       const response = await fetch('/api/yahoo-finance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ symbols }),
+        signal: controller.signal,
+        cache: 'no-store',
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Failed to fetch stock prices from API');
@@ -152,10 +168,29 @@ class PriceService {
           return this.getFallbackStockPrice(symbol);
         }
       });
-    } catch (error) {
-      console.error('Error fetching stock prices:', error);
+    } catch (error: any) {
+      // Only log if it's not an abort error or network failure (which are expected during development)
+      if (error?.name !== 'AbortError' && !error?.message?.includes('Failed to fetch')) {
+        console.error('Error fetching stock prices:', error);
+      } else if (process.env.NODE_ENV === 'development') {
+        console.debug('Stock price fetch failed, using fallback:', error?.message);
+      }
       return this.getFallbackStockPrices(symbols);
     }
+  }
+
+  // Generate a stable pseudo-random number based on symbol (deterministic)
+  private getStableChange(symbol: string, multiplier: number = 1): number {
+    // Simple hash function to generate stable number from symbol
+    let hash = 0;
+    for (let i = 0; i < symbol.length; i++) {
+      const char = symbol.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    // Normalize to -0.5 to 0.5 range
+    const normalized = ((hash % 1000) / 1000) - 0.5;
+    return normalized * multiplier;
   }
 
   private getFallbackCryptoPrices(symbols: string[]): AssetPrice[] {
@@ -175,8 +210,8 @@ class PriceService {
     return symbols.map(symbol => ({
       symbol,
       price: fallbackPrices[symbol] || 1,
-      change24h: (Math.random() - 0.5) * 200,
-      changePercent24h: (Math.random() - 0.5) * 10,
+      change24h: this.getStableChange(symbol, 200),
+      changePercent24h: this.getStableChange(symbol + '_pct', 10),
       lastUpdated: Date.now()
     }));
   }
@@ -198,8 +233,8 @@ class PriceService {
     return symbols.map(symbol => ({
       symbol,
       price: fallbackPrices[symbol] || 100,
-      change24h: (Math.random() - 0.5) * 10,
-      changePercent24h: (Math.random() - 0.5) * 5,
+      change24h: this.getStableChange(symbol, 10),
+      changePercent24h: this.getStableChange(symbol + '_pct', 5),
       lastUpdated: Date.now()
     }));
   }
@@ -297,10 +332,18 @@ class PriceService {
   }
 
   private async fetchPriceForSymbol(symbol: string): Promise<AssetPrice> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
     try {
       if (this.cryptoIdMap[symbol]) {
         // Use crypto API route
-        const response = await fetch(`/api/crypto-prices?symbol=${encodeURIComponent(symbol)}`);
+        const response = await fetch(`/api/crypto-prices?symbol=${encodeURIComponent(symbol)}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           // Check if rate limited or server error - use cached/fallback silently
@@ -327,7 +370,12 @@ class PriceService {
         };
       } else {
         // Use API route for stock symbols to avoid CORS
-        const response = await fetch(`/api/yahoo-finance?symbol=${encodeURIComponent(symbol)}`);
+        const response = await fetch(`/api/yahoo-finance?symbol=${encodeURIComponent(symbol)}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           // Check if rate limited or server error - use cached/fallback silently
@@ -352,10 +400,17 @@ class PriceService {
         };
       }
     } catch (error: any) {
-      // Only log non-rate-limit errors
-      if (!error.message?.includes('Failed to fetch')) {
-        console.warn(`⚠️ Price fetch warning for ${symbol}:`, error.message);
+      clearTimeout(timeoutId);
+      
+      // Silently handle network errors and use fallback (don't spam console)
+      if (error?.name === 'AbortError' || error?.message?.includes('Failed to fetch')) {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug(`Network issue for ${symbol}, using fallback`);
+        }
+      } else {
+        console.warn(`⚠️ Price fetch warning for ${symbol}:`, error?.message);
       }
+      
       // Return cached data if available, otherwise fallback
       const cached = this.cache.get(symbol);
       if (cached) {

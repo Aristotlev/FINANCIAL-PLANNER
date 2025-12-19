@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { 
   CashCard, 
   SavingsCard, 
@@ -18,16 +18,16 @@ import {
 } from "./financial/financial-cards";
 import { useBetterAuth } from '../contexts/better-auth-context';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw } from "lucide-react";
+import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, LayoutGrid } from "lucide-react";
 import { AIChatAssistant } from './ui/ai-chat';
 import { ThemeToggle } from './ui/theme-toggle';
 import { CurrencySelector } from './ui/currency-selector';
-import { DataVisualization3D } from './ui/data-visualization-3d';
 import { BackgroundBeams } from './ui/background-beams';
 import { APIConnectionManager } from './ui/api-connection-manager';
 import { DataService } from '../lib/data-service';
 import { HiddenCardsFolder } from './ui/hidden-cards-folder';
 import { DraggableCardWrapper } from './ui/draggable-card-wrapper';
+import { CardOrderPanel } from './ui/card-order-panel';
 import { useHiddenCards, CardType } from '../contexts/hidden-cards-context';
 import { useCardOrder } from '../contexts/card-order-context';
 import { useFinancialData } from '../contexts/financial-data-context';
@@ -35,6 +35,11 @@ import { usePortfolioValues } from '../hooks/use-portfolio';
 import { useCurrency } from '../contexts/currency-context';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+// Lazy load the 3D visualization to improve initial load
+const DataVisualization3D = lazy(() => 
+  import('./ui/data-visualization-3d').then(mod => ({ default: mod.DataVisualization3D }))
+);
 
 // Extend jsPDF interface to include autoTable
 declare module 'jspdf' {
@@ -53,26 +58,29 @@ export function Dashboard() {
   const [showVisualization, setShowVisualization] = useState(true);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [showApiKeysMenu, setShowApiKeysMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [openApiCategory, setOpenApiCategory] = useState<string | null>(null);
   const [showConnectionManager, setShowConnectionManager] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [resetTrigger, setResetTrigger] = useState(0);
-  const [zoomLevel, setZoomLevel] = useState(1.0); // Zoom level as decimal (0.5 - 1.0)
+  const [zoomLevel, setZoomLevel] = useState(1.0);
   const [isZooming, setIsZooming] = useState(false);
   const [showZoomHint, setShowZoomHint] = useState(false);
-  const [currencyUpdateTrigger, setCurrencyUpdateTrigger] = useState(0);
+  const [showCardOrderPanel, setShowCardOrderPanel] = useState(false);
 
-  // Listen for currency changes to trigger re-calculations
+  // Memoized currency update trigger - debounced to prevent cascading renders
+  const currencyUpdateTriggerRef = React.useRef(0);
+
+  // Memoized event handler for currency changes
+  const handleCurrencyChange = useCallback(() => {
+    currencyUpdateTriggerRef.current += 1;
+  }, []);
+
+  // Listen for currency changes - optimized with cleanup
   React.useEffect(() => {
-    const handleCurrencyChange = () => {
-      setCurrencyUpdateTrigger(prev => prev + 1);
-      // Force re-render of all financial data
-      window.dispatchEvent(new CustomEvent('financialDataChanged'));
-    };
-    
     window.addEventListener('currencyChanged', handleCurrencyChange);
     return () => window.removeEventListener('currencyChanged', handleCurrencyChange);
-  }, []);
+  }, [handleCurrencyChange]);
 
   // Calculate portfolio distribution data with currency conversion
   const portfolioData = React.useMemo(() => {
@@ -143,7 +151,7 @@ export function Dashboard() {
         },
       ]
     };
-  }, [cash, savings, valuableItems, realEstate, tradingAccount, crypto, stocks, mainCurrency.code, convert, currencyUpdateTrigger]);
+  }, [cash, savings, valuableItems, realEstate, tradingAccount, crypto, stocks, mainCurrency.code, convert]);
 
   // NOTE: Total assets calculation removed - each card now shows its own real data
   // Net worth will aggregate from individual cards when they have data
@@ -180,50 +188,54 @@ export function Dashboard() {
     }
   }, [user]);
 
-  const resetCardPositions = () => {
-    // Trigger reset by dispatching a custom event
+  // Memoized reset handlers
+  const resetCardPositions = useCallback(() => {
     const event = new CustomEvent('resetCardPositions');
     window.dispatchEvent(event);
     setResetTrigger(prev => prev + 1);
-  };
+  }, []);
 
-  const resetZoom = () => {
+  const resetZoom = useCallback(() => {
     setZoomLevel(1.0);
-  };
+  }, []);
 
   // Add keyboard shortcut for reset layout (Command+Z or Ctrl+Z)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Command+Z (Mac) or Ctrl+Z (Windows/Linux)
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        e.preventDefault(); // Prevent default undo behavior
+        e.preventDefault();
         resetCardPositions();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [resetCardPositions]);
 
-  // Smooth wheel-based zoom with momentum
+  // Smooth wheel-based zoom with momentum - optimized with throttling
   React.useEffect(() => {
     let zoomTimeout: NodeJS.Timeout;
+    let lastZoomTime = 0;
+    const ZOOM_THROTTLE = 16; // ~60fps max
     
     const handleWheel = (e: WheelEvent) => {
-      // Check if Ctrl/Cmd key is pressed for zoom (standard browser zoom pattern)
+      // Check if Ctrl/Cmd key is pressed for zoom
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
+        
+        const now = Date.now();
+        if (now - lastZoomTime < ZOOM_THROTTLE) return;
+        lastZoomTime = now;
         
         setIsZooming(true);
         clearTimeout(zoomTimeout);
         
         // Calculate zoom delta - smoother increments
-        const delta = -e.deltaY * 0.001; // Reduced sensitivity for smoothness
+        const delta = -e.deltaY * 0.001;
         
         setZoomLevel(prevZoom => {
-          // Smooth exponential scaling
           const newZoom = prevZoom * (1 + delta);
-          // Clamp between 0.5 (50%) and 1.0 (100%)
           return Math.max(0.5, Math.min(1.0, newZoom));
         });
         
@@ -239,7 +251,7 @@ export function Dashboard() {
     };
   }, []);
 
-  const exportDataAsJSON = () => {
+  const exportDataAsJSON = useCallback(() => {
     try {
       const data = DataService.exportAllData();
       const dataStr = JSON.stringify(data, null, 2);
@@ -247,16 +259,16 @@ export function Dashboard() {
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `money-hub-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `omnifolio-backup-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       URL.revokeObjectURL(url);
       setShowDataMenu(false);
     } catch (error) {
       console.error('Export error:', error);
     }
-  };
+  }, []);
 
-  const exportDataAsPDF = () => {
+  const exportDataAsPDF = useCallback(() => {
     try {
       const data = DataService.exportAllData();
       const doc = new jsPDF();
@@ -265,7 +277,7 @@ export function Dashboard() {
       let yPosition = 20;
 
       doc.setFontSize(20);
-      doc.text('Money Hub - Portfolio Report', pageWidth / 2, yPosition, { align: 'center' });
+      doc.text('OmniFolio - Portfolio Report', pageWidth / 2, yPosition, { align: 'center' });
       yPosition += 10;
       doc.setFontSize(12);
       doc.text(`Generated: ${currentDate}`, pageWidth / 2, yPosition, { align: 'center' });
@@ -291,15 +303,15 @@ export function Dashboard() {
         theme: 'plain',
       });
 
-      doc.save(`money-hub-portfolio-${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`omnifolio-portfolio-${new Date().toISOString().split('T')[0]}.pdf`);
       setShowDataMenu(false);
     } catch (error) {
       console.error('PDF Export error:', error);
       alert('Failed to generate PDF. Please try again.');
     }
-  };
+  }, []);
 
-  const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const importData = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
@@ -314,9 +326,9 @@ export function Dashboard() {
       }
     };
     reader.readAsText(file);
-  };
+  }, []);
 
-  const clearAllData = async () => {
+  const clearAllData = useCallback(async () => {
     if (window.confirm('Clear all data? This cannot be undone.')) {
       try {
         // Import SupabaseDataService dynamically to avoid circular dependencies
@@ -334,10 +346,10 @@ export function Dashboard() {
         window.location.reload();
       }
     }
-  };
+  }, []);
 
-  // Helper function to render the appropriate card component based on cardId
-  const renderCard = (cardId: CardType) => {
+  // Memoized helper function to render the appropriate card component based on cardId
+  const renderCard = useCallback((cardId: CardType) => {
     switch (cardId) {
       case 'cash':
         return <CashCard />;
@@ -366,7 +378,7 @@ export function Dashboard() {
       default:
         return null;
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen h-full bg-black dark:bg-black relative overflow-hidden">
@@ -394,10 +406,10 @@ export function Dashboard() {
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed top-6 right-6 z-[10000] flex items-center space-x-4">
+      <div className="fixed top-2 sm:top-6 right-2 sm:right-6 left-2 sm:left-auto z-[10000] flex items-center justify-between sm:justify-end space-x-2 sm:space-x-4 flex-wrap sm:flex-nowrap gap-2 sm:gap-0">
               {/* Zoom Indicator - Shows during zoom, fades out when idle */}
               <div 
-                className={`flex items-center gap-2 px-3 py-2 bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-md rounded-lg border border-gray-700 shadow-lg transition-all duration-300 ${
+                className={`hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-md rounded-lg border border-gray-700 shadow-lg transition-all duration-300 ${
                   isZooming || zoomLevel !== 1.0 
                     ? 'opacity-100 scale-100' 
                     : 'opacity-0 scale-95 pointer-events-none'
@@ -425,14 +437,25 @@ export function Dashboard() {
               {/* Hidden Cards Folder */}
               <HiddenCardsFolder />
 
+              {/* Arrange Cards Button */}
+              <button 
+                onClick={() => setShowCardOrderPanel(true)}
+                className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors relative group min-h-touch"
+                title="Arrange Cards"
+              >
+                <LayoutGrid className="w-4 h-4" />
+                <span className="text-sm hidden lg:inline">Arrange</span>
+              </button>
+
               {/* Reset Card Positions Button */}
               <button 
                 onClick={resetCardPositions}
-                className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors relative group"
+                className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors relative group min-h-touch"
+                title="Reset Layout"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span className="text-sm hidden sm:inline">Reset Layout</span>
-                <span className="text-xs text-gray-400 ml-1 hidden lg:inline">(⌘Z)</span>
+                <span className="text-sm hidden lg:inline">Reset Layout</span>
+                <span className="text-xs text-gray-400 ml-1 hidden xl:inline">(⌘Z)</span>
                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-gray-700">
                   <div className="font-semibold mb-1">Reset Layout: ⌘Z / Ctrl+Z</div>
                   <div className="text-gray-400">Zoom: Hold Ctrl/⌘ + Scroll</div>
@@ -440,13 +463,14 @@ export function Dashboard() {
               </button>
               
               {/* Data Management Dropdown */}
-              <div className="relative">
+              <div className="relative hidden md:block">
                 <button 
                   onClick={() => setShowDataMenu(!showDataMenu)}
-                  className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors min-h-touch"
+                  title="Data Management"
                 >
                   <Database className="w-4 h-4" />
-                  <span className="text-sm">Data</span>
+                  <span className="text-sm hidden lg:inline">Data</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${showDataMenu ? 'rotate-180' : ''}`} />
                 </button>
                 
@@ -514,27 +538,81 @@ export function Dashboard() {
                 )}
               </div>
               
-              <button className="p-2 text-gray-300 hover:text-white dark:hover:text-gray-100 rounded-full hover:bg-gray-700 dark:hover:bg-gray-800">
-                <Settings className="w-5 h-5" />
-              </button>
+              {/* Settings Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors min-h-touch"
+                  title="Settings"
+                >
+                  <Settings className="w-5 h-5" />
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showSettingsMenu ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showSettingsMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-[10001]" 
+                      onClick={() => setShowSettingsMenu(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[10002]">
+                      <div className="p-2">
+                        <a
+                          href="/billing"
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        >
+                          <CreditCard className="w-4 h-4 text-green-500" />
+                          <span>Billing & Plans</span>
+                        </a>
+                        
+                        <a
+                          href="/terms"
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        >
+                          <Shield className="w-4 h-4 text-blue-500" />
+                          <span>Terms & Conditions</span>
+                        </a>
+                        
+                        <a
+                          href="/privacy"
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        >
+                          <Shield className="w-4 h-4 text-purple-500" />
+                          <span>Privacy Policy</span>
+                        </a>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
               
               <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-600 flex-shrink-0">
                 <img 
+                  key={user?.avatarUrl}
                   src={user?.avatarUrl || '/api/auth/avatar'} 
                   alt={user?.name || 'User avatar'}
                   className="w-full h-full object-cover"
+                  onLoad={() => {
+                    console.log('✅ Avatar image loaded successfully:', user?.avatarUrl);
+                  }}
+                  onError={(e) => {
+                    console.error('❌ Avatar image failed to load:', user?.avatarUrl);
+                    console.error('Error event:', e);
+                    e.currentTarget.src = '/api/auth/avatar';
+                  }}
                 />
               </div>
-              <span className="text-sm font-medium text-gray-200 dark:text-gray-300">
+              <span className="text-sm font-medium text-gray-200 dark:text-gray-300 hidden md:inline truncate max-w-[150px] lg:max-w-[200px]">
                 {user?.email}
               </span>
               
               <button
                 onClick={logout}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 hover:bg-gray-700 dark:hover:bg-gray-800"
+                className="inline-flex items-center px-2 sm:px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 hover:bg-gray-700 dark:hover:bg-gray-800 min-h-touch"
+                title="Sign out"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign out
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </div>
 
@@ -543,7 +621,7 @@ export function Dashboard() {
 
       {/* Main Dashboard */}
       <div 
-        className="pt-32 pb-8 relative z-10 flex items-center justify-center min-h-screen"
+        className="pt-20 sm:pt-32 pb-8 px-2 sm:px-4 relative z-10 flex items-center justify-center min-h-screen"
         data-dashboard-zoom-container
         style={{ 
           transform: `scale(${zoomLevel})`,
@@ -553,9 +631,9 @@ export function Dashboard() {
         }}
       >
         
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-2 sm:px-4">
           {/* All Financial Cards - Dynamic Order with Drag-and-Drop */}
-          <div className="flex flex-wrap gap-6 justify-center">
+          <div className="flex flex-wrap gap-3 sm:gap-6 justify-center">
             {cardOrder.map(cardId => {
               if (isCardHidden(cardId)) return null;
               
@@ -572,21 +650,29 @@ export function Dashboard() {
       {/* AI Chat Assistant with Voice */}
       <AIChatAssistant />
 
-      {/* 3D Data Visualization Overlay */}
+      {/* 3D Data Visualization Overlay - Lazy loaded for better initial performance */}
       {showVisualization && (
-        <DataVisualization3D
-          title="Portfolio Distribution"
-          chartType="bar"
-          totalLabel="Total Portfolio Value"
-          totalValue={portfolioData.total}
-          data={portfolioData.items}
-        />
+        <Suspense fallback={null}>
+          <DataVisualization3D
+            title="Portfolio Distribution"
+            chartType="bar"
+            totalLabel="Total Portfolio Value"
+            totalValue={portfolioData.total}
+            data={portfolioData.items}
+          />
+        </Suspense>
       )}
 
       {/* API Connection Manager */}
       <APIConnectionManager 
         isOpen={showConnectionManager}
         onClose={() => setShowConnectionManager(false)}
+      />
+
+      {/* Card Order Panel */}
+      <CardOrderPanel 
+        isOpen={showCardOrderPanel}
+        onClose={() => setShowCardOrderPanel(false)}
       />
     </div>
   );

@@ -1,36 +1,72 @@
 /**
- * Runtime Environment Variables Endpoint
- * This API route serves environment variables at runtime
- * It replaces the placeholder values with actual environment variables
+ * Runtime Environment Variables API
+ * 
+ * This endpoint serves environment variables at runtime as a JavaScript file.
+ * It's loaded before the app initializes to ensure client-side code has access
+ * to necessary configuration (Supabase URL, API keys, etc.)
+ * 
+ * Security: Only NEXT_PUBLIC_ variables should be exposed here
  */
 
-export const dynamic = 'force-dynamic';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const envScript = `
+  try {
+    // Create JavaScript that sets window.__ENV__
+    const envScript = `
 (function() {
+  'use strict';
+  
+  // Set environment variables on window object
   window.__ENV__ = {
     NEXT_PUBLIC_SUPABASE_URL: '${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: '${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}',
-    NEXT_PUBLIC_APP_URL: '${process.env.NEXT_PUBLIC_APP_URL || ''}',
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: '${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}',
-    NEXT_PUBLIC_GOOGLE_AI_API_KEY: '${process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || ''}',
-    NEXT_PUBLIC_ELEVENLABS_API_KEY: '${process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || ''}',
-    NEXT_PUBLIC_ELEVENLABS_VOICE_ID: '${process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || ''}',
+    NEXT_PUBLIC_APP_URL: '${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')}',
   };
   
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('[Runtime ENV] Environment variables loaded at runtime');
-    console.log('[Runtime ENV] Supabase configured:', !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL);
+  // Log in development
+  if (window.location.hostname === 'localhost') {
+    console.log('[ENV API] Environment variables loaded:', {
+      hasSupabaseUrl: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasMapsKey: !!window.__ENV__.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+      appUrl: window.__ENV__.NEXT_PUBLIC_APP_URL,
+    });
   }
 })();
-  `.trim();
+`;
 
-  return new Response(envScript, {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/javascript',
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-    },
-  });
+    // Return as JavaScript with proper MIME type
+    return new NextResponse(envScript, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    });
+  } catch (error) {
+    console.error('[ENV API] Error generating environment script:', error);
+    
+    // Return empty but valid JavaScript on error
+    const fallbackScript = `
+(function() {
+  console.error('[ENV API] Failed to load environment variables');
+  window.__ENV__ = {};
+})();
+`;
+    
+    return new NextResponse(fallbackScript, {
+      status: 200, // Still return 200 to avoid blocking app
+      headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+      },
+    });
+  }
 }
+
+// Prevent caching of this endpoint
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;

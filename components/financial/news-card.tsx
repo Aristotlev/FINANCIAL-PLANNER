@@ -18,6 +18,7 @@ import {
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { formatNumber } from "../../lib/utils";
 import { usePortfolioContext } from "../../contexts/portfolio-context";
+import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 
 interface NewsItem {
   title: string;
@@ -26,6 +27,7 @@ interface NewsItem {
   pubDate: string;
   source: string;
   category: string;
+  matchedSymbol?: string;
 }
 
 // News sources configuration - matches API sources
@@ -38,7 +40,8 @@ const NEWS_SOURCES = {
     { name: "Bitcoin Magazine", url: "https://bitcoinmagazine.com/.rss/full/", color: "#5B67E5" },
     { name: "Crypto Briefing", url: "https://cryptobriefing.com/feed/", color: "#7C3AED" },
     { name: "CryptoSlate", url: "https://cryptoslate.com/feed/", color: "#4A5568" },
-    { name: "NewsBTC", url: "https://www.newsbtc.com/feed/", color: "#F7931A" }
+    { name: "NewsBTC", url: "https://www.newsbtc.com/feed/", color: "#F7931A" },
+    { name: "Google News", url: "https://news.google.com", color: "#4285F4" }
   ],
   stocks: [
     { name: "MarketWatch", url: "https://www.marketwatch.com/rss/topstories", color: "#0066CC" },
@@ -49,7 +52,8 @@ const NEWS_SOURCES = {
     { name: "CNBC", url: "https://www.cnbc.com/id/100003114/device/rss/rss.html", color: "#0099CC" },
     { name: "Reuters Business", url: "https://www.reutersagency.com/feed/", color: "#FF6600" },
     { name: "Barron's", url: "https://www.barrons.com/xml/rss/3_7014.xml", color: "#0080C9" },
-    { name: "The Motley Fool", url: "https://www.fool.com/feeds/index.aspx", color: "#D9232D" }
+    { name: "The Motley Fool", url: "https://www.fool.com/feeds/index.aspx", color: "#D9232D" },
+    { name: "Google News", url: "https://news.google.com", color: "#4285F4" }
   ],
   forex: [
     { name: "FXStreet", url: "https://www.fxstreet.com/news/rss", color: "#1E40AF" },
@@ -73,275 +77,6 @@ const NEWS_SOURCES = {
     { name: "CNBC World", url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", color: "#00AAE7" },
     { name: "The Motley Fool", url: "https://www.fool.com/feeds/index.aspx", color: "#D9232D" },
     { name: "Seeking Alpha", url: "https://seekingalpha.com/feed.xml", color: "#FF7A00" }
-  ]
-};
-
-// Mock news data (in production, you'd fetch from RSS feeds via API)
-// Minimum 8 articles per category for better coverage
-const MOCK_NEWS: Record<string, NewsItem[]> = {
-  crypto: [
-    {
-      title: "Bitcoin Surges Past $65,000 as Institutional Interest Grows",
-      description: "Major cryptocurrency reaches new monthly high amid growing institutional adoption and ETF inflows.",
-      link: "https://www.coindesk.com/markets/",
-      pubDate: "2 hours ago",
-      source: "CoinDesk",
-      category: "crypto"
-    },
-    {
-      title: "Ethereum's Shanghai Upgrade Shows Strong Network Growth",
-      description: "Post-upgrade metrics indicate increased validator participation and network security improvements.",
-      link: "https://cointelegraph.com/news",
-      pubDate: "4 hours ago",
-      source: "CoinTelegraph",
-      category: "crypto"
-    },
-    {
-      title: "Bitcoin Mining Difficulty Reaches All-Time High",
-      description: "Network security strengthens as mining difficulty adjustment reflects increased hashrate.",
-      link: "https://bitcoinmagazine.com/markets",
-      pubDate: "6 hours ago",
-      source: "Bitcoin Magazine",
-      category: "crypto"
-    },
-    {
-      title: "Major Banks Launch Digital Asset Custody Services",
-      description: "Leading financial institutions expand cryptocurrency offerings for institutional clients.",
-      link: "https://cryptobriefing.com/news",
-      pubDate: "8 hours ago",
-      source: "Crypto Briefing",
-      category: "crypto"
-    },
-    {
-      title: "Solana Network Upgrades to Improve Transaction Speed",
-      description: "Latest update aims to enhance throughput and reduce network congestion during peak usage.",
-      link: "https://www.coindesk.com/tech/",
-      pubDate: "10 hours ago",
-      source: "CoinDesk",
-      category: "crypto"
-    },
-    {
-      title: "DeFi Protocols See Record TVL Growth This Quarter",
-      description: "Decentralized finance platforms attract billions in new capital amid growing adoption.",
-      link: "https://decrypt.co/defi",
-      pubDate: "12 hours ago",
-      source: "Decrypt",
-      category: "crypto"
-    },
-    {
-      title: "NFT Market Shows Signs of Recovery with New Collections",
-      description: "Digital collectibles market rebounds as blue-chip NFTs regain investor interest.",
-      link: "https://www.theblock.co/nft-news",
-      pubDate: "14 hours ago",
-      source: "The Block",
-      category: "crypto"
-    },
-    {
-      title: "Crypto Regulation Framework Proposed by G20 Nations",
-      description: "Global financial leaders work toward unified cryptocurrency regulatory standards.",
-      link: "https://cointelegraph.com/regulation",
-      pubDate: "16 hours ago",
-      source: "CoinTelegraph",
-      category: "crypto"
-    }
-  ],
-  stocks: [
-    {
-      title: "Tech Giants Report Strong Q3 Earnings, Beat Expectations",
-      description: "Apple, Microsoft, and Google parent Alphabet exceed analyst estimates with robust quarterly results.",
-      link: "https://www.marketwatch.com/story/tech-earnings",
-      pubDate: "1 hour ago",
-      source: "MarketWatch",
-      category: "stocks"
-    },
-    {
-      title: "S&P 500 Reaches Record High on Economic Optimism",
-      description: "Index climbs to new all-time high as investors bet on continued economic expansion.",
-      link: "https://finance.yahoo.com/news/sp-500-record",
-      pubDate: "3 hours ago",
-      source: "Yahoo Finance",
-      category: "stocks"
-    },
-    {
-      title: "Tesla Announces Major Production Milestone",
-      description: "EV manufacturer hits 2 million vehicle production mark, expanding global capacity.",
-      link: "https://www.investing.com/news/stock-market-news/tesla-production",
-      pubDate: "5 hours ago",
-      source: "Investing.com",
-      category: "stocks"
-    },
-    {
-      title: "Pharmaceutical Stocks Rally on FDA Approvals",
-      description: "Healthcare sector gains as multiple new drug approvals boost investor confidence.",
-      link: "https://www.benzinga.com/news/pharma-fda",
-      pubDate: "7 hours ago",
-      source: "Benzinga",
-      category: "stocks"
-    },
-    {
-      title: "Energy Sector Sees Renewed Interest Amid Supply Concerns",
-      description: "Oil and gas stocks rise as global demand outlook strengthens and supply remains tight.",
-      link: "https://www.marketwatch.com/story/energy-sector",
-      pubDate: "9 hours ago",
-      source: "MarketWatch",
-      category: "stocks"
-    },
-    {
-      title: "Retail Sales Data Boosts Consumer Discretionary Stocks",
-      description: "Strong consumer spending figures drive retail and consumer goods stock prices higher.",
-      link: "https://www.cnbc.com/retail",
-      pubDate: "11 hours ago",
-      source: "CNBC",
-      category: "stocks"
-    },
-    {
-      title: "AI Chip Makers Surge on Rising Demand Forecasts",
-      description: "Semiconductor companies gain as artificial intelligence applications drive chip demand.",
-      link: "https://seekingalpha.com/semiconductors",
-      pubDate: "13 hours ago",
-      source: "Seeking Alpha",
-      category: "stocks"
-    },
-    {
-      title: "Banking Sector Under Scrutiny After Earnings Miss",
-      description: "Major financial institutions face investor concerns following weaker-than-expected quarterly results.",
-      link: "https://www.reuters.com/banking",
-      pubDate: "15 hours ago",
-      source: "Reuters Business",
-      category: "stocks"
-    }
-  ],
-  forex: [
-    {
-      title: "US Dollar Strengthens Against Major Currencies",
-      description: "Greenback gains on strong economic data and Fed policy expectations.",
-      link: "https://www.fxstreet.com/news/usd-strength",
-      pubDate: "30 minutes ago",
-      source: "FXStreet",
-      category: "forex"
-    },
-    {
-      title: "EUR/USD Falls to Three-Month Low on ECB Signals",
-      description: "Euro weakens as European Central Bank hints at slower pace of rate hikes.",
-      link: "https://www.dailyfx.com/forex/eur-usd-analysis",
-      pubDate: "2 hours ago",
-      source: "DailyFX",
-      category: "forex"
-    },
-    {
-      title: "Japanese Yen Intervention Speculation Grows",
-      description: "BOJ officials warn against excessive volatility as USD/JPY approaches key levels.",
-      link: "https://www.forexlive.com/news/jpy-intervention",
-      pubDate: "4 hours ago",
-      source: "ForexLive",
-      category: "forex"
-    },
-    {
-      title: "British Pound Rebounds on Positive Economic Data",
-      description: "Sterling gains ground after UK GDP figures exceed expectations.",
-      link: "https://www.investing.com/news/forex-news/gbp-economic-data",
-      pubDate: "6 hours ago",
-      source: "Investing.com FX",
-      category: "forex"
-    },
-    {
-      title: "Emerging Market Currencies Under Pressure",
-      description: "EM FX faces headwinds from strong dollar and global risk-off sentiment.",
-      link: "https://www.fxstreet.com/news/emerging-markets",
-      pubDate: "8 hours ago",
-      source: "FXStreet",
-      category: "forex"
-    },
-    {
-      title: "Swiss Franc Reaches Multi-Year High as Safe Haven",
-      description: "CHF strengthens amid global market uncertainty and risk-off sentiment.",
-      link: "https://www.fxempire.com/chf-analysis",
-      pubDate: "10 hours ago",
-      source: "FXEmpire",
-      category: "forex"
-    },
-    {
-      title: "Australian Dollar Gains on Strong Commodity Prices",
-      description: "AUD rises as metals and mining exports boost currency outlook.",
-      link: "https://www.dailyfx.com/aud-commodities",
-      pubDate: "12 hours ago",
-      source: "DailyFX",
-      category: "forex"
-    },
-    {
-      title: "Canadian Dollar Volatility Increases on Oil Price Swings",
-      description: "CAD faces increased trading ranges amid fluctuating crude oil valuations.",
-      link: "https://www.actionforex.com/cad-oil",
-      pubDate: "14 hours ago",
-      source: "Action Forex",
-      category: "forex"
-    }
-  ],
-  indices: [
-    {
-      title: "Global Equity Indices Hit Multi-Year Highs",
-      description: "Major world indices rally on improved economic outlook and corporate earnings strength.",
-      link: "https://www.marketwatch.com/story/global-indices",
-      pubDate: "1 hour ago",
-      source: "MarketWatch",
-      category: "indices"
-    },
-    {
-      title: "Asian Markets Lead Global Gains on Tech Rally",
-      description: "Hong Kong and Tokyo indices surge as technology stocks drive regional performance.",
-      link: "https://www.investing.com/news/stock-market-news/asian-markets",
-      pubDate: "3 hours ago",
-      source: "Investing.com",
-      category: "indices"
-    },
-    {
-      title: "European Indices Mixed Amid Banking Sector Weakness",
-      description: "FTSE and DAX show divergent performance as financial stocks weigh on sentiment.",
-      link: "https://www.reuters.com/markets/europe",
-      pubDate: "5 hours ago",
-      source: "Reuters",
-      category: "indices"
-    },
-    {
-      title: "S&P 500 Reaches Record High on Economic Optimism",
-      description: "Index climbs to new all-time high as investors bet on continued economic expansion.",
-      link: "https://www.cnbc.com/markets/sp-500",
-      pubDate: "7 hours ago",
-      source: "CNBC",
-      category: "indices"
-    },
-    {
-      title: "Volatility Index Falls to Lowest Level in Months",
-      description: "VIX drops as market stability returns and investor confidence improves.",
-      link: "https://www.marketwatch.com/story/vix-volatility",
-      pubDate: "9 hours ago",
-      source: "MarketWatch",
-      category: "indices"
-    },
-    {
-      title: "Nasdaq 100 Outperforms on Strong Tech Sector Gains",
-      description: "Technology-heavy index leads market as mega-cap tech stocks rally sharply.",
-      link: "https://www.cnbc.com/nasdaq-100",
-      pubDate: "11 hours ago",
-      source: "CNBC Markets",
-      category: "indices"
-    },
-    {
-      title: "Dow Jones Hits Psychological 40,000 Milestone",
-      description: "Blue-chip index crosses major level for first time as industrial stocks surge.",
-      link: "https://www.wsj.com/dow-40000",
-      pubDate: "13 hours ago",
-      source: "WSJ Markets",
-      category: "indices"
-    },
-    {
-      title: "Russell 2000 Small-Cap Index Shows Relative Weakness",
-      description: "Small-cap stocks lag larger peers as investors favor quality and stability.",
-      link: "https://www.barrons.com/russell-2000",
-      pubDate: "15 hours ago",
-      source: "Barron's Markets",
-      category: "indices"
-    }
   ]
 };
 
@@ -418,7 +153,7 @@ function parseTimeToMinutes(pubDate: string): number {
 function NewsModalContent() {
   const [activeTab, setActiveTab] = useState<'mynews' | 'crypto' | 'stocks' | 'forex' | 'indices'>('mynews');
   const [news, setNews] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading state
   const [error, setError] = useState<string | null>(null);
   const [newsCache, setNewsCache] = useState<Record<string, NewsItem[]>>({});
   const [lastRefresh, setLastRefresh] = useState<Record<string, number>>({});
@@ -428,158 +163,133 @@ function NewsModalContent() {
   const cryptoHoldings = portfolioContext?.cryptoHoldings || [];
   const stockHoldings = portfolioContext?.stockHoldings || [];
 
-  // Generate guaranteed article for a holding if none exists
-  const generateGuaranteedArticle = React.useCallback((holding: any, isCrypto: boolean, counter: number = 0): NewsItem => {
-    const symbol = holding.symbol;
-    const name = holding.name;
-    const change = holding.change || '+0.0%';
-    const isPositive = !change.startsWith('-');
-    
-    // Generate a realistic recent time (within last 2 hours) - always fresh on each call
-    // Add counter offset to ensure different times for multiple articles
-    const minutesAgo = Math.floor(Math.random() * 120) + 10 + (counter * 15); // 10-130 minutes ago + offset
-    const timeString = minutesAgo < 60 
-      ? `${minutesAgo} minute${minutesAgo !== 1 ? 's' : ''} ago`
-      : `${Math.floor(minutesAgo / 60)} hour${Math.floor(minutesAgo / 60) !== 1 ? 's' : ''} ago`;
-    
-    // Generate varied article content for freshness
-    const actionWords = isPositive 
-      ? ['Gains Momentum', 'Surges Higher', 'Shows Strength', 'Rallies', 'Climbs']
-      : ['Faces Pressure', 'Dips Lower', 'Shows Weakness', 'Pulls Back', 'Declines'];
-    const randomAction = actionWords[(Math.floor(Math.random() * actionWords.length) + counter) % actionWords.length];
-    
-    const descriptions = isPositive 
-      ? [
-          `${name} is currently trending upward with a ${change} change. Market analysts are monitoring ${symbol} for potential breakout opportunities.`,
-          `${name} shows positive momentum with ${change} gains. ${isCrypto ? 'Cryptocurrency' : 'Stock'} traders are watching ${symbol} closely for continued strength.`,
-          `Trading activity in ${name} (${symbol}) indicates bullish sentiment with a ${change} increase. Technical indicators suggest potential for further upside.`,
-        ]
-      : [
-          `${name} is experiencing volatility with a ${change} change. ${isCrypto ? 'Cryptocurrency' : 'Stock'} market analysts continue to monitor ${symbol} for support levels.`,
-          `${name} faces headwinds showing ${change} movement. Traders are watching ${symbol} for potential reversal signals.`,
-          `Market activity in ${name} (${symbol}) reflects cautious sentiment with ${change} change. Analysts tracking key support zones.`,
+  // Fetch personalized news from API - returns real articles for each holding
+  const fetchPersonalizedNewsFromAPI = React.useCallback(async (forceRefresh = false): Promise<NewsItem[]> => {
+    // If no holdings, fetch general market news from API instead of mock data
+    if (cryptoHoldings.length === 0 && stockHoldings.length === 0) {
+      try {
+        // Fetch general market news from crypto and stocks categories with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        
+        const [cryptoRes, stocksRes] = await Promise.allSettled([
+          fetch(`/api/news?category=crypto${forceRefresh ? `&t=${Date.now()}` : ''}`, { signal: controller.signal }),
+          fetch(`/api/news?category=stocks${forceRefresh ? `&t=${Date.now()}` : ''}`, { signal: controller.signal })
+        ]);
+        
+        clearTimeout(timeoutId);
+        
+        const cryptoData = cryptoRes.status === 'fulfilled' && cryptoRes.value.ok 
+          ? await cryptoRes.value.json() 
+          : { news: [] };
+        const stocksData = stocksRes.status === 'fulfilled' && stocksRes.value.ok 
+          ? await stocksRes.value.json() 
+          : { news: [] };
+        
+        // Combine and return top articles from each
+        return [
+          ...(cryptoData.news || []).slice(0, 4),
+          ...(stocksData.news || []).slice(0, 4)
         ];
-    const randomDescription = descriptions[(Math.floor(Math.random() * descriptions.length) + counter) % descriptions.length];
-    
-    return {
-      title: `${name} (${symbol}) ${randomAction} in Recent Trading ${counter > 0 ? `- Update ${counter + 1}` : ''}`,
-      description: randomDescription,
-      link: isCrypto ? `https://www.coindesk.com/price/${symbol.toLowerCase()}/?ref=${counter}` : `https://finance.yahoo.com/quote/${symbol}?ref=${counter}`,
-      pubDate: timeString,
-      source: isCrypto ? 'CoinDesk' : 'Yahoo Finance',
-      category: isCrypto ? 'crypto' : 'stocks'
-    };
-  }, []); // No dependencies - always create fresh articles
-
-  // Filter news based on user's investments
-  const getPersonalizedNews = React.useCallback((): NewsItem[] => {
-    const allNews = [
-      ...MOCK_NEWS.crypto,
-      ...MOCK_NEWS.stocks,
-      ...MOCK_NEWS.forex,
-      ...MOCK_NEWS.indices
-    ];
-
-    // If no holdings, show general market news
-    if (!cryptoHoldings || !stockHoldings || (cryptoHoldings.length === 0 && stockHoldings.length === 0)) {
-      return allNews.slice(0, 10); // Show top 10 general market news
+      } catch (error) {
+        console.error('Error fetching general news:', error);
+        return [];
+      }
     }
 
-    const personalizedArticles: NewsItem[] = [];
-    const usedArticles = new Set<string>();
-    const usedSymbols = new Set<string>();
-
-    // Process each crypto holding - guarantee at least 3 articles
-    if (cryptoHoldings && cryptoHoldings.length > 0) {
-      cryptoHoldings.forEach(holding => {
-        const symbol = holding.symbol?.toLowerCase() || '';
-        const name = holding.name?.toLowerCase() || '';
-        
-        // Skip if we already processed this symbol
-        if (usedSymbols.has(symbol)) return;
-        usedSymbols.add(symbol);
-        
-        // Find matching articles
-        const matchingArticles = allNews.filter(item => {
-          const searchText = `${item.title} ${item.description}`.toLowerCase();
-          return (searchText.includes(symbol) || searchText.includes(name)) && !usedArticles.has(item.title);
-        });
-
-        // Add up to 3 matching articles, or generate them if needed
-        const articlesToAdd = Math.min(3, matchingArticles.length);
-        for (let i = 0; i < articlesToAdd; i++) {
-          personalizedArticles.push(matchingArticles[i]);
-          usedArticles.add(matchingArticles[i].title);
-        }
-        
-        // Generate additional articles if we have less than 3
-        for (let i = matchingArticles.length; i < 3; i++) {
-          const guaranteedArticle = generateGuaranteedArticle(holding, true, i);
-          personalizedArticles.push(guaranteedArticle);
-          usedArticles.add(guaranteedArticle.title);
-        }
-      });
-    }
-
-    // Process each stock holding - guarantee at least 3 articles
-    if (stockHoldings && stockHoldings.length > 0) {
-      stockHoldings.forEach(holding => {
-        const symbol = holding.symbol?.toLowerCase() || '';
-        const name = holding.name?.toLowerCase() || '';
-        const nameFirstWord = name.split(' ')[0];
-        
-        // Skip if we already processed this symbol
-        if (usedSymbols.has(symbol)) return;
-        usedSymbols.add(symbol);
-        
-        // Find matching articles
-        const matchingArticles = allNews.filter(item => {
-          const searchText = `${item.title} ${item.description}`.toLowerCase();
-          return (searchText.includes(symbol) || searchText.includes(nameFirstWord)) && !usedArticles.has(item.title);
-        });
-
-        // Add up to 3 matching articles, or generate them if needed
-        const articlesToAdd = Math.min(3, matchingArticles.length);
-        for (let i = 0; i < articlesToAdd; i++) {
-          personalizedArticles.push(matchingArticles[i]);
-          usedArticles.add(matchingArticles[i].title);
-        }
-        
-        // Generate additional articles if we have less than 3
-        for (let i = matchingArticles.length; i < 3; i++) {
-          const guaranteedArticle = generateGuaranteedArticle(holding, false, i);
-          personalizedArticles.push(guaranteedArticle);
-          usedArticles.add(guaranteedArticle.title);
-        }
-      });
-    }
-
-    // Sort by time (newest first)
-    personalizedArticles.sort((a, b) => {
-      const aMinutes = parseTimeToMinutes(a.pubDate);
-      const bMinutes = parseTimeToMinutes(b.pubDate);
-      return aMinutes - bMinutes; // Lower minutes = more recent
-    });
-    
-    return personalizedArticles;
-  }, [cryptoHoldings, stockHoldings, generateGuaranteedArticle]);
-
-  const fetchNews = async (category: string, showLoader = true, forceRefresh = false) => {
-    // For "My News" tab, show personalized news
-    if (category === 'mynews') {
-      if (showLoader) setLoading(true);
-      setError(null);
+    try {
+      // Call the personalized news API with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for personalized news
       
-      // Add a small delay to show loading state when forcing refresh
-      if (forceRefresh && showLoader) {
-        await new Promise(resolve => setTimeout(resolve, 150));
+      const response = await fetch('/api/news/personalized', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(forceRefresh ? { 'Cache-Control': 'no-cache' } : {})
+        },
+        body: JSON.stringify({
+          cryptoHoldings: cryptoHoldings.map(h => ({ 
+            symbol: h.symbol, 
+            name: h.name 
+          })),
+          stockHoldings: stockHoldings.map(h => ({ 
+            symbol: h.symbol, 
+            name: h.name 
+          }))
+        }),
+        cache: forceRefresh ? 'no-store' : 'default',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch personalized news');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.news && data.news.length > 0) {
+        return data.news;
       }
       
-      const personalizedNews = getPersonalizedNews();
-      setNews(personalizedNews);
-      setNewsCache(prev => ({ ...prev, mynews: personalizedNews }));
-      setLastRefresh(prev => ({ ...prev, mynews: Date.now() }));
-      setLoading(false);
+      // Return empty array if API returns no data - no fake mock fallback
+      return [];
+    } catch (error) {
+      console.error('Error fetching personalized news:', error);
+      // Return empty array on error - no fake mock fallback
+      return [];
+    }
+  }, [cryptoHoldings, stockHoldings]);
+
+  const fetchNews = async (category: string, showLoader = true, forceRefresh = false) => {
+    // Clear current news immediately to prevent flash of old content
+    setError(null);
+    
+    // For "My News" tab, fetch personalized news from API
+    if (category === 'mynews') {
+      // Check cache first (unless force refresh)
+      const cached = newsCache['mynews'];
+      const cacheAge = lastRefresh['mynews'] ? Date.now() - lastRefresh['mynews'] : Infinity;
+      const cacheValid = cached && cached.length > 0 && cacheAge < 5 * 60 * 1000; // 5 minutes cache
+      
+      // Return cached data immediately if available and not forcing refresh
+      if (cacheValid && !forceRefresh) {
+        setNews(cached);
+        setLoading(false);
+        return;
+      }
+      
+      // Show loading state and clear old content
+      setNews([]);
+      if (showLoader) setLoading(true);
+      
+      try {
+        const personalizedNews = await fetchPersonalizedNewsFromAPI(forceRefresh);
+        
+        // Sort by recency
+        personalizedNews.sort((a, b) => {
+          const aMinutes = parseTimeToMinutes(a.pubDate);
+          const bMinutes = parseTimeToMinutes(b.pubDate);
+          return aMinutes - bMinutes; // Lower minutes = more recent
+        });
+        
+        setNews(personalizedNews);
+        setNewsCache(prev => ({ ...prev, mynews: personalizedNews }));
+        setLastRefresh(prev => ({ ...prev, mynews: Date.now() }));
+        
+        if (personalizedNews.length === 0) {
+          setError('No personalized news found. Try refreshing or add more holdings.');
+        }
+      } catch (err) {
+        console.error('Error loading personalized news:', err);
+        setError('Unable to load personalized news. Please try refreshing.');
+        // Show empty state on error - no fake mock data
+        setNews([]);
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     
@@ -590,26 +300,27 @@ function NewsModalContent() {
     
     // On force refresh, clear cache and refetch
     if (forceRefresh) {
+      setNews([]);
       if (showLoader) setLoading(true);
-      setError(null);
       await fetchNewsFromAPI(category, true, true);
       return;
     }
     
-    // Instantly show cached data for smooth tab switching
-    if (cached) {
+    // Instantly show cached data for smooth tab switching (no flicker)
+    if (cached && cached.length > 0) {
       setNews(cached);
-      setError(null);
+      setLoading(false);
       // Only fetch in background if cache is old
-      if (!cacheValid && !showLoader) {
-        // Silent background refresh
+      if (!cacheValid) {
+        // Silent background refresh - don't show loader
         fetchNewsFromAPI(category, false, false);
       }
       return;
     }
     
-    // Show mock data immediately while fetching for first time
-    setNews(MOCK_NEWS[category as keyof typeof MOCK_NEWS] || []);
+    // No cache - show loading state while fetching
+    setNews([]);
+    if (showLoader) setLoading(true);
     await fetchNewsFromAPI(category, showLoader, false);
   };
   
@@ -619,7 +330,7 @@ function NewsModalContent() {
     
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout for faster responses
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout to allow CORS proxy fallbacks
       
       // Add timestamp and force refresh parameter to bust cache
       const cacheBuster = forceRefresh ? `&t=${Date.now()}` : '';
@@ -638,10 +349,10 @@ function NewsModalContent() {
       }
       const data = await response.json();
       
-      // Update with real news or fallback to mock
+      // Only use real news from API - no fake mock data fallback
       const newsData = (data.news && data.news.length > 0) 
         ? data.news 
-        : MOCK_NEWS[category as keyof typeof MOCK_NEWS] || [];
+        : [];
       
       // Remove duplicates based on title and link
       const uniqueNews: NewsItem[] = [];
@@ -670,16 +381,15 @@ function NewsModalContent() {
       setLastRefresh(prev => ({ ...prev, [category]: Date.now() }));
     } catch (err) {
       if ((err as Error).name === 'AbortError') {
-        console.log('News fetch timeout - using cached or mock data');
+        console.log('News fetch timeout - using cached data');
         setError('Loading took longer than expected. Showing cached news.');
       } else {
         console.error('Error fetching news:', err);
         setError('Unable to load fresh news. Showing cached articles.');
       }
-      // Use cached data or fallback to mock data on error
+      // Use cached data only (no fake mock data fallback)
       const cached = newsCache[category];
-      const mockData = MOCK_NEWS[category as keyof typeof MOCK_NEWS] || [];
-      const fallbackData = cached || mockData;
+      const fallbackData = cached || [];
       
       // Remove duplicates from fallback data
       const uniqueFallback: NewsItem[] = [];
@@ -897,28 +607,26 @@ function NewsModalContent() {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className={`${activeTab === 'mynews' ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-orange-50 dark:bg-orange-900/20'} p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${activeTab === 'mynews' ? 'hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30' : 'hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30'} cursor-pointer`}>
-            <div className={`text-2xl font-bold ${activeTab === 'mynews' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`}>{Math.max(news.length, 8)}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">{activeTab === 'mynews' ? 'Your Articles' : 'Latest Articles'}</div>
-          </div>
-          <div className={`${activeTab === 'mynews' ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-orange-50 dark:bg-orange-900/20'} p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${activeTab === 'mynews' ? 'hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30' : 'hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30'} cursor-pointer`}>
-            <div className={`text-2xl font-bold ${activeTab === 'mynews' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`}>
-              {activeTab === 'mynews' ? (cryptoHoldings?.length || 0) + (stockHoldings?.length || 0) : NEWS_SOURCES[activeTab as keyof typeof NEWS_SOURCES]?.length || 0}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">{activeTab === 'mynews' ? 'Holdings' : 'News Sources'}</div>
-          </div>
-          <div className={`${activeTab === 'mynews' ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-orange-50 dark:bg-orange-900/20'} p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${activeTab === 'mynews' ? 'hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30' : 'hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30'} cursor-pointer`}>
-            <div className={`text-2xl font-bold ${activeTab === 'mynews' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`}>
-              {activeTab === 'mynews' ? 'Smart' : 'Live'}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">{activeTab === 'mynews' ? 'AI Filtered' : 'Real-time Updates'}</div>
-          </div>
-          <div className={`${activeTab === 'mynews' ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-orange-50 dark:bg-orange-900/20'} p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg ${activeTab === 'mynews' ? 'hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30' : 'hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30'} cursor-pointer`}>
-            <div className={`text-2xl font-bold ${activeTab === 'mynews' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`}>
-              {activeTab === 'mynews' ? 'Auto' : '24/7'}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">{activeTab === 'mynews' ? 'Updated' : 'Coverage'}</div>
-          </div>
+          <ThemedStatBox
+            themeColor={CARD_THEME_COLORS.news}
+            value={Math.max(news.length, 8)}
+            label={activeTab === 'mynews' ? 'Your Articles' : 'Latest Articles'}
+          />
+          <ThemedStatBox
+            themeColor={CARD_THEME_COLORS.news}
+            value={activeTab === 'mynews' ? (cryptoHoldings?.length || 0) + (stockHoldings?.length || 0) : NEWS_SOURCES[activeTab as keyof typeof NEWS_SOURCES]?.length || 0}
+            label={activeTab === 'mynews' ? 'Holdings' : 'News Sources'}
+          />
+          <ThemedStatBox
+            themeColor={CARD_THEME_COLORS.news}
+            value={activeTab === 'mynews' ? 'Smart' : 'Live'}
+            label={activeTab === 'mynews' ? 'AI Filtered' : 'Real-time Updates'}
+          />
+          <ThemedStatBox
+            themeColor={CARD_THEME_COLORS.news}
+            value={activeTab === 'mynews' ? 'Auto' : '24/7'}
+            label={activeTab === 'mynews' ? 'Updated' : 'Coverage'}
+          />
         </div>
 
         {/* News Feed */}
@@ -947,7 +655,7 @@ function NewsModalContent() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span
                         className="px-2 py-1 text-xs font-semibold rounded"
                         style={{
@@ -957,6 +665,12 @@ function NewsModalContent() {
                       >
                         {item.source}
                       </span>
+                      {/* Show matched symbol badge for personalized news */}
+                      {activeTab === 'mynews' && (item as any).matchedSymbol && (
+                        <span className="px-2 py-1 text-xs font-semibold rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700">
+                          {(item as any).matchedSymbol}
+                        </span>
+                      )}
                       <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <Clock className="w-3 h-3" />
                         {item.pubDate}
@@ -994,18 +708,21 @@ function NewsModalContent() {
 
         {/* Footer Info */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-sm pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800/30">
-            <div className="text-orange-600 dark:text-orange-400 font-medium text-base">Multi-Source</div>
-            <div className="text-gray-600 dark:text-gray-400 text-xs mt-1">Aggregated from top sources</div>
-          </div>
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/30">
-            <div className="text-red-600 dark:text-red-400 font-medium text-base">Real-time RSS</div>
-            <div className="text-gray-600 dark:text-gray-400 text-xs mt-1">Live feed updates</div>
-          </div>
-          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/30">
-            <div className="text-amber-600 dark:text-amber-400 font-medium text-base">Global Coverage</div>
-            <div className="text-gray-600 dark:text-gray-400 text-xs mt-1">Worldwide market news</div>
-          </div>
+          <ThemedStatBox
+            themeColor={CARD_THEME_COLORS.news}
+            value="Multi-Source"
+            label="Aggregated from top sources"
+          />
+          <ThemedStatBox
+            themeColor={CARD_THEME_COLORS.news}
+            value="Real-time RSS"
+            label="Live feed updates"
+          />
+          <ThemedStatBox
+            themeColor={CARD_THEME_COLORS.news}
+            value="Global Coverage"
+            label="Worldwide market news"
+          />
         </div>
       </div>
     </div>

@@ -393,6 +393,53 @@ export interface Database {
           updated_at?: string
         }
       }
+      user_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan: string
+          status: string
+          subscription_start_date: string | null
+          subscription_end_date: string | null
+          cancel_at_period_end: boolean
+          cancelled_at: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          stripe_price_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan?: string
+          status?: string
+          subscription_start_date?: string | null
+          subscription_end_date?: string | null
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_price_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan?: string
+          status?: string
+          subscription_start_date?: string | null
+          subscription_end_date?: string | null
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_price_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

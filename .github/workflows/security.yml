@@ -33,9 +33,14 @@ jobs:
           npm audit --audit-level=moderate || true
           
           # Fail on high/critical vulnerabilities
-          if npm audit --audit-level=high | grep -q "found"; then
+          AUDIT_OUTPUT=$(npm audit --audit-level=high 2>&1)
+          echo "$AUDIT_OUTPUT"
+          
+          if echo "$AUDIT_OUTPUT" | grep -E "found [1-9][0-9]* vulnerabilities" | grep -qE "(high|critical)"; then
             echo "❌ High or critical vulnerabilities found!"
-            npm audit --audit-level=high
+            exit 1
+          elif echo "$AUDIT_OUTPUT" | grep -qE "found [1-9][0-9]* (high|critical)"; then
+            echo "❌ High or critical vulnerabilities found!"
             exit 1
           else
             echo "✅ No high or critical vulnerabilities found"

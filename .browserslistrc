@@ -1,0 +1,49 @@
+# Browserslist configuration for Money Hub App
+# This determines which browsers to support and affects:
+# - Autoprefixer (CSS vendor prefixes)
+# - Babel transpilation
+# - PostCSS transformations
+
+# Cover 95%+ of global users
+> 0.5%
+
+# Last 2 versions of all major browsers
+last 2 versions
+
+# Include Firefox Extended Support Release
+Firefox ESR
+
+# Exclude dead browsers (no updates in 24 months)
+not dead
+
+# Explicitly exclude IE 11 (deprecated)
+not IE 11
+
+# Mobile browsers - iOS Safari
+iOS >= 12
+
+# Mobile browsers - Android Chrome
+Chrome >= 80
+
+# Desktop browsers
+Safari >= 12
+Edge >= 80
+Firefox >= 78
+Opera >= 67
+
+# Specific mobile browsers
+Samsung >= 10
+UCAndroid >= 13
+
+# Development builds
+# Uncomment for faster dev builds
+# [development]
+# last 1 chrome version
+# last 1 firefox version
+# last 1 safari version
+
+# Production builds
+# [production]
+# > 0.5%
+# last 2 versions
+# not dead

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { priceService, type AssetPrice } from '../lib/price-service';
 
 export function useAssetPrice(symbol: string) {
@@ -28,24 +28,36 @@ export function useAssetPrices(symbols: string[]) {
   const [prices, setPrices] = useState<{ [symbol: string]: AssetPrice }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pricesRef = useRef<{ [symbol: string]: AssetPrice }>({});
 
   useEffect(() => {
     const unsubscribers: (() => void)[] = [];
-    const newPrices: { [symbol: string]: AssetPrice } = {};
     let loadedCount = 0;
 
     setLoading(true);
     setError(null);
+    pricesRef.current = {};
 
     symbols.forEach(symbol => {
       const unsubscribe = priceService.subscribe(symbol, (price: AssetPrice) => {
-        newPrices[symbol] = price;
-        loadedCount++;
+        const prevPrice = pricesRef.current[symbol];
         
-        setPrices({ ...newPrices });
-        
-        if (loadedCount >= symbols.length) {
-          setLoading(false);
+        // Only update if price actually changed (avoid unnecessary re-renders)
+        if (!prevPrice || prevPrice.price !== price.price || prevPrice.change24h !== price.change24h) {
+          pricesRef.current[symbol] = price;
+          loadedCount++;
+          
+          // Batch updates - only set state once all initial prices are loaded
+          // or when an existing price changes
+          if (loadedCount >= symbols.length || prevPrice) {
+            setPrices({ ...pricesRef.current });
+            setLoading(false);
+          }
+        } else {
+          loadedCount++;
+          if (loadedCount >= symbols.length) {
+            setLoading(false);
+          }
         }
       });
       

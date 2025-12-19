@@ -87,6 +87,7 @@ import {
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, ConditionalThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { priceService, AssetPrice } from "../../lib/price-service";
 import { 
   TRADING_DATABASE, 
@@ -873,9 +874,9 @@ function TradingAccountHoverContent() {
         const forex = localStorage.getItem('forexAccountBalance');
         const crypto = localStorage.getItem('cryptoAccountBalance');
         const options = localStorage.getItem('optionsAccountBalance');
-        setForexBalance(forex ? parseFloat(forex) : 10000);
-        setCryptoBalance(crypto ? parseFloat(crypto) : 10000);
-        setOptionsBalance(options ? parseFloat(options) : 10000);
+        setForexBalance(forex ? parseFloat(forex) : 0);
+        setCryptoBalance(crypto ? parseFloat(crypto) : 0);
+        setOptionsBalance(options ? parseFloat(options) : 0);
       }
     };
     
@@ -1507,28 +1508,29 @@ function TradingAccountModalContent() {
   const [tradingSubTab, setTradingSubTab] = useState<'forex' | 'crypto-futures' | 'options' | 'overview'>('overview');
   
   // Separate account balances for each trading category - load from localStorage
+  // Default to 0 if user hasn't set any balance
   const [forexAccountBalance, setForexAccountBalance] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('forexAccountBalance');
-      return saved ? parseFloat(saved) : 10000;
+      return saved ? parseFloat(saved) : 0;
     }
-    return 10000;
+    return 0;
   });
   
   const [cryptoAccountBalance, setCryptoAccountBalance] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('cryptoAccountBalance');
-      return saved ? parseFloat(saved) : 10000;
+      return saved ? parseFloat(saved) : 0;
     }
-    return 10000;
+    return 0;
   });
   
   const [optionsAccountBalance, setOptionsAccountBalance] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('optionsAccountBalance');
-      return saved ? parseFloat(saved) : 10000;
+      return saved ? parseFloat(saved) : 0;
     }
-    return 10000;
+    return 0;
   });
   
   // Track positions and stats for each trading category
@@ -2097,26 +2099,27 @@ function TradingAccountModalContent() {
 
                 {/* Total Portfolio Summary */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-cyan-50 dark:bg-cyan-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/50 dark:hover:shadow-cyan-500/30 cursor-pointer">
-                    <div className="text-2xl font-bold text-cyan-600">${formatNumber(totalValue)}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Portfolio Value</div>
-                  </div>
-                  <div className={`p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer ${totalPnL >= 0 ? 'bg-green-50 dark:bg-green-900/20 hover:shadow-green-500/50 dark:hover:shadow-green-500/30' : 'bg-red-50 dark:bg-red-900/20 hover:shadow-red-500/50 dark:hover:shadow-red-500/30'}`}>
-                    <div className={`text-2xl font-bold ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {totalPnL >= 0 ? '+' : ''}${formatNumber(totalPnL)}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Total P&L</div>
-                  </div>
-                  <div className="bg-cyan-50 dark:bg-cyan-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/50 dark:hover:shadow-cyan-500/30 cursor-pointer">
-                    <div className="text-2xl font-bold text-cyan-600">{positions.length}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Active Positions</div>
-                  </div>
-                  <div className="bg-cyan-50 dark:bg-cyan-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/50 dark:hover:shadow-cyan-500/30 cursor-pointer">
-                    <div className="text-2xl font-bold text-cyan-600">
-                      {positions.filter(p => p.positionType === 'long').length} / {positions.filter(p => p.positionType === 'short').length}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Long / Short</div>
-                  </div>
+                  <ThemedStatBox
+                    themeColor={CARD_THEME_COLORS.tradingAccount}
+                    value={`$${formatNumber(totalValue)}`}
+                    label="Portfolio Value"
+                  />
+                  <ConditionalThemedStatBox
+                    themeColor={CARD_THEME_COLORS.tradingAccount}
+                    value={`${totalPnL >= 0 ? '+' : ''}$${formatNumber(totalPnL)}`}
+                    label="Total P&L"
+                    valueType={totalPnL >= 0 ? 'positive' : 'negative'}
+                  />
+                  <ThemedStatBox
+                    themeColor={CARD_THEME_COLORS.tradingAccount}
+                    value={positions.length}
+                    label="Active Positions"
+                  />
+                  <ThemedStatBox
+                    themeColor={CARD_THEME_COLORS.tradingAccount}
+                    value={`${positions.filter(p => p.positionType === 'long').length} / ${positions.filter(p => p.positionType === 'short').length}`}
+                    label="Long / Short"
+                  />
                 </div>
 
             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
@@ -2490,9 +2493,9 @@ export function TradingAccountCard() {
         const forex = localStorage.getItem('forexAccountBalance');
         const crypto = localStorage.getItem('cryptoAccountBalance');
         const options = localStorage.getItem('optionsAccountBalance');
-        setForexBalance(forex ? parseFloat(forex) : 10000);
-        setCryptoBalance(crypto ? parseFloat(crypto) : 10000);
-        setOptionsBalance(options ? parseFloat(options) : 10000);
+        setForexBalance(forex ? parseFloat(forex) : 0);
+        setCryptoBalance(crypto ? parseFloat(crypto) : 0);
+        setOptionsBalance(options ? parseFloat(options) : 0);
       }
     };
     
@@ -2612,29 +2615,29 @@ function TradingToolsModalContent() {
   const [tradingSubTab, setTradingSubTab] = useState<'forex' | 'crypto-futures' | 'options'>('forex');
   const [stocksSubTab, setStocksSubTab] = useState<'market-overview' | 'top-gainers' | 'heatmap' | 'ticker-tape'>('market-overview');
   
-  // Separate balances for each trading account type
+  // Separate balances for each trading account type - default to 0 if not set
   const [forexBalance, setForexBalance] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('forexAccountBalance');
-      return saved ? parseFloat(saved) : 10000;
+      return saved ? parseFloat(saved) : 0;
     }
-    return 10000;
+    return 0;
   });
   
   const [cryptoBalance, setCryptoBalance] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('cryptoAccountBalance');
-      return saved ? parseFloat(saved) : 10000;
+      return saved ? parseFloat(saved) : 0;
     }
-    return 10000;
+    return 0;
   });
   
   const [optionsBalance, setOptionsBalance] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('optionsAccountBalance');
-      return saved ? parseFloat(saved) : 10000;
+      return saved ? parseFloat(saved) : 0;
     }
-    return 10000;
+    return 0;
   });
 
   // Save balances to localStorage when they change
@@ -3162,18 +3165,21 @@ function TradingToolsModalContent() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Live</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Real-time Data</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">50+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Indicators</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Global</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Markets</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="Live"
+                label="Real-time Data"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="50+"
+                label="Indicators"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="Global"
+                label="Markets"
+              />
             </div>
 
             {/* Stocks Widget Container */}
@@ -3218,18 +3224,21 @@ function TradingToolsModalContent() {
         {mainTab === 'crypto' && (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">24/7</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Trading</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">1000+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Cryptocurrencies</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Real-time</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Market Data</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="24/7"
+                label="Trading"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="1000+"
+                label="Cryptocurrencies"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="Real-time"
+                label="Market Data"
+              />
             </div>
 
             <div 
@@ -3247,18 +3256,21 @@ function TradingToolsModalContent() {
         {mainTab === 'forex' && (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">180+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Currency Pairs</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Live</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Exchange Rates</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Major</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Currencies</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="180+"
+                label="Currency Pairs"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="Live"
+                label="Exchange Rates"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="Major"
+                label="Currencies"
+              />
             </div>
 
             <div 
@@ -3276,18 +3288,21 @@ function TradingToolsModalContent() {
         {mainTab === 'tools' && (
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Advanced</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Charting Tools</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">100+</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Indicators</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Multi</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Timeframes</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="Advanced"
+                label="Charting Tools"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="100+"
+                label="Indicators"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.tradingTools}
+                value="Multi"
+                label="Timeframes"
+              />
             </div>
 
             <div 

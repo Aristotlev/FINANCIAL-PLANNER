@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, TrendingUp, TrendingDown, Activity, BarChart3, Target } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, TrendingUp, Activity, BarChart3, Target, Loader2 } from "lucide-react";
 
 interface TechnicalAnalysisModalProps {
   isOpen: boolean;
@@ -14,71 +14,71 @@ interface TechnicalAnalysisModalProps {
 const TECHNICAL_INDICATORS = [
   { 
     id: 'rsi', 
-    name: 'RSI (Relative Strength Index)', 
+    name: 'RSI', 
     code: 'STD;Relative%1Strength%1Index',
-    description: 'Momentum oscillator measuring speed and magnitude of price changes',
+    description: 'Momentum oscillator',
     icon: Activity
   },
   { 
     id: 'macd', 
     name: 'MACD', 
     code: 'STD;MACD',
-    description: 'Trend-following momentum indicator showing relationship between moving averages',
+    description: 'Trend-following momentum',
     icon: TrendingUp
   },
   { 
     id: 'bb', 
     name: 'Bollinger Bands', 
     code: 'STD;Bollinger%1Bands',
-    description: 'Volatility indicator with upper and lower price bands',
+    description: 'Volatility indicator',
     icon: BarChart3
   },
   { 
     id: 'stoch', 
-    name: 'Stochastic Oscillator', 
+    name: 'Stochastic', 
     code: 'STD;Stochastic',
-    description: 'Momentum indicator comparing closing price to price range',
+    description: 'Momentum oscillator',
     icon: Target
   },
   { 
     id: 'ema', 
-    name: 'EMA (Exponential Moving Average)', 
+    name: 'EMA', 
     code: 'STD;EMA',
-    description: 'Trend indicator giving more weight to recent prices',
+    description: 'Exponential Moving Avg',
     icon: TrendingUp
   },
   { 
     id: 'sma', 
-    name: 'SMA (Simple Moving Average)', 
+    name: 'SMA', 
     code: 'STD;SMA',
-    description: 'Basic trend indicator averaging prices over time',
+    description: 'Simple Moving Avg',
     icon: TrendingUp
   },
   { 
     id: 'volume', 
     name: 'Volume', 
     code: 'STD;Volume',
-    description: 'Shows trading activity and confirms price movements',
+    description: 'Trading activity',
     icon: BarChart3
   },
   { 
     id: 'atr', 
-    name: 'ATR (Average True Range)', 
+    name: 'ATR', 
     code: 'STD;Average%1True%1Range',
-    description: 'Volatility indicator measuring market volatility',
+    description: 'Volatility measure',
     icon: Activity
   }
 ];
 
 const TIMEFRAMES = [
-  { id: '1', label: '1 Min', value: '1' },
-  { id: '5', label: '5 Min', value: '5' },
-  { id: '15', label: '15 Min', value: '15' },
-  { id: '60', label: '1 Hour', value: '60' },
-  { id: '240', label: '4 Hour', value: '240' },
-  { id: 'D', label: 'Daily', value: 'D' },
-  { id: 'W', label: 'Weekly', value: 'W' },
-  { id: 'M', label: 'Monthly', value: 'M' }
+  { id: '1', label: '1m', value: '1' },
+  { id: '5', label: '5m', value: '5' },
+  { id: '15', label: '15m', value: '15' },
+  { id: '60', label: '1H', value: '60' },
+  { id: '240', label: '4H', value: '240' },
+  { id: 'D', label: '1D', value: 'D' },
+  { id: 'W', label: '1W', value: 'W' },
+  { id: 'M', label: '1M', value: 'M' }
 ];
 
 export function TechnicalAnalysisModal({ 
@@ -90,7 +90,9 @@ export function TechnicalAnalysisModal({
 }: TechnicalAnalysisModalProps) {
   const [selectedIndicators, setSelectedIndicators] = useState<string[]>(['rsi']);
   const [timeframe, setTimeframe] = useState('D');
-  const [widgetLoaded, setWidgetLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef(`tradingview-widget-${Date.now()}`);
 
   // Format symbol for TradingView
   const getTradingViewSymbol = () => {
@@ -120,16 +122,20 @@ export function TechnicalAnalysisModal({
     });
   };
 
+  // Load TradingView widget
   useEffect(() => {
     if (!isOpen) {
-      setWidgetLoaded(false);
+      setIsLoading(true);
       return;
     }
 
-    // Load TradingView widget
     const loadWidget = () => {
-      const container = document.getElementById('technical-analysis-widget');
+      const container = containerRef.current;
       if (!container) return;
+
+      // Clear existing content
+      container.innerHTML = '';
+      setIsLoading(true);
 
       // Get selected indicator codes
       const studies = selectedIndicators
@@ -139,9 +145,17 @@ export function TechnicalAnalysisModal({
         })
         .filter(Boolean);
 
+      // Create widget container with unique ID
+      const widgetContainer = document.createElement('div');
+      widgetContainer.id = widgetIdRef.current;
+      widgetContainer.className = 'tradingview-widget-container__widget';
+      widgetContainer.style.height = '100%';
+      widgetContainer.style.width = '100%';
+
       const script = document.createElement('script');
       script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
       script.async = true;
+      script.type = 'text/javascript';
       script.innerHTML = JSON.stringify({
         autosize: true,
         symbol: getTradingViewSymbol(),
@@ -159,7 +173,7 @@ export function TechnicalAnalysisModal({
         hotlist: false,
         hide_volume: false,
         save_image: true,
-        backgroundColor: "#0F0F0F",
+        backgroundColor: "rgba(15, 15, 15, 1)",
         gridColor: "rgba(242, 242, 242, 0.06)",
         withdateranges: true,
         range: "12M",
@@ -169,65 +183,88 @@ export function TechnicalAnalysisModal({
         support_host: "https://www.tradingview.com"
       });
 
-      container.innerHTML = '';
-      container.appendChild(script);
-      setWidgetLoaded(true);
+      container.appendChild(widgetContainer);
+      widgetContainer.appendChild(script);
+
+      // Set loading to false after a delay
+      const loadingTimer = setTimeout(() => setIsLoading(false), 2000);
+      
+      return () => clearTimeout(loadingTimer);
     };
 
     // Small delay to ensure DOM is ready
-    const timer = setTimeout(loadWidget, 100);
+    const timer = setTimeout(loadWidget, 200);
     return () => clearTimeout(timer);
   }, [isOpen, selectedIndicators, timeframe, symbol, assetType]);
+
+  // Handle escape key and body overflow
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000000] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
       
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div 
-          className="relative w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
-        >
+      {/* Modal Content */}
+      <div 
+        className="relative w-full max-w-7xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Technical Analysis
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+                {assetName || symbol}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {assetName || symbol} ({getTradingViewSymbol()})
-              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{getTradingViewSymbol()}</p>
             </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              aria-label="Close modal"
             >
-              <X className="w-5 h-5 text-gray-600 dark:text-white" />
+              <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-6 space-y-4">
-            {/* Controls Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Timeframe Selector */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Timeframe
+          <div className="p-4 space-y-3 overflow-y-auto">
+            {/* Timeframe & Indicators - Single Row */}
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Timeframe */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Timeframe:
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="flex gap-1">
                   {TIMEFRAMES.map((tf) => (
                     <button
                       key={tf.id}
                       onClick={() => setTimeframe(tf.value)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
                         timeframe === tf.value
                           ? 'bg-purple-600 text-white'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -239,104 +276,62 @@ export function TechnicalAnalysisModal({
                 </div>
               </div>
 
-              {/* Quick Presets */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Quick Presets
-                </label>
-                <div className="grid grid-cols-2 gap-2">
+              {/* Indicator Count */}
+              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Indicators: {selectedIndicators.length}
+              </div>
+            </div>
+
+            {/* Indicator Buttons - Compact Grid */}
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+              {TECHNICAL_INDICATORS.map((indicator) => {
+                const Icon = indicator.icon;
+                const isSelected = selectedIndicators.includes(indicator.id);
+                
+                return (
                   <button
-                    onClick={() => setSelectedIndicators(['rsi'])}
-                    className="px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                    key={indicator.id}
+                    onClick={() => toggleIndicator(indicator.id)}
+                    className={`p-2 rounded-lg border transition-all ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30'
+                        : 'border-gray-300 dark:border-gray-700 hover:border-purple-400'
+                    }`}
+                    title={indicator.description}
                   >
-                    RSI Only
+                    <div className="flex flex-col items-center gap-1">
+                      <Icon className={`w-4 h-4 ${
+                        isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'
+                      }`} />
+                      <span className={`font-semibold text-xs ${
+                        isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-400'
+                      }`}>
+                        {indicator.name}
+                      </span>
+                    </div>
                   </button>
-                  <button
-                    onClick={() => setSelectedIndicators(['rsi', 'macd'])}
-                    className="px-3 py-2 rounded-lg text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                  >
-                    RSI + MACD
-                  </button>
-                  <button
-                    onClick={() => setSelectedIndicators(['rsi', 'macd', 'bb'])}
-                    className="px-3 py-2 rounded-lg text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
-                  >
-                    Full Analysis
-                  </button>
-                  <button
-                    onClick={() => setSelectedIndicators([])}
-                    className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Clear All
-                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chart - Larger */}
+            <div className="relative bg-[#0F0F0F] rounded-lg overflow-hidden border border-gray-700" style={{ minHeight: '650px', height: '650px' }}>
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#0F0F0F] z-10">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-400 text-sm">Loading chart...</p>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Indicator Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Select Indicators ({selectedIndicators.length} selected)
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {TECHNICAL_INDICATORS.map((indicator) => {
-                  const Icon = indicator.icon;
-                  const isSelected = selectedIndicators.includes(indicator.id);
-                  
-                  return (
-                    <button
-                      key={indicator.id}
-                      onClick={() => toggleIndicator(indicator.id)}
-                      className={`p-3 rounded-lg border-2 transition-all text-left ${
-                        isSelected
-                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon className={`w-4 h-4 ${isSelected ? 'text-purple-600' : 'text-gray-500'}`} />
-                        <span className={`font-semibold text-sm ${
-                          isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-900 dark:text-white'
-                        }`}>
-                          {indicator.name}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {indicator.description}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Chart */}
-            <div className="bg-[#0F0F0F] rounded-lg overflow-hidden" style={{ minHeight: '600px' }}>
+              )}
               <div 
-                id="technical-analysis-widget" 
+                ref={containerRef}
                 className="tradingview-widget-container"
-                style={{ height: '600px', width: '100%' }}
+                style={{ height: '100%', width: '100%' }}
               />
-            </div>
-
-            {/* Info Footer */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-start gap-3">
-                <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 mb-1">
-                    Interactive Chart
-                  </h4>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Use the chart tools to draw trend lines, add more indicators, change chart types, and analyze price patterns. 
-                    Click on any indicator in the chart legend to customize its settings.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }

@@ -23,6 +23,7 @@ import { TbCoin } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { formatNumber } from "../../lib/utils";
 import { searchBanks, BankInfo } from "../../lib/banks-database";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
@@ -31,12 +32,27 @@ import { DualCurrencyDisplay, CompactDualCurrency } from "../ui/dual-currency-di
 // Bank Logo Component
 function BankLogo({ bank }: { bank: BankInfo }) {
   const [imgError, setImgError] = useState(false);
+  const [fallbackAttempt, setFallbackAttempt] = useState(0);
   
-  // Generate logo URL from Clearbit Logo API
-  const logoUrl = `https://logo.clearbit.com/${bank.website}`;
+  // Use Google's favicon service as primary (free, no API key required)
+  // Falls back to DuckDuckGo's icon service, then to colored icon
+  const getLogoUrl = () => {
+    switch (fallbackAttempt) {
+      case 0:
+        // Primary: Google's high-quality favicon service (128px)
+        return `https://www.google.com/s2/favicons?domain=${bank.website}&sz=128`;
+      case 1:
+        // Fallback 1: DuckDuckGo icon service
+        return `https://icons.duckduckgo.com/ip3/${bank.website}.ico`;
+      default:
+        return null;
+    }
+  };
   
-  if (imgError) {
-    // Fallback to colored icon if logo fails to load
+  const logoUrl = getLogoUrl();
+  
+  if (imgError || !logoUrl) {
+    // Fallback to colored icon if all logo sources fail
     return (
       <div 
         className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -56,7 +72,13 @@ function BankLogo({ bank }: { bank: BankInfo }) {
         src={logoUrl}
         alt={bank.name}
         className="w-full h-full object-contain p-1"
-        onError={() => setImgError(true)}
+        onError={() => {
+          if (fallbackAttempt < 1) {
+            setFallbackAttempt(fallbackAttempt + 1);
+          } else {
+            setImgError(true);
+          }
+        }}
       />
     </div>
   );
@@ -1276,18 +1298,21 @@ function CashModalContent() {
 
             {/* Account Summary Stats */}
             <div className="grid grid-cols-3 gap-4 px-2 -mx-2 py-2 -my-2">
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-green-600">${Math.round(checkingTotal).toLocaleString()}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Checking Accounts</div>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-blue-600">${Math.round(savingsTotal).toLocaleString()}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Savings Accounts</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">${Math.round(moneyMarketTotal).toLocaleString()}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Money Market</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.cash}
+                value={`$${Math.round(checkingTotal).toLocaleString()}`}
+                label="Checking Accounts"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.cash}
+                value={`$${Math.round(savingsTotal).toLocaleString()}`}
+                label="Savings Accounts"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.cash}
+                value={`$${Math.round(moneyMarketTotal).toLocaleString()}`}
+                label="Money Market"
+              />
             </div>
           </div>
         )}

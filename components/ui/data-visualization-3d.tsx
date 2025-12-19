@@ -236,7 +236,7 @@ export function DataVisualization3D({
   );
 }
 
-// Floating animation - only runs in browser
+// Floating animation - only runs in browser, respects reduced motion preference
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.textContent = `
@@ -251,6 +251,14 @@ if (typeof document !== 'undefined') {
     
     .animate-float {
       animation: float 3s ease-in-out infinite;
+    }
+    
+    /* Respect user's motion preferences for better accessibility and performance */
+    @media (prefers-reduced-motion: reduce) {
+      .animate-float {
+        animation: none;
+        transform: translateZ(100px) rotateX(5deg);
+      }
     }
   `;
   document.head.appendChild(style);

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { SupabaseDataService } from '../lib/supabase/supabase-data-service';
 import { usePortfolioValues } from '../hooks/use-portfolio';
 
@@ -25,6 +25,9 @@ export function useFinancialData() {
   return context;
 }
 
+// Debounce delay to prevent rapid re-fetching
+const DEBOUNCE_DELAY = 500;
+
 export function FinancialDataProvider({ children }: { children: ReactNode }) {
   const [cash, setCash] = useState(0);
   const [savings, setSavings] = useState(0);
@@ -32,60 +35,78 @@ export function FinancialDataProvider({ children }: { children: ReactNode }) {
   const [realEstate, setRealEstate] = useState(0);
   const [tradingAccount, setTradingAccount] = useState(0);
   const [expenses, setExpenses] = useState(0);
-  const [loading, setLoading] = useState(false); // Changed from true to false - show data immediately
+  const [loading, setLoading] = useState(false);
+  
+  // Refs for debouncing
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoadingRef = useRef(false);
+  const lastLoadTimeRef = useRef(0);
 
-  const loadData = async () => {
-    // Don't set loading to true on subsequent loads - prevents flashing
+  const loadData = useCallback(async () => {
+    // Prevent concurrent loads
+    if (isLoadingRef.current) return;
+    
+    // Throttle: minimum 2 seconds between loads
+    const now = Date.now();
+    if (now - lastLoadTimeRef.current < 2000) return;
+    
+    isLoadingRef.current = true;
+    lastLoadTimeRef.current = now;
+    
     try {
-      // Load cash accounts
-      const cashAccounts = await SupabaseDataService.getCashAccounts([]);
+      // Load all data in parallel for better performance
+      const [cashAccounts, savingsGoals, items, properties, tradingPositions, expenseCategories] = await Promise.all([
+        SupabaseDataService.getCashAccounts([]),
+        SupabaseDataService.getSavingsAccounts([]),
+        SupabaseDataService.getValuableItems([]),
+        SupabaseDataService.getRealEstate([]),
+        SupabaseDataService.getTradingAccounts([]),
+        SupabaseDataService.getExpenseCategories([])
+      ]);
+
+      // Calculate totals
       const totalCash = cashAccounts.reduce((sum, account) => sum + account.balance, 0);
-      setCash(totalCash);
-
-      // Load savings goals
-      const savingsGoals = await SupabaseDataService.getSavingsAccounts([]);
       const totalSavings = savingsGoals.reduce((sum, goal) => sum + goal.current, 0);
-      setSavings(totalSavings);
-
-      // Load valuable items
-      const items = await SupabaseDataService.getValuableItems([]);
       const totalItems = items.reduce((sum, item) => sum + item.currentValue, 0);
-      setValuableItems(totalItems);
-
-      // Load real estate
-      const properties = await SupabaseDataService.getRealEstate([]);
       const totalRealEstate = properties.reduce((sum, prop) => sum + prop.currentValue, 0);
-      setRealEstate(totalRealEstate);
-
-      // Load trading account - calculate from actual positions
-      const tradingPositions = await SupabaseDataService.getTradingAccounts([]);
       const totalTrading = tradingPositions.reduce((sum: number, position: any) => {
-        // Calculate market value of each position
         const marketValue = Math.abs(position.shares || 0) * (position.currentPrice || 0);
         return sum + marketValue;
       }, 0);
-      setTradingAccount(totalTrading);
-
-      // Load expenses
-      const expenseCategories = await SupabaseDataService.getExpenseCategories([]);
       const totalMonthlyExpenses = expenseCategories.reduce((sum: number, cat: any) => sum + cat.amount, 0);
-      setExpenses(totalMonthlyExpenses); // Use monthly expenses as liabilities
-      
-      // Dispatch event to notify other components
-      window.dispatchEvent(new Event('financialDataChanged'));
+
+      // Batch state updates to minimize re-renders
+      setCash(totalCash);
+      setSavings(totalSavings);
+      setValuableItems(totalItems);
+      setRealEstate(totalRealEstate);
+      setTradingAccount(totalTrading);
+      setExpenses(totalMonthlyExpenses);
     } catch (error) {
       console.error('Error loading financial data:', error);
+    } finally {
+      isLoadingRef.current = false;
     }
-  };
+  }, []);
+
+  // Debounced data change handler
+  const handleDataChange = useCallback(() => {
+    // Clear any pending debounce
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // Schedule new load with debounce
+    debounceTimeoutRef.current = setTimeout(() => {
+      loadData();
+    }, DEBOUNCE_DELAY);
+  }, [loadData]);
 
   useEffect(() => {
+    // Initial load
     loadData();
 
-    // Listen for data changes from any card
-    const handleDataChange = () => {
-      loadData();
-    };
-
+    // Listen for data changes with debouncing
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('stockDataChanged', handleDataChange);
@@ -94,12 +115,18 @@ export function FinancialDataProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);
+      
+      // Cleanup debounce timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
     };
-  }, []);
+  }, [loadData, handleDataChange]);
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
+    lastLoadTimeRef.current = 0; // Reset throttle for manual refresh
     await loadData();
-  };
+  }, [loadData]);
 
   return (
     <FinancialDataContext.Provider

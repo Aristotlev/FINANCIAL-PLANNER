@@ -2,21 +2,26 @@
 
 import React, { useState } from 'react';
 import { 
-  DollarSign, 
   TrendingUp, 
   Shield, 
   BarChart3, 
   PieChart, 
   Target,
   Smartphone,
-  Globe,
-  Users,
-  CheckCircle,
-  Star
+  Star,
+  ArrowRight,
+  Play,
+  Zap,
+  Check,
+  Wallet,
+  LineChart,
+  Building2,
+  Coins,
+  Receipt
 } from 'lucide-react';
 import { LoginForm } from './login-form';
 import { SignupForm } from './signup-form';
-import { ThemeToggle } from '../ui/theme-toggle';
+import { OmnifolioLogo } from '../ui/omnifolio-logo';
 
 export function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -34,251 +39,523 @@ export function LandingPage() {
 
   const features = [
     {
-      icon: <BarChart3 className="w-8 h-8 text-blue-600" />,
-      title: "Portfolio Tracking",
-      description: "Track stocks, crypto, real estate, and valuable items all in one place"
+      icon: <BarChart3 className="w-6 h-6" />,
+      title: "Smart Portfolio Tracking",
+      description: "AI-powered tracking for stocks, crypto, real estate, and valuables in one unified dashboard.",
+      gradient: "from-blue-500 to-cyan-500"
     },
     {
-      icon: <PieChart className="w-8 h-8 text-green-600" />,
-      title: "Expense Management",
-      description: "Categorize and budget your expenses with intelligent insights"
+      icon: <PieChart className="w-6 h-6" />,
+      title: "Intelligent Expense Management",
+      description: "Auto-categorize expenses and get AI-driven insights to optimize your spending habits.",
+      gradient: "from-green-500 to-emerald-500"
     },
     {
-      icon: <TrendingUp className="w-8 h-8 text-purple-600" />,
-      title: "Investment Analysis",
-      description: "Get detailed analytics on your investment performance and growth"
+      icon: <TrendingUp className="w-6 h-6" />,
+      title: "Real-Time Analytics",
+      description: "Track performance, growth, and ROI across all your assets with live market data.",
+      gradient: "from-purple-500 to-violet-500"
     },
     {
-      icon: <Shield className="w-8 h-8 text-red-600" />,
-      title: "Secure & Private",
-      description: "Bank-level security with encrypted data and privacy protection"
+      icon: <Shield className="w-6 h-6" />,
+      title: "Bank-Level Security",
+      description: "256-bit encryption with multi-factor authentication protects your financial data.",
+      gradient: "from-red-500 to-rose-500"
     },
     {
-      icon: <Target className="w-8 h-8 text-orange-600" />,
-      title: "Goal Setting",
-      description: "Set and track financial goals with personalized recommendations"
+      icon: <Target className="w-6 h-6" />,
+      title: "Goal-Based Planning",
+      description: "Set financial milestones and get personalized roadmaps to achieve them faster.",
+      gradient: "from-orange-500 to-amber-500"
     },
     {
-      icon: <Smartphone className="w-8 h-8 text-indigo-600" />,
-      title: "Mobile Ready",
-      description: "Access your financial data anywhere with responsive design"
+      icon: <Smartphone className="w-6 h-6" />,
+      title: "Access Anywhere",
+      description: "Responsive design works seamlessly on desktop, tablet, and mobile devices.",
+      gradient: "from-indigo-500 to-blue-500"
     }
   ];
 
   const testimonials = [
     {
       name: "Sarah Johnson",
-      role: "Software Engineer",
+      role: "Marketing Director at TechCo",
       avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=64&h=64&fit=crop&crop=face&auto=format",
-      content: "Money Hub transformed how I manage my finances. The portfolio tracking is incredible!"
+      content: "OmniFolio transformed how I manage my finances. I went from chaos to clarity in just one week."
     },
     {
-      name: "Mike Chen",
-      role: "Investment Banker",
+      name: "Marcus Chen",
+      role: "Founder of StartupX",
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face&auto=format",
-      content: "Finally, a platform that handles all my assets - from crypto to real estate!"
+      content: "The AI insights are shockingly good. It actually helped me rebalance my portfolio and save $50K."
     },
     {
       name: "Emily Davis",
-      role: "Entrepreneur",
+      role: "SEO Lead at GrowthLab",
       avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face&auto=format",
-      content: "The expense tracking and budgeting features help me stay on top of my business finances."
+      content: "Managing crypto, stocks, and real estate used to be a nightmare. Now it takes me 5 minutes a day."
     }
   ];
 
+  const stats = [
+    { value: "$2.4B+", label: "Assets Tracked" },
+    { value: "50,000+", label: "Active Users" },
+    { value: "99.9%", label: "Uptime" },
+    { value: "4.9/5", label: "User Rating" }
+  ];
+
+  const trustedCompanies = ["TechCo", "StartupX", "GrowthLab", "Acme Inc", "ScaleNow"];
+
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-purple-900">
+      <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden">
+        {/* Animated Background Gradients */}
+        <div className="fixed inset-0 z-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-pulse"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
+        </div>
+
+        {/* Grid Pattern Overlay */}
+        <div className="fixed inset-0 z-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }}></div>
+
         {/* Header */}
-        <header className="relative z-10 px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6 md:justify-start md:space-x-10">
-            <div className="flex justify-start lg:w-0 lg:flex-1">
-              <div className="flex items-center">
-                <DollarSign className="w-8 h-8 text-blue-600" />
-                <span className="ml-2 text-2xl font-bold text-gray-900 dark:text-white">Money Hub</span>
+        <header className="relative z-20 px-4 sm:px-6 lg:px-8 border-b border-gray-800/50 backdrop-blur-xl bg-gray-900/50">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-between items-center py-4">
+              <OmnifolioLogo size="md" />
+              
+              <nav className="hidden md:flex items-center gap-8">
+                <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Features</a>
+                <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">How it Works</a>
+                <a href="#testimonials" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Testimonials</a>
+                <a href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Pricing</a>
+              </nav>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={openLogin}
+                  className="hidden sm:block text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                >
+                  Sign in
+                </button>
+                <button
+                  onClick={openSignup}
+                  className="relative group px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+                >
+                  <span className="relative z-10">Get Started</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur-xl"></div>
+                </button>
               </div>
-            </div>
-            <div className="hidden md:flex items-center justify-end md:flex-1 lg:w-0 space-x-4">
-              <ThemeToggle />
-              <button
-                onClick={openLogin}
-                className="whitespace-nowrap text-base font-medium text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-              >
-                Sign in
-              </button>
-              <button
-                onClick={openSignup}
-                className="whitespace-nowrap inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
-              >
-                Get Started
-              </button>
             </div>
           </div>
         </header>
 
         {/* Hero Section */}
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 pb-16">
-          <div className="text-center">
-            <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
-              <span className="block">Take Control of Your</span>
-              <span className="block text-blue-600">Financial Future</span>
-            </h1>
-            <p className="mt-3 max-w-md mx-auto text-base text-gray-500 dark:text-gray-300 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-              The most comprehensive financial management platform. Track investments, manage expenses, 
-              and grow your wealth with intelligent insights and beautiful visualizations.
-            </p>
-            <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-              <div className="rounded-md shadow">
+        <section className="relative z-10 pt-20 pb-32 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-4xl mx-auto">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 rounded-full mb-8">
+                <Zap className="w-4 h-4 text-cyan-400" />
+                <span className="text-sm text-gray-300">AI-Powered Financial Intelligence</span>
+              </div>
+
+              {/* Main Headline */}
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6">
+                <span className="block text-white">Master Your Wealth</span>
+                <span className="block bg-gradient-to-r from-cyan-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                  on Autopilot
+                </span>
+              </h1>
+
+              {/* Subheadline */}
+              <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                Track investments, manage expenses, and grow your net worth with intelligent insights. 
+                Your complete financial command center — while you sleep.
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
                 <button
                   onClick={openSignup}
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10"
+                  className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl text-lg font-semibold hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   Start Free Trial
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-              </div>
-              <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
                 <button
                   onClick={openLogin}
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                  className="group w-full sm:w-auto px-8 py-4 bg-white/5 border border-gray-700 hover:border-gray-600 rounded-xl text-lg font-medium hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2"
                 >
+                  <Play className="w-5 h-5 text-cyan-400" />
                   Watch Demo
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Dashboard Preview */}
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 pb-16">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="px-6 py-8 bg-gradient-to-r from-blue-600 to-purple-600">
-                <h3 className="text-2xl font-bold text-white text-center mb-4">Your Financial Command Center</h3>
+              {/* Social Proof - Avatars */}
+              <div className="flex items-center justify-center gap-4 flex-wrap">
+                <div className="flex -space-x-3">
+                  {[
+                    "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=40&h=40&fit=crop&crop=face&auto=format",
+                    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face&auto=format",
+                    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face&auto=format",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face&auto=format"
+                  ].map((src, i) => (
+                    <img key={i} src={src} alt="" className="w-10 h-10 rounded-full border-2 border-gray-900" />
+                  ))}
+                  <div className="w-10 h-10 rounded-full border-2 border-gray-900 bg-gradient-to-r from-cyan-500 to-purple-600 flex items-center justify-center text-xs font-bold">
+                    +2k
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+                <span className="text-gray-400 text-sm">50,000+ portfolios managed</span>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">$1.2M</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Net Worth</div>
+            </div>
+
+            {/* Dashboard Preview */}
+            <div className="mt-20 relative">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent z-10 pointer-events-none"></div>
+              <div className="relative bg-gradient-to-b from-gray-800/50 to-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-1 shadow-2xl shadow-purple-500/10">
+                <div className="bg-gray-900/80 rounded-xl p-6">
+                  {/* Dashboard Header */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <Wallet className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white">Total Net Worth</h3>
+                        <p className="text-sm text-gray-400">Updated just now</p>
+                      </div>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">$1,247,892</p>
+                      <p className="text-sm text-green-400">+$24,567 (12.4%) this month</p>
+                    </div>
                   </div>
-                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">+12.5%</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Portfolio Growth</div>
-                  </div>
-                  <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">8</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Asset Classes</div>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">95%</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Goal Progress</div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <LineChart className="w-4 h-4 text-blue-400" />
+                        <span className="text-xs text-gray-400">Stocks</span>
+                      </div>
+                      <p className="text-xl font-bold text-white">$456,780</p>
+                      <p className="text-xs text-green-400">+8.2%</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Coins className="w-4 h-4 text-orange-400" />
+                        <span className="text-xs text-gray-400">Crypto</span>
+                      </div>
+                      <p className="text-xl font-bold text-white">$89,340</p>
+                      <p className="text-xs text-green-400">+15.7%</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Building2 className="w-4 h-4 text-purple-400" />
+                        <span className="text-xs text-gray-400">Real Estate</span>
+                      </div>
+                      <p className="text-xl font-bold text-white">$650,000</p>
+                      <p className="text-xs text-green-400">+5.3%</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Receipt className="w-4 h-4 text-red-400" />
+                        <span className="text-xs text-gray-400">Expenses</span>
+                      </div>
+                      <p className="text-xl font-bold text-white">$4,250</p>
+                      <p className="text-xs text-red-400">-12% vs avg</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        {/* Trusted By Section */}
+        <section className="relative z-10 py-12 border-y border-gray-800/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-center text-xs uppercase tracking-widest text-gray-500 mb-8">Trusted by fast-growing companies</p>
+            <div className="flex items-center justify-center gap-8 sm:gap-12 flex-wrap opacity-50">
+              {trustedCompanies.map((company, i) => (
+                <span key={i} className="text-lg sm:text-xl font-bold text-gray-400 hover:text-gray-300 transition-colors cursor-default">
+                  {company}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* Features Section */}
-        <div className="relative z-10 py-16 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-                Everything you need to manage your money
+        <section id="features" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="text-sm font-medium text-cyan-400 uppercase tracking-widest">Features</span>
+              <h2 className="mt-4 text-4xl sm:text-5xl font-extrabold text-white">
+                Everything you need to{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  dominate your finances
+                </span>
               </h2>
-              <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-300">
-                Powerful features designed to give you complete control over your financial life
+              <p className="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">
+                Powerful tools designed to automate your entire financial workflow, from tracking to optimization.
               </p>
             </div>
 
-            <div className="mt-16">
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {features.map((feature, index) => (
-                  <div key={index} className="relative group">
-                    <div className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-                      <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-full mb-4">
-                        {feature.icon}
-                      </div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 text-center">
-                        {feature.title}
-                      </h3>
-                      <p className="text-gray-500 dark:text-gray-300 text-center">
-                        {feature.description}
-                      </p>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((feature, i) => (
+                <div key={i} className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 hover:border-gray-700 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/5">
+                  <div className={`w-12 h-12 bg-gradient-to-r ${feature.gradient} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    {feature.icon}
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
+                  <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Testimonials */}
-        <div className="relative z-10 py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-                Trusted by thousands of users
+        {/* How It Works Section */}
+        <section id="how-it-works" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent via-purple-900/10 to-transparent">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="text-sm font-medium text-cyan-400 uppercase tracking-widest">How It Works</span>
+              <h2 className="mt-4 text-4xl sm:text-5xl font-extrabold text-white">
+                Build wealth in{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  3 simple steps
+                </span>
               </h2>
             </div>
 
-            <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
-              {testimonials.map((testimonial, index) => (
-                <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-                  <div className="flex items-center mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Step 1 */}
+              <div className="relative">
+                <div className="text-6xl font-extrabold text-gray-800 mb-4">01</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Connect Your Accounts</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">Link your bank accounts, brokerages, and crypto wallets in seconds.</p>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-4 h-4 text-green-400" />
+                      </div>
+                      <span className="text-green-400 text-sm font-medium">Chase Bank</span>
+                      <Check className="w-4 h-4 text-green-400 ml-auto" />
+                    </div>
+                    <div className="flex items-center gap-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                      <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <LineChart className="w-4 h-4 text-blue-400" />
+                      </div>
+                      <span className="text-blue-400 text-sm font-medium">Fidelity</span>
+                      <Check className="w-4 h-4 text-blue-400 ml-auto" />
+                    </div>
+                    <div className="flex items-center gap-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                      <div className="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                        <Coins className="w-4 h-4 text-orange-400" />
+                      </div>
+                      <span className="text-orange-400 text-sm font-medium">Coinbase</span>
+                      <Check className="w-4 h-4 text-orange-400 ml-auto" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="relative">
+                <div className="text-6xl font-extrabold text-gray-800 mb-4">02</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Set Your Goals</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">Define your financial targets, risk tolerance, and timeline.</p>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">Net Worth Goal</span>
+                      <span className="text-cyan-400 font-bold">$1,000,000</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-gradient-to-r from-cyan-500 to-purple-500 h-2 rounded-full" style={{ width: '68%' }}></div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-500">Current: $680,000</span>
+                      <span className="text-purple-400">68% Complete</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="relative">
+                <div className="text-6xl font-extrabold text-gray-800 mb-4">03</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Watch Your Wealth Grow</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">Get real-time insights, alerts, and recommendations.</p>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                  <div className="flex items-end justify-between h-20 gap-2">
+                    {[40, 55, 45, 70, 60, 85, 75, 90].map((height, i) => (
+                      <div key={i} className="flex-1 bg-gradient-to-t from-cyan-500 to-purple-500 rounded-t opacity-80 hover:opacity-100 transition-opacity" style={{ height: height + '%' }}></div>
                     ))}
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">"{testimonial.content}"</p>
-                  <div className="flex items-center">
-                    <img 
-                      src={testimonial.avatar} 
-                      alt={testimonial.name}
-                      className="w-12 h-12 rounded-full mr-4"
-                    />
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-xs text-gray-500">Jan</span>
+                    <span className="text-xs text-green-400 font-medium">+24.5% YTD</span>
+                    <span className="text-xs text-gray-500">Dec</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section className="relative z-10 py-16 border-y border-gray-800/50 bg-gray-900/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {stats.map((stat, i) => (
+                <div key={i} className="text-center">
+                  <p className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                    {stat.value}
+                  </p>
+                  <p className="mt-2 text-gray-400 text-sm sm:text-base">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section id="testimonials" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <span className="text-sm font-medium text-cyan-400 uppercase tracking-widest">Testimonials</span>
+              <h2 className="mt-4 text-4xl sm:text-5xl font-extrabold text-white">
+                Loved by{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  financial professionals
+                </span>
+              </h2>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-8">
+              {testimonials.map((testimonial, i) => (
+                <div key={i} className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 hover:border-gray-700 transition-all">
+                  <div className="flex items-center gap-1 mb-6">
+                    {[...Array(5)].map((_, j) => (
+                      <Star key={j} className="w-5 h-5 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                  <p className="text-gray-300 mb-6 leading-relaxed text-lg">&quot;{testimonial.content}&quot;</p>
+                  <div className="flex items-center gap-4">
+                    <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full" />
                     <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">{testimonial.name}</div>
-                      <div className="text-gray-500 dark:text-gray-400 text-sm">{testimonial.role}</div>
+                      <p className="font-semibold text-white">{testimonial.name}</p>
+                      <p className="text-sm text-gray-400">{testimonial.role}</p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
         {/* CTA Section */}
-        <div className="relative z-10 bg-blue-600">
-          <div className="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              <span className="block">Ready to take control?</span>
-              <span className="block">Start your financial journey today.</span>
-            </h2>
-            <p className="mt-4 text-lg leading-6 text-blue-100">
-              Join thousands of users who have transformed their financial lives with Money Hub.
-            </p>
-            <button
-              onClick={openSignup}
-              className="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 sm:w-auto"
-            >
-              Get Started Free
-            </button>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <footer className="relative z-10 bg-gray-800">
-          <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-center items-center">
-              <div className="flex items-center">
-                <DollarSign className="w-6 h-6 text-blue-400" />
-                <span className="ml-2 text-xl font-bold text-white">Money Hub</span>
+        <section className="relative z-10 py-24 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative overflow-hidden bg-gradient-to-r from-cyan-600 via-purple-600 to-blue-600 rounded-3xl p-12 text-center">
+              <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+              <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl"></div>
+              
+              <div className="relative z-10">
+                <span className="inline-block px-4 py-1 bg-white/20 rounded-full text-sm font-medium mb-6">
+                  Start creating magic today
+                </span>
+                <h2 className="text-4xl sm:text-5xl font-extrabold text-white mb-6">
+                  Ready to take control?
+                </h2>
+                <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+                  Join 50,000+ users who have transformed their financial lives with OmniFolio.
+                </p>
+                <button
+                  onClick={openSignup}
+                  className="group inline-flex items-center gap-2 px-8 py-4 bg-white text-purple-600 rounded-xl text-lg font-bold hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+                >
+                  Get Started for Free
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
             </div>
-            <p className="mt-4 text-center text-gray-400">
-              © 2024 Money Hub. All rights reserved.
-            </p>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="relative z-10 border-t border-gray-800/50 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid md:grid-cols-4 gap-8 mb-12">
+              <div className="md:col-span-1">
+                <OmnifolioLogo size="md" />
+                <p className="mt-4 text-gray-400 text-sm">
+                  Your complete financial command center. Track, analyze, and grow your wealth.
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-white mb-4">Product</h4>
+                <ul className="space-y-2">
+                  <li><a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">Features</a></li>
+                  <li><a href="#how-it-works" className="text-gray-400 hover:text-white text-sm transition-colors">How it Works</a></li>
+                  <li><a href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Integrations</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-white mb-4">Company</h4>
+                <ul className="space-y-2">
+                  <li><a href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">About</a></li>
+                  <li><a href="/blog" className="text-gray-400 hover:text-white text-sm transition-colors">Blog</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-white mb-4">Legal</h4>
+                <ul className="space-y-2">
+                  <li><a href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a></li>
+                  <li><a href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a></li>
+                  <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Security</a></li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-gray-500 text-sm">
+                © {new Date().getFullYear()} OmniFolio. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4">
+                {/* Twitter */}
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+                </a>
+                {/* YouTube */}
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                </a>
+                {/* Instagram */}
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </a>
+              </div>
+            </div>
           </div>
         </footer>
       </div>
@@ -287,11 +564,11 @@ export function LandingPage() {
       {showAuthModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowAuthModal(false)} />
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => setShowAuthModal(false)} />
             
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
             
-            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-700">
               {authMode === 'login' ? (
                 <LoginForm 
                   onClose={() => setShowAuthModal(false)}

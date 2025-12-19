@@ -24,6 +24,7 @@ import { TbReceipt } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { formatNumber } from "../../lib/utils";
 import { useFinancialData } from "../../contexts/financial-data-context";
 import { useCurrency } from "../../contexts/currency-context";
@@ -1012,24 +1013,26 @@ function ExpensesModalContent() {
         {activeTab === 'debt' && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/50 dark:hover:shadow-red-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-red-600">-${formatNumber(totalDebtBalance)}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Balance</div>
-              </div>
-              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-orange-600">-${formatNumber(totalDebtPayments)}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Monthly Payment</div>
-              </div>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/50 dark:hover:shadow-yellow-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {debtAccounts.length > 0 ? ((debtAccounts.reduce((sum, d) => sum + d.interestRate, 0) / debtAccounts.length).toFixed(2)) : '0.00'}%
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Avg APR</div>
-              </div>
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/50 dark:hover:shadow-red-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-red-600">{debtAccounts.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Accounts</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.expenses}
+                value={`-$${formatNumber(totalDebtBalance)}`}
+                label="Total Balance"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.expenses}
+                value={`-$${formatNumber(totalDebtPayments)}`}
+                label="Monthly Payment"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.expenses}
+                value={`${debtAccounts.length > 0 ? ((debtAccounts.reduce((sum, d) => sum + d.interestRate, 0) / debtAccounts.length).toFixed(2)) : '0.00'}%`}
+                label="Avg APR"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.expenses}
+                value={debtAccounts.length}
+                label="Accounts"
+              />
             </div>
 
             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">

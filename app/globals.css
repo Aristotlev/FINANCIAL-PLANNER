@@ -2,6 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Browser Compatibility & Mobile-First Optimizations */
+@layer base {
+  /* Universal box-sizing with vendor prefixes */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+  }
+  
+  /* Improve mobile tap highlighting */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Smooth scrolling with vendor prefixes */
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  /* Prevent text size adjustment on mobile */
+  body {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Disable auto-zoom on iOS when focusing inputs */
+    -webkit-touch-callout: none;
+  }
+  
+  /* Mobile-friendly touch scrolling */
+  @media (max-width: 768px) {
+    body {
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  
+  /* Reduced motion support for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
 /* Optimized Zoom Performance with Hardware Acceleration */
 @layer utilities {
   .zoom-optimized {
@@ -17,6 +74,34 @@
   
   .smooth-zoom-ease {
     transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  
+  /* Mobile-specific utilities */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+  }
+  
+  /* Safe area support for notched devices */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
   }
 }
 
@@ -147,6 +232,15 @@ canvas.fixed {
   }
 }
 
+@keyframes spin {
+  from {
+    transform: translateZ(8px) rotate(0deg);
+  }
+  to {
+    transform: translateZ(8px) rotate(360deg);
+  }
+}
+
 .animate-scan-lines {
   animation: scan-lines 3s linear infinite;
 }
@@ -171,25 +265,41 @@ canvas.fixed {
               0 4px 16px rgba(0, 0, 0, 0.1),
               0 0 20px rgba(139, 92, 246, 0.2) !important;
   backdrop-filter: blur(12px) !important;
-  z-index: 999999 !important;
   pointer-events: none !important;
   transition: opacity 0.1s ease-out !important;
 }
 
-/* Light mode pie chart sector stroke - ensure visible borders */
-.recharts-pie-sector {
-  stroke: #ffffff !important;
-  stroke-width: 2px !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+/* ===========================================
+   PIE CHART STABILITY - ANTI-GLITCH FIXES
+   =========================================== */
+
+/* Prevent pie chart sectors from glitching - CRITICAL */
+.recharts-pie-sector,
+.recharts-sector,
+.recharts-pie-sector path,
+.recharts-sector path {
+  /* Disable all transitions and animations on sectors */
+  transition: none !important;
+  animation: none !important;
+  /* Stable SVG rendering */
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+  /* Prevent flickering */
+  will-change: auto;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-/* Dark mode pie chart sector stroke - ensure dark borders */
-.dark .recharts-pie-sector {
-  stroke: #1f2937 !important;
-  stroke-width: 2px !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+/* Dark mode pie chart sector - same anti-glitch */
+.dark .recharts-pie-sector,
+.dark .recharts-sector,
+.dark .recharts-pie-sector path,
+.dark .recharts-sector path {
+  transition: none !important;
+  animation: none !important;
+  shape-rendering: geometricPrecision;
+  vector-effect: non-scaling-stroke;
+  will-change: auto;
 }
 
 /* Dark mode text colors for charts and overlays */
@@ -210,7 +320,6 @@ canvas.fixed {
               0 0 40px rgba(139, 92, 246, 0.3),
               0 4px 20px rgba(0, 0, 0, 0.4) !important;
   backdrop-filter: blur(16px) !important;
-  z-index: 999999 !important;
   pointer-events: none !important;
   transition: opacity 0.1s ease-out !important;
 }
@@ -256,23 +365,15 @@ canvas.fixed {
   background-color: rgba(75, 85, 99, 0.5) !important;
 }
 
-/* Pie Chart Label - Optimized for smooth hover */
+/* Pie Chart Label - Clean and stable */
 .pie-chart-label {
   cursor: pointer;
-  transform-origin: center center;
   position: relative;
-  z-index: 10;
   pointer-events: auto;
-  transition: filter 0.2s ease-out, 
-              font-weight 0.2s ease-out;
-  will-change: filter;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 .pie-chart-label:hover {
-  font-weight: 600 !important;
-  z-index: 99999 !important;
+  font-weight: 700 !important;
 }
 
 /* Light mode pie chart label with enhanced colored glow */
@@ -311,367 +412,96 @@ canvas.fixed {
 /* Ensure tooltip can escape parent containers */
 .recharts-wrapper {
   position: relative !important;
-  z-index: 10 !important;
+  /* REMOVED z-index to prevent stacking context conflicts */
+  /* CRITICAL: Prevent resize loops - use layout only, not strict */
+  contain: layout;
 }
 
-/* Ensure ResponsiveContainer is visible and properly sized */
+/* Ensure ResponsiveContainer is visible and properly sized - ANTI-GLITCH */
 .recharts-responsive-container {
-  min-height: 200px !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  display: block !important;
-  position: relative !important;
+  min-height: 200px;
+  display: block;
+  position: relative;
+  /* Use layout containment only - NOT strict (strict causes clipping issues) */
+  contain: layout;
+  /* Allow overflow for tooltips */
+  overflow: visible !important;
 }
 
-/* Ensure PieChart SVG is visible */
-.recharts-pie,
-.recharts-pie-sector,
-.recharts-layer {
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Fix for pie chart SVG container */
-.recharts-surface > g {
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-/* Ensure pie chart path elements are visible */
-.recharts-pie path,
-.recharts-sector path {
-  visibility: visible !important;
-  opacity: 1 !important;
-  fill-opacity: 1 !important;
+/* Ensure pie chart containers don't clip overflow */
+.recharts-wrapper,
+.recharts-surface {
+  overflow: visible !important;
 }
 
 /* Ensure all SVG elements in pie charts are rendered */
 svg.recharts-surface {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  display: block;
+  /* Prevent SVG from resizing unexpectedly */
+  overflow: visible !important;
 }
 
-/* Ensure pie chart sectors have proper fill */
-.recharts-pie .recharts-pie-sector path {
-  fill-opacity: 1 !important;
-}
-
-/* Override any potential hiding of recharts elements */
+/* Pie chart layer stability */
+.recharts-pie,
 .recharts-layer.recharts-pie {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+  /* Isolate the pie chart layer - layout only */
+  contain: layout;
+  /* Prevent transforms from causing re-renders */
+  will-change: auto;
 }
 
-/* Prevent tooltip flickering and ensure smooth positioning */
+/* Prevent tooltip flickering - let Recharts control visibility */
 .recharts-tooltip-wrapper {
   pointer-events: none !important;
-  z-index: 999999 !important;
+  z-index: 50 !important;
   position: absolute !important;
-  transition: none !important;
-  will-change: auto !important;
-  transform: none !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  isolation: isolate !important;
+  /* NO contain - allow overflow */
 }
 
-/* Ensure tooltip content is visible and properly layered */
+/* Ensure tooltip content is properly layered */
 .recharts-tooltip-wrapper > div {
   pointer-events: none !important;
-  z-index: 999999 !important;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
-/* Pie Chart Slice - Optimized Smooth Popout */
+/* Pie Chart Slice - MAXIMUM STABILITY to prevent visual glitching */
 .recharts-pie-sector,
 .recharts-sector {
   cursor: pointer;
-  position: relative;
-  z-index: 1;
-  transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter 0.25s ease-out;
-  transform-origin: center center;
-  will-change: transform;
-  transform: scale(1) translateZ(0);
-  backface-visibility: hidden;
-  filter: drop-shadow(0 0 0px transparent);
-  visibility: visible !important;
-  opacity: 1 !important;
-  display: block !important;
+  /* geometricPrecision for smooth arcs without gaps */
+  shape-rendering: geometricPrecision;
+  /* CRITICAL: No transitions */
+  transition: none !important;
 }
 
+/* Prevent SVG path glitching */
+.recharts-pie-sector path,
+.recharts-sector path,
+.recharts-pie-sector,
+.recharts-sector {
+  vector-effect: non-scaling-stroke;
+  shape-rendering: geometricPrecision;
+  /* CRITICAL: Disable all CSS transitions on paths */
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Stable hover effect - use opacity only, no filter */
 .recharts-pie-sector:hover,
 .recharts-sector:hover {
-  transform: scale(1.12) translateZ(0) !important;
-  z-index: 99998 !important;
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter 0.2s ease-out;
+  opacity: 0.9;
 }
 
 .dark .recharts-pie-sector:hover,
 .dark .recharts-sector:hover {
-  transform: scale(1.12) translateZ(0) !important;
-  z-index: 99998 !important;
+  opacity: 0.9;
 }
 
-/* Dark mode specific color glows for pie chart slices - Optimized */
-.dark .recharts-pie-sector[fill="#84cc16"]:hover,
-.dark .recharts-sector[fill="#84cc16"]:hover {
-  filter: drop-shadow(0 0 12px #bef264)
-          drop-shadow(0 0 24px #a3e635);
-}
-
-.dark .recharts-pie-sector[fill="#8b5cf6"]:hover,
-.dark .recharts-sector[fill="#8b5cf6"]:hover {
-  filter: drop-shadow(0 0 12px #e9d5ff)
-          drop-shadow(0 0 24px #c4b5fd);
-}
-
-.dark .recharts-pie-sector[fill="#f59e0b"]:hover,
-.dark .recharts-sector[fill="#f59e0b"]:hover {
-  filter: drop-shadow(0 0 12px #fcd34d)
-          drop-shadow(0 0 24px #fbbf24);
-}
-
-.dark .recharts-pie-sector[fill="#10b981"]:hover,
-.dark .recharts-sector[fill="#10b981"]:hover {
-  filter: drop-shadow(0 0 12px #a7f3d0)
-          drop-shadow(0 0 24px #6ee7b7);
-}
-
-.dark .recharts-pie-sector[fill="#ef4444"]:hover,
-.dark .recharts-sector[fill="#ef4444"]:hover {
-  filter: drop-shadow(0 0 12px #fecaca)
-          drop-shadow(0 0 24px #fca5a5);
-}
-
-.dark .recharts-pie-sector[fill="#06b6d4"]:hover,
-.dark .recharts-sector[fill="#06b6d4"]:hover {
-  filter: drop-shadow(0 0 12px #a5f3fc)
-          drop-shadow(0 0 24px #67e8f9);
-}
-
-.dark .recharts-pie-sector[fill="#14b8a6"]:hover,
-.dark .recharts-sector[fill="#14b8a6"]:hover {
-  filter: drop-shadow(0 0 12px #99f6e4)
-          drop-shadow(0 0 24px #5eead4);
-}
-
-/* Light mode specific color glows for pie chart slices - Optimized */
-.recharts-pie-sector[fill="#84cc16"]:hover,
-.recharts-sector[fill="#84cc16"]:hover {
-  filter: drop-shadow(0 0 6px #84cc16)
-          drop-shadow(0 0 10px #84cc16);
-}
-
-.recharts-pie-sector[fill="#8b5cf6"]:hover,
-.recharts-sector[fill="#8b5cf6"]:hover {
-  filter: drop-shadow(0 0 6px #8b5cf6)
-          drop-shadow(0 0 10px #8b5cf6);
-}
-
-.recharts-pie-sector[fill="#f59e0b"]:hover,
-.recharts-sector[fill="#f59e0b"]:hover {
-  filter: drop-shadow(0 0 6px #f59e0b)
-          drop-shadow(0 0 10px #f59e0b);
-}
-
-.recharts-pie-sector[fill="#10b981"]:hover,
-.recharts-sector[fill="#10b981"]:hover {
-  filter: drop-shadow(0 0 6px #10b981)
-          drop-shadow(0 0 10px #10b981);
-}
-
-.recharts-pie-sector[fill="#ef4444"]:hover,
-.recharts-sector[fill="#ef4444"]:hover {
-  filter: drop-shadow(0 0 6px #ef4444)
-          drop-shadow(0 0 10px #ef4444);
-}
-
-.recharts-pie-sector[fill="#06b6d4"]:hover,
-.recharts-sector[fill="#06b6d4"]:hover {
-  filter: drop-shadow(0 0 6px #06b6d4)
-          drop-shadow(0 0 10px #06b6d4);
-}
-
-.recharts-pie-sector[fill="#14b8a6"]:hover,
-.recharts-sector[fill="#14b8a6"]:hover {
-  filter: drop-shadow(0 0 6px #14b8a6)
-          drop-shadow(0 0 10px #14b8a6);
-}
-
-/* Stock-specific pie chart colors - Pink/Rose */
-.recharts-pie-sector[fill="#daa4c1"]:hover,
-.recharts-sector[fill="#daa4c1"]:hover {
-  filter: drop-shadow(0 0 6px #daa4c1)
-          drop-shadow(0 0 10px #daa4c1);
-}
-
-.dark .recharts-pie-sector[fill="#daa4c1"]:hover,
-.dark .recharts-sector[fill="#daa4c1"]:hover {
-  filter: drop-shadow(0 0 12px #f0c4dc)
-          drop-shadow(0 0 24px #daa4c1);
-}
-
-/* Stock-specific pie chart colors - Lime Green */
-.recharts-pie-sector[fill="#9bd322"]:hover,
-.recharts-sector[fill="#9bd322"]:hover {
-  filter: drop-shadow(0 0 6px #9bd322)
-          drop-shadow(0 0 10px #9bd322);
-}
-
-.dark .recharts-pie-sector[fill="#9bd322"]:hover,
-.dark .recharts-sector[fill="#9bd322"]:hover {
-  filter: drop-shadow(0 0 12px #b5e352)
-          drop-shadow(0 0 24px #9bd322);
-}
-
-/* Stock-specific pie chart colors - Yellow/Gold */
-.recharts-pie-sector[fill="#baa51c"]:hover,
-.recharts-sector[fill="#baa51c"]:hover {
-  filter: drop-shadow(0 0 3px #baa51c)
-          drop-shadow(0 0 4px #baa51c);
-}
-
-.dark .recharts-pie-sector[fill="#baa51c"]:hover,
-.dark .recharts-sector[fill="#baa51c"]:hover {
-  filter: drop-shadow(0 0 4px #dac54c)
-          drop-shadow(0 0 8px #baa51c);
-}
-
-/* Stock-specific pie chart colors - Deep Purple */
-.recharts-pie-sector[fill="#4936a1"]:hover,
-.recharts-sector[fill="#4936a1"]:hover {
-  filter: drop-shadow(0 0 3px #4936a1)
-          drop-shadow(0 0 4px #4936a1);
-}
-
-.dark .recharts-pie-sector[fill="#4936a1"]:hover,
-.dark .recharts-sector[fill="#4936a1"]:hover {
-  filter: drop-shadow(0 0 4px #7966c1)
-          drop-shadow(0 0 8px #5946b1);
-}
-
-/* Additional pie chart colors - Pink/Hot Pink */
-.recharts-pie-sector[fill="#ec4899"]:hover,
-.recharts-sector[fill="#ec4899"]:hover {
-  filter: drop-shadow(0 0 3px #ec4899)
-          drop-shadow(0 0 4px #ec4899);
-}
-
-.dark .recharts-pie-sector[fill="#ec4899"]:hover,
-.dark .recharts-sector[fill="#ec4899"]:hover {
-  filter: drop-shadow(0 0 4px #f9a8d4)
-          drop-shadow(0 0 8px #f472b6);
-}
-
-/* Additional pie chart colors - Bright Blue */
-.recharts-pie-sector[fill="#3b82f6"]:hover,
-.recharts-sector[fill="#3b82f6"]:hover {
-  filter: drop-shadow(0 0 3px #3b82f6)
-          drop-shadow(0 0 4px #3b82f6);
-}
-
-.dark .recharts-pie-sector[fill="#3b82f6"]:hover,
-.dark .recharts-sector[fill="#3b82f6"]:hover {
-  filter: drop-shadow(0 0 4px #93c5fd)
-          drop-shadow(0 0 8px #60a5fa);
-}
-
-/* Additional pie chart colors - Light Blue */
-.recharts-pie-sector[fill="#60a5fa"]:hover,
-.recharts-sector[fill="#60a5fa"]:hover {
-  filter: drop-shadow(0 0 3px #60a5fa)
-          drop-shadow(0 0 4px #60a5fa);
-}
-
-.dark .recharts-pie-sector[fill="#60a5fa"]:hover,
-.dark .recharts-sector[fill="#60a5fa"]:hover {
-  filter: drop-shadow(0 0 4px #dbeafe)
-          drop-shadow(0 0 8px #93c5fd);
-}
-
-/* Additional pie chart colors - Indigo */
-.recharts-pie-sector[fill="#6366f1"]:hover,
-.recharts-sector[fill="#6366f1"]:hover {
-  filter: drop-shadow(0 0 3px #6366f1)
-          drop-shadow(0 0 4px #6366f1);
-}
-
-.dark .recharts-pie-sector[fill="#6366f1"]:hover,
-.dark .recharts-sector[fill="#6366f1"]:hover {
-  filter: drop-shadow(0 0 4px #c7d2fe)
-          drop-shadow(0 0 8px #a5b4fc);
-}
-
-/* Additional pie chart colors - Sky Blue */
-.recharts-pie-sector[fill="#0ea5e9"]:hover,
-.recharts-sector[fill="#0ea5e9"]:hover {
-  filter: drop-shadow(0 0 3px #0ea5e9)
-          drop-shadow(0 0 4px #0ea5e9);
-}
-
-.dark .recharts-pie-sector[fill="#0ea5e9"]:hover,
-.dark .recharts-sector[fill="#0ea5e9"]:hover {
-  filter: drop-shadow(0 0 4px #7dd3fc)
-          drop-shadow(0 0 8px #38bdf8);
-}
-
-/* Additional pie chart colors - Amber/Gold */
-.recharts-pie-sector[fill="#fbbf24"]:hover,
-.recharts-sector[fill="#fbbf24"]:hover {
-  filter: drop-shadow(0 0 3px #fbbf24)
-          drop-shadow(0 0 4px #fbbf24);
-}
-
-.dark .recharts-pie-sector[fill="#fbbf24"]:hover,
-.dark .recharts-sector[fill="#fbbf24"]:hover {
-  filter: drop-shadow(0 0 4px #fef3c7)
-          drop-shadow(0 0 8px #fcd34d);
-}
-
-/* Additional pie chart colors - Light Red */
-.recharts-pie-sector[fill="#f87171"]:hover,
-.recharts-sector[fill="#f87171"]:hover {
-  filter: drop-shadow(0 0 3px #f87171)
-          drop-shadow(0 0 4px #f87171);
-}
-
-.dark .recharts-pie-sector[fill="#f87171"]:hover,
-.dark .recharts-sector[fill="#f87171"]:hover {
-  filter: drop-shadow(0 0 4px #fecaca)
-          drop-shadow(0 0 8px #fca5a5);
-}
-
-/* Additional pie chart colors - Dark Purple */
-.recharts-pie-sector[fill="#7c3aed"]:hover,
-.recharts-sector[fill="#7c3aed"]:hover {
-  filter: drop-shadow(0 0 3px #7c3aed)
-          drop-shadow(0 0 4px #7c3aed);
-}
-
-.dark .recharts-pie-sector[fill="#7c3aed"]:hover,
-.dark .recharts-sector[fill="#7c3aed"]:hover {
-  filter: drop-shadow(0 0 4px #c4b5fd)
-          drop-shadow(0 0 8px #a78bfa);
-}
-
-/* Additional pie chart colors - Chart Default Blue */
-.recharts-pie-sector[fill="#8884d8"]:hover,
-.recharts-sector[fill="#8884d8"]:hover {
-  filter: drop-shadow(0 0 3px #8884d8)
-          drop-shadow(0 0 4px #8884d8);
-}
-
-.dark .recharts-pie-sector[fill="#8884d8"]:hover,
-.dark .recharts-sector[fill="#8884d8"]:hover {
-  filter: drop-shadow(0 0 4px #bbb4f8)
-          drop-shadow(0 0 8px #a8a4e8);
+/* Ensure the pie container is COMPLETELY stable */
+.recharts-pie,
+.recharts-layer.recharts-pie {
+  contain: layout style;
+  /* Prevent any transforms */
+  transform: none !important;
 }
 
 /* Bar Chart Neon Popout Animation */
@@ -1095,128 +925,7 @@ svg.recharts-surface {
           drop-shadow(0 0 6px #ef4444);
 }
 
-/* Button glow effects */
-button.bg-purple-600:hover,
-button.bg-purple-500:hover {
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.5),
-              0 0 25px rgba(139, 92, 246, 0.3),
-              0 4px 20px rgba(139, 92, 246, 0.4) !important;
-}
-
-.dark button.bg-purple-600:hover,
-.dark button.bg-purple-500:hover {
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6),
-              0 0 40px rgba(139, 92, 246, 0.4),
-              0 4px 30px rgba(124, 58, 237, 0.5) !important;
-}
-
-button.bg-green-600:hover,
-button.bg-green-500:hover {
-  box-shadow: 0 0 15px rgba(16, 185, 129, 0.5),
-              0 0 25px rgba(16, 185, 129, 0.3),
-              0 4px 20px rgba(16, 185, 129, 0.4) !important;
-}
-
-.dark button.bg-green-600:hover,
-.dark button.bg-green-500:hover {
-  box-shadow: 0 0 20px rgba(52, 211, 153, 0.6),
-              0 0 40px rgba(16, 185, 129, 0.4),
-              0 4px 30px rgba(5, 150, 105, 0.5) !important;
-}
-
-button.bg-blue-600:hover,
-button.bg-blue-500:hover {
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5),
-              0 0 25px rgba(59, 130, 246, 0.3),
-              0 4px 20px rgba(59, 130, 246, 0.4) !important;
-}
-
-.dark button.bg-blue-600:hover,
-.dark button.bg-blue-500:hover {
-  box-shadow: 0 0 20px rgba(96, 165, 250, 0.6),
-              0 0 40px rgba(59, 130, 246, 0.4),
-              0 4px 30px rgba(37, 99, 235, 0.5) !important;
-}
-
-button.bg-red-600:hover,
-button.bg-red-500:hover {
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5),
-              0 0 25px rgba(239, 68, 68, 0.3),
-              0 4px 20px rgba(239, 68, 68, 0.4) !important;
-}
-
-.dark button.bg-red-600:hover,
-.dark button.bg-red-500:hover {
-  box-shadow: 0 0 20px rgba(248, 113, 113, 0.6),
-              0 0 40px rgba(239, 68, 68, 0.4),
-              0 4px 30px rgba(220, 38, 38, 0.5) !important;
-}
-
-button.bg-orange-600:hover,
-button.bg-orange-500:hover {
-  box-shadow: 0 0 15px rgba(249, 115, 22, 0.5),
-              0 0 25px rgba(249, 115, 22, 0.3),
-              0 4px 20px rgba(249, 115, 22, 0.4) !important;
-}
-
-.dark button.bg-orange-600:hover,
-.dark button.bg-orange-500:hover {
-  box-shadow: 0 0 20px rgba(251, 146, 60, 0.6),
-              0 0 40px rgba(249, 115, 22, 0.4),
-              0 4px 30px rgba(234, 88, 12, 0.5) !important;
-}
-
-/* Progress bar glow effects */
-.bg-purple-500,
-.bg-purple-600 {
-  transition: box-shadow 0.3s ease;
-}
-
-.bg-purple-500:hover,
-.bg-purple-600:hover {
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.6),
-              0 0 20px rgba(139, 92, 246, 0.4);
-}
-
-.dark .bg-purple-500:hover,
-.dark .bg-purple-600:hover {
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.7),
-              0 0 30px rgba(139, 92, 246, 0.5);
-}
-
-.bg-green-500,
-.bg-green-600 {
-  transition: box-shadow 0.3s ease;
-}
-
-.bg-green-500:hover,
-.bg-green-600:hover {
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6),
-              0 0 20px rgba(16, 185, 129, 0.4);
-}
-
-.dark .bg-green-500:hover,
-.dark .bg-green-600:hover {
-  box-shadow: 0 0 15px rgba(52, 211, 153, 0.7),
-              0 0 30px rgba(16, 185, 129, 0.5);
-}
-
-.bg-blue-500,
-.bg-blue-600 {
-  transition: box-shadow 0.3s ease;
-}
-
-.bg-blue-500:hover,
-.bg-blue-600:hover {
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6),
-              0 0 20px rgba(59, 130, 246, 0.4);
-}
-
-.dark .bg-blue-500:hover,
-.dark .bg-blue-600:hover {
-  box-shadow: 0 0 15px rgba(96, 165, 250, 0.7),
-              0 0 30px rgba(59, 130, 246, 0.5);
-}
+/* Button styles - clean hover without neon glow */
 
 /* Enable zoom with Alt/Command + Scroll */
 html {
@@ -1313,6 +1022,54 @@ div[class*="z-[1000000]"] {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Mobile Responsive Improvements */
+@media (max-width: 768px) {
+  /* Optimize modal sizing for mobile */
+  .modal-content {
+    max-height: 90vh !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Improve button touch targets */
+  button:not(.no-min-height), 
+  a:not(.no-min-height), 
+  [role="button"]:not(.no-min-height) {
+    min-height: 44px;
+  }
+  
+  /* Optimize card grid for mobile */
+  .financial-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+  
+  /* Reduce padding on containers */
+  .container {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+/* Tablet Optimizations */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .financial-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable certain hover effects on touch devices */
+  .hover\:scale-\[1\.02\]:hover {
+    transform: scale(1) !important;
+  }
+}
+
 /* Fade in/out animation for notifications */
 @keyframes fadeInOut {
   0% {
@@ -1335,6 +1092,21 @@ div[class*="z-[1000000]"] {
 
 .animate-fade-in-out {
   animation: fadeInOut 2s ease-in-out forwards;
+}
+
+/* Tooltip bounce animation for MASSIVE popout effect */
+@keyframes tooltipBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  50% {
+    transform: scale(1.08) translateY(-12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-10px);
+  }
 }
 
 /* Slide in from right animation for notifications */

@@ -5,7 +5,10 @@
 
 import { NextRequest } from "next/server";
 import Replicate from "replicate";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
+// ✅ SECURE: Server-side only environment variable
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
 // Available voices in Kokoro-82m model
@@ -31,7 +34,22 @@ export async function POST(req: NextRequest) {
   const startTime = Date.now();
   
   try {
-    console.log('[TTS-REPLICATE] Received request');
+    // ✅ Authenticate user
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Please sign in to use TTS features' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('[TTS-REPLICATE] Received authenticated request from user:', session.user.id);
     
     if (!REPLICATE_API_TOKEN) {
       return new Response(

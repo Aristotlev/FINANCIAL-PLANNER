@@ -14,6 +14,9 @@ export interface CryptoHolding {
   color: string;
   change: string;
   entryPoint: number;
+  walletType?: string;
+  walletName?: string;
+  walletAddress?: string;
 }
 
 export interface StockHolding {

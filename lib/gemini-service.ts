@@ -30,10 +30,12 @@ export class GeminiService {
   private context: ConversationContext;
 
   constructor() {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || '';
+    // ✅ Use server-side API key (no NEXT_PUBLIC_ prefix)
+    // This service should only be instantiated in API routes (server-side)
+    const apiKey = process.env.GOOGLE_AI_API_KEY || '';
     
     if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-      console.error('❌ Gemini API key not configured! Please add NEXT_PUBLIC_GOOGLE_AI_API_KEY to .env.local');
+      console.error('❌ Gemini API key not configured! Please add GOOGLE_AI_API_KEY to .env.local');
     } else {
       console.log('✅ Gemini API key found:', apiKey.substring(0, 20) + '...');
     }
@@ -54,9 +56,9 @@ export class GeminiService {
       const modelNames = [
         'gemini-2.5-flash',
         'gemini-2.0-flash',
-        'gemini-flash-latest',
-        'gemini-pro-latest',
         'gemini-2.5-pro',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
       ];
 
       for (const modelName of modelNames) {
@@ -91,10 +93,10 @@ export class GeminiService {
    * Fallback method to call Gemini REST API directly
    */
   private async callGeminiRestAPI(prompt: string): Promise<string> {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY;
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
     
     // Try multiple models
-    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     
     for (const model of models) {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -1125,7 +1127,7 @@ Please respond naturally and intelligently. If this is an action request, includ
       let errorMessage = "I'm having trouble connecting to the AI service. ";
       
       if (error?.message?.includes('API key')) {
-        errorMessage = "The API key seems to be invalid. Please check your NEXT_PUBLIC_GOOGLE_AI_API_KEY in .env.local";
+        errorMessage = "The API key seems to be invalid. Please check your GOOGLE_AI_API_KEY in .env.local";
       } else if (error?.message?.includes('quota') || error?.status === 429) {
         errorMessage = "API rate limit reached. Please wait a moment and try again.";
       } else if (error?.message?.includes('SAFETY')) {

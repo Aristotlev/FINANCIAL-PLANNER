@@ -15,18 +15,18 @@ export function middleware(request: NextRequest) {
     // - Next.js development mode
     // - Dynamic imports and blob workers
     isDev 
-      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com"
-      : "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com",
-    "style-src 'self' 'unsafe-inline' https://s3.tradingview.com https://www.tradingview.com https://fonts.googleapis.com https://maps.googleapis.com",
-    "img-src 'self' data: blob: https: https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://*.gstatic.com https://lh3.googleusercontent.com",
+      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com https://accounts.google.com"
+      : "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com https://accounts.google.com",
+    "style-src 'self' 'unsafe-inline' https://s3.tradingview.com https://www.tradingview.com https://fonts.googleapis.com https://maps.googleapis.com https://accounts.google.com",
+    "img-src 'self' data: blob: https: https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://*.gstatic.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://www.google.com https://icons.duckduckgo.com https://img.logo.dev",
     "font-src 'self' data: https://fonts.gstatic.com https://maps.gstatic.com",
     isDev
       ? "connect-src 'self' https: http: ws: wss:"
-      : "connect-src 'self' https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co",
+      : "connect-src 'self' https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co https://accounts.google.com",
     "media-src 'self' blob: data: https://api.elevenlabs.io https://replicate.delivery",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
-    "frame-src 'self' https://www.tradingview.com https://s.tradingview.com https://s3.tradingview.com https://www.tradingview-widget.com",
+    "frame-src 'self' https://www.tradingview.com https://s.tradingview.com https://s3.tradingview.com https://www.tradingview-widget.com https://accounts.google.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

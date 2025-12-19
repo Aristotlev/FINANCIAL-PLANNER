@@ -27,7 +27,8 @@ import {
   X,
   Edit3,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  ArrowDownLeft
 } from "lucide-react";
 import { 
   SiApple, 
@@ -52,12 +53,12 @@ import {
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, ConditionalThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { useAssetPrices } from "../../hooks/use-price";
 import { formatNumber } from "../../lib/utils";
 import { usePortfolioContext } from "../../contexts/portfolio-context";
-import { useTechnicalAnalysis } from "../../hooks/use-technical-analysis";
-import { BarChart3 } from "lucide-react";
 import { AIRebalancing } from "../ui/ai-rebalancing";
+import { SellPositionModal } from "../ui/sell-position-modal";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, LargeDualCurrency } from "../ui/dual-currency-display";
 
@@ -558,7 +559,11 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-  if (percent < 0.01) return null; // Don't show labels for very small slices (less than 1%)
+  // Don't show labels for very small slices (less than 1%) or placeholder slices
+  if (percent < 0.01 || !name) return null;
+
+  // Display 100% instead of 99.99% for single-stock scenarios
+  const displayPercent = percent >= 0.999 ? 100 : (percent * 100);
 
   return (
     <text
@@ -575,7 +580,7 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
         '--label-color': fill
       } as React.CSSProperties}
     >
-      {name} {(percent * 100).toFixed(1)}%
+      {name} {displayPercent.toFixed(1)}%
     </text>
   );
 };
@@ -583,12 +588,14 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
 function StocksModalContent() {
   const [activeTab, setActiveTab] = useState<'holdings' | 'performance' | 'dividends' | 'analysis'>('holdings');
   const { stockHoldings, setStockHoldings } = usePortfolioContext();
+  const { formatMain } = useCurrencyConversion();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingHolding, setEditingHolding] = useState<StockHolding | null>(null);
   const [colorPickerHolding, setColorPickerHolding] = useState<string | null>(null);
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [sellingHolding, setSellingHolding] = useState<StockHolding | null>(null);
   const isInitialMount = useRef(true);
-  const { openTechnicalAnalysis, TechnicalAnalysisComponent } = useTechnicalAnalysis();
 
   // Load data on component mount
   useEffect(() => {
@@ -693,6 +700,60 @@ function StocksModalContent() {
     window.dispatchEvent(new Event('stockDataChanged'));
   };
 
+  const sellHolding = async (holdingId: string, sellShares: number, destination: any) => {
+    const holding = stockHoldings.find((h: StockHolding) => h.id === holdingId);
+    if (!holding) return;
+
+    const currentPrice = prices[holding.symbol]?.price || holding.entryPoint;
+    const proceeds = sellShares * currentPrice;
+
+    // Update or delete the holding
+    if (sellShares >= holding.shares) {
+      // Selling entire position
+      await SupabaseDataService.deleteStockHolding(holdingId);
+    } else {
+      // Selling partial position
+      const updatedHolding = {
+        ...holding,
+        shares: holding.shares - sellShares
+      };
+      await SupabaseDataService.saveStockHolding(updatedHolding);
+    }
+
+    // Handle destination (stocks only go to bank or savings, no stablecoin option)
+    if (destination.type === 'bank') {
+      // Transfer to bank account
+      const accounts = await SupabaseDataService.getCashAccounts([]);
+      const account = accounts.find((a: any) => a.id === destination.id);
+      if (account) {
+        const updatedAccount = {
+          ...account,
+          balance: account.balance + proceeds
+        };
+        await SupabaseDataService.saveCashAccount(updatedAccount);
+      }
+    } else if (destination.type === 'savings') {
+      // Transfer to savings goal
+      const goals = await SupabaseDataService.getSavingsAccounts([]);
+      const goal = goals.find((g: any) => g.id === destination.id);
+      if (goal) {
+        const updatedGoal = {
+          ...goal,
+          currentAmount: goal.currentAmount + proceeds
+        };
+        await SupabaseDataService.saveSavingsAccount(updatedGoal);
+      }
+    }
+
+    // Refresh data
+    const savedHoldings = await SupabaseDataService.getStockHoldings([]);
+    setStockHoldings(savedHoldings);
+    
+    // Notify other components
+    window.dispatchEvent(new Event('stockDataChanged'));
+    window.dispatchEvent(new Event('financialDataChanged'));
+  };
+
   const totalValue = updatedHoldings.reduce((sum, holding) => sum + holding.value, 0);
   const totalGainLoss = updatedHoldings.reduce((sum, holding) => {
     const costBasis = holding.shares * holding.entryPoint;
@@ -706,7 +767,7 @@ function StocksModalContent() {
       return [];
     }
     
-    return updatedHoldings
+    const allocation = updatedHoldings
       .filter(holding => holding.value > 0)
       .map(holding => ({
         id: holding.id,
@@ -714,8 +775,11 @@ function StocksModalContent() {
         fullName: holding.name,
         value: (holding.value / totalValue) * 100,
         actualValue: holding.value,
-        color: holding.color || '#8884d8'
+        color: holding.color || '#8884d8',
+        isPlaceholder: false
       }));
+    
+    return allocation;
   }, [updatedHoldings, totalValue, prices]);
 
   return (
@@ -758,10 +822,10 @@ function StocksModalContent() {
 
         {/* Tab Content */}
         {activeTab === 'holdings' && (
-          <div className="space-y-6" style={{ overflow: 'visible' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ overflow: 'visible' }}>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Individual Stock Allocation */}
-              <div className="relative" style={{ zIndex: 1, overflow: 'visible' }}>
+              <div>
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Portfolio Allocation</h3>
                 {loading ? (
                   <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -771,53 +835,71 @@ function StocksModalContent() {
                     </div>
                   </div>
                 ) : stockAllocation.length > 0 ? (
-                  <div className="relative" style={{ overflow: 'visible', padding: '20px', paddingTop: '10px', zIndex: 10, height: '300px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                  <div className="h-[280px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
+                    <ResponsiveContainer width="100%" height="100%" debounce={200}>
+                      <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                       <Pie
                         data={stockAllocation}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={CustomPieLabel}
-                        outerRadius={70}
+                        label={false}
+                        outerRadius={80}
                         innerRadius={0}
                         fill="#8884d8"
                         dataKey="value"
                         isAnimationActive={false}
-                        paddingAngle={2}
-                        style={{ cursor: 'pointer' }}
+                        animationDuration={0}
+                        animationBegin={0}
+                        animationEasing="linear"
+                        paddingAngle={0}
+                        startAngle={90}
+                        endAngle={-270}
+                        activeShape={false as any}
                       >
                         {stockAllocation.map((entry) => (
                           <Cell 
                             key={`cell-${entry.id}`} 
                             fill={entry.color}
-                            style={{ cursor: 'pointer' }}
+                            stroke={stockAllocation.length > 1 ? "#fff" : "none"}
+                            strokeWidth={stockAllocation.length > 1 ? 2 : 0}
                           />
                         ))}
                       </Pie>
                       <Tooltip 
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0];
-                            return (
-                              <div 
-                                className="bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
-                                style={{ zIndex: 10000 }}
-                              >
-                                <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                                  {data.payload.fullName || data.name}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {data.name}
-                                </p>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                  {Number(data.value).toFixed(1)}% • ${formatNumber(data.payload.actualValue)}
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
+                        isAnimationActive={false}
+                        animationDuration={0}
+                        trigger="hover"
+                        wrapperStyle={{
+                          zIndex: 50,
+                          pointerEvents: 'none',
+                          visibility: 'visible'
+                        }}
+                        allowEscapeViewBox={{ x: true, y: true }}
+                        content={(props) => {
+                          const { active, payload } = props;
+                          if (!active || !payload || !payload.length) return null;
+                          const data = payload[0];
+                          const displayPercent = stockAllocation.length === 1 ? 100 : Number(data.value);
+                          return (
+                            <div 
+                              className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-2xl border-2 border-purple-200 dark:border-purple-700"
+                              style={{ 
+                                boxShadow: '0 10px 40px rgba(139, 92, 246, 0.3), 0 4px 20px rgba(0,0,0,0.15)',
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                {data.payload.fullName || data.name}
+                              </p>
+                              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                                {data.name}
+                              </p>
+                              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">
+                                {displayPercent.toFixed(1)}% • {formatMain(data.payload.actualValue)}
+                              </p>
+                            </div>
+                          );
                         }}
                       />
                     </PieChart>
@@ -871,15 +953,14 @@ function StocksModalContent() {
                         </div>
                         <div className="flex gap-1">
                           <button
-                            onClick={() => openTechnicalAnalysis({
-                              symbol: holding.symbol,
-                              assetType: 'stock',
-                              assetName: holding.name
-                            })}
+                            onClick={() => {
+                              setSellingHolding(holding);
+                              setShowSellModal(true);
+                            }}
                             className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                            title="Technical Analysis (RSI, MACD, etc.)"
+                            title="Sell"
                           >
-                            <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400 dark:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                            <ArrowDownLeft className="w-4 h-4 text-green-600 dark:text-green-400 dark:drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
                           </button>
                           <button
                             onClick={() => {
@@ -913,26 +994,28 @@ function StocksModalContent() {
 
             {/* Performance Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2 -mx-2 py-2 -my-2">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className={`text-2xl font-bold ${totalReturn >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
-                  {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Return</div>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
-                <div className={`text-2xl font-bold ${totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalGainLoss >= 0 ? '+' : ''}${formatNumber(totalGainLoss)}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Unrealized {totalGainLoss >= 0 ? 'Gains' : 'Losses'}</div>
-              </div>
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/50 dark:hover:shadow-indigo-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-indigo-600">${(totalValue - totalGainLoss).toLocaleString()}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Cost Basis</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">{updatedHoldings.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Positions</div>
-              </div>
+              <ConditionalThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}%`}
+                label="Total Return"
+                valueType={totalReturn >= 0 ? 'positive' : 'negative'}
+              />
+              <ConditionalThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`${totalGainLoss >= 0 ? '+' : ''}$${formatNumber(totalGainLoss)}`}
+                label={`Unrealized ${totalGainLoss >= 0 ? 'Gains' : 'Losses'}`}
+                valueType={totalGainLoss >= 0 ? 'positive' : 'negative'}
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`$${(totalValue - totalGainLoss).toLocaleString()}`}
+                label="Cost Basis"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={updatedHoldings.length}
+                label="Positions"
+              />
             </div>
           </div>
         )}
@@ -961,20 +1044,22 @@ function StocksModalContent() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30 cursor-pointer">
-                <div className={`text-xl font-bold ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(1)}%
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Return</div>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
-                <div className="text-xl font-bold text-blue-600">${formatNumber(totalValue)}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Portfolio Value</div>
-              </div>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/50 dark:hover:shadow-yellow-500/30 cursor-pointer">
-                <div className="text-xl font-bold text-yellow-600">{updatedHoldings.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Positions</div>
-              </div>
+              <ConditionalThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(1)}%`}
+                label="Total Return"
+                valueType={totalReturn >= 0 ? 'positive' : 'negative'}
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`$${formatNumber(totalValue)}`}
+                label="Portfolio Value"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={updatedHoldings.length}
+                label="Positions"
+              />
             </div>
           </div>
         )}
@@ -997,43 +1082,41 @@ function StocksModalContent() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2 -mx-2 py-2 -my-2">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
-                <div className="text-xl font-bold text-purple-600">
-                  ${Math.round(updatedHoldings.reduce((sum, h) => {
-                    const price = prices[h.symbol]?.price || 0;
-                    const value = h.shares * price;
-                    const estimatedYield = h.sector === 'Technology' ? 0.005 : 0.03;
-                    return sum + (value * estimatedYield);
-                  }, 0) * 4).toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Est. Annual Dividends</div>
-              </div>
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/50 dark:hover:shadow-indigo-500/30 cursor-pointer">
-                <div className="text-xl font-bold text-indigo-600">
-                  {updatedHoldings.length > 0 ? (
-                    (updatedHoldings.reduce((sum, h) => {
-                      const estimatedYield = h.sector === 'Technology' ? 0.5 : 3.0;
-                      return sum + estimatedYield;
-                    }, 0) / updatedHoldings.length).toFixed(1)
-                  ) : '0.0'}%
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Avg. Yield</div>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
-                <div className="text-xl font-bold text-blue-600">
-                  ${Math.round(updatedHoldings.reduce((sum, h) => {
-                    const price = prices[h.symbol]?.price || 0;
-                    const value = h.shares * price;
-                    const estimatedYield = h.sector === 'Technology' ? 0.005 : 0.03;
-                    return sum + (value * estimatedYield);
-                  }, 0)).toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Est. Quarterly</div>
-              </div>
-              <div className="bg-violet-50 dark:bg-violet-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-violet-500/50 dark:hover:shadow-violet-500/30 cursor-pointer">
-                <div className="text-xl font-bold text-violet-600">{updatedHoldings.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Div. Stocks</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`$${Math.round(updatedHoldings.reduce((sum, h) => {
+                  const price = prices[h.symbol]?.price || 0;
+                  const value = h.shares * price;
+                  const estimatedYield = h.sector === 'Technology' ? 0.005 : 0.03;
+                  return sum + (value * estimatedYield);
+                }, 0) * 4).toLocaleString()}`}
+                label="Est. Annual Dividends"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`${updatedHoldings.length > 0 ? (
+                  (updatedHoldings.reduce((sum, h) => {
+                    const estimatedYield = h.sector === 'Technology' ? 0.5 : 3.0;
+                    return sum + estimatedYield;
+                  }, 0) / updatedHoldings.length).toFixed(1)
+                ) : '0.0'}%`}
+                label="Avg. Yield"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={`$${Math.round(updatedHoldings.reduce((sum, h) => {
+                  const price = prices[h.symbol]?.price || 0;
+                  const value = h.shares * price;
+                  const estimatedYield = h.sector === 'Technology' ? 0.005 : 0.03;
+                  return sum + (value * estimatedYield);
+                }, 0)).toLocaleString()}`}
+                label="Est. Quarterly"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.stocks}
+                value={updatedHoldings.length}
+                label="Div. Stocks"
+              />
             </div>
           </div>
         )}
@@ -1119,7 +1202,21 @@ function StocksModalContent() {
         onUpdate={updateHolding}
       />
       
-      <TechnicalAnalysisComponent />
+      <SellPositionModal
+        isOpen={showSellModal}
+        onClose={() => {
+          setShowSellModal(false);
+          setSellingHolding(null);
+        }}
+        assetType="stock"
+        holding={sellingHolding}
+        currentPrice={sellingHolding ? (prices[sellingHolding.symbol]?.price || sellingHolding.entryPoint) : 0}
+        onSell={async (amount, destination) => {
+          if (sellingHolding) {
+            await sellHolding(sellingHolding.id, amount, destination);
+          }
+        }}
+      />
     </div>
   );
 }

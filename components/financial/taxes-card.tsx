@@ -22,6 +22,7 @@ import {
 import { GiReceiveMoney } from "react-icons/gi";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
+import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { formatNumber } from "../../lib/utils";
 import {
   Country,
@@ -1242,35 +1243,23 @@ function TaxesModalContent() {
 
                     {/* Other Taxes */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Capital Gains Tax</div>
-                        <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                          {formatCurrency(calculation.capitalGainsTax.amount, activeProfile.country)}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Average rate: {calculation.capitalGainsTax.rate.toFixed(2)}%
-                        </div>
-                      </div>
+                      <ThemedStatBox
+                        themeColor={CARD_THEME_COLORS.taxes}
+                        value={formatCurrency(calculation.capitalGainsTax.amount, activeProfile.country)}
+                        label={`Capital Gains Tax (${calculation.capitalGainsTax.rate.toFixed(2)}%)`}
+                      />
 
-                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Dividend Tax</div>
-                        <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                          {formatCurrency(calculation.dividendTax.amount, activeProfile.country)}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Rate: {calculation.dividendTax.rate}%
-                        </div>
-                      </div>
+                      <ThemedStatBox
+                        themeColor={CARD_THEME_COLORS.taxes}
+                        value={formatCurrency(calculation.dividendTax.amount, activeProfile.country)}
+                        label={`Dividend Tax (${calculation.dividendTax.rate}%)`}
+                      />
 
-                      <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Social Security</div>
-                        <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
-                          {formatCurrency(calculation.socialSecurity.amount, activeProfile.country)}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Rate: {calculation.socialSecurity.rate}%
-                        </div>
-                      </div>
+                      <ThemedStatBox
+                        themeColor={CARD_THEME_COLORS.taxes}
+                        value={formatCurrency(calculation.socialSecurity.amount, activeProfile.country)}
+                        label={`Social Security (${calculation.socialSecurity.rate}%)`}
+                      />
 
                       <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                         <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">VAT/GST Rate</div>

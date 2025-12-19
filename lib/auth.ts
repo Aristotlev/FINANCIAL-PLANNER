@@ -27,6 +27,17 @@ export const auth = betterAuth({
 
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // Update session every 24 hours
+  },
+
+  user: {
+    // Include additional fields in the user object
+    additionalFields: {
+      image: {
+        type: "string",
+        required: false,
+      },
+    },
   },
 
   baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",

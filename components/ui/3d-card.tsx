@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useState, useContext, useRef, useEffect } from "react";
+import React, { createContext, useState, useContext, useRef, useEffect, useCallback } from "react";
 
 type MouseEnterContextType = [
   boolean,
@@ -24,12 +24,21 @@ export const CardContainer = ({
 }: CardContainerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMouseEntered, setIsMouseEntered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
 
   // Listen for drag events to disable 3D effects during dragging
   useEffect(() => {
-    const handleDragStart = () => setIsDragging(true);
-    const handleDragEnd = () => setIsDragging(false);
+    const handleDragStart = () => {
+      isDraggingRef.current = true;
+      // Reset transform immediately when drag starts
+      if (containerRef.current) {
+        containerRef.current.style.transform = 'rotateY(0deg) rotateX(0deg)';
+      }
+      setIsMouseEntered(false);
+    };
+    const handleDragEnd = () => {
+      isDraggingRef.current = false;
+    };
     
     window.addEventListener('cardDragStart', handleDragStart);
     window.addEventListener('cardDragEnd', handleDragEnd);
@@ -40,35 +49,37 @@ export const CardContainer = ({
     };
   }, []);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current || isDragging) return;
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Skip all processing if dragging - this is the key performance fix
+    if (!containerRef.current || isDraggingRef.current) return;
     
-    const { left, top, width, height } =
-      containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - left - width / 2) / 25;
-    const y = (e.clientY - top - height / 2) / 25;
+    const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - left - width / 2) / 8; // Enhanced sensitivity for more dramatic 3D tilt
+    const y = (e.clientY - top - height / 2) / 8;
     
+    // Apply transform directly without requestAnimationFrame for immediate response
     containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
-  };
+  }, []);
 
-  const handleMouseEnter = () => {
-    if (!isDragging) {
+  const handleMouseEnter = useCallback(() => {
+    if (!isDraggingRef.current) {
       setIsMouseEntered(true);
     }
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     if (!containerRef.current) return;
     setIsMouseEntered(false);
-    containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
-  };
+    containerRef.current.style.transform = 'rotateY(0deg) rotateX(0deg)';
+  }, []);
 
   return (
     <MouseEnterContext.Provider value={[isMouseEntered, setIsMouseEntered]}>
       <div
         className={containerClassName}
         style={{
-          perspective: "1000px",
+          perspective: "2000px", // Enhanced perspective for dramatic 3D depth
+          perspectiveOrigin: "50% 50%",
         }}
       >
         <div
@@ -76,9 +87,11 @@ export const CardContainer = ({
           onMouseEnter={handleMouseEnter}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className={`relative transition-all duration-200 ease-linear ${className || ""}`}
+          className={`relative ${className || ""}`}
           style={{
             transformStyle: "preserve-3d",
+            transition: "transform 0.15s ease-out", // Smooth transitions
+            willChange: "transform",
           }}
         >
           {children}
@@ -132,7 +145,14 @@ export const CardItem = ({
   return (
     <Tag
       ref={ref}
-      className={`transition-all duration-200 ease-linear ${className || ""}`}
+      className={`${className || ""}`}
+      style={{
+        transformStyle: "preserve-3d",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        transition: "transform 0.25s cubic-bezier(0.23, 1, 0.32, 1)",
+        willChange: "transform",
+      }}
       {...rest}
     >
       {children}

@@ -1,12 +1,17 @@
 /**
  * Voice pipeline endpoint
  * Receives audio → Gemini (transcribe + respond) → ElevenLabs TTS → stream back
+ * Protected by authentication and rate limiting
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { rateLimit, getClientIP, RateLimitConfigs } from "@/lib/rate-limit";
 
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY;
-const ELEVENLABS_API_KEY = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY;
+// ✅ SECURE: Server-side only environment variables
+const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 // Arabella voice - HARDCODED - professional, clear female voice perfect for financial analysis
 const ELEVENLABS_VOICE_ID = 'Z3R5wn05IrDiVCyEkUrK'; // Arabella (HARDCODED)
 
@@ -102,7 +107,44 @@ async function synthesizeWithElevenLabs(text: string): Promise<ReadableStream<Ui
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[VOICE] Processing voice request...');
+    // ✅ Authenticate user
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please sign in to use voice features' },
+        { status: 401 }
+      );
+    }
+
+    console.log('[VOICE] Processing authenticated request from user:', session.user.id);
+
+    // ✅ Rate limiting - Voice pipeline is very expensive
+    const headersList = await headers();
+    const identifier = session.user?.id || getClientIP(headersList);
+    const rateLimitResult = await rateLimit(identifier, RateLimitConfigs.AI_STRICT);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded. Please try again later.',
+          limit: rateLimitResult.limit,
+          remaining: rateLimitResult.remaining,
+          reset: new Date(rateLimitResult.reset).toISOString(),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
 
     if (!GEMINI_API_KEY) {
       return NextResponse.json(

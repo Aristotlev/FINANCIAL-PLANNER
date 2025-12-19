@@ -2,20 +2,54 @@
 
 import { supabase, isSupabaseConfigured } from './client';
 import { DataService } from '../data-service';
+import { authClient } from '../auth-client';
 
 /**
  * Enhanced Data Service with Supabase backend
  * Falls back to localStorage if Supabase is not configured
+ * 
+ * IMPORTANT: Uses Better Auth for user authentication, NOT Supabase Auth
  */
 export class SupabaseDataService {
   private static isConfigured = isSupabaseConfigured();
+  private static cachedUserId: string | null = null;
+  private static lastUserIdCheck: number = 0;
+  private static readonly USER_ID_CACHE_TTL = 30000; // 30 seconds
 
-  // Helper to get current user ID
+  // Helper to get current user ID from Better Auth (NOT Supabase Auth)
   private static async getUserId(): Promise<string | null> {
     if (!this.isConfigured) return null;
     
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id || null;
+    // Use cached user ID if still valid
+    const now = Date.now();
+    if (this.cachedUserId && (now - this.lastUserIdCheck) < this.USER_ID_CACHE_TTL) {
+      return this.cachedUserId;
+    }
+    
+    try {
+      // Get user from Better Auth session
+      const response = await authClient.getSession();
+      
+      if (response.data && 'user' in response.data && response.data.user) {
+        this.cachedUserId = response.data.user.id;
+        this.lastUserIdCheck = now;
+        return this.cachedUserId;
+      }
+      
+      // Clear cache if no user
+      this.cachedUserId = null;
+      this.lastUserIdCheck = now;
+      return null;
+    } catch (error) {
+      console.error('Error getting user ID from Better Auth:', error);
+      return null;
+    }
+  }
+  
+  // Clear cached user ID (call on logout)
+  static clearUserCache(): void {
+    this.cachedUserId = null;
+    this.lastUserIdCheck = 0;
   }
 
   // ==================== CASH ACCOUNTS ====================
@@ -262,6 +296,9 @@ export class SupabaseDataService {
       const mappedData = (data || []).map((holding: any) => ({
         ...holding,
         entryPoint: holding.purchase_price || 0,
+        walletType: holding.wallet_type,
+        walletName: holding.wallet_name,
+        walletAddress: holding.wallet_address,
       }));
       return mappedData;
     } catch (error) {
@@ -308,6 +345,9 @@ export class SupabaseDataService {
         amount: holding.amount,
         purchase_price: holding.entryPoint || 0,
         color: holding.color || '#f59e0b',
+        wallet_type: holding.walletType || 'other',
+        wallet_name: holding.walletName || null,
+        wallet_address: holding.walletAddress || null,
       };
       const { error } = await supabase
         .from('crypto_holdings')

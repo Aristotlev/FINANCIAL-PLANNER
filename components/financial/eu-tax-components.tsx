@@ -363,7 +363,7 @@ export function EUTaxBreakdown({
         <div className="space-y-4">
           {/* Pie Chart */}
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" debounce={100}>
               <PieChart>
                 <Pie
                   data={chartData}
@@ -374,12 +374,20 @@ export function EUTaxBreakdown({
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  isAnimationActive={false}
+                  animationDuration={0}
+                  animationBegin={0}
+                  style={{ outline: 'none' }}
                 >
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => formatCurrency(value, country)} />
+                <Tooltip 
+                  formatter={(value: number) => formatCurrency(value, country)} 
+                  isAnimationActive={false}
+                  animationDuration={0}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

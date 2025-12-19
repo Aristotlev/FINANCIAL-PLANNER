@@ -20,6 +20,7 @@ import { TbDiamond } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, ConditionalThemedStatBox, ThemedContainer, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { formatNumber } from "../../lib/utils";
 import { useCurrency } from "../../contexts/currency-context";
 
@@ -1106,24 +1107,27 @@ function ValuableItemsModalContent() {
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2 -mx-2 py-2 -my-2">
-              <div className="bg-lime-50 dark:bg-lime-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-lime-500/50 dark:hover:shadow-lime-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-lime-600">${formatNumber(totalValue)}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Current Value</div>
-              </div>
-              <div className={`p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer ${totalAppreciation >= 0 ? 'bg-green-50 dark:bg-green-900/20 hover:shadow-green-500/50 dark:hover:shadow-green-500/30' : 'bg-red-50 dark:bg-red-900/20 hover:shadow-red-500/50 dark:hover:shadow-red-500/30'}`}>
-                <div className={`text-2xl font-bold ${totalAppreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalAppreciation >= 0 ? '+' : ''}${formatNumber(totalAppreciation)}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Appreciation</div>
-              </div>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/50 dark:hover:shadow-yellow-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-yellow-600">${formatNumber(totalInsured)}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Insured Value</div>
-              </div>
-              <div className="bg-lime-50 dark:bg-lime-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-lime-500/50 dark:hover:shadow-lime-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-lime-600">{items.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Items</div>
-              </div>
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.valuableItems}
+                value={`$${formatNumber(totalValue)}`}
+                label="Current Value"
+              />
+              <ConditionalThemedStatBox
+                themeColor={CARD_THEME_COLORS.valuableItems}
+                value={`${totalAppreciation >= 0 ? '+' : ''}$${formatNumber(totalAppreciation)}`}
+                label="Appreciation"
+                valueType={totalAppreciation >= 0 ? 'positive' : 'negative'}
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.valuableItems}
+                value={`$${formatNumber(totalInsured)}`}
+                label="Insured Value"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.valuableItems}
+                value={items.length}
+                label="Total Items"
+              />
             </div>
           </div>
         )}

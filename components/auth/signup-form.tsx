@@ -214,13 +214,13 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
           />
           <label htmlFor="agree-terms" className="ml-2 text-sm text-gray-600 dark:text-gray-400">
             I agree to the{' '}
-            <button type="button" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+            <a href="/terms" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
               Terms of Service
-            </button>{' '}
+            </a>{' '}
             and{' '}
-            <button type="button" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+            <a href="/privacy" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
               Privacy Policy
-            </button>
+            </a>
           </label>
         </div>
 

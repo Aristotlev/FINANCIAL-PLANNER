@@ -13,17 +13,19 @@ export class TTSPreprocessor {
 
   /**
    * Initialize Gemini API for text preprocessing with robust model selection
+   * NOTE: This should only be called from server-side code (API routes)
    */
   private static async initialize() {
     if (this.genAI || this.initializationAttempted) return;
 
     this.initializationAttempted = true;
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY || '';
+    // ✅ Use server-side API key (no NEXT_PUBLIC_ prefix)
+    const apiKey = process.env.GOOGLE_AI_API_KEY || '';
     
     if (!apiKey || apiKey === 'your_gemini_api_key_here') {
       console.warn('⚠️ [TTS] Gemini API key not configured - using fallback preprocessing');
-      console.warn('📝 [TTS] Add NEXT_PUBLIC_GOOGLE_AI_API_KEY to .env.local for AI-powered TTS');
+      console.warn('📝 [TTS] Add GOOGLE_AI_API_KEY to .env.local for AI-powered TTS');
       return;
     }
 

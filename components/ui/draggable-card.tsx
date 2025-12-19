@@ -5,23 +5,27 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 
 let highestZIndex = 100; // Unclicked cards: 100-999, hovered: 5000-9999, dropdowns: 10000-19999, dragged: 20000+
 
+interface DraggableCardBodyProps {
+  children: React.ReactNode;
+  className?: string;
+  cardId?: string; // Optional card ID for hidden folder feature
+}
+
 export const DraggableCardBody = ({
   children,
   className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
+  cardId,
+}: DraggableCardBodyProps) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [zIndex, setZIndex] = useState(100);
   const [isHovering, setIsHovering] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
+  const positionRef = useRef({ x: 0, y: 0 });
   const startPos = useRef({ x: 0, y: 0 });
   const dragStartPos = useRef({ x: 0, y: 0 });
   const hasMoved = useRef(false);
-  const animationFrameId = useRef<number | null>(null);
-  const lastPosition = useRef({ x: 0, y: 0 });
+  const zoomLevelRef = useRef(1);
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Don't drag if clicking on interactive elements or the visual area
@@ -32,96 +36,153 @@ export const DraggableCardBody = ({
       return;
     }
     
-    // DON'T prevent default - it blocks HTML5 dragstart events!
-    // Text selection is prevented via CSS user-select: none
+    e.preventDefault();
+    e.stopPropagation();
     
-    // Bring this card to the ABSOLUTE TOP when dragging - use 20000+ range
-    // This puts them above everything: unclicked cards (100-999), hovered cards (5000-9999), 
-    // and even dropdowns/modals (10000-19999)
-    const dragZIndex = 20000 + Date.now() % 1000; // Ensures each drag gets unique high z-index
+    // Bring this card to the ABSOLUTE TOP when dragging
+    const dragZIndex = 20000 + Date.now() % 1000;
     setZIndex(dragZIndex);
     
     hasMoved.current = false;
     dragStartPos.current = { x: e.clientX, y: e.clientY };
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
     setIsDragging(true);
+    
+    // Get the cardId from window (set by DraggableCardWrapper) or from prop
+    const currentCardId = (window as any).__currentDragCard || cardId;
+    
+    // Dispatch drag start event to disable 3D effects
+    window.dispatchEvent(new CustomEvent('cardDragStart', { detail: { cardId: currentCardId } }));
     
     // Get zoom level from the dashboard container's transform scale
     const dashboardContainer = document.querySelector('[data-dashboard-zoom-container]') as HTMLElement;
-    let zoomLevel = 1;
+    zoomLevelRef.current = 1;
     if (dashboardContainer) {
       const transform = dashboardContainer.style.transform;
       const scaleMatch = transform.match(/scale\(([0-9.]+)\)/);
       if (scaleMatch) {
-        zoomLevel = parseFloat(scaleMatch[1]);
+        zoomLevelRef.current = parseFloat(scaleMatch[1]);
       }
     }
     
-    // Store zoom level for use in other handlers
-    (dragRef.current as any)._zoomLevel = zoomLevel;
-    
-    // Account for zoom level when setting start position
+    // Store offset from mouse to card position (accounts for where user clicked on the card)
     startPos.current = {
-      x: e.clientX / zoomLevel - position.x,
-      y: e.clientY / zoomLevel - position.y,
+      x: e.clientX / zoomLevelRef.current - positionRef.current.x,
+      y: e.clientY / zoomLevelRef.current - positionRef.current.y,
     };
     
     // Force immediate z-index update on the DOM element
     if (dragRef.current) {
       dragRef.current.style.zIndex = String(dragZIndex);
     }
-  }, [position.x, position.y]);
+  }, [cardId]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || !dragRef.current) return;
     
-    // Use requestAnimationFrame for smooth 60fps updates
-    if (animationFrameId.current) {
-      cancelAnimationFrame(animationFrameId.current);
+    // Track mouse position for drop detection
+    lastMousePos.current = { x: e.clientX, y: e.clientY };
+    
+    // Check if mouse has moved more than 5px (threshold for drag vs click)
+    const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
+    const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
+    
+    if (deltaX > 5 || deltaY > 5) {
+      hasMoved.current = true;
     }
     
-    animationFrameId.current = requestAnimationFrame(() => {
-      // Check if mouse has moved more than 5px (threshold for drag vs click)
-      const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
-      const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
-      
-      if (deltaX > 5 || deltaY > 5) {
-        hasMoved.current = true;
+    // Calculate new position accounting for zoom
+    const newX = e.clientX / zoomLevelRef.current - startPos.current.x;
+    const newY = e.clientY / zoomLevelRef.current - startPos.current.y;
+    
+    // Update position ref and apply transform directly to DOM (no React state = no lag)
+    positionRef.current = { x: newX, y: newY };
+    dragRef.current.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+    
+    // Check if over the hidden folder dropdown and dispatch event
+    const hiddenFolderDropdown = document.querySelector('[data-hidden-folder-dropdown]');
+    const hiddenFolderButton = document.querySelector('[data-hidden-folder-button]');
+    
+    let isOverDropTarget = false;
+    
+    if (hiddenFolderDropdown) {
+      const rect = hiddenFolderDropdown.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right && 
+          e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        isOverDropTarget = true;
       }
-      
-      // Get the stored zoom level from when drag started
-      const zoomLevel = (dragRef.current as any)?._zoomLevel || 1;
-      
-      // Account for zoom level when calculating new position
-      const newX = e.clientX / zoomLevel - startPos.current.x;
-      const newY = e.clientY / zoomLevel - startPos.current.y;
-      
-      // Only update if position actually changed (avoid unnecessary renders)
-      if (newX !== lastPosition.current.x || newY !== lastPosition.current.y) {
-        lastPosition.current = { x: newX, y: newY };
-        setPosition({ x: newX, y: newY });
+    }
+    
+    if (hiddenFolderButton) {
+      const rect = hiddenFolderButton.getBoundingClientRect();
+      if (e.clientX >= rect.left && e.clientX <= rect.right && 
+          e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        isOverDropTarget = true;
       }
-    });
-  }, [isDragging]);
+    }
+    
+    // Get cardId from window or prop
+    const currentCardId = (window as any).__currentDragCard || cardId;
+    
+    // Dispatch hover event for the hidden folder to react
+    window.dispatchEvent(new CustomEvent('cardDragMove', { 
+      detail: { cardId: currentCardId, x: e.clientX, y: e.clientY, isOverDropTarget } 
+    }));
+  }, [isDragging, cardId]);
 
   const handleMouseUp = useCallback(() => {
-    if (animationFrameId.current) {
-      cancelAnimationFrame(animationFrameId.current);
-      animationFrameId.current = null;
+    // Check if we dropped over the hidden folder
+    const hiddenFolderDropdown = document.querySelector('[data-hidden-folder-dropdown]');
+    const hiddenFolderButton = document.querySelector('[data-hidden-folder-button]');
+    
+    let droppedOnHiddenFolder = false;
+    const { x, y } = lastMousePos.current;
+    
+    if (hiddenFolderDropdown) {
+      const rect = hiddenFolderDropdown.getBoundingClientRect();
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        droppedOnHiddenFolder = true;
+      }
     }
+    
+    if (hiddenFolderButton) {
+      const rect = hiddenFolderButton.getBoundingClientRect();
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        droppedOnHiddenFolder = true;
+      }
+    }
+    
+    // Get cardId from window or prop
+    const currentCardId = (window as any).__currentDragCard || cardId;
+    
+    if (droppedOnHiddenFolder && currentCardId && hasMoved.current) {
+      // Dispatch event to hide the card
+      window.dispatchEvent(new CustomEvent('hideCardRequest', { detail: { cardId: currentCardId } }));
+      
+      // Reset position since card will be hidden
+      positionRef.current = { x: 0, y: 0 };
+      if (dragRef.current) {
+        dragRef.current.style.transform = 'translate3d(0px, 0px, 0)';
+      }
+    }
+    
     setIsDragging(false);
+    // Clear the current drag card
+    (window as any).__currentDragCard = null;
+    
+    // Dispatch drag end event to re-enable 3D effects
+    window.dispatchEvent(new CustomEvent('cardDragEnd', { detail: { cardId: currentCardId } }));
     // After drag ends, lower z-index back to hover range (5000+) so dropdowns can appear above
     highestZIndex = Math.max(highestZIndex + 1, 5000);
     setZIndex(highestZIndex);
-  }, []);
+  }, [cardId]);
 
   const handleMouseEnter = useCallback(() => {
     setIsHovering(true);
     // Bring card forward when hovering, but keep in clicked card range (5000+) for hologram visibility
-    // This ensures it's above unclicked cards but still below dropdowns
     if (!isDragging) {
       highestZIndex = Math.max(highestZIndex + 1, 5000);
       setZIndex(highestZIndex);
-      // Force immediate z-index update on the DOM element
       if (dragRef.current) {
         dragRef.current.style.zIndex = String(highestZIndex);
       }
@@ -135,9 +196,12 @@ export const DraggableCardBody = ({
   // Listen for reset event
   useEffect(() => {
     const handleReset = () => {
-      setPosition({ x: 0, y: 0 });
+      positionRef.current = { x: 0, y: 0 };
+      if (dragRef.current) {
+        dragRef.current.style.transform = 'translate3d(0px, 0px, 0)';
+      }
       setZIndex(100);
-      highestZIndex = 5000; // Reset to start of hover range
+      highestZIndex = 5000;
     };
 
     window.addEventListener('resetCardPositions', handleReset);
@@ -148,21 +212,19 @@ export const DraggableCardBody = ({
 
   useEffect(() => {
     if (isDragging) {
-      // Use passive: false for better performance on touch devices
-      document.addEventListener("mousemove", handleMouseMove, { passive: true });
-      document.addEventListener("mouseup", handleMouseUp, { passive: true });
+      // Use capture phase for faster event handling
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       document.body.style.userSelect = "none";
       document.body.style.cursor = "grabbing";
       
-      // Disable pointer events on other cards to prevent hover effects
-      if (dragRef.current) {
-        const allCards = document.querySelectorAll('[data-card]');
-        allCards.forEach((card) => {
-          if (card !== dragRef.current?.closest('[data-card]')) {
-            (card as HTMLElement).style.pointerEvents = 'none';
-          }
-        });
-      }
+      // Disable pointer events on other cards to prevent hover effects during drag
+      const allCards = document.querySelectorAll('[data-card]');
+      allCards.forEach((card) => {
+        if (card !== dragRef.current) {
+          (card as HTMLElement).style.pointerEvents = 'none';
+        }
+      });
     } else {
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
@@ -179,10 +241,6 @@ export const DraggableCardBody = ({
       document.removeEventListener("mouseup", handleMouseUp);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
-      
-      if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-      }
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
@@ -200,15 +258,14 @@ export const DraggableCardBody = ({
       style={{
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+        transform: `translate3d(${positionRef.current.x}px, ${positionRef.current.y}px, 0)`,
         transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         zIndex: zIndex,
         position: "relative",
-        isolation: "isolate", // Creates a new stacking context
+        isolation: "isolate",
         willChange: isDragging ? "transform" : "auto",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
-        WebkitTransform: `translate3d(${position.x}px, ${position.y}px, 0)`,
       }}
     >
       {children}

@@ -1,24 +1,24 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell
 } from "recharts";
-import { Coins, Plus, Search, X, Edit3, Trash2, TrendingUp, DollarSign, RefreshCw } from "lucide-react";
-import { 
-  SiBitcoin, 
-  SiEthereum, 
-  SiCardano, 
-  SiPolkadot, 
+import { Coins, Plus, Search, X, Edit3, Trash2, TrendingUp, DollarSign, RefreshCw, Percent, ArrowDownLeft } from "lucide-react";
+import {
+  SiBitcoin,
+  SiEthereum,
+  SiCardano,
+  SiPolkadot,
   SiSolana,
   SiChainlink,
   SiPolygon,
@@ -72,19 +72,23 @@ import {
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
+import { ThemedStatBox, ConditionalThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { useAssetPrices } from "../../hooks/use-price";
 import { formatNumber } from "../../lib/utils";
 import { usePortfolioContext } from "../../contexts/portfolio-context";
-import { useTechnicalAnalysis } from "../../hooks/use-technical-analysis";
-import { BarChart3 } from "lucide-react";
 import { AIRebalancing } from "../ui/ai-rebalancing";
+import { SellPositionModal } from "../ui/sell-position-modal";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, LargeDualCurrency } from "../ui/dual-currency-display";
+import { CRYPTO_WALLETS, getDeFiWallets, getCeFiWallets, getWalletById } from "../../lib/crypto-wallets-database";
+import { PortfolioWalletPieChartV2 } from "../ui/portfolio-wallet-pie-chart-v2";
+import { CryptoAPYCalculator } from "../ui/crypto-apy-calculator";
+import { Wallet } from "lucide-react";
 
 // Crypto Icon Component - Binance style
 function CryptoIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
   if (!symbol) return <TbCoin className={className} />;
-  
+
   switch (symbol.toUpperCase()) {
     case 'BTC':
     case 'BTCUSD':
@@ -180,6 +184,9 @@ interface CryptoHolding {
   color: string;
   change: string;
   entryPoint: number;
+  walletType?: string;
+  walletName?: string;
+  walletAddress?: string;
 }
 
 interface SearchResult {
@@ -189,84 +196,84 @@ interface SearchResult {
 }
 
 const initialCryptoHoldings: CryptoHolding[] = [
-  { 
+  {
     id: '1',
-    name: 'Bitcoin', 
-    symbol: 'BTC', 
-    amount: 0.75, 
-    value: 18500, 
-    color: '#f59e0b', 
-    change: '+5.2%', 
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    amount: 0.75,
+    value: 18500,
+    color: '#f59e0b',
+    change: '+5.2%',
     entryPoint: 24000
   },
-  { 
+  {
     id: '2',
-    name: 'Ethereum', 
-    symbol: 'ETH', 
-    amount: 6.2, 
-    value: 10250, 
-    color: '#fbbf24', 
-    change: '+7.1%', 
+    name: 'Ethereum',
+    symbol: 'ETH',
+    amount: 6.2,
+    value: 10250,
+    color: '#3316c5',
+    change: '+7.1%',
     entryPoint: 1650
   },
-  { 
+  {
     id: '3',
-    name: 'Cardano', 
-    symbol: 'ADA', 
-    amount: 1250, 
-    value: 312.50, 
-    color: '#f59e0b', 
-    change: '-2.3%', 
+    name: 'Cardano',
+    symbol: 'ADA',
+    amount: 1250,
+    value: 312.50,
+    color: '#f59e0b',
+    change: '-2.3%',
     entryPoint: 0.30
   },
-  { 
+  {
     id: '4',
-    name: 'Polkadot', 
-    symbol: 'DOT', 
-    amount: 125, 
-    value: 687.50, 
-    color: '#fbbf24', 
-    change: '+12.7%', 
+    name: 'Polkadot',
+    symbol: 'DOT',
+    amount: 125,
+    value: 687.50,
+    color: '#fbbf24',
+    change: '+12.7%',
     entryPoint: 5.20
   },
-  { 
+  {
     id: '5',
-    name: 'Chainlink', 
-    symbol: 'LINK', 
-    amount: 85, 
-    value: 1020, 
-    color: '#f59e0b', 
-    change: '+8.9%', 
+    name: 'Chainlink',
+    symbol: 'LINK',
+    amount: 85,
+    value: 1020,
+    color: '#f59e0b',
+    change: '+8.9%',
     entryPoint: 12.00
   },
-  { 
+  {
     id: '6',
-    name: 'Solana', 
-    symbol: 'SOL', 
-    amount: 15.5, 
-    value: 465, 
-    color: '#fbbf24', 
-    change: '+15.3%', 
+    name: 'Solana',
+    symbol: 'SOL',
+    amount: 15.5,
+    value: 465,
+    color: '#fbbf24',
+    change: '+15.3%',
     entryPoint: 30.00
   },
-  { 
+  {
     id: '7',
-    name: 'USD Coin', 
-    symbol: 'USDC', 
-    amount: 5000, 
-    value: 5000, 
-    color: '#10b981', 
-    change: '0.0%', 
+    name: 'USD Coin',
+    symbol: 'USDC',
+    amount: 5000,
+    value: 5000,
+    color: '#10b981',
+    change: '0.0%',
     entryPoint: 1.00
   },
-  { 
+  {
     id: '8',
-    name: 'Tether', 
-    symbol: 'USDT', 
-    amount: 3500, 
-    value: 3500, 
-    color: '#06b6d4', 
-    change: '0.0%', 
+    name: 'Tether',
+    symbol: 'USDT',
+    amount: 3500,
+    value: 3500,
+    color: '#06b6d4',
+    change: '0.0%',
     entryPoint: 1.00
   }
 ];
@@ -326,12 +333,12 @@ const cryptoHistory = [
 const DEFAULT_COLORS = ['#f59e0b', '#fbbf24', '#10b981', '#06b6d4', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6'];
 
 // Add Position Modal Component
-function AddPositionModal({ 
-  isOpen, 
-  onClose, 
-  onAdd 
-}: { 
-  isOpen: boolean; 
+function AddPositionModal({
+  isOpen,
+  onClose,
+  onAdd
+}: {
+  isOpen: boolean;
   onClose: () => void;
   onAdd: (holding: Omit<CryptoHolding, 'id' | 'value' | 'change'>) => void;
 }) {
@@ -340,8 +347,11 @@ function AddPositionModal({
   const [amount, setAmount] = useState('');
   const [entryPoint, setEntryPoint] = useState('');
   const [color, setColor] = useState('#f59e0b');
+  const [walletType, setWalletType] = useState('other');
+  const [walletName, setWalletName] = useState('');
+  const [showWalletOptions, setShowWalletOptions] = useState(false);
 
-  const filteredCryptos = popularCryptos.filter(crypto => 
+  const filteredCryptos = popularCryptos.filter(crypto =>
     crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -353,7 +363,9 @@ function AddPositionModal({
         symbol: selectedCrypto.symbol,
         amount: parseFloat(amount),
         entryPoint: parseFloat(entryPoint),
-        color: color
+        color: color,
+        walletType: walletType,
+        walletName: walletName || undefined
       });
       onClose();
       setSearchTerm('');
@@ -361,6 +373,8 @@ function AddPositionModal({
       setAmount('');
       setEntryPoint('');
       setColor('#f59e0b');
+      setWalletType('other');
+      setWalletName('');
     }
   };
 
@@ -465,6 +479,99 @@ function AddPositionModal({
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Select a color for pie charts and visualizations</p>
         </div>
 
+        {/* Wallet Selection */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-200 flex items-center gap-2">
+              <Wallet className="w-4 h-4" />
+              Wallet
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowWalletOptions(!showWalletOptions)}
+              className="text-xs text-orange-600 dark:text-orange-400 hover:underline"
+            >
+              {showWalletOptions ? 'Hide' : 'Show'} Options
+            </button>
+          </div>
+
+          {!showWalletOptions ? (
+            <select
+              value={walletType}
+              onChange={(e) => setWalletType(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:text-white"
+            >
+              <option value="other">Other Wallet</option>
+              <optgroup label="🔷 DeFi Wallets">
+                {getDeFiWallets().slice(0, -1).map(wallet => (
+                  <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="🏦 CeFi Exchanges">
+                {getCeFiWallets().map(wallet => (
+                  <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
+                ))}
+              </optgroup>
+            </select>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+                {CRYPTO_WALLETS.filter(w => w.id !== 'other').map(wallet => {
+                  const isSelected = walletType === wallet.id;
+                  return (
+                    <button
+                      key={wallet.id}
+                      type="button"
+                      onClick={() => setWalletType(wallet.id)}
+                      className={`p-2 rounded-lg text-left transition-all ${isSelected
+                        ? 'bg-orange-100 dark:bg-orange-900 border-2 border-orange-500'
+                        : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded"
+                          style={{ backgroundColor: wallet.color }}
+                        />
+                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {wallet.name}
+                        </span>
+                      </div>
+                      <div className={`text-xs mt-1 px-1.5 py-0.5 rounded inline-block ${wallet.type === 'defi'
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                        }`}>
+                        {wallet.type === 'defi' ? 'DeFi' : 'CeFi'}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Selected Wallet Info */}
+          {walletType && walletType !== 'other' && (
+            <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
+              {getWalletById(walletType)?.description}
+            </div>
+          )}
+
+          {/* Optional Custom Wallet Name */}
+          <div className="mt-3">
+            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+              Custom Name (Optional)
+            </label>
+            <input
+              type="text"
+              value={walletName}
+              onChange={(e) => setWalletName(e.target.value)}
+              placeholder="e.g., Main Wallet, Trading Wallet"
+              className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+            />
+          </div>
+        </div>
+
         {/* Buttons */}
         <div className="flex gap-3">
           <button
@@ -487,13 +594,13 @@ function AddPositionModal({
 }
 
 // Edit Position Modal Component
-function EditPositionModal({ 
-  isOpen, 
-  onClose, 
+function EditPositionModal({
+  isOpen,
+  onClose,
   holding,
-  onUpdate 
-}: { 
-  isOpen: boolean; 
+  onUpdate
+}: {
+  isOpen: boolean;
   onClose: () => void;
   holding: CryptoHolding | null;
   onUpdate: (id: string, updates: Partial<CryptoHolding>) => void;
@@ -501,12 +608,16 @@ function EditPositionModal({
   const [amount, setAmount] = useState('');
   const [entryPoint, setEntryPoint] = useState('');
   const [color, setColor] = useState('#f59e0b');
+  const [walletType, setWalletType] = useState('other');
+  const [walletName, setWalletName] = useState('');
 
   useEffect(() => {
     if (holding) {
       setAmount(holding.amount !== undefined ? holding.amount.toString() : '');
       setEntryPoint(holding.entryPoint !== undefined ? holding.entryPoint.toString() : '');
       setColor(holding.color || '#f59e0b');
+      setWalletType(holding.walletType || 'other');
+      setWalletName(holding.walletName || '');
     }
   }, [holding]);
 
@@ -515,7 +626,9 @@ function EditPositionModal({
       await onUpdate(holding.id, {
         amount: parseFloat(amount),
         entryPoint: parseFloat(entryPoint),
-        color: color
+        color: color,
+        walletType: walletType,
+        walletName: walletName || undefined
       });
       onClose();
     }
@@ -584,6 +697,38 @@ function EditPositionModal({
           </p>
         </div>
 
+        {/* Wallet Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200 flex items-center gap-2">
+            <Wallet className="w-4 h-4" />
+            Wallet
+          </label>
+          <select
+            value={walletType}
+            onChange={(e) => setWalletType(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:text-white mb-2"
+          >
+            <option value="other">Other Wallet</option>
+            <optgroup label="🔷 DeFi Wallets">
+              {getDeFiWallets().slice(0, -1).map(wallet => (
+                <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
+              ))}
+            </optgroup>
+            <optgroup label="🏦 CeFi Exchanges">
+              {getCeFiWallets().map(wallet => (
+                <option key={wallet.id} value={wallet.id}>{wallet.name}</option>
+              ))}
+            </optgroup>
+          </select>
+          <input
+            type="text"
+            value={walletName}
+            onChange={(e) => setWalletName(e.target.value)}
+            placeholder="Custom name (optional)"
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+          />
+        </div>
+
         {/* Buttons */}
         <div className="flex gap-3">
           <button
@@ -611,7 +756,11 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-  if (percent < 0.01) return null; // Don't show labels for very small slices (less than 1%)
+  // Don't show labels for very small slices (less than 1%) or placeholder slices
+  if (percent < 0.01 || !name) return null;
+
+  // Display 100% instead of 99.99% for single-item scenarios
+  const displayPercent = percent >= 0.999 ? 100 : (percent * 100);
 
   return (
     <text
@@ -628,7 +777,7 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
         '--label-color': fill
       } as React.CSSProperties}
     >
-      {name} {(percent * 100).toFixed(1)}%
+      {name} {displayPercent.toFixed(1)}%
     </text>
   );
 };
@@ -645,15 +794,17 @@ interface CryptoTransaction {
 }
 
 function CryptoModalContent() {
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'transactions' | 'analysis'>('portfolio');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'transactions' | 'analysis' | 'apy'>('portfolio');
   const { cryptoHoldings, setCryptoHoldings } = usePortfolioContext();
+  const { formatMain } = useCurrencyConversion();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingHolding, setEditingHolding] = useState<CryptoHolding | null>(null);
   const [colorPickerHolding, setColorPickerHolding] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<CryptoTransaction[]>([]);
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [sellingHolding, setSellingHolding] = useState<CryptoHolding | null>(null);
   const isInitialMount = useRef(true);
-  const { openTechnicalAnalysis, TechnicalAnalysisComponent } = useTechnicalAnalysis();
 
   // Load data on component mount
   useEffect(() => {
@@ -662,15 +813,15 @@ function CryptoModalContent() {
       setCryptoHoldings(savedHoldings);
     };
     loadHoldings();
-    
+
     // Transactions removed from localStorage - using Supabase only
     // This prevents console spam from continuous localStorage access
-    
+
     // Listen for data changes from AI or other components
     const handleDataChange = () => loadHoldings();
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
-    
+
     return () => {
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);
@@ -691,7 +842,7 @@ function CryptoModalContent() {
     const value = newHolding.amount * currentPrice;
     const changePercent = ((currentPrice - newHolding.entryPoint) / newHolding.entryPoint * 100);
     const change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
-    
+
     const holding: CryptoHolding = {
       ...newHolding,
       id,
@@ -701,12 +852,12 @@ function CryptoModalContent() {
 
     // Save to database first
     await SupabaseDataService.saveCryptoHolding(holding);
-    
+
     setCryptoHoldings([...cryptoHoldings, holding]);
-    
+
     // Notify other components that crypto data changed
     window.dispatchEvent(new Event('cryptoDataChanged'));
-    
+
     // Record transaction
     const transaction: CryptoTransaction = {
       id: Date.now().toString(),
@@ -718,7 +869,7 @@ function CryptoModalContent() {
       totalValue: newHolding.amount * newHolding.entryPoint,
       date: new Date().toISOString()
     };
-    
+
     const updatedTransactions = [transaction, ...transactions];
     setTransactions(updatedTransactions);
     // Removed localStorage - using Supabase only
@@ -738,13 +889,13 @@ function CryptoModalContent() {
       }
       return holding;
     });
-    
+
     // Save to database immediately
     const updatedHolding = updatedHoldings.find(h => h.id === id);
     if (updatedHolding) {
       await SupabaseDataService.saveCryptoHolding(updatedHolding);
     }
-    
+
     setCryptoHoldings(updatedHoldings);
     // Notify other components that crypto data changed
     window.dispatchEvent(new Event('cryptoDataChanged'));
@@ -752,7 +903,7 @@ function CryptoModalContent() {
 
   const deleteHolding = async (id: string) => {
     const holding = cryptoHoldings.find((h: CryptoHolding) => h.id === id);
-    
+
     if (holding) {
       // Record sell transaction
       const currentPriceData = prices[holding.symbol];
@@ -767,12 +918,12 @@ function CryptoModalContent() {
         totalValue: holding.amount * currentPrice,
         date: new Date().toISOString()
       };
-      
+
       const updatedTransactions = [transaction, ...transactions];
       setTransactions(updatedTransactions);
       // Removed localStorage - using Supabase only
     }
-    
+
     await SupabaseDataService.deleteCryptoHolding(id);
     const updatedHoldings = cryptoHoldings.filter((holding: CryptoHolding) => holding.id !== id);
     setCryptoHoldings(updatedHoldings);
@@ -780,30 +931,137 @@ function CryptoModalContent() {
     window.dispatchEvent(new Event('cryptoDataChanged'));
   };
 
-  // Update holdings with real-time prices
-  const updatedHoldings = cryptoHoldings.map(holding => {
-    const currentPriceData = prices[holding.symbol];
-    if (currentPriceData) {
-      const currentPrice = currentPriceData.price;
-      const value = holding.amount * currentPrice;
-      const changePercent = ((currentPrice - holding.entryPoint) / holding.entryPoint * 100);
-      const change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
-      
-      return {
-        ...holding,
-        value,
-        change
-      };
-    }
-    return holding;
-  });
+  const sellHolding = async (holdingId: string, sellAmount: number, destination: any) => {
+    const holding = cryptoHoldings.find((h: CryptoHolding) => h.id === holdingId);
+    if (!holding) return;
 
-  const totalValue = updatedHoldings.reduce((sum, holding) => sum + holding.value, 0);
-  const totalGainLoss = updatedHoldings.reduce((sum, holding) => {
     const currentPrice = prices[holding.symbol]?.price || holding.entryPoint;
-    const costBasis = holding.amount * holding.entryPoint;
-    return sum + (holding.value - costBasis);
-  }, 0);
+    const proceeds = sellAmount * currentPrice;
+
+    // Update or delete the holding
+    if (sellAmount >= holding.amount) {
+      // Selling entire position
+      await SupabaseDataService.deleteCryptoHolding(holdingId);
+    } else {
+      // Selling partial position
+      const updatedHolding = {
+        ...holding,
+        amount: holding.amount - sellAmount
+      };
+      await SupabaseDataService.saveCryptoHolding(updatedHolding);
+    }
+
+    // Handle destination
+    if (destination.type === 'stablecoin') {
+      // Find or create stablecoin holding
+      const stablecoinHolding = cryptoHoldings.find((h: CryptoHolding) =>
+        h.symbol === destination.symbol
+      );
+
+      if (stablecoinHolding) {
+        // Add to existing stablecoin
+        const updatedStablecoin = {
+          ...stablecoinHolding,
+          amount: stablecoinHolding.amount + proceeds
+        };
+        await SupabaseDataService.saveCryptoHolding(updatedStablecoin);
+      } else {
+        // Create new stablecoin holding
+        const newStablecoin: CryptoHolding = {
+          id: Date.now().toString(),
+          symbol: destination.symbol,
+          name: destination.symbol === 'USDT' ? 'Tether' :
+            destination.symbol === 'USDC' ? 'USD Coin' :
+              destination.symbol === 'DAI' ? 'Dai' : 'Binance USD',
+          amount: proceeds,
+          entryPoint: 1.0,
+          value: proceeds,
+          change: '+0.00%',
+          color: '#10b981'
+        };
+        await SupabaseDataService.saveCryptoHolding(newStablecoin);
+      }
+    } else if (destination.type === 'bank') {
+      // Transfer to bank account
+      const accounts = await SupabaseDataService.getCashAccounts([]);
+      const account = accounts.find((a: any) => a.id === destination.id);
+      if (account) {
+        const updatedAccount = {
+          ...account,
+          balance: account.balance + proceeds
+        };
+        await SupabaseDataService.saveCashAccount(updatedAccount);
+      }
+    } else if (destination.type === 'savings') {
+      // Transfer to savings goal
+      const goals = await SupabaseDataService.getSavingsAccounts([]);
+      const goal = goals.find((g: any) => g.id === destination.id);
+      if (goal) {
+        const updatedGoal = {
+          ...goal,
+          currentAmount: goal.currentAmount + proceeds
+        };
+        await SupabaseDataService.saveSavingsAccount(updatedGoal);
+      }
+    }
+
+    // Record transaction
+    const transaction: CryptoTransaction = {
+      id: Date.now().toString(),
+      type: 'sell',
+      symbol: holding.symbol,
+      name: holding.name,
+      amount: sellAmount,
+      pricePerUnit: currentPrice,
+      totalValue: proceeds,
+      date: new Date().toISOString()
+    };
+
+    const updatedTransactions = [transaction, ...transactions];
+    setTransactions(updatedTransactions);
+
+    // Refresh data
+    const savedHoldings = await SupabaseDataService.getCryptoHoldings([]);
+    setCryptoHoldings(savedHoldings);
+
+    // Notify other components
+    window.dispatchEvent(new Event('cryptoDataChanged'));
+    window.dispatchEvent(new Event('financialDataChanged'));
+  };
+
+  // Update holdings with real-time prices - MEMOIZED to prevent glitchy re-renders
+  const updatedHoldings = useMemo(() => {
+    return cryptoHoldings.map(holding => {
+      const currentPriceData = prices[holding.symbol];
+      if (currentPriceData) {
+        const currentPrice = currentPriceData.price;
+        const value = holding.amount * currentPrice;
+        const changePercent = ((currentPrice - holding.entryPoint) / holding.entryPoint * 100);
+        const change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+
+        return {
+          ...holding,
+          value,
+          change
+        };
+      }
+      return holding;
+    });
+  }, [cryptoHoldings, prices]);
+
+  // Memoize calculations to prevent unnecessary re-renders
+  const totalValue = useMemo(() =>
+    updatedHoldings.reduce((sum, holding) => sum + holding.value, 0)
+    , [updatedHoldings]);
+
+  const totalGainLoss = useMemo(() =>
+    updatedHoldings.reduce((sum, holding) => {
+      const currentPrice = prices[holding.symbol]?.price || holding.entryPoint;
+      const costBasis = holding.amount * holding.entryPoint;
+      return sum + (holding.value - costBasis);
+    }, 0)
+    , [updatedHoldings, prices]);
+
   const totalReturn = totalValue > 0 ? (totalGainLoss / (totalValue - totalGainLoss)) * 100 : 0;
 
   // Calculate exact percentages for pie chart - memoized to prevent glitchy re-renders
@@ -811,8 +1069,8 @@ function CryptoModalContent() {
     if (updatedHoldings.length === 0 || totalValue === 0) {
       return [];
     }
-    
-    return updatedHoldings
+
+    const allocation = updatedHoldings
       .filter(holding => holding.value > 0)
       .map(h => ({
         id: h.id,
@@ -822,7 +1080,9 @@ function CryptoModalContent() {
         actualValue: h.value,
         color: h.color || '#f59e0b'
       }));
-  }, [updatedHoldings, totalValue, prices]);
+
+    return allocation;
+  }, [updatedHoldings, totalValue]);
 
   return (
     <div className="p-6">
@@ -833,23 +1093,23 @@ function CryptoModalContent() {
             {[
               { id: 'portfolio', label: 'Portfolio', icon: Coins },
               { id: 'transactions', label: 'Transactions', icon: TrendingUp },
-              { id: 'analysis', label: 'Analysis', icon: DollarSign }
+              { id: 'analysis', label: 'Analysis', icon: DollarSign },
+              { id: 'apy', label: 'APY Calculator', icon: Percent }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id as any)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === id
-                    ? 'border-orange-500 text-orange-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${activeTab === id
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {label}
               </button>
             ))}
           </div>
-          
+
           {activeTab === 'portfolio' && (
             <button
               onClick={() => setShowAddModal(true)}
@@ -876,58 +1136,69 @@ function CryptoModalContent() {
                     </div>
                   </div>
                 ) : pieChartData.length > 0 ? (
-                  <div className="relative" style={{ overflow: 'visible', padding: '20px', paddingTop: '10px', zIndex: 10, height: '300px' }}>
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="relative [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100" style={{ height: '300px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%" debounce={200}>
                       <PieChart>
-                      <Pie
-                        data={pieChartData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={CustomPieLabel}
-                        outerRadius={70}
-                        innerRadius={0}
-                        fill="#8884d8"
-                        dataKey="value"
-                        isAnimationActive={false}
-                        paddingAngle={2}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {pieChartData.map((entry) => (
-                          <Cell 
-                            key={`cell-${entry.id}`} 
-                            fill={entry.color}
-                            style={{ cursor: 'pointer' }}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
+                        <Pie
+                          data={pieChartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={false}
+                          outerRadius={70}
+                          innerRadius={0}
+                          fill="#8884d8"
+                          dataKey="value"
+                          isAnimationActive={false}
+                          animationDuration={0}
+                          animationBegin={0}
+                          animationEasing="linear"
+                          paddingAngle={0}
+                          startAngle={90}
+                          endAngle={-270}
+                          activeShape={false as any}
+                        >
+                          {pieChartData.map((entry) => (
+                            <Cell
+                              key={`cell-${entry.id}`}
+                              fill={entry.color}
+                              stroke={pieChartData.length > 1 ? "#fff" : "none"}
+                              strokeWidth={pieChartData.length > 1 ? 2 : 0}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          isAnimationActive={false}
+                          animationDuration={0}
+                          trigger="hover"
+                          wrapperStyle={{ zIndex: 50, pointerEvents: 'none', visibility: 'visible' }}
+                          allowEscapeViewBox={{ x: true, y: true }}
+                          content={(props) => {
+                            const { active, payload } = props;
+                            if (!active || !payload || !payload.length) return null;
                             const data = payload[0];
+                            const displayPercent = pieChartData.length === 1 ? 100 : Number(data.value);
                             return (
-                              <div 
-                                className="bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
-                                style={{ zIndex: 10000 }}
+                              <div
+                                className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-2xl border-2 border-orange-200 dark:border-orange-700"
+                                style={{ boxShadow: '0 10px 40px rgba(249, 115, 22, 0.3), 0 4px 20px rgba(0,0,0,0.15)', pointerEvents: 'none' }}
                               >
-                                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <p className="text-sm font-bold text-gray-900 dark:text-white">
                                   {data.name}
                                 </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                                   {data.payload.symbol}
                                 </p>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                  {Number(data.value).toFixed(1)}% • ${formatNumber(data.payload.actualValue)}
+                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">
+                                  {displayPercent.toFixed(1)}% • {formatMain(data.payload.actualValue)}
                                 </p>
                               </div>
                             );
-                          }
-                          return null;
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 ) : cryptoHoldings.length > 0 ? (
                   <div className="flex items-center justify-center text-gray-500 dark:text-gray-400" style={{ height: '300px' }}>
                     <div className="text-center">
@@ -952,7 +1223,7 @@ function CryptoModalContent() {
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Holdings Details</h3>
                 <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
                   {loading && <div className="text-center text-gray-500 dark:text-gray-400">Loading prices...</div>}
-                  {updatedHoldings.sort((a, b) => b.value - a.value).map((holding, index) => (
+                  {[...updatedHoldings].sort((a, b) => b.value - a.value).map((holding, index) => (
                     <div key={holding.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <div className="flex items-center gap-3">
                         <CryptoIcon symbol={holding.symbol} />
@@ -965,8 +1236,8 @@ function CryptoModalContent() {
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-right">
-                          <DualCurrencyDisplay 
-                            amount={holding.value} 
+                          <DualCurrencyDisplay
+                            amount={holding.value}
                             originalCurrency="USD"
                             layout="stacked"
                             size="md"
@@ -977,15 +1248,14 @@ function CryptoModalContent() {
                         </div>
                         <div className="flex gap-1">
                           <button
-                            onClick={() => openTechnicalAnalysis({
-                              symbol: holding.symbol,
-                              assetType: 'crypto',
-                              assetName: holding.name
-                            })}
+                            onClick={() => {
+                              setSellingHolding(holding);
+                              setShowSellModal(true);
+                            }}
                             className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                            title="Technical Analysis (RSI, MACD, etc.)"
+                            title="Sell"
                           >
-                            <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400 dark:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                            <ArrowDownLeft className="w-4 h-4 text-green-600 dark:text-green-400 dark:drop-shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
                           </button>
                           <button
                             onClick={() => {
@@ -1017,28 +1287,48 @@ function CryptoModalContent() {
               </div>
             </div>
 
+            {/* Wallet Distribution Chart */}
+            {cryptoHoldings.length > 0 && (
+              <div
+                className="mt-6 bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+                style={{
+                  overflow: 'visible',
+                  position: 'relative',
+                  zIndex: 1,
+                  isolation: 'auto'
+                }}
+              >
+                <PortfolioWalletPieChartV2
+                  holdings={updatedHoldings}
+                  prices={prices}
+                />
+              </div>
+            )}
+
             {/* Performance Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2 -mx-2 py-2 -my-2">
-              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30 cursor-pointer">
-                <div className={`text-2xl font-bold ${totalReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalReturn >= 0 ? '+' : ''}{totalReturn.toFixed(2)}%
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Total Return</div>
-              </div>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/50 dark:hover:shadow-yellow-500/30 cursor-pointer">
-                <div className={`text-2xl font-bold ${totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalGainLoss >= 0 ? '+' : ''}${Math.abs(totalGainLoss).toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Unrealized {totalGainLoss >= 0 ? 'Gains' : 'Losses'}</div>
-              </div>
-              <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-amber-500/50 dark:hover:shadow-amber-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-amber-600">${(totalValue - totalGainLoss).toLocaleString()}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Cost Basis</div>
-              </div>
-              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30 cursor-pointer">
-                <div className="text-2xl font-bold text-orange-600">{updatedHoldings.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Assets</div>
-              </div>
+              <ConditionalThemedStatBox
+                themeColor={CARD_THEME_COLORS.crypto}
+                value={`${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}%`}
+                label="Total Return"
+                valueType={totalReturn >= 0 ? 'positive' : 'negative'}
+              />
+              <ConditionalThemedStatBox
+                themeColor={CARD_THEME_COLORS.crypto}
+                value={`${totalGainLoss >= 0 ? '+' : ''}$${Math.abs(totalGainLoss).toLocaleString()}`}
+                label={`Unrealized ${totalGainLoss >= 0 ? 'Gains' : 'Losses'}`}
+                valueType={totalGainLoss >= 0 ? 'positive' : 'negative'}
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.crypto}
+                value={`$${(totalValue - totalGainLoss).toLocaleString()}`}
+                label="Cost Basis"
+              />
+              <ThemedStatBox
+                themeColor={CARD_THEME_COLORS.crypto}
+                value={updatedHoldings.length}
+                label="Assets"
+              />
             </div>
           </div>
         )}
@@ -1051,7 +1341,7 @@ function CryptoModalContent() {
                 {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
               </div>
             </div>
-            
+
             {transactions.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <TrendingUp className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -1062,20 +1352,19 @@ function CryptoModalContent() {
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {transactions.map((tx) => {
                   const date = new Date(tx.date);
-                  const formattedDate = date.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
+                  const formattedDate = date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
                   });
-                  
+
                   return (
                     <div key={tx.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-orange-300 dark:hover:border-orange-600 transition-all">
                       <div className="flex items-center gap-3">
-                        <div className={`px-2 py-1 rounded text-xs font-semibold ${
-                          tx.type === 'buy' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
-                        }`}>
+                        <div className={`px-2 py-1 rounded text-xs font-semibold ${tx.type === 'buy' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+                          }`}>
                           {tx.type.toUpperCase()}
                         </div>
                         <div>
@@ -1086,15 +1375,14 @@ function CryptoModalContent() {
                             {tx.name} • {formattedDate}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-500">
-                            @ ${tx.pricePerUnit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            @ ${tx.pricePerUnit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className={`font-semibold ${
-                          tx.type === 'buy' ? 'text-gray-900 dark:text-white' : 'text-green-600 dark:text-green-400'
-                        }`}>
-                          ${tx.totalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        <div className={`font-semibold ${tx.type === 'buy' ? 'text-gray-900 dark:text-white' : 'text-green-600 dark:text-green-400'
+                          }`}>
+                          ${tx.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                       </div>
                     </div>
@@ -1108,7 +1396,7 @@ function CryptoModalContent() {
         {activeTab === 'analysis' && (
           <div className="space-y-6">
             {/* AI Rebalancing Suggestions */}
-            <AIRebalancing 
+            <AIRebalancing
               holdings={updatedHoldings.map(h => ({
                 symbol: h.symbol,
                 name: h.name,
@@ -1129,10 +1417,10 @@ function CryptoModalContent() {
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip formatter={(value) => [`$${formatNumber(Number(value))}`, 'Portfolio Value']} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#f59e0b" 
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#f59e0b"
                       strokeWidth={3}
                       dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }}
                     />
@@ -1151,11 +1439,10 @@ function CryptoModalContent() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-700 dark:text-gray-300">Diversification</span>
-                    <span className={`font-semibold ${
-                      updatedHoldings.length >= 5 ? 'text-green-600 dark:text-green-400' :
+                    <span className={`font-semibold ${updatedHoldings.length >= 5 ? 'text-green-600 dark:text-green-400' :
                       updatedHoldings.length >= 3 ? 'text-yellow-600 dark:text-yellow-400' :
-                      'text-red-600 dark:text-red-400'
-                    }`}>
+                        'text-red-600 dark:text-red-400'
+                      }`}>
                       {updatedHoldings.length >= 5 ? 'Good' : updatedHoldings.length >= 3 ? 'Medium' : 'Low'}
                     </span>
                   </div>
@@ -1165,7 +1452,7 @@ function CryptoModalContent() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-semibold text-gray-900 dark:text-white">Portfolio Insights</h4>
                 <div className="text-sm space-y-2">
@@ -1181,32 +1468,52 @@ function CryptoModalContent() {
                     const changeNum = parseFloat(h.change.replace('%', ''));
                     return changeNum > 20;
                   }) && (
-                    <p className="text-gray-700 dark:text-gray-300">• Consider taking profits on strong performers</p>
-                  )}
+                      <p className="text-gray-700 dark:text-gray-300">• Consider taking profits on strong performers</p>
+                    )}
                 </div>
               </div>
             </div>
           </div>
         )}
+
+        {activeTab === 'apy' && (
+          <CryptoAPYCalculator
+            holdings={updatedHoldings}
+          />
+        )}
       </div>
 
       {/* Modals */}
-      <AddPositionModal 
-        isOpen={showAddModal} 
-        onClose={() => setShowAddModal(false)} 
+      <AddPositionModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
         onAdd={addHolding}
       />
-      
-      <EditPositionModal 
-        isOpen={showEditModal} 
-        onClose={() => setShowEditModal(false)} 
+
+      <EditPositionModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
         holding={editingHolding}
         onUpdate={async (id, updates) => {
           await updateHolding(id, updates);
         }}
       />
-      
-      <TechnicalAnalysisComponent />
+
+      <SellPositionModal
+        isOpen={showSellModal}
+        onClose={() => {
+          setShowSellModal(false);
+          setSellingHolding(null);
+        }}
+        assetType="crypto"
+        holding={sellingHolding}
+        currentPrice={sellingHolding ? (prices[sellingHolding.symbol]?.price || sellingHolding.entryPoint) : 0}
+        onSell={async (amount, destination) => {
+          if (sellingHolding) {
+            await sellHolding(sellingHolding.id, amount, destination);
+          }
+        }}
+      />
     </div>
   );
 }
@@ -1222,12 +1529,12 @@ function CryptoHoverContent() {
       setCryptoHoldings(savedHoldings);
     };
     loadHoldings();
-    
+
     // Listen for data changes
     const handleDataChange = () => loadHoldings();
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
-    
+
     return () => {
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);
@@ -1250,7 +1557,7 @@ function CryptoHoverContent() {
   const totalGainLoss = portfolioData.reduce((sum, h) => sum + h.gainLoss, 0);
   const totalCost = portfolioData.reduce((sum, h) => sum + h.costBasis, 0);
   const totalGainLossPercent = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
-  
+
   // Show top 2 holdings by value
   const topHoldings = [...portfolioData].sort((a, b) => b.currentValue - a.currentValue).slice(0, 2);
   const dayChange = portfolioData.reduce((sum, h) => {
@@ -1305,7 +1612,7 @@ function CryptoCardWithPrices() {
       setCryptoHoldings(savedHoldings);
     };
     loadHoldings();
-    
+
     // Listen for data changes and reload
     const handleDataChange = () => {
       loadHoldings();
@@ -1313,13 +1620,13 @@ function CryptoCardWithPrices() {
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('currencyChanged', handleDataChange); // Re-render on currency change
-    
+
     return () => {
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('currencyChanged', handleDataChange);
     };
-  }, [mainCurrency.code]); // Re-load when currency changes
+  }, []); // Currency changes handled by event listener
 
   const symbols = cryptoHoldings.map(holding => holding.symbol);
   const { prices, loading } = useAssetPrices(symbols);
@@ -1331,7 +1638,7 @@ function CryptoCardWithPrices() {
       const currentPrice = currentPriceData.price;
       const value = holding.amount * currentPrice;
       const changePercent = ((currentPrice - holding.entryPoint) / holding.entryPoint * 100);
-      
+
       return {
         ...holding,
         value,
@@ -1346,7 +1653,7 @@ function CryptoCardWithPrices() {
   const totalCostBasis = portfolioData.reduce((sum, holding) => sum + (holding.amount * holding.entryPoint), 0);
   const totalGainLoss = totalValue - totalCostBasis;
   const totalReturn = totalCostBasis > 0 ? (totalGainLoss / totalCostBasis) * 100 : 0;
-  
+
   // Format change display
   const changeDisplay = cryptoHoldings.length === 0 ? "0.0%" : `${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}%`;
   const changeTypeCalc = totalReturn >= 0 ? "positive" as const : "negative" as const;
@@ -1382,15 +1689,15 @@ function CryptoCardWithPrices() {
       secondaryColor="#fbbf24"
       gridColor="#f59e0b15"
       stats={[
-        { 
-          label: "BTC", 
-          value: loading || !btcHolding ? "Loading..." : formatMain(convertToMain(btcHolding.value, 'USD')), 
-          color: "#f59e0b" 
+        {
+          label: "BTC",
+          value: loading || !btcHolding ? "Loading..." : formatMain(convertToMain(btcHolding.value, 'USD')),
+          color: "#f59e0b"
         },
-        { 
-          label: "ETH", 
-          value: loading || !ethHolding ? "Loading..." : formatMain(convertToMain(ethHolding.value, 'USD')), 
-          color: "#fbbf24" 
+        {
+          label: "ETH",
+          value: loading || !ethHolding ? "Loading..." : formatMain(convertToMain(ethHolding.value, 'USD')),
+          color: "#fbbf24"
         }
       ]}
       icon={Coins}

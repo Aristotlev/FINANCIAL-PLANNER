@@ -1,6 +1,7 @@
 /**
  * TTS Streaming Proxy with Multiple Provider Support
  * Supports both ElevenLabs and Replicate (Kokoro-82m)
+ * Protected by authentication and rate limiting
  * 
  * Provider Selection:
  * - Default: ElevenLabs (better quality, streaming)
@@ -10,8 +11,12 @@
 import { NextRequest } from "next/server";
 import { ElevenLabsClient } from "elevenlabs";
 import Replicate from "replicate";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { rateLimit, getClientIP, RateLimitConfigs } from "@/lib/rate-limit";
 
-const ELEVENLABS_API_KEY = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY;
+// ✅ SECURE: Server-side only environment variables
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
 // Arabella voice - HARDCODED - professional, clear female voice perfect for financial analysis
@@ -39,7 +44,48 @@ export async function POST(req: NextRequest) {
   const startTime = Date.now();
   
   try {
-    console.log('[TTS] Received request');
+    // ✅ Authenticate user
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Please sign in to use TTS features' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('[TTS] Received authenticated request from user:', session.user.id);
+    
+    // ✅ Rate limiting - TTS is expensive, limit to 30 requests/min
+    const headersList = await headers();
+    const identifier = session.user?.id || getClientIP(headersList);
+    const rateLimitResult = await rateLimit(identifier, RateLimitConfigs.AI_MODERATE);
+
+    if (!rateLimitResult.success) {
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded. Please try again later.',
+          limit: rateLimitResult.limit,
+          remaining: rateLimitResult.remaining,
+          reset: new Date(rateLimitResult.reset).toISOString(),
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
     
     // Get provider from query params or use default (elevenlabs)
     const url = new URL(req.url);
