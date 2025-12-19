@@ -4,10 +4,17 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   
-  // Redirect www to non-www for consistency
-  if (url.hostname === 'www.omnifolio.app') {
-    url.hostname = 'omnifolio.app';
-    return NextResponse.redirect(url, 301);
+  // CRITICAL: Redirect non-www to www to prevent OAuth state_mismatch
+  // This must happen BEFORE the OAuth flow starts
+  // Exception: POST requests can't be redirected without losing body
+  // Exception: OAuth callbacks need to go through (they're GET but have state params)
+  if (url.hostname === 'omnifolio.app' && request.method === 'GET') {
+    // Don't redirect OAuth callbacks - they need the state cookie
+    const isOAuthCallback = url.pathname.includes('/callback/');
+    if (!isOAuthCallback) {
+      url.hostname = 'www.omnifolio.app';
+      return NextResponse.redirect(url, 301);
+    }
   }
   
   const response = NextResponse.next();

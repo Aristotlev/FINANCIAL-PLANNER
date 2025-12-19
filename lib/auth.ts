@@ -9,15 +9,21 @@ const pool = new Pool({
   },
 });
 
-// Determine the base URL for auth - always use non-www in production
+// IMPORTANT: Always use www canonical URL to prevent state_mismatch errors
+// The OAuth flow MUST start and end on the exact same domain
 const getAuthBaseURL = () => {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  // Normalize www to non-www
-  return appUrl.replace('://www.', '://');
+  if (process.env.NODE_ENV === "production") {
+    // Always use canonical www URL in production
+    return "https://www.omnifolio.app";
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 };
 
 export const auth = betterAuth({
   database: pool,
+  
+  // Secret for signing tokens - required for production
+  secret: process.env.BETTER_AUTH_SECRET,
   
   emailAndPassword: {
     enabled: true,
@@ -28,8 +34,8 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      // Use the normalized base URL for redirect
-      redirectURI: `${getAuthBaseURL()}/api/auth/callback/google`,
+      // CRITICAL: Must match exactly what's in Google Cloud Console
+      redirectURI: "https://www.omnifolio.app/api/auth/callback/google",
     },
   },
 
@@ -65,9 +71,10 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "money-hub",
     useSecureCookies: process.env.NODE_ENV === "production",
+    // Use www domain for cookies
     crossSubDomainCookies: {
       enabled: true,
-      domain: ".omnifolio.app", // Allow cookies across subdomains
+      domain: "www.omnifolio.app",
     },
   },
 
