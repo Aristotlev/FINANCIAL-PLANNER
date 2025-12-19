@@ -1,9 +1,20 @@
 import { createAuthClient } from "better-auth/client";
 
+// Always use the production URL for auth to ensure cookie consistency
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    // In production, always use omnifolio.app regardless of how user accessed the site
+    if (window.location.hostname.includes('run.app') || 
+        window.location.hostname === 'omnifolio.app') {
+      return 'https://omnifolio.app';
+    }
+    return window.location.origin;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+};
+
 export const authClient = createAuthClient({
-  baseURL: typeof window !== 'undefined' 
-    ? window.location.origin 
-    : (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  baseURL: getBaseURL(),
   
   // Add fetch timeout to prevent hanging
   fetchOptions: {
