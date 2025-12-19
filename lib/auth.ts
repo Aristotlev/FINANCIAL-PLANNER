@@ -40,9 +40,11 @@ export const auth = betterAuth({
     },
   },
 
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
   trustedOrigins: [
+    "https://omnifolio.app",
+    "https://financial-planner-629380503119.europe-west1.run.app",
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     "http://localhost:3000",
   ],
@@ -50,6 +52,9 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "money-hub",
     useSecureCookies: process.env.NODE_ENV === "production",
+    crossSubDomainCookies: {
+      enabled: false,
+    },
   },
 
   // Configure where to redirect after social sign-in
