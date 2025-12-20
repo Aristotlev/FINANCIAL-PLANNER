@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
+import { motion } from 'framer-motion';
+import {
   ArrowLeft,
   Target,
   Shield,
@@ -18,6 +19,22 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { OmnifolioLogo } from '@/components/ui/omnifolio-logo';
+import { BackgroundBeams } from '@/components/ui/background-beams';
+import { CardContainer, CardItem } from '@/components/ui/3d-card';
+
+const fadeIn = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6 }
+};
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 export default function AboutPage() {
   const router = useRouter();
@@ -25,26 +42,35 @@ export default function AboutPage() {
   const handleBackToHome = () => {
     router.push('/');
   };
+
   const problemsWeSolve = [
     {
       icon: Puzzle,
       title: "Fragmented Finances",
-      description: "No more juggling between banking apps, crypto wallets, stock brokers, and spreadsheets. Everything lives in one place."
+      description: "No more juggling between banking apps, crypto wallets, stock brokers, and spreadsheets. Everything lives in one place.",
+      color: "from-purple-500/20 to-cyan-500/20",
+      iconColor: "text-purple-400"
     },
     {
       icon: Eye,
       title: "Lack of Visibility",
-      description: "Get a complete picture of your net worth across all asset classes—cash, investments, crypto, real estate, and more."
+      description: "Get a complete picture of your net worth across all asset classes—cash, investments, crypto, real estate, and more.",
+      color: "from-blue-500/20 to-purple-500/20",
+      iconColor: "text-blue-400"
     },
     {
       icon: Layers,
       title: "Complex Tools",
-      description: "Financial software shouldn't require a finance degree. We built OmniFolio to be powerful yet intuitive."
+      description: "Financial software shouldn't require a finance degree. We built OmniFolio to be powerful yet intuitive.",
+      color: "from-cyan-500/20 to-blue-500/20",
+      iconColor: "text-cyan-400"
     },
     {
       icon: Sparkles,
       title: "Disconnected Insights",
-      description: "See how all your financial decisions connect. Track expenses, monitor investments, and plan your future in one unified view."
+      description: "See how all your financial decisions connect. Track expenses, monitor investments, and plan your future in one unified view.",
+      color: "from-fuchsia-500/20 to-purple-500/20",
+      iconColor: "text-fuchsia-400"
     }
   ];
 
@@ -83,220 +109,332 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-black text-white selection:bg-purple-500/30 overflow-x-hidden">
+      <BackgroundBeams />
+
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
+          <div className="flex items-center justify-between h-20">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <OmnifolioLogo size="sm" />
             </Link>
             <div className="flex items-center gap-4">
-              <button 
+              <motion.button
+                whileHover={{ x: -4 }}
                 onClick={handleBackToHome}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group"
               >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Home
-              </button>
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                <span className="text-sm font-medium">Back to Home</span>
+              </motion.button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
-            The Vision Behind <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">OmniFolio</span>
-          </h1>
-          <p className="text-xl text-gray-300 leading-relaxed">
-            We dreamed of a world where managing your entire financial life didn't require 
-            a dozen different apps, endless spreadsheets, and hours of manual work.
-          </p>
-        </div>
-      </section>
-
-      {/* The Problem Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">The Problem We Set Out to Solve</h2>
-            <p className="text-gray-300 text-lg leading-relaxed">
-              We've all been there. Your cash is in one banking app. Your crypto is on an exchange. 
-              Your stocks are with a broker. Your real estate values are in a spreadsheet. Your expenses? 
-              Who knows. Getting a clear picture of your total financial health felt impossible.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {problemsWeSolve.map((problem, index) => (
-              <div 
-                key={index}
-                className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700 hover:border-purple-500/50 transition-all hover:-translate-y-1"
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center mb-4 border border-purple-500/30">
-                  <problem.icon className="w-6 h-6 text-purple-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{problem.title}</h3>
-                <p className="text-gray-400">{problem.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Our Vision Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold text-white">Our Vision</h2>
-              </div>
-              <p className="text-gray-300 text-lg leading-relaxed mb-6">
-                We envisioned an <strong className="text-white">all-in-one financial command center</strong> where 
-                you could track <em>everything</em>—and actually <em>do</em> everything—without ever leaving 
-                the platform.
-              </p>
-              <p className="text-gray-400 leading-relaxed mb-6">
-                Imagine seeing your complete net worth update in real-time. Your crypto gains, stock 
-                performance, property values, and savings—all in one beautiful dashboard. No more 
-                switching between apps. No more forgotten accounts. No more manual calculations.
-              </p>
-              <p className="text-gray-400 leading-relaxed">
-                That's what we're building. A single source of truth for your entire financial life.
-              </p>
-            </div>
-            <div className="bg-gray-800/50 rounded-2xl p-8 border border-gray-700">
-              <h3 className="text-xl font-semibold text-white mb-6">Everything in One Place</h3>
-              <div className="grid grid-cols-1 gap-3">
-                {features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-gray-300">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why We Built This Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Why We Built This</h2>
-          </div>
-          <div className="bg-gray-800/50 rounded-2xl p-8 border border-gray-700">
-            <p className="text-gray-300 text-lg leading-relaxed mb-6">
-              We were tired of the fragmentation. Every financial tool we tried solved one piece of the 
-              puzzle but ignored the rest. Budget apps didn't track investments. Investment apps didn't 
-              handle crypto. Crypto apps didn't care about your savings account.
-            </p>
-            <p className="text-gray-300 text-lg leading-relaxed mb-6">
-              We wanted to see our <strong className="text-white">complete financial picture</strong>—not 
-              just a slice of it. We wanted to understand how our spending affected our savings, how our 
-              investments compared to our debts, and whether we were actually making progress toward 
-              our goals.
-            </p>
-            <p className="text-gray-300 text-lg leading-relaxed">
-              So we built OmniFolio: the financial dashboard we always wanted but could never find. 
-              A place where every dollar, euro, bitcoin, and asset comes together in one unified, 
-              beautiful interface.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">What We Believe In</h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              The principles that guide how we build OmniFolio
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => (
-              <div 
-                key={index}
-                className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700 hover:border-purple-500/50 transition-all hover:-translate-y-1"
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
-                  <value.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">{value.title}</h3>
-                <p className="text-gray-400">{value.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* The Future Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-800/30">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-2xl mb-6">
-            <Zap className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Where We're Headed</h2>
-          <p className="text-gray-300 text-lg leading-relaxed mb-6">
-            We're just getting started. Our vision extends beyond tracking—we want to help you 
-            make smarter financial decisions with AI-powered insights, automated recommendations, 
-            and tools that grow with your wealth.
-          </p>
-          <p className="text-gray-400 leading-relaxed">
-            Whether you're just starting your financial journey or managing a complex portfolio, 
-            OmniFolio is designed to be your lifelong financial companion.
-          </p>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-purple-600 to-cyan-600 rounded-3xl p-8 sm:p-12 text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Ready to See Your Complete Financial Picture?
-            </h2>
-            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-              Join us in building the future of personal finance management. 
-              Your entire financial life, finally in one place.
-            </p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-purple-600 rounded-xl text-lg font-bold hover:bg-gray-100 transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+      <main className="relative z-10">
+        {/* Hero Section */}
+        <section className="relative pt-40 pb-24 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="max-w-4xl mx-auto text-center"
             >
-              Get Started
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="inline-block px-4 py-1.5 mb-6 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-sm font-medium tracking-wide"
+              >
+                Our Journey & Vision
+              </motion.div>
+              <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-8">
+                The Vision Behind <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">OmniFolio</span>
+              </h1>
+              <p className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto">
+                We dreamed of a world where managing your entire financial life didn't require
+                a dozen different apps, endless spreadsheets, and hours of manual work.
+              </p>
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* The Problem Section - 3D Cards */}
+        <section className="py-24 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={fadeIn}
+              className="max-w-3xl mx-auto text-center mb-20"
+            >
+              <h2 className="text-3xl sm:text-5xl font-bold mb-6">The Problem We Solve</h2>
+              <p className="text-gray-400 text-lg leading-relaxed">
+                Traditional finance tools are siloed and complex. We're rebuilding the experience from the ground up
+                to give you total control over your wealth.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {problemsWeSolve.map((problem, index) => (
+                <CardContainer key={index} className="inter-var">
+                  <div className="bg-gray-900/40 relative group/card dark:hover:shadow-2xl dark:hover:shadow-purple-500/[0.1] border-white/5 w-auto h-auto rounded-3xl p-8 border backdrop-blur-sm">
+                    <CardItem
+                      translateZ={50}
+                      className="w-14 h-14 bg-gradient-to-br from-white/10 to-transparent rounded-2xl flex items-center justify-center mb-6 border border-white/10"
+                    >
+                      <div className={`w-12 h-12 bg-gradient-to-br ${problem.color} rounded-xl flex items-center justify-center border border-white/5`}>
+                        <problem.icon className={`w-6 h-6 ${problem.iconColor}`} />
+                      </div>
+                    </CardItem>
+                    <CardItem
+                      as="h3"
+                      translateZ={60}
+                      className="text-2xl font-bold text-white mb-3"
+                    >
+                      {problem.title}
+                    </CardItem>
+                    <CardItem
+                      as="p"
+                      translateZ={40}
+                      className="text-gray-400 text-sm leading-relaxed"
+                    >
+                      {problem.description}
+                    </CardItem>
+                  </div>
+                </CardContainer>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Our Vision Section */}
+        <section className="py-24 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+                    <Target className="w-7 h-7 text-white" />
+                  </div>
+                  <h2 className="text-4xl font-bold">Our Vision</h2>
+                </div>
+                <div className="space-y-6 text-lg text-gray-400 leading-relaxed">
+                  <p>
+                    We envisioned an <strong className="text-white font-semibold">all-in-one financial command center</strong> where
+                    you could track <em>everything</em>—and actually <em>do</em> everything—without ever leaving
+                    the platform.
+                  </p>
+                  <p>
+                    Imagine seeing your complete net worth update in real-time. Your crypto gains, stock
+                    performance, property values, and savings—all in one beautiful dashboard.
+                  </p>
+                  <p>
+                    That's what we're building. A single source of truth for your entire financial life.
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="relative"
+              >
+                <div className="absolute -inset-4 bg-gradient-to-tr from-purple-500/10 to-cyan-500/10 blur-2xl rounded-3xl" />
+                <div className="relative bg-gray-900/60 backdrop-blur-xl rounded-3xl p-10 border border-white/10 shadow-2xl">
+                  <h3 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                    <Sparkles className="w-6 h-6 text-purple-400" />
+                    Everything in One Place
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {features.map((feature, index) => (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        key={index}
+                        className="flex items-center gap-4 group"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-500/40 transition-colors">
+                          <Check className="w-3.5 h-3.5 text-purple-400 group-hover:text-white transition-colors" />
+                        </div>
+                        <span className="text-gray-300 group-hover:text-white transition-colors">{feature}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Why We Built This - Manifesto Section */}
+        <section className="py-24 overflow-hidden relative">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1 }}
+            >
+              <h2 className="text-4xl sm:text-6xl font-bold mb-12 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">
+                Why We Built This
+              </h2>
+              <div className="space-y-8 text-xl sm:text-2xl text-gray-400 leading-relaxed font-light italic">
+                <p>
+                  "We were tired of the fragmentation. Every financial tool we tried solved one piece of the
+                  puzzle but ignored the rest. Budget apps didn't track investments. Investment apps didn't
+                  handle crypto."
+                </p>
+                <p className="text-white font-normal not-italic">
+                  We wanted to see our <span className="text-purple-400">complete financial picture</span>—not
+                  just a slice of it.
+                </p>
+                <p>
+                  So we built OmniFolio: the financial dashboard we always wanted but could never find.
+                  A place where every dollar, euro, bitcoin, and asset comes together in one unified,
+                  beautiful interface.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Values Section */}
+        <section className="py-24 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-20">
+              <h2 className="text-3xl sm:text-5xl font-bold mb-6">What We Believe In</h2>
+              <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                The principles that guide every pixel we design and every line of code we write.
+              </p>
+            </div>
+            <motion.div
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
+            >
+              {values.map((value, index) => (
+                <motion.div
+                  key={index}
+                  variants={fadeIn}
+                  whileHover={{ y: -8 }}
+                  className="bg-gray-900/40 backdrop-blur-sm rounded-3xl p-8 border border-white/5 hover:border-purple-500/30 transition-all group"
+                >
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <value.icon className="w-7 h-7 text-purple-400 group-hover:text-purple-300 transition-colors" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-4">{value.title}</h3>
+                  <p className="text-gray-400 leading-relaxed text-sm">{value.description}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* The Future Section */}
+        <section className="py-24 relative bg-purple-500/5">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-3xl mb-8 shadow-xl shadow-purple-500/20"
+            >
+              <Zap className="w-10 h-10 text-white" />
+            </motion.div>
+            <h2 className="text-3xl sm:text-5xl font-bold mb-8">Where We're Headed</h2>
+            <div className="space-y-6 text-lg text-gray-400 leading-relaxed">
+              <p>
+                We're just getting started. Our vision extends beyond tracking—we want to help you
+                make smarter financial decisions with AI-powered insights and automated recommendations.
+              </p>
+              <p>
+                Whether you're just starting your financial journey or managing a complex portfolio,
+                OmniFolio is designed to be your lifelong financial companion.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-32 px-4 relative overflow-hidden">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-purple-600 to-blue-700 rounded-[3rem] p-12 sm:p-20 text-center relative overflow-hidden shadow-2xl shadow-purple-900/40"
+            >
+              <div className="absolute inset-0 bg-grid-white/10 [mask-image:radial-gradient(white,transparent_85%)]" />
+              <div className="relative z-10">
+                <h2 className="text-4xl sm:text-6xl font-bold text-white mb-8 tracking-tight leading-tight">
+                  Ready to See Your Complete <br className="hidden sm:block" /> Financial Picture?
+                </h2>
+                <p className="text-white/80 text-xl mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+                  Join us in building the future of personal finance management.
+                  Your entire financial life, finally in one place.
+                </p>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-3 px-10 py-5 bg-white text-purple-600 rounded-2xl text-xl font-bold hover:bg-gray-100 transition-all shadow-xl shadow-black/20"
+                  >
+                    Get Started Now
+                    <ArrowRight className="w-6 h-6" />
+                  </Link>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+      <footer className="relative z-10 border-t border-white/5 py-16 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10">
+          <div className="flex flex-col items-center md:items-start gap-4">
             <OmnifolioLogo size="sm" />
+            <p className="text-gray-500 text-sm italic">
+              Empowering your financial future.
+            </p>
           </div>
-          <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} OmniFolio. All rights reserved.
-          </p>
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Home
-            </Link>
-            <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
-              About
-            </Link>
+
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors font-medium">
+                Home
+              </Link>
+              <Link href="/about" className="text-white text-sm transition-colors font-semibold">
+                About
+              </Link>
+              <Link href="/blog" className="text-gray-400 hover:text-white text-sm transition-colors font-medium">
+                Blog
+              </Link>
+            </div>
+            <p className="text-gray-600 text-xs tracking-widest uppercase">
+              © {new Date().getFullYear()} OmniFolio. All rights reserved.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-gray-500 text-sm">
+            <span>Built for the future of finance.</span>
           </div>
         </div>
       </footer>

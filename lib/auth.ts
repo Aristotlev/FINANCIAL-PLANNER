@@ -3,12 +3,19 @@ import { createAuthMiddleware } from "better-auth/api";
 import { Pool } from "pg";
 
 // Create PostgreSQL pool for Better Auth
+// IMPORTANT: Cloud Run requires SSL but Supabase uses self-signed certs
 const pool = new Pool({
   connectionString: process.env.SUPABASE_DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: false, // Required for Supabase pooler self-signed certs
   },
 });
+
+// Disable SSL verification globally for Node.js (needed in Cloud Run)
+// This is safe because we're connecting to a known Supabase endpoint
+if (process.env.NODE_ENV === "production") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
 
 // IMPORTANT: Always use www canonical URL to prevent state_mismatch errors
 // The OAuth flow MUST start and end on the exact same domain

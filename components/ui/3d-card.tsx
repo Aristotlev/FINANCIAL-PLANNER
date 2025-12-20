@@ -39,10 +39,10 @@ export const CardContainer = ({
     const handleDragEnd = () => {
       isDraggingRef.current = false;
     };
-    
+
     window.addEventListener('cardDragStart', handleDragStart);
     window.addEventListener('cardDragEnd', handleDragEnd);
-    
+
     return () => {
       window.removeEventListener('cardDragStart', handleDragStart);
       window.removeEventListener('cardDragEnd', handleDragEnd);
@@ -52,11 +52,11 @@ export const CardContainer = ({
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     // Skip all processing if dragging - this is the key performance fix
     if (!containerRef.current || isDraggingRef.current) return;
-    
+
     const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - left - width / 2) / 8; // Enhanced sensitivity for more dramatic 3D tilt
-    const y = (e.clientY - top - height / 2) / 8;
-    
+    const x = (e.clientX - left - width / 2) / 25; // Reduced sensitivity for more stable experience
+    const y = (e.clientY - top - height / 2) / 25;
+
     // Apply transform directly without requestAnimationFrame for immediate response
     containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
   }, []);

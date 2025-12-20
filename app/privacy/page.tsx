@@ -1,9 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
+import { motion, AnimatePresence } from 'framer-motion';
+import {
   ArrowLeft,
   Shield,
   Lock,
@@ -15,19 +16,77 @@ import {
   FileText,
   AlertCircle,
   CheckCircle,
-  Globe
+  Globe,
+  Zap,
+  Sparkles,
+  Fingerprint,
+  HardDrive,
+  UserCheck
 } from 'lucide-react';
 import { OmnifolioLogo } from '@/components/ui/omnifolio-logo';
+import { BackgroundBeams } from '@/components/ui/background-beams';
+import { CardContainer, CardItem } from '@/components/ui/3d-card';
+
+const fadeIn = {
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.6 }
+};
+
+const staggerContainer = {
+  initial: { opacity: 0 },
+  whileInView: { opacity: 1 },
+  viewport: { once: true },
+  transition: { staggerChildren: 0.1 }
+};
 
 export default function PrivacyPolicyPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const lastUpdated = "December 19, 2025";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleBackToHome = () => {
     router.push('/');
   };
 
+  const summaryCards = [
+    {
+      icon: Eye,
+      title: "Data Sovereignty",
+      text: "We never sell your personal data. You own it.",
+      color: "from-blue-500 to-cyan-500",
+      iconColor: "text-blue-400"
+    },
+    {
+      icon: Shield,
+      title: "Ironclad Security",
+      text: "Bank-level AES-256 encryption at rest and in transit.",
+      color: "from-purple-500 to-blue-500",
+      iconColor: "text-purple-400"
+    },
+    {
+      icon: Fingerprint,
+      title: "Privacy by Design",
+      text: "Every feature is built with your anonymity in mind.",
+      color: "from-cyan-500 to-purple-500",
+      iconColor: "text-cyan-400"
+    },
+    {
+      icon: UserCheck,
+      title: "Global Compliance",
+      text: "Strict adherence to GDPR, CCPA, and global standards.",
+      color: "from-purple-500 to-pink-500",
+      iconColor: "text-pink-400"
+    }
+  ];
+
   const sections = [
+    // ... (rest of sections data)
     {
       id: "information-we-collect",
       icon: Database,
@@ -217,206 +276,220 @@ export default function PrivacyPolicyPage() {
     }
   ];
 
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-[#030712] text-white selection:bg-purple-500/30 relative overflow-x-hidden">
+      <BackgroundBeams />
+
+      {/* Decorative gradients */}
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none z-0" />
+
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/60 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
+          <div className="flex items-center justify-between h-20">
+            <Link href="/" className="flex items-center gap-2 group">
               <OmnifolioLogo size="sm" />
+              <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </Link>
             <div className="flex items-center gap-4">
-              <button 
+              <motion.button
+                whileHover={{ x: -2 }}
                 onClick={handleBackToHome}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-medium py-2 px-4 rounded-full hover:bg-white/5"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Home
-              </button>
+                <span>Back to Home</span>
+              </motion.button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-12 px-4 sm:px-6 lg:px-8">
+      <section className="pt-40 pb-20 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-2xl mb-6">
-            <Shield className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-            Privacy Policy
-          </h1>
-          <p className="text-xl text-gray-300 leading-relaxed mb-4">
-            Your privacy is fundamental to everything we build at OmniFolio.
-          </p>
-          <p className="text-gray-500 text-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-purple-400 text-sm font-medium mb-8"
+          >
+            <Shield className="w-4 h-4" />
+            <span>Trusted Financial Infrastructure</span>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-8"
+          >
+            Our <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">Privacy</span> Commitment
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto"
+          >
+            At OmniFolio, your financial data is your business, not ours.
+            We've engineered our platform with a privacy-first architecture
+            to ensure you remain in total control of your digital wealth.
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-6 text-gray-500 text-sm font-medium"
+          >
             Last Updated: {lastUpdated}
-          </p>
+          </motion.p>
         </div>
       </section>
 
-      {/* Quick Summary */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-2xl p-8 border border-purple-500/20">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <Lock className="w-5 h-5 text-purple-400" />
-              Privacy at a Glance
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">We never sell your personal data</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">Bank-level encryption protects your data</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">You can delete your data anytime</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">We're GDPR and CCPA compliant</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">Your financial data stays private</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">Transparent about data practices</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Quick Summary / Highlights - More compact */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-16 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="whileInView"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+          >
+            {summaryCards.map((card, index) => (
+              <CardContainer key={index} className="inter-var w-full">
+                <div className="bg-white/[0.03] backdrop-blur-md relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] border-white/5 w-full h-full rounded-[1.5rem] p-5 md:p-6 border hover:border-purple-500/30 transition-all overflow-hidden flex flex-col items-center text-center">
+                  {/* Hover gradient reveal */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
 
-      {/* Table of Contents */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-4">Contents</h2>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {sections.map((section) => (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  className="text-gray-400 hover:text-purple-400 transition-colors text-sm py-1"
-                >
-                  {section.title}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto space-y-12">
-          {sections.map((section) => (
-            <div 
-              key={section.id} 
-              id={section.id}
-              className="bg-gray-800/30 rounded-2xl p-8 border border-gray-700 scroll-mt-24"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center border border-purple-500/30">
-                  <section.icon className="w-5 h-5 text-purple-400" />
+                  <CardItem translateZ={40} className="mb-4">
+                    <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                      <card.icon className="w-6 h-6 text-white" />
+                    </div>
+                  </CardItem>
+                  <CardItem
+                    as="h3"
+                    translateZ={50}
+                    className="text-lg font-bold text-white mb-2"
+                  >
+                    {card.title}
+                  </CardItem>
+                  <CardItem
+                    as="p"
+                    translateZ={30}
+                    className="text-gray-400 text-sm leading-relaxed"
+                  >
+                    {card.text}
+                  </CardItem>
                 </div>
-                <h2 className="text-2xl font-bold text-white">{section.title}</h2>
-              </div>
-              
-              <div className="space-y-6">
-                {section.content.map((block, blockIndex) => (
-                  <div key={blockIndex}>
-                    <h3 className="text-lg font-medium text-gray-200 mb-3">
-                      {block.subtitle}
-                    </h3>
-                    <ul className="space-y-2">
-                      {block.items.map((item, itemIndex) => (
-                        <li key={itemIndex} className="flex items-start gap-3">
-                          <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-2 flex-shrink-0" />
-                          <span className="text-gray-400">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+              </CardContainer>
+            ))}
+          </motion.div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800/30">
+      <section className="px-4 sm:px-6 lg:px-8 pb-32 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-800/50 rounded-2xl p-8 border border-gray-700 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl mb-4">
-              <Mail className="w-6 h-6 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-4">Questions About Privacy?</h2>
-            <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-              If you have any questions about this Privacy Policy or our data practices, 
-              we're here to help. Your privacy matters to us.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="mailto:privacy@omnifolio.app"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 text-white rounded-xl font-medium hover:from-purple-500 hover:to-cyan-500 transition-all"
+          {/* Main Content Area - Centered and Compact */}
+          <div className="space-y-16">
+            {sections.map((section, idx) => (
+              <motion.div
+                key={section.id}
+                id={section.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.6, delay: idx * 0.05 }}
+                className="group relative bg-white/[0.02] backdrop-blur-sm rounded-[2rem] p-6 md:p-10 border border-white/5 hover:border-purple-500/20 transition-all scroll-mt-24"
               >
-                <Mail className="w-4 h-4" />
-                privacy@omnifolio.app
-              </a>
-            </div>
-            <p className="text-gray-500 text-sm mt-6">
-              We aim to respond to all privacy-related inquiries within 48 hours.
-            </p>
-          </div>
-        </div>
-      </section>
+                {/* Section header - Compact */}
+                <div className="flex items-center gap-5 mb-8">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform duration-500 shadow-lg">
+                    <section.icon className="w-6 h-6 text-purple-400 group-hover:text-cyan-400 transition-colors" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">{section.title}</h2>
+                    <div className="h-0.5 w-12 bg-gradient-to-r from-purple-500 to-transparent rounded-full" />
+                  </div>
+                </div>
 
-      {/* Legal Footer Note */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-800">
-            <p className="text-gray-500 text-sm leading-relaxed">
-              This Privacy Policy is effective as of {lastUpdated} and applies to all users of 
-              OmniFolio services. This policy complies with the General Data Protection Regulation 
-              (GDPR), the California Consumer Privacy Act (CCPA), and other applicable privacy laws. 
-              By using OmniFolio, you acknowledge that you have read and understood this Privacy Policy.
-            </p>
+                {/* Section content - Improved readability */}
+                <div className="space-y-10">
+                  {section.content.map((block, blockIndex) => (
+                    <div key={blockIndex} className="relative">
+                      <h3 className="text-xl font-semibold text-gray-200 mb-5 flex items-center gap-3">
+                        <span className="w-2 h-2 bg-cyan-500 rounded-full" />
+                        {block.subtitle}
+                      </h3>
+                      <ul className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+                        {block.items.map((item, itemIndex) => (
+                          <li key={itemIndex} className="flex items-start gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all group/item shadow-sm">
+                            <div className="mt-1 flex-shrink-0">
+                              <Zap className="w-4 h-4 text-purple-500/50 group-hover/item:text-purple-400 transition-colors" />
+                            </div>
+                            <span className="text-gray-300 text-sm leading-relaxed group-hover/item:text-white transition-colors">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Legal Footer Note - Centered and Readable */}
+            <section className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-10 text-center">
+              <p className="text-gray-400 text-sm leading-relaxed max-w-3xl mx-auto italic">
+                This Privacy Policy is effective as of {lastUpdated} and applies to all users of
+                OmniFolio services. This policy complies with the General Data Protection Regulation
+                (GDPR), the California Consumer Privacy Act (CCPA), and other applicable privacy laws.
+                By using OmniFolio, you acknowledge that you have read and understood this Privacy Policy.
+              </p>
+            </section>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <OmnifolioLogo size="sm" />
+      <footer className="border-t border-white/5 py-12 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#030712]/50 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
+            <div className="flex items-center gap-3 group">
+              <OmnifolioLogo size="sm" />
+              <div className="w-px h-6 bg-white/10 mx-2" />
+              <span className="text-gray-500 font-medium">Privacy Division</span>
+            </div>
+
+            <div className="flex items-center gap-8">
+              <Link href="/" className="text-gray-400 hover:text-white transition-colors font-medium relative group">
+                Home
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all group-hover:w-full" />
+              </Link>
+              <Link href="/about" className="text-gray-400 hover:text-white transition-colors font-medium relative group">
+                About
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all group-hover:w-full" />
+              </Link>
+              <Link href="/privacy" className="text-white transition-colors font-medium relative group">
+                Privacy
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-purple-500" />
+              </Link>
+              <Link href="/terms" className="text-gray-400 hover:text-white transition-colors font-medium relative group">
+                Terms
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all group-hover:w-full" />
+              </Link>
+            </div>
           </div>
-          <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} OmniFolio. All rights reserved.
-          </p>
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Home
-            </Link>
-            <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
-              About
-            </Link>
-            <Link href="/privacy" className="text-purple-400 text-sm transition-colors">
-              Privacy
-            </Link>
-            <Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Terms
-            </Link>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
+            <p className="text-gray-600 text-xs font-medium">
+              © {new Date().getFullYear()} OmniFolio Technologies. Securely managed.
+            </p>
+            <div className="flex items-center gap-6 text-xs text-gray-500 font-medium">
+              <Link href="/terms" className="hover:text-white transition-colors">Compliance Status</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Data Processing Agreement</Link>
+            </div>
           </div>
         </div>
       </footer>

@@ -1,9 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
+import { motion, AnimatePresence } from 'framer-motion';
+import {
   ArrowLeft,
   FileText,
   Shield,
@@ -18,9 +19,24 @@ import {
   XCircle,
   Globe,
   Gavel,
-  LucideIcon
+  LucideIcon,
+  Zap
 } from 'lucide-react';
 import { OmnifolioLogo } from '@/components/ui/omnifolio-logo';
+import { BackgroundBeams } from '@/components/ui/background-beams';
+import { CardContainer, CardItem } from '@/components/ui/3d-card';
+
+const fadeIn = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6 }
+};
+
+const staggerContainer = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { staggerChildren: 0.1 }
+};
 
 interface ContentBlock {
   subtitle?: string;
@@ -37,12 +53,48 @@ interface Section {
 
 export default function TermsOfServicePage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const lastUpdated = "December 19, 2025";
   const effectiveDate = "December 19, 2025";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleBackToHome = () => {
     router.push('/');
   };
+
+  const summaryCards = [
+    {
+      icon: Scale,
+      title: "Fair Terms",
+      text: "Clear, transparent agreements between us and you.",
+      color: "from-purple-500 to-blue-500",
+      iconColor: "text-purple-400"
+    },
+    {
+      icon: CheckCircle,
+      title: "Data Ownership",
+      text: "You own your data—we just help you organize it.",
+      color: "from-blue-500 to-cyan-500",
+      iconColor: "text-blue-400"
+    },
+    {
+      icon: RefreshCw,
+      title: "Easy Cancellation",
+      text: "Cancel anytime—no long-term commitments.",
+      color: "from-cyan-500 to-purple-500",
+      iconColor: "text-cyan-400"
+    },
+    {
+      icon: CreditCard,
+      title: "Refund Policy",
+      text: "14-day refund policy on all new subscriptions.",
+      color: "from-purple-500 to-pink-500",
+      iconColor: "text-pink-400"
+    }
+  ];
 
   const sections: Section[] = [
     {
@@ -350,141 +402,195 @@ export default function TermsOfServicePage() {
     }
   ];
 
+  if (!mounted) return null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-[#030712] text-white selection:bg-purple-500/30 relative overflow-x-hidden">
+      <BackgroundBeams />
+
+      {/* Decorative gradients */}
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none z-0" />
+
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/60 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
+          <div className="flex items-center justify-between h-20">
+            <Link href="/" className="flex items-center gap-2 group">
               <OmnifolioLogo size="sm" />
+              <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </Link>
             <div className="flex items-center gap-4">
-              <button 
+              <motion.button
+                whileHover={{ x: -2 }}
                 onClick={handleBackToHome}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-medium py-2 px-4 rounded-full hover:bg-white/5"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Home
-              </button>
+                <span>Back to Home</span>
+              </motion.button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-12 px-4 sm:px-6 lg:px-8">
+      <section className="pt-40 pb-20 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-2xl mb-6">
-            <FileText className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6">
-            Terms of Service
-          </h1>
-          <p className="text-xl text-gray-300 leading-relaxed mb-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-purple-400 text-sm font-medium mb-8"
+          >
+            <Scale className="w-4 h-4" />
+            <span>Transparency & Trust</span>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-8"
+          >
+            Terms of <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">Service</span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto"
+          >
             Please read these terms carefully before using OmniFolio.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-500">
+            By using our service, you agree to these legal conditions.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-gray-500 text-sm font-medium"
+          >
             <span>Effective Date: {effectiveDate}</span>
             <span className="hidden sm:inline">•</span>
             <span>Last Updated: {lastUpdated}</span>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Quick Summary */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-2xl p-8 border border-purple-500/20">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <Scale className="w-5 h-5 text-purple-400" />
-              Key Points Summary
-            </h2>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">You own your data—we just help you organize it</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">We're a tracking tool, not financial advisors</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">Cancel anytime—no long-term commitments</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">14-day refund policy on new subscriptions</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <XCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">No illegal activities or abuse of the Service</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <XCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-300">No automated scraping or reverse engineering</span>
-              </div>
-            </div>
-          </div>
+      {/* Highlights Summary */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-16 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+          >
+            {summaryCards.map((card, index) => (
+              <CardContainer key={index} className="inter-var w-full">
+                <div className="bg-white/[0.03] backdrop-blur-md relative group/card border-white/5 w-full h-full rounded-[1.5rem] p-5 md:p-6 border hover:border-purple-500/30 transition-all overflow-hidden flex flex-col items-center text-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
+
+                  <CardItem translateZ={40} className="mb-4">
+                    <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                      <card.icon className="w-6 h-6 text-white" />
+                    </div>
+                  </CardItem>
+                  <CardItem
+                    as="h3"
+                    translateZ={50}
+                    className="text-lg font-bold text-white mb-2"
+                  >
+                    {card.title}
+                  </CardItem>
+                  <CardItem
+                    as="p"
+                    translateZ={30}
+                    className="text-gray-400 text-sm leading-relaxed"
+                  >
+                    {card.text}
+                  </CardItem>
+                </div>
+              </CardContainer>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* Table of Contents */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
+      <section className="px-4 sm:px-6 lg:px-8 pb-12 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700">
-            <h2 className="text-lg font-semibold text-white mb-4">Contents</h2>
-            <div className="grid sm:grid-cols-2 gap-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-white/[0.02] backdrop-blur-sm rounded-[1.5rem] p-6 border border-white/5"
+          >
+            <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-400" />
+              Quick Navigation
+            </h2>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2">
               {sections.map((section) => (
                 <a
                   key={section.id}
                   href={`#${section.id}`}
-                  className="text-gray-400 hover:text-purple-400 transition-colors text-sm py-1"
+                  className="text-gray-400 hover:text-purple-400 transition-colors text-sm py-1.5 flex items-center gap-2 group"
                 >
+                  <span className="w-1 h-1 bg-gray-600 rounded-full group-hover:bg-purple-400 transition-colors" />
                   {section.title}
                 </a>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto space-y-12">
-          {sections.map((section) => (
-            <div 
-              key={section.id} 
+      {/* Main Content Sections */}
+      <section className="px-4 sm:px-6 lg:px-8 pb-32 relative z-10">
+        <div className="max-w-4xl mx-auto space-y-16">
+          {sections.map((section, idx) => (
+            <motion.div
+              key={section.id}
               id={section.id}
-              className="bg-gray-800/30 rounded-2xl p-8 border border-gray-700 scroll-mt-24"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+              className="group relative bg-white/[0.02] backdrop-blur-sm rounded-[2rem] p-6 md:p-10 border border-white/5 hover:border-purple-500/20 transition-all scroll-mt-24"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center border border-purple-500/30">
-                  <section.icon className="w-5 h-5 text-purple-400" />
+              <div className="flex items-center gap-5 mb-10">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500/10 to-cyan-500/10 rounded-xl flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform duration-500 shadow-lg">
+                  <section.icon className="w-6 h-6 text-purple-400 group-hover:text-cyan-400 transition-colors" />
                 </div>
-                <h2 className="text-2xl font-bold text-white">{section.title}</h2>
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-1">{section.title}</h2>
+                  <div className="h-1 w-12 bg-gradient-to-r from-purple-500 to-transparent rounded-full" />
+                </div>
               </div>
-              
-              <div className="space-y-6">
+
+              <div className="space-y-10">
                 {section.content.map((block, blockIndex) => (
-                  <div key={blockIndex}>
+                  <div key={blockIndex} className="relative">
                     {block.subtitle && (
-                      <h3 className="text-lg font-medium text-gray-200 mb-3">
+                      <h3 className="text-xl font-semibold text-gray-100 mb-5 flex items-center gap-3">
+                        <span className="w-2 h-2 bg-purple-500 rounded-full" />
                         {block.subtitle}
                       </h3>
                     )}
                     {block.text && (
-                      <p className="text-gray-400 leading-relaxed">
+                      <p className="text-gray-400 leading-relaxed text-lg mb-4">
                         {block.text}
                       </p>
                     )}
                     {block.items && (
-                      <ul className="space-y-2">
+                      <ul className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 mt-4">
                         {block.items.map((item, itemIndex) => (
-                          <li key={itemIndex} className="flex items-start gap-3">
-                            <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-2 flex-shrink-0" />
-                            <span className="text-gray-400">{item}</span>
+                          <li key={itemIndex} className="flex items-start gap-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all group/item shadow-sm">
+                            <div className="mt-1 flex-shrink-0">
+                              <Zap className="w-4 h-4 text-purple-500/50 group-hover/item:text-purple-400 transition-colors" />
+                            </div>
+                            <span className="text-gray-300 text-sm leading-relaxed group-hover/item:text-white transition-colors">{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -492,89 +598,105 @@ export default function TermsOfServicePage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </section>
 
-      {/* Contact Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-800/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-800/50 rounded-2xl p-8 border border-gray-700 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl mb-4">
-              <Mail className="w-6 h-6 text-white" />
+          {/* Contact Section - Redesigned */}
+          <motion.section
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-gradient-to-br from-purple-500/5 via-cyan-500/5 to-blue-500/5 border border-white/10 rounded-[2.5rem] p-10 md:p-16 text-center relative overflow-hidden group"
+          >
+            <div className="relative z-10">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-[2rem] mb-8 shadow-[0_0_50px_rgba(168,85,247,0.3)] group-hover:scale-110 transition-transform duration-500">
+                <Mail className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-4xl font-bold text-white mb-6">Legal Support</h2>
+              <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto leading-relaxed">
+                If you have any questions about these Terms of Service or our legal practices,
+                our team is here to provide clarity.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a
+                  href="mailto:legal@omnifolio.app"
+                  className="group/btn relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-bold overflow-hidden transition-all hover:scale-105 active:scale-95"
+                >
+                  <Mail className="w-5 h-5" />
+                  legal@omnifolio.app
+                </a>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-4">Questions About These Terms?</h2>
-            <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-              If you have any questions about these Terms of Service, please contact our legal team.
+          </motion.section>
+
+          {/* Related Links - Redesigned */}
+          <section className="pt-8">
+            <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-8">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-cyan-400" />
+                Resources
+              </h3>
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  href="/privacy"
+                  className="flex items-center gap-3 px-6 py-3 bg-white/[0.05] border border-white/10 text-gray-300 rounded-xl hover:bg-white/[0.1] hover:text-white transition-all group"
+                >
+                  <Shield className="w-4 h-4 text-purple-400" />
+                  <span>Privacy Policy</span>
+                  <ArrowLeft className="w-4 h-4 rotate-180 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* Legal Footer Note */}
+          <footer className="text-center py-12">
+            <p className="text-gray-500 text-sm leading-relaxed max-w-3xl mx-auto italic">
+              These Terms of Service are effective as of {effectiveDate}. By using OmniFolio,
+              you acknowledge that you have read, understood, and agree to be bound by these Terms.
+              Securely managed in the cloud.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="mailto:legal@omnifolio.app"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 text-white rounded-xl font-medium hover:from-purple-500 hover:to-cyan-500 transition-all"
-              >
-                <Mail className="w-4 h-4" />
-                legal@omnifolio.app
-              </a>
-            </div>
-          </div>
+          </footer>
         </div>
       </section>
 
-      {/* Related Links */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-800">
-            <h3 className="text-lg font-semibold text-white mb-4">Related Documents</h3>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/privacy"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 hover:text-white transition-colors"
-              >
-                <Shield className="w-4 h-4" />
-                Privacy Policy
-              </Link>
+      {/* Main Footer */}
+      <footer className="border-t border-white/5 py-12 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#030712]/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
+            <div className="flex items-center gap-3 group">
+              <OmnifolioLogo size="sm" />
+              <div className="w-px h-6 bg-white/10 mx-2" />
+              <span className="text-gray-500 font-medium tracking-wider text-sm uppercase">Legal Department</span>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Legal Footer Note */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-800">
-            <p className="text-gray-500 text-sm leading-relaxed">
-              These Terms of Service are effective as of {effectiveDate}. By using OmniFolio, 
-              you acknowledge that you have read, understood, and agree to be bound by these Terms. 
-              If you are using the Service on behalf of an organization, you represent that you 
-              have the authority to bind that organization to these Terms.
+            <nav className="flex items-center gap-8">
+              {[
+                { name: 'Home', href: '/' },
+                { name: 'About', href: '/about' },
+                { name: 'Privacy', href: '/privacy' },
+                { name: 'Terms', href: '/terms', active: true },
+              ].map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`text-sm font-medium transition-all relative group ${item.active ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                >
+                  {item.name}
+                  <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-500 transition-all ${item.active ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
+            <p className="text-gray-600 text-xs font-medium">
+              © {new Date().getFullYear()} OmniFolio Technologies. All rights reserved and protected.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-800 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <OmnifolioLogo size="sm" />
-          </div>
-          <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} OmniFolio. All rights reserved.
-          </p>
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Home
-            </Link>
-            <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
-              About
-            </Link>
-            <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
-              Privacy
-            </Link>
-            <Link href="/terms" className="text-purple-400 text-sm transition-colors">
-              Terms
-            </Link>
+            <div className="flex items-center gap-6 text-xs text-gray-500 font-medium">
+              <Link href="/terms" className="hover:text-purple-400 transition-colors">Term Definitions</Link>
+              <Link href="/privacy" className="hover:text-cyan-400 transition-colors">Compliance Information</Link>
+            </div>
           </div>
         </div>
       </footer>
