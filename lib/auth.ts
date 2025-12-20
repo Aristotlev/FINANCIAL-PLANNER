@@ -4,8 +4,17 @@ import { Pool } from "pg";
 
 // Create PostgreSQL pool for Better Auth
 // IMPORTANT: Cloud Run requires SSL but Supabase uses self-signed certs
+const connectionString = process.env.SUPABASE_DATABASE_URL;
+
+if (!connectionString) {
+  console.error("❌ FATAL: SUPABASE_DATABASE_URL is missing in environment variables!");
+} else {
+  // Log masked connection string for debugging
+  console.log("✅ SUPABASE_DATABASE_URL found:", connectionString.replace(/:[^:@]*@/, ":****@"));
+}
+
 const pool = new Pool({
-  connectionString: process.env.SUPABASE_DATABASE_URL,
+  connectionString: connectionString,
   ssl: {
     rejectUnauthorized: false, // Required for Supabase pooler self-signed certs
   },
