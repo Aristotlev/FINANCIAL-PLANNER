@@ -24,8 +24,18 @@ const getAuthBaseURL = () => {
     // Always use canonical www URL in production
     return "https://www.omnifolio.app";
   }
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // FORCE localhost:3000 in development to avoid redirecting to production
+  return "http://localhost:3000";
 };
+
+// Debug logging for OAuth credentials
+if (process.env.NODE_ENV === "production") {
+  console.log("Auth Config Debug:");
+  console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + "..." : "MISSING");
+  console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.substring(0, 5) + "..." : "MISSING");
+  console.log("BETTER_AUTH_URL:", process.env.BETTER_AUTH_URL);
+  console.log("NEXT_PUBLIC_BETTER_AUTH_URL:", process.env.NEXT_PUBLIC_BETTER_AUTH_URL);
+}
 
 export const auth = betterAuth({
   database: pool,
@@ -40,10 +50,12 @@ export const auth = betterAuth({
 
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID!.trim(),
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!.trim(),
       // CRITICAL: Must match exactly what's in Google Cloud Console
-      redirectURI: "https://www.omnifolio.app/api/auth/callback/google",
+      redirectURI: process.env.NODE_ENV === "production" 
+        ? "https://www.omnifolio.app/api/auth/callback/google"
+        : "http://localhost:3000/api/auth/callback/google",
     },
   },
 
@@ -82,8 +94,8 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === "production",
     // Re-enable cross-subdomain cookies to ensure stability across www and root
     crossSubDomainCookies: {
-      enabled: true,
-      domain: ".omnifolio.app", 
+      enabled: process.env.NODE_ENV === "production",
+      domain: process.env.NODE_ENV === "production" ? ".omnifolio.app" : undefined, 
     },
   },
 

@@ -4,7 +4,7 @@
 
 ### Your OAuth Client ID
 ```
-629380503119-6h41katf4dlj38ecqd5cg3nq7fnovl5l.apps.googleusercontent.com
+YOUR_GOOGLE_CLIENT_ID
 ```
 
 ### Required Google Cloud Console Settings
@@ -50,8 +50,8 @@ Add ALL of these **EXACTLY** as shown:
 
 | Variable | Value | Status |
 |----------|-------|--------|
-| `GOOGLE_CLIENT_ID` | `629380503119-...` | ✅ Set |
-| `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` | ✅ Set |
+| `GOOGLE_CLIENT_ID` | `YOUR_GOOGLE_CLIENT_ID` | ✅ Set |
+| `GOOGLE_CLIENT_SECRET` | `YOUR_GOOGLE_CLIENT_SECRET` | ✅ Set |
 | `BETTER_AUTH_SECRET` | `5SeG5WpB/...` | ✅ Set |
 | `BETTER_AUTH_URL` | `https://www.omnifolio.app` | ✅ Set |
 | `SUPABASE_DATABASE_URL` | `postgresql://...` | ✅ Set |

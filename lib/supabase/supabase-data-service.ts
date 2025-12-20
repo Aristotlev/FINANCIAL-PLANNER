@@ -41,7 +41,8 @@ export class SupabaseDataService {
       this.lastUserIdCheck = now;
       return null;
     } catch (error) {
-      console.error('Error getting user ID from Better Auth:', error);
+      // Silently fail if auth is not available (e.g. during SSR or initial load)
+      // console.error('Error getting user ID from Better Auth:', error);
       return null;
     }
   }
@@ -50,6 +51,26 @@ export class SupabaseDataService {
   static clearUserCache(): void {
     this.cachedUserId = null;
     this.lastUserIdCheck = 0;
+  }
+
+  // Helper to check if an error is an auth error that should be suppressed
+  private static isAuthError(error: any): boolean {
+    if (!error) return false;
+    
+    // Check for specific error codes and messages
+    const code = error.code;
+    const status = error.status;
+    const message = error.message?.toLowerCase() || '';
+    
+    return (
+      code === 'PGRST301' || // JWT expired
+      status === 401 ||      // Unauthorized
+      status === 403 ||      // Forbidden
+      message.includes('jwt') ||
+      message.includes('auth') ||
+      message.includes('key') ||
+      message.includes('token')
+    );
   }
 
   // ==================== CASH ACCOUNTS ====================
@@ -76,7 +97,9 @@ export class SupabaseDataService {
       // Return data as-is (even if empty) - no defaults
       return data || [];
     } catch (error) {
-      console.error('Error loading cash accounts from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading cash accounts from Supabase:', error);
+      }
       return DataService.loadCashAccounts([]);
     }
   }
@@ -181,7 +204,9 @@ export class SupabaseDataService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error loading income sources from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading income sources from Supabase:', error);
+      }
       const stored = localStorage.getItem('incomeSources');
       return stored ? JSON.parse(stored) : defaultSources;
     }
@@ -302,7 +327,9 @@ export class SupabaseDataService {
       }));
       return mappedData;
     } catch (error) {
-      console.error('Error loading crypto holdings:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading crypto holdings:', error);
+      }
       return DataService.loadCryptoHoldings([]);
     }
   }
@@ -420,7 +447,9 @@ export class SupabaseDataService {
       // Return data as-is (even if empty) - no defaults
       return data || [];
     } catch (error) {
-      console.error('Error loading stock holdings from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading stock holdings from Supabase:', error);
+      }
       return DataService.loadStockHoldings([]);
     }
   }
@@ -524,7 +553,9 @@ export class SupabaseDataService {
       // Return data as-is (even if empty) - no defaults
       return data || [];
     } catch (error) {
-      console.error('Error loading trading accounts from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading trading accounts from Supabase:', error);
+      }
       return DataService.loadTradingAccounts([]);
     }
   }
@@ -628,7 +659,9 @@ export class SupabaseDataService {
       // Return data as-is (even if empty) - only use defaults on first load when no data exists
       return data || [];
     } catch (error) {
-      console.error('Error loading real estate from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading real estate from Supabase:', error);
+      }
       return DataService.loadRealEstate(defaultProperties);
     }
   }
@@ -733,7 +766,9 @@ export class SupabaseDataService {
       // Return data as-is (even if empty) - only use defaults on first load when no data exists
       return data || [];
     } catch (error) {
-      console.error('Error loading savings accounts from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading savings accounts from Supabase:', error);
+      }
       return DataService.loadSavingsAccounts(defaultAccounts);
     }
   }
@@ -838,7 +873,9 @@ export class SupabaseDataService {
       // Return data as-is (even if empty) - only use defaults on first load when no data exists
       return data || [];
     } catch (error) {
-      console.error('Error loading expense categories from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading expense categories from Supabase:', error);
+      }
       return DataService.loadExpenseCategories(defaultCategories);
     }
   }
@@ -941,7 +978,9 @@ export class SupabaseDataService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error loading subscriptions from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading subscriptions from Supabase:', error);
+      }
       return DataService.loadSubscriptions(defaultSubscriptions);
     }
   }
@@ -1040,7 +1079,9 @@ export class SupabaseDataService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error loading debt accounts from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading debt accounts from Supabase:', error);
+      }
       return DataService.loadDebtAccounts?.(defaultAccounts) || [];
     }
   }
@@ -1141,7 +1182,9 @@ export class SupabaseDataService {
       // Return data as-is (even if empty) - only use defaults on first load when no data exists
       return data || [];
     } catch (error) {
-      console.error('Error loading valuable items from Supabase:', error);
+      if (!this.isAuthError(error)) {
+        console.error('Error loading valuable items from Supabase:', error);
+      }
       return DataService.loadValuableItems(defaultItems);
     }
   }
