@@ -17,6 +17,16 @@ if (process.env.NODE_ENV === "production") {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
+// Fix for local development: Ensure production URLs in .env.local don't interfere
+if (process.env.NODE_ENV !== "production") {
+  // These might be set in .env.local pointing to production, which confuses better-auth
+  // We want to force localhost for development
+  if (process.env.BETTER_AUTH_URL && process.env.BETTER_AUTH_URL !== "http://localhost:3000") {
+    console.log("⚠️ Overriding BETTER_AUTH_URL for development (was " + process.env.BETTER_AUTH_URL + ")");
+    process.env.BETTER_AUTH_URL = "http://localhost:3000";
+  }
+}
+
 // IMPORTANT: Always use www canonical URL to prevent state_mismatch errors
 // The OAuth flow MUST start and end on the exact same domain
 const getAuthBaseURL = () => {
