@@ -5,16 +5,13 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   
   // CRITICAL: Redirect non-www to www to prevent OAuth state_mismatch
-  // This must happen BEFORE the OAuth flow starts
-  // Exception: POST requests can't be redirected without losing body
-  // Exception: OAuth callbacks need to go through (they're GET but have state params)
-  if (url.hostname === 'omnifolio.app' && request.method === 'GET') {
-    // Don't redirect OAuth callbacks - they need the state cookie
-    const isOAuthCallback = url.pathname.includes('/callback/');
-    if (!isOAuthCallback) {
-      url.hostname = 'www.omnifolio.app';
-      return NextResponse.redirect(url, 301);
-    }
+  // This MUST happen for ALL requests including OAuth callbacks
+  // The state cookie is set on .omnifolio.app so it will be available after redirect
+  if (url.hostname === 'omnifolio.app') {
+    url.hostname = 'www.omnifolio.app';
+    // Use 308 for POST requests to preserve method, 301 for GET
+    const statusCode = request.method === 'GET' ? 301 : 308;
+    return NextResponse.redirect(url, statusCode);
   }
   
   const response = NextResponse.next();

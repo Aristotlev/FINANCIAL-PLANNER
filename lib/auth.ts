@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { Pool } from "pg";
 
 // Create PostgreSQL pool for Better Auth
@@ -71,49 +72,35 @@ export const auth = betterAuth({
   advanced: {
     cookiePrefix: "money-hub",
     useSecureCookies: process.env.NODE_ENV === "production",
-    // Use www domain for cookies
+    // Use root domain for cookies to work across www and non-www
     crossSubDomainCookies: {
       enabled: true,
-      domain: "www.omnifolio.app",
+      domain: ".omnifolio.app", // Leading dot allows cookies on all subdomains
     },
   },
 
-  // Configure where to redirect after social sign-in
-  callbacks: {
-    async onSignIn(user: any, account: any) {
-      // Fetch and save Google profile picture
-      if (account?.provider === 'google' && account?.access_token) {
-        try {
-          const googleResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: {
-              Authorization: `Bearer ${account.access_token}`,
-            },
-          });
-
-          if (googleResponse.ok) {
-            const googleData = await googleResponse.json();
-            console.log("✅ Fetched Google profile:", {
-              email: googleData.email,
-              picture: googleData.picture,
-            });
-
-            // Update user's profile picture in database
-            await pool.query(
-              `UPDATE users 
-               SET image = $1, 
-                   name = COALESCE(NULLIF(name, ''), $2),
-                   updated_at = NOW() 
-               WHERE id = $3`,
-              [googleData.picture, googleData.name, user.id]
-            );
+  // Use hooks to handle post-authentication actions
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      // Check if this is the OAuth callback for Google
+      if (ctx.path === "/callback/:id" && ctx.params?.id === "google") {
+        const newSession = ctx.context.newSession;
+        if (newSession?.user) {
+          try {
+            // The user's profile picture should already be set from Google's userinfo
+            // But we can update it if needed
+            console.log("✅ Google OAuth callback completed for user:", newSession.user.email);
             
-            console.log("💾 Saved profile picture to database");
+            // If the user has an image from Google, it's already saved
+            if (newSession.user.image) {
+              console.log("� User image from Google:", newSession.user.image);
+            }
+          } catch (error) {
+            console.error("❌ Error in OAuth callback hook:", error);
           }
-        } catch (error) {
-          console.error("❌ Error fetching profile picture:", error);
         }
       }
-    },
+    }),
   },
 });
 
