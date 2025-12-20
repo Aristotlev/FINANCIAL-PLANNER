@@ -77,13 +77,14 @@ export const auth = betterAuth({
   ],
 
   advanced: {
-    cookiePrefix: "money-hub",
+    // Changed prefix to invalidate any old/conflicting cookies from previous deployments
+    cookiePrefix: "omnifolio-v2", 
     useSecureCookies: process.env.NODE_ENV === "production",
-    // Simplified cookie config: rely on the host header since we force www
-    // crossSubDomainCookies: {
-    //   enabled: true,
-    //   domain: ".omnifolio.app", 
-    // },
+    // Re-enable cross-subdomain cookies to ensure stability across www and root
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: ".omnifolio.app", 
+    },
   },
 
   // Use hooks to handle post-authentication actions
