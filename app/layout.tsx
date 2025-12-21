@@ -78,18 +78,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google tag (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6CJBH3X6XC"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-6CJBH3X6XC');
-            `,
-          }}
-        />
         {/* Runtime environment variables - loaded at runtime, not build time */}
         <Script
           src="/api/env"
@@ -102,6 +90,22 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-6CJBH3X6XC"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-6CJBH3X6XC', {
+              page_path: window.location.pathname,
+            });
+            gtag('config', 'AW-17821905669');
+          `}
+        </Script>
         <ExtensionErrorBoundary>
           <ReduxWarningsSuppressor />
           <ZoomHandler />
