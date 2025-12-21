@@ -11,6 +11,7 @@ import { CurrencyProvider } from "../contexts/currency-context";
 import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
 import { ExtensionErrorBoundary } from "../components/ui/extension-error-boundary";
+import { ConsentBanner } from "../components/ui/consent-banner";
 import Script from "next/script";
 
 // Force dynamic rendering for all pages (disable static generation)
@@ -77,6 +78,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Google tag (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-6CJBH3X6XC"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-6CJBH3X6XC');
+            `,
+          }}
+        />
         {/* Runtime environment variables - loaded at runtime, not build time */}
         <Script
           src="/api/env"
@@ -101,6 +114,7 @@ export default function RootLayout({
                       <HiddenCardsProvider>
                         <CardOrderProvider>
                           {children}
+                          <ConsentBanner />
                         </CardOrderProvider>
                       </HiddenCardsProvider>
                     </FinancialDataProvider>
