@@ -128,14 +128,14 @@ function NetWorthModalContent() {
 
   const cashValue = financialData.cash;
   const assetBreakdown = React.useMemo(() => [
-    { name: 'Real Estate', value: realEstate, color: '#84cc16', percentage: (realEstate / totalAssets * 100) },
-    { name: 'Stock Portfolio', value: portfolio.stocks.value, color: '#8b5cf6', percentage: (portfolio.stocks.value / totalAssets * 100) },
-    { name: 'Valuable Items', value: valuableItems, color: '#f59e0b', percentage: (valuableItems / totalAssets * 100) },
-    { name: 'Savings', value: savings, color: '#10b981', percentage: (savings / totalAssets * 100) },
-    { name: 'Crypto Portfolio', value: portfolio.crypto.value, color: '#ef4444', percentage: (portfolio.crypto.value / totalAssets * 100) },
-    { name: 'Trading Account', value: tradingAccount, color: '#06b6d4', percentage: (tradingAccount / totalAssets * 100) },
-    { name: 'Cash', value: cashValue, color: '#14b8a6', percentage: (cashValue / totalAssets * 100) }
-  ], [realEstate, portfolio.stocks.value, valuableItems, savings, portfolio.crypto.value, tradingAccount, cashValue, totalAssets]);
+    { name: 'Real Estate', value: realEstate, color: '#84cc16', percentage: totalAssets > 0 ? (realEstate / totalAssets * 100) : 0 },
+    { name: 'Stock Portfolio', value: portfolio.stocks.value, color: '#8b5cf6', percentage: totalAssets > 0 ? (portfolio.stocks.value / totalAssets * 100) : 0 },
+    { name: 'Valuable Items', value: valuableItems, color: '#f59e0b', percentage: totalAssets > 0 ? (valuableItems / totalAssets * 100) : 0 },
+    { name: 'Savings', value: savings, color: '#10b981', percentage: totalAssets > 0 ? (savings / totalAssets * 100) : 0 },
+    { name: 'Crypto Portfolio', value: portfolio.crypto.value, color: '#ef4444', percentage: totalAssets > 0 ? (portfolio.crypto.value / totalAssets * 100) : 0 },
+    { name: 'Trading Account', value: tradingAccount, color: '#06b6d4', percentage: totalAssets > 0 ? (tradingAccount / totalAssets * 100) : 0 },
+    { name: 'Cash', value: cashValue, color: '#14b8a6', percentage: totalAssets > 0 ? (cashValue / totalAssets * 100) : 0 }
+  ].filter(item => item.value > 0), [realEstate, portfolio.stocks.value, valuableItems, savings, portfolio.crypto.value, tradingAccount, cashValue, totalAssets]);
 
   // Pie chart data with exact percentages - memoized
   const pieChartData = React.useMemo(() => assetBreakdown.map(asset => ({
@@ -650,15 +650,15 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
       
       const monthData = {
         month,
-        // Assets with different growth patterns
-        cash: Math.max(100, financialData.cash * (growthFactor + stableVariation)),
-        savings: Math.max(100, financialData.savings * (growthFactor + stableVariation)),
-        crypto: Math.max(100, portfolio.crypto.value * (growthFactor + baseVariation + cryptoVolatility)),
-        stocks: Math.max(100, portfolio.stocks.value * (growthFactor + stockVolatility)),
-        realEstate: Math.max(100, financialData.realEstate * (growthFactor + stableVariation * 0.5)), // Very stable
-        valuableItems: Math.max(100, financialData.valuableItems * (growthFactor + stableVariation)),
-        tradingAccount: Math.max(100, financialData.tradingAccount * (growthFactor + stockVolatility)),
-        expenses: Math.max(50, financialData.expenses * (0.9 + (Math.random() * 0.2))), // Random fluctuation
+        // Assets with different growth patterns - ONLY if they have value > 0
+        cash: financialData.cash > 0 ? Math.max(0, financialData.cash * (growthFactor + stableVariation)) : 0,
+        savings: financialData.savings > 0 ? Math.max(0, financialData.savings * (growthFactor + stableVariation)) : 0,
+        crypto: portfolio.crypto.value > 0 ? Math.max(0, portfolio.crypto.value * (growthFactor + baseVariation + cryptoVolatility)) : 0,
+        stocks: portfolio.stocks.value > 0 ? Math.max(0, portfolio.stocks.value * (growthFactor + stockVolatility)) : 0,
+        realEstate: financialData.realEstate > 0 ? Math.max(0, financialData.realEstate * (growthFactor + stableVariation * 0.5)) : 0, // Very stable
+        valuableItems: financialData.valuableItems > 0 ? Math.max(0, financialData.valuableItems * (growthFactor + stableVariation)) : 0,
+        tradingAccount: financialData.tradingAccount > 0 ? Math.max(0, financialData.tradingAccount * (growthFactor + stockVolatility)) : 0,
+        expenses: financialData.expenses > 0 ? Math.max(0, financialData.expenses * (0.9 + (Math.random() * 0.2))) : 0, // Random fluctuation
       };
       
       // Calculate net worth
@@ -668,13 +668,13 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
       
       return {
         ...monthData,
-        netWorth: Math.max(100, monthNetWorth)
+        netWorth: Math.max(0, monthNetWorth)
       };
     });
   }, [financialData.cash, financialData.savings, financialData.realEstate, financialData.valuableItems, 
       financialData.tradingAccount, financialData.expenses, portfolio.crypto.value, portfolio.stocks.value]);
 
-  const assetCategories = [
+  const allAssetCategories = [
     { key: 'realEstate', name: 'Real Estate', color: '#14b8a6' },
     { key: 'stocks', name: 'Stocks', color: '#6366f1' },
     { key: 'valuableItems', name: 'Valuable Items', color: '#84cc16' },
@@ -685,6 +685,24 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
     { key: 'expenses', name: 'Expenses', color: '#ef4444' },
     { key: 'netWorth', name: 'Net Worth', color: '#d946ef' }
   ];
+
+  const assetCategories = React.useMemo(() => {
+    return allAssetCategories.filter(category => {
+      if (category.key === 'netWorth') return true;
+      if (category.key === 'expenses') return financialData.expenses > 0;
+      
+      switch(category.key) {
+        case 'realEstate': return financialData.realEstate > 0;
+        case 'stocks': return portfolio.stocks.value > 0;
+        case 'valuableItems': return financialData.valuableItems > 0;
+        case 'crypto': return portfolio.crypto.value > 0;
+        case 'savings': return financialData.savings > 0;
+        case 'tradingAccount': return financialData.tradingAccount > 0;
+        case 'cash': return financialData.cash > 0;
+        default: return false;
+      }
+    });
+  }, [financialData, portfolio]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -1142,15 +1160,15 @@ function NetWorthTrends({ data, financialData, portfolio }: { data: any[]; finan
       
       const monthData = {
         month,
-        // Assets with different growth patterns
-        cash: Math.max(100, financialData.cash * (growthFactor + stableVariation)),
-        savings: Math.max(100, financialData.savings * (growthFactor + stableVariation)),
-        crypto: Math.max(100, portfolio.crypto.value * (growthFactor + baseVariation + cryptoVolatility)),
-        stocks: Math.max(100, portfolio.stocks.value * (growthFactor + stockVolatility)),
-        realEstate: Math.max(100, financialData.realEstate * (growthFactor + stableVariation * 0.5)), // Very stable
-        valuableItems: Math.max(100, financialData.valuableItems * (growthFactor + stableVariation)),
-        tradingAccount: Math.max(100, financialData.tradingAccount * (growthFactor + stockVolatility)),
-        expenses: Math.max(50, financialData.expenses * (0.9 + (Math.random() * 0.2))), // Random fluctuation
+        // Assets with different growth patterns - ONLY if they have value > 0
+        cash: financialData.cash > 0 ? Math.max(0, financialData.cash * (growthFactor + stableVariation)) : 0,
+        savings: financialData.savings > 0 ? Math.max(0, financialData.savings * (growthFactor + stableVariation)) : 0,
+        crypto: portfolio.crypto.value > 0 ? Math.max(0, portfolio.crypto.value * (growthFactor + baseVariation + cryptoVolatility)) : 0,
+        stocks: portfolio.stocks.value > 0 ? Math.max(0, portfolio.stocks.value * (growthFactor + stockVolatility)) : 0,
+        realEstate: financialData.realEstate > 0 ? Math.max(0, financialData.realEstate * (growthFactor + stableVariation * 0.5)) : 0, // Very stable
+        valuableItems: financialData.valuableItems > 0 ? Math.max(0, financialData.valuableItems * (growthFactor + stableVariation)) : 0,
+        tradingAccount: financialData.tradingAccount > 0 ? Math.max(0, financialData.tradingAccount * (growthFactor + stockVolatility)) : 0,
+        expenses: financialData.expenses > 0 ? Math.max(0, financialData.expenses * (0.9 + (Math.random() * 0.2))) : 0, // Random fluctuation
       };
       
       // Calculate net worth
@@ -1160,24 +1178,42 @@ function NetWorthTrends({ data, financialData, portfolio }: { data: any[]; finan
       
       return {
         ...monthData,
-        netWorth: Math.max(100, monthNetWorth)
+        netWorth: Math.max(0, monthNetWorth)
       };
     });
   }, [financialData.cash, financialData.savings, financialData.realEstate, financialData.valuableItems, 
       financialData.tradingAccount, financialData.expenses, portfolio.crypto.value, portfolio.stocks.value]);
 
   // Card colors from the application
-  const assetCategories = [
+  const allAssetCategories = [
     { key: 'netWorth', name: 'Net Worth', color: '#d946ef', strokeWidth: 4, glowIntensity: 12 },
-    { key: 'realEstate', name: 'Real Estate', color: '#14b8a6', strokeWidth: 2.5, glowIntensity: 8 },
-    { key: 'stocks', name: 'Stocks', color: '#6366f1', strokeWidth: 2.5, glowIntensity: 8 },
-    { key: 'valuableItems', name: 'Valuable Items', color: '#84cc16', strokeWidth: 2.5, glowIntensity: 8 },
-    { key: 'crypto', name: 'Crypto', color: '#f59e0b', strokeWidth: 2.5, glowIntensity: 8 },
-    { key: 'savings', name: 'Savings', color: '#3b82f6', strokeWidth: 2.5, glowIntensity: 8 },
-    { key: 'tradingAccount', name: 'Trading Account', color: '#06b6d4', strokeWidth: 2.5, glowIntensity: 8 },
-    { key: 'cash', name: 'Cash', color: '#10b981', strokeWidth: 2.5, glowIntensity: 8 },
+    { key: 'realEstate', name: 'Real Estate', color: '#14b8a6', strokeWidth: 3, glowIntensity: 8 },
+    { key: 'stocks', name: 'Stocks', color: '#6366f1', strokeWidth: 3, glowIntensity: 8 },
+    { key: 'valuableItems', name: 'Valuable Items', color: '#84cc16', strokeWidth: 3, glowIntensity: 8 },
+    { key: 'crypto', name: 'Crypto', color: '#f59e0b', strokeWidth: 3, glowIntensity: 8 },
+    { key: 'savings', name: 'Savings', color: '#3b82f6', strokeWidth: 3, glowIntensity: 8 },
+    { key: 'tradingAccount', name: 'Trading Account', color: '#06b6d4', strokeWidth: 3, glowIntensity: 8 },
+    { key: 'cash', name: 'Cash', color: '#10b981', strokeWidth: 3, glowIntensity: 8 },
     { key: 'expenses', name: 'Expenses', color: '#ef4444', strokeWidth: 3, glowIntensity: 10 }
   ];
+
+  const assetCategories = React.useMemo(() => {
+    return allAssetCategories.filter(category => {
+      if (category.key === 'netWorth') return true;
+      if (category.key === 'expenses') return financialData.expenses > 0;
+      
+      switch(category.key) {
+        case 'realEstate': return financialData.realEstate > 0;
+        case 'stocks': return portfolio.stocks.value > 0;
+        case 'valuableItems': return financialData.valuableItems > 0;
+        case 'crypto': return portfolio.crypto.value > 0;
+        case 'savings': return financialData.savings > 0;
+        case 'tradingAccount': return financialData.tradingAccount > 0;
+        case 'cash': return financialData.cash > 0;
+        default: return false;
+      }
+    });
+  }, [financialData, portfolio]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {

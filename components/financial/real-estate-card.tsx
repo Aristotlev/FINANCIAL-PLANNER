@@ -1518,7 +1518,7 @@ function RealEstateModalContent() {
   const addProperty = async (propertyData: Omit<RealEstateProperty, 'id'>) => {
     const newProperty: RealEstateProperty = {
       ...propertyData,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     // Save to database first
     await SupabaseDataService.saveRealEstate(newProperty);

@@ -230,7 +230,7 @@ export function CryptoFuturesTradingTab({
     }
 
     const newPosition: CryptoFuturesPosition = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       symbol,
       direction,
       quantity: calculatedPosition.quantity,

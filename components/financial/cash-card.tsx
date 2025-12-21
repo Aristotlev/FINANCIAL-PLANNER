@@ -1082,7 +1082,7 @@ function CashModalContent() {
   const addAccount = async (accountData: Omit<CashAccount, 'id'>) => {
     const newAccount: CashAccount = {
       ...accountData,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     // Save to database first
     await SupabaseDataService.saveCashAccount(newAccount);
@@ -1117,7 +1117,7 @@ function CashModalContent() {
   const addIncomeSource = async (incomeData: Omit<IncomeSource, 'id'>) => {
     const newIncome: IncomeSource = {
       ...incomeData,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     await SupabaseDataService.saveIncomeSource(newIncome);
     setIncomeSources([...incomeSources, newIncome]);

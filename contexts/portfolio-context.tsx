@@ -174,6 +174,9 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
   // Load holdings from database on mount and when data changes
   useEffect(() => {
+    let isMounted = true;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    
     const loadData = async () => {
       try {
         const { SupabaseDataService } = await import('../lib/supabase/supabase-data-service');
@@ -181,18 +184,27 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           SupabaseDataService.getCryptoHoldings([]),
           SupabaseDataService.getStockHoldings([])
         ]);
-        setCryptoHoldings(cryptoData);
-        setStockHoldings(stockData);
+        if (isMounted) {
+          setCryptoHoldings(cryptoData);
+          setStockHoldings(stockData);
+        }
       } catch (error) {
         console.error('Error loading portfolio data:', error);
       }
     };
     
+    // Initial load (immediate)
     loadData();
 
-    // Listen for data changes
+    // Listen for data changes with debounce to allow database consistency
     const handleDataChange = () => {
-      loadData();
+      // Debounce to prevent rapid re-fetches and allow DB to sync
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(() => {
+        loadData();
+      }, 500); // 500ms delay
     };
 
     window.addEventListener('cryptoDataChanged', handleDataChange);
@@ -200,6 +212,10 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     window.addEventListener('financialDataChanged', handleDataChange);
 
     return () => {
+      isMounted = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);

@@ -31,33 +31,44 @@ export function useAssetPrices(symbols: string[]) {
   const pricesRef = useRef<{ [symbol: string]: AssetPrice }>({});
 
   useEffect(() => {
-    const unsubscribers: (() => void)[] = [];
-    let loadedCount = 0;
+    // Handle empty symbols list immediately
+    if (!symbols || symbols.length === 0) {
+      setLoading(false);
+      return;
+    }
 
+    const unsubscribers: (() => void)[] = [];
+    const loadedSymbols = new Set<string>();
+    const uniqueSymbols = [...new Set(symbols)]; // Work with unique symbols
+    
     setLoading(true);
     setError(null);
-    pricesRef.current = {};
+    
+    // Keep existing prices to avoid flickering, but mark as loading
+    // pricesRef.current is preserved across renders
 
-    symbols.forEach(symbol => {
+    // Safety timeout to ensure loading state doesn't get stuck
+    const safetyTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Asset prices loading timed out, forcing display');
+        setLoading(false);
+        setPrices({ ...pricesRef.current });
+      }
+    }, 5000); // 5 second safety timeout
+
+    uniqueSymbols.forEach(symbol => {
       const unsubscribe = priceService.subscribe(symbol, (price: AssetPrice) => {
-        const prevPrice = pricesRef.current[symbol];
+        pricesRef.current[symbol] = price;
+        loadedSymbols.add(symbol);
         
-        // Only update if price actually changed (avoid unnecessary re-renders)
-        if (!prevPrice || prevPrice.price !== price.price || prevPrice.change24h !== price.change24h) {
-          pricesRef.current[symbol] = price;
-          loadedCount++;
-          
-          // Batch updates - only set state once all initial prices are loaded
-          // or when an existing price changes
-          if (loadedCount >= symbols.length || prevPrice) {
-            setPrices({ ...pricesRef.current });
-            setLoading(false);
-          }
+        // Check if we have loaded all unique symbols
+        if (loadedSymbols.size >= uniqueSymbols.length) {
+          setPrices({ ...pricesRef.current });
+          setLoading(false);
+          clearTimeout(safetyTimeout);
         } else {
-          loadedCount++;
-          if (loadedCount >= symbols.length) {
-            setLoading(false);
-          }
+          // Optional: Update incrementally for better UX
+          setPrices({ ...pricesRef.current });
         }
       });
       
@@ -65,6 +76,7 @@ export function useAssetPrices(symbols: string[]) {
     });
 
     return () => {
+      clearTimeout(safetyTimeout);
       unsubscribers.forEach(unsub => unsub());
     };
   }, [symbols.join(',')]);

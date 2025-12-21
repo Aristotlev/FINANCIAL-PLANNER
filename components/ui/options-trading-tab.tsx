@@ -174,7 +174,7 @@ export function OptionsTradingTab({
     }
 
     const newPosition: OptionsPosition = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       symbol,
       optionType,
       strikePrice: parseFloat(strikePrice),

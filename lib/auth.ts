@@ -39,11 +39,14 @@ const getAuthBaseURL = () => {
 };
 
 // Debug logging for OAuth credentials
+console.log("Auth Config Debug:");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("Base URL:", getAuthBaseURL());
+console.log("BETTER_AUTH_URL (env):", process.env.BETTER_AUTH_URL);
+
 if (process.env.NODE_ENV === "production") {
-  console.log("Auth Config Debug:");
   console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 10) + "..." : "MISSING");
   console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET.substring(0, 5) + "..." : "MISSING");
-  console.log("BETTER_AUTH_URL:", process.env.BETTER_AUTH_URL);
   console.log("NEXT_PUBLIC_BETTER_AUTH_URL:", process.env.NEXT_PUBLIC_BETTER_AUTH_URL);
 }
 
@@ -62,7 +65,7 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!.trim(),
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!.trim(),
-      // CRITICAL: Must match exactly what's in Google Cloud Console
+      // Explicitly set redirectURI to ensure it matches exactly what Google expects
       redirectURI: process.env.NODE_ENV === "production" 
         ? "https://www.omnifolio.app/api/auth/callback/google"
         : "http://localhost:3000/api/auth/callback/google",
@@ -72,8 +75,9 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // Update session every 24 hours
+    // Disable cookie cache in development to prevent stale state issues
     cookieCache: {
-      enabled: true,
+      enabled: process.env.NODE_ENV === "production",
       maxAge: 60 * 5, // 5 minutes cache
     },
   },

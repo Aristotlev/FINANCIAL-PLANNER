@@ -947,7 +947,7 @@ function ValuableItemsModalContent() {
   const addItem = async (itemData: Omit<ValuableItem, 'id'>) => {
     const newItem: ValuableItem = {
       ...itemData,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     // Save to database first
     await SupabaseDataService.saveValuableItem(newItem);

@@ -376,13 +376,23 @@ export class SupabaseDataService {
         wallet_name: holding.walletName || null,
         wallet_address: holding.walletAddress || null,
       };
+      
+      // console.log('Saving crypto holding to Supabase:', dbHolding);
+      
       const { error } = await supabase
         .from('crypto_holdings')
         .upsert(dbHolding);
 
       if (error) throw error;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving crypto holding:', error);
+      if (error && typeof error === 'object') {
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Error message:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error hint:', error.hint);
+      }
+      
       // Fall back to localStorage on error
       const holdings = DataService.loadCryptoHoldings([]);
       const existing = holdings.findIndex(h => h.id === holding.id);
@@ -1413,7 +1423,8 @@ export class SupabaseDataService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching tax profiles:', error);
+        console.error('Error fetching tax profiles:', error.message || error);
+        if (Object.keys(error).length > 0) console.error('Error details:', error);
         return defaultProfiles;
       }
 

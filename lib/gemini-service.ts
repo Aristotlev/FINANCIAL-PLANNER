@@ -25,7 +25,7 @@ interface AIResponse {
 }
 
 export class GeminiService {
-  private genAI: GoogleGenerativeAI;
+  private genAI: GoogleGenerativeAI | null = null;
   private model: any;
   private context: ConversationContext;
 
@@ -34,16 +34,21 @@ export class GeminiService {
     // This service should only be instantiated in API routes (server-side)
     const apiKey = process.env.GOOGLE_AI_API_KEY || '';
     
-    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-      console.error('❌ Gemini API key not configured! Please add GOOGLE_AI_API_KEY to .env.local');
-    } else {
-      console.log('✅ Gemini API key found:', apiKey.substring(0, 20) + '...');
+    // Only log error if on server side and key is missing
+    if (typeof window === 'undefined') {
+      if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+        console.error('❌ Gemini API key not configured! Please add GOOGLE_AI_API_KEY to .env.local');
+      } else {
+        console.log('✅ Gemini API key found:', apiKey.substring(0, 20) + '...');
+      }
     }
     
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Try to list available models and pick the best one
-    this.initializeModel();
+    // Only initialize GoogleGenerativeAI if we have a key (server side)
+    if (apiKey && typeof window === 'undefined') {
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      // Try to list available models and pick the best one
+      this.initializeModel();
+    }
     
     this.context = {
       previousMessages: [],
@@ -51,6 +56,13 @@ export class GeminiService {
   }
 
   private async initializeModel() {
+    // 🚨 CRITICAL: Never run on client side
+    if (typeof window !== 'undefined') {
+      return;
+    }
+
+    if (!this.genAI) return;
+
     try {
       // Try different model names in order of preference
       const modelNames = [
@@ -64,7 +76,7 @@ export class GeminiService {
       for (const modelName of modelNames) {
         try {
           console.log(`🔍 Trying model: ${modelName}`);
-          this.model = this.genAI.getGenerativeModel({ 
+          this.model = this.genAI!.getGenerativeModel({ 
             model: modelName,
           });
           
@@ -81,7 +93,7 @@ export class GeminiService {
       
       // If all fail, set a default and let it error gracefully later
       console.warn('⚠️ No working model found, using fallback');
-      this.model = this.genAI.getGenerativeModel({ 
+      this.model = this.genAI!.getGenerativeModel({ 
         model: 'gemini-2.5-flash',
       });
     } catch (error) {
@@ -93,7 +105,17 @@ export class GeminiService {
    * Fallback method to call Gemini REST API directly
    */
   private async callGeminiRestAPI(prompt: string): Promise<string> {
+    // 🚨 CRITICAL: Never run on client side
+    if (typeof window !== 'undefined') {
+      throw new Error('Cannot call Gemini REST API from client side');
+    }
+
     const apiKey = process.env.GOOGLE_AI_API_KEY;
+    
+    if (!apiKey) {
+      console.error('❌ Gemini API key missing in callGeminiRestAPI');
+      throw new Error('Gemini API key not configured on server');
+    }
     
     // Try multiple models
     const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
@@ -950,8 +972,8 @@ Before creating any action JSON, ask yourself:
         return await this.handleMarketAnalysisRequest(marketAnalysisRequest);
       }
 
-      // Wait for model initialization if needed
-      if (!this.model) {
+      // Wait for model initialization if needed (only on server)
+      if (typeof window === 'undefined' && !this.model) {
         await this.initializeModel();
       }
 
@@ -980,18 +1002,55 @@ ${conversationHistory}
 
 Please respond naturally and intelligently. If this is an action request, include the action JSON. Otherwise, just provide a helpful response.`;
 
-      // Generate response using REST API fallback if SDK fails
+      // Generate response
       let responseText = '';
       
       try {
         console.log('🤖 Calling Gemini API...');
-        const result = await this.model.generateContent(fullPrompt);
-        const response = await result.response;
-        responseText = response.text();
+        
+        // Check if we are on the client side
+        if (typeof window !== 'undefined') {
+          console.log('🌐 Client-side detected, using proxy...');
+          const response = await fetch('/api/gemini-proxy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt: fullPrompt }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Proxy error: ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          responseText = data.text;
+        } else {
+          // Server-side: use SDK directly
+          if (!this.model) {
+            await this.initializeModel();
+          }
+          
+          if (this.model) {
+            const result = await this.model.generateContent(fullPrompt);
+            const response = await result.response;
+            responseText = response.text();
+          } else {
+            // Fallback to REST API if model init failed but we have key
+            console.warn('⚠️ SDK model not ready, trying REST API fallback...');
+            responseText = await this.callGeminiRestAPI(fullPrompt);
+          }
+        }
+        
         console.log('✅ Gemini API response received:', responseText.substring(0, 100) + '...');
       } catch (modelError: any) {
-        console.warn('⚠️ SDK failed, trying REST API fallback...', modelError.message);
-        responseText = await this.callGeminiRestAPI(fullPrompt);
+        console.warn('⚠️ Primary generation failed:', modelError.message);
+        // Only try REST fallback on server side
+        if (typeof window === 'undefined') {
+           responseText = await this.callGeminiRestAPI(fullPrompt);
+        } else {
+           throw modelError;
+        }
       }
 
       // Parse action if present
@@ -1630,7 +1689,7 @@ Please respond naturally and intelligently. If this is an action request, includ
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           
           await SupabaseDataService.saveStockHolding({
-            id: `stock_${Date.now()}`,
+            id: crypto.randomUUID(),
             symbol: action.data.symbol,
             name: stockName,
             shares: validatedShares,
@@ -1979,7 +2038,7 @@ Please respond naturally and intelligently. If this is an action request, includ
           }
           
           await SupabaseDataService.saveCryptoHolding({
-            id: `crypto_${Date.now()}`,
+            id: crypto.randomUUID(),
             symbol: action.data.symbol.toUpperCase(),
             name: cryptoName,
             amount: finalAmount,
@@ -2007,7 +2066,7 @@ Please respond naturally and intelligently. If this is an action request, includ
           const cashColor = action.data.color || getAssetColor(action.data.bank || 'CASH', 'stock');
           
           await SupabaseDataService.saveCashAccount({
-            id: `cash_${Date.now()}`,
+            id: crypto.randomUUID(),
             name: action.data.name || action.data.bank,
             bank: action.data.bank,
             balance: action.data.balance || 0,
@@ -2032,7 +2091,7 @@ Please respond naturally and intelligently. If this is an action request, includ
           const savingsColor = action.data.color || getAssetColor(action.data.bank || 'SAVINGS', 'stock');
           
           await SupabaseDataService.saveSavingsAccount({
-            id: `savings_${Date.now()}`,
+            id: crypto.randomUUID(),
             name: action.data.name,
             bank: action.data.bank,
             balance: action.data.balance || 0,
@@ -2107,7 +2166,7 @@ Please respond naturally and intelligently. If this is an action request, includ
           const propertyColor = action.data.color || getAssetColor(action.data.propertyType || 'PROPERTY', 'stock');
           
           await SupabaseDataService.saveRealEstate({
-            id: `property_${Date.now()}`,
+            id: crypto.randomUUID(),
             name: action.data.name,
             propertyType: action.data.propertyType,
             currentValue: action.data.currentValue,
@@ -2140,7 +2199,7 @@ Please respond naturally and intelligently. If this is an action request, includ
           const positionValue = (action.data.size || 1) * (action.data.entryPrice || 0);
           
           await SupabaseDataService.saveTradingAccount({
-            id: `trade_${Date.now()}`,
+            id: crypto.randomUUID(),
             name: action.data.symbol || action.data.name,
             broker: action.data.broker || 'Trading Account',
             balance: positionValue,
@@ -2237,7 +2296,7 @@ Please respond naturally and intelligently. If this is an action request, includ
           const itemColor = action.data.color || getAssetColor(action.data.category || 'ITEM', 'stock');
           
           await SupabaseDataService.saveValuableItem({
-            id: `item_${Date.now()}`,
+            id: crypto.randomUUID(),
             name: action.data.name,
             category: action.data.category,
             currentValue: action.data.currentValue || action.data.value,
@@ -2315,7 +2374,7 @@ Please respond naturally and intelligently. If this is an action request, includ
             };
 
             await SupabaseDataService.saveExpenseCategory({
-              id: `expense_${Date.now()}`,
+              id: crypto.randomUUID(),
               name: action.data.category,
               amount: action.data.amount,
               budget: action.data.amount * 1.2, // Set budget to 120% of initial amount
@@ -2340,7 +2399,7 @@ Please respond naturally and intelligently. If this is an action request, includ
         case 'add_liability':
           // Add debt account
           await SupabaseDataService.saveDebtAccount({
-            id: `debt_${Date.now()}`,
+            id: crypto.randomUUID(),
             name: action.data.name,
             type: action.data.type,
             balance: action.data.balance,

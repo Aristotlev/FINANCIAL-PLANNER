@@ -12,6 +12,9 @@ if (process.env.NODE_ENV === 'development' && !process.env.DOCKER_BUILD) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Disable strict mode to prevent double-invocation of auth callbacks in dev
+  reactStrictMode: false,
+
   // Use standalone output for Docker/Cloud Run deployment
   output: process.env.DOCKER_BUILD ? 'standalone' : undefined,
   

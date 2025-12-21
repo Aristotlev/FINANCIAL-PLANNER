@@ -66,11 +66,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = ({ children, variant = 'primary', size = 'md', className, ...props }: ButtonProps) => {
   const variants = {
-    primary: 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg hover:shadow-blue-500/25',
-    secondary: 'bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700 hover:border-gray-600',
+    primary: 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/25',
+    secondary: 'bg-white/5 border border-gray-700 hover:border-gray-600 text-white hover:bg-white/10',
     ghost: 'bg-gray-800/50 text-gray-500 cursor-not-allowed',
-    pro: 'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/25',
-    premium: 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white hover:shadow-lg hover:shadow-orange-500/25',
+    pro: 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:shadow-lg hover:shadow-purple-500/25',
+    premium: 'bg-gradient-to-r from-orange-500 to-red-600 text-white hover:shadow-lg hover:shadow-orange-500/25',
   };
   
   const sizes = {
@@ -133,9 +133,9 @@ function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
     <div
       className={cn(
         "relative flex flex-col rounded-2xl border p-6 text-left transition-all duration-300",
-        "bg-gray-900/50 backdrop-blur-sm hover:bg-gray-900/70",
+        "bg-gray-900/40 backdrop-blur-xl hover:bg-gray-900/60",
         isCurrentPlan && "border-green-500/50 ring-2 ring-green-500/20",
-        isFeatured && !isCurrentPlan && "border-purple-500/50 ring-1 ring-purple-500/20 shadow-xl shadow-purple-500/10 scale-105",
+        isFeatured && !isCurrentPlan && "border-purple-500/50 ring-1 ring-purple-500/20 shadow-2xl shadow-purple-500/10 scale-105 z-10",
         isPremium && !isCurrentPlan && "border-orange-500/30 hover:border-orange-500/50",
         !isFeatured && !isPremium && !isCurrentPlan && "border-gray-800 hover:border-gray-700"
       )}

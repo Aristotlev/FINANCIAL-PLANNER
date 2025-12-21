@@ -714,7 +714,7 @@ export function SubscriptionManager({ onSubscriptionsChange }: SubscriptionManag
         // Create new
         newSubscription = {
           ...subscriptionData,
-          id: Date.now().toString()
+          id: crypto.randomUUID()
         };
         await SupabaseDataService.saveSubscription(newSubscription);
         setSubscriptions([...subscriptions, newSubscription]);

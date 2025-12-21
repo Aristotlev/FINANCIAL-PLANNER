@@ -609,7 +609,7 @@ function AddEditTaxProfileModal({
                 type="button"
                 onClick={() => {
                   const newSource: CustomIncomeSource = {
-                    id: Date.now().toString(),
+                    id: crypto.randomUUID(),
                     label: '',
                     amount: 0,
                     incomeType: 'custom',
@@ -901,7 +901,7 @@ function TaxesModalContent() {
       } else {
         newProfile = {
           ...profileData,
-          id: Date.now().toString()
+          id: crypto.randomUUID()
         };
         
         // If setting as active, deactivate others

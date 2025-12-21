@@ -139,7 +139,7 @@ async function handleBulkAdd(request: BulkAddRequest): Promise<NextResponse> {
 
             // Save to database
             await SupabaseDataService.saveStockHolding({
-              id: `stock_${Date.now()}_${Math.random()}`,
+              id: crypto.randomUUID(),
               symbol: item.symbol,
               name,
               shares: item.shares,
@@ -173,7 +173,7 @@ async function handleBulkAdd(request: BulkAddRequest): Promise<NextResponse> {
             const color = marketData?.color || getAssetColor(item.symbol, 'crypto');
 
             await SupabaseDataService.saveCryptoHolding({
-              id: `crypto_${Date.now()}_${Math.random()}`,
+              id: crypto.randomUUID(),
               symbol: item.symbol,
               name,
               amount: item.amount,
@@ -203,7 +203,7 @@ async function handleBulkAdd(request: BulkAddRequest): Promise<NextResponse> {
             const color = getAssetColor(item.bank, 'stock');
 
             await SupabaseDataService.saveCashAccount({
-              id: `cash_${Date.now()}_${Math.random()}`,
+              id: crypto.randomUUID(),
               name: item.name,
               bank: item.bank,
               balance: item.balance,
@@ -233,7 +233,7 @@ async function handleBulkAdd(request: BulkAddRequest): Promise<NextResponse> {
             const color = getAssetColor(item.bank, 'stock');
 
             await SupabaseDataService.saveSavingsAccount({
-              id: `savings_${Date.now()}_${Math.random()}`,
+              id: crypto.randomUUID(),
               name: item.name,
               bank: item.bank,
               balance: item.balance,

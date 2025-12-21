@@ -30,8 +30,15 @@ export function usePortfolioValues() {
 
   // Listen for data changes from individual cards
   useEffect(() => {
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    
     const handleDataChange = () => {
-      setRefreshTrigger(prev => prev + 1);
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(() => {
+        setRefreshTrigger(prev => prev + 1);
+      }, 500);
     };
 
     window.addEventListener('cryptoDataChanged', handleDataChange);
@@ -39,6 +46,9 @@ export function usePortfolioValues() {
     window.addEventListener('financialDataChanged', handleDataChange);
 
     return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);

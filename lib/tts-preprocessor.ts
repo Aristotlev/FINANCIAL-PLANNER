@@ -16,6 +16,11 @@ export class TTSPreprocessor {
    * NOTE: This should only be called from server-side code (API routes)
    */
   private static async initialize() {
+    // 🚨 CRITICAL: Never run on client side
+    if (typeof window !== 'undefined') {
+      return;
+    }
+
     if (this.genAI || this.initializationAttempted) return;
 
     this.initializationAttempted = true;
@@ -76,18 +81,8 @@ export class TTSPreprocessor {
     console.log('🎙️ [TTS Preprocessor] Starting text preprocessing...');
     console.log('📝 [TTS Preprocessor] Original length:', text.length);
 
-    // Initialize if needed
-    await this.initialize();
-
-    // If Gemini not available, use fallback
-    if (!this.model) {
-      console.log('⚠️ [TTS Preprocessor] Gemini AI unavailable - using fallback preprocessing');
-      return this.fallbackPreprocess(text);
-    }
-
-    try {
-      // Use Gemini to intelligently convert text to speech-friendly format
-      const prompt = `You are a professional financial voice assistant TTS preprocessor. Convert the following text into natural, spoken English that sounds perfect when read aloud by a premium AI voice (like a Bloomberg anchor or financial news reporter).
+    // Define prompt for both client (proxy) and server usage
+    const prompt = `You are a professional financial voice assistant TTS preprocessor. Convert the following text into natural, spoken English that sounds perfect when read aloud by a premium AI voice (like a Bloomberg anchor or financial news reporter).
 
 **CRITICAL RULES - Follow EXACTLY:**
 
@@ -196,7 +191,40 @@ ${text}
 
 **Output (professional speech text only):**`;
 
-      console.log('🤖 [TTS Preprocessor] Calling Gemini API...');
+    // 🌐 CLIENT-SIDE: Use Proxy
+    if (typeof window !== 'undefined') {
+      try {
+        console.log('🌐 [TTS Preprocessor] Client-side detected, using proxy...');
+        const response = await fetch('/api/gemini-proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+
+        if (!response.ok) throw new Error('Proxy request failed');
+        
+        const data = await response.json();
+        const processedText = data.text.trim();
+        
+        console.log('✅ [TTS Preprocessor] Proxy processing complete');
+        return processedText;
+      } catch (error) {
+        console.warn('⚠️ [TTS Preprocessor] Proxy failed, using fallback:', error);
+        return this.fallbackPreprocess(text);
+      }
+    }
+
+    // 🖥️ SERVER-SIDE: Use SDK directly
+    await this.initialize();
+
+    // If Gemini not available, use fallback
+    if (!this.model) {
+      console.log('⚠️ [TTS Preprocessor] Gemini AI unavailable - using fallback preprocessing');
+      return this.fallbackPreprocess(text);
+    }
+
+    try {
+      console.log('🤖 [TTS Preprocessor] Calling Gemini API (Server)...');
       
       const result = await this.model.generateContent(prompt);
       const response = await result.response;

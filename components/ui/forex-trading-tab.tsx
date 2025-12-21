@@ -215,7 +215,7 @@ export function ForexTradingTab({
     }
 
     const newPosition: ForexPosition = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       pair,
       direction,
       lotSize: calculatedPosition.lotSize,

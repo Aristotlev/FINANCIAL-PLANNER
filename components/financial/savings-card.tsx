@@ -927,7 +927,7 @@ function SavingsModalContent() {
   const colors = ['#3b82f6', '#6366f1', '#0ea5e9', '#8b5cf6', '#06b6d4', '#10b981'];
 
   const addGoal = async (newGoal: Omit<SavingsGoal, 'id' | 'color'>) => {
-    const id = Date.now().toString();
+    const id = crypto.randomUUID();
     const color = colors[savingsGoals.length % colors.length];
     
     const goal: SavingsGoal = {
@@ -969,7 +969,7 @@ function SavingsModalContent() {
   const addAccount = async (accountData: Omit<Account, 'id'>) => {
     const newAccount: Account = {
       ...accountData,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     // Save to database first
     await SupabaseDataService.saveSavingsAccount(newAccount);

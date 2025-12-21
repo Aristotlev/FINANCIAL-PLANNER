@@ -802,7 +802,7 @@ export function AIChatAssistant() {
       
       // Add a message to chat to confirm
       const confirmMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'system',
         content: '🔇 Voice responses disabled. I\'ll continue to respond in text only.',
         timestamp: new Date(),
@@ -814,7 +814,7 @@ export function AIChatAssistant() {
       
       // Add a message to chat to confirm
       const confirmMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'system',
         content: '🔊 Voice responses enabled. I\'ll now speak my responses using premium AI voice.',
         timestamp: new Date(),
@@ -873,7 +873,7 @@ export function AIChatAssistant() {
       }
 
       const attachment: FileAttachment = {
-        id: `${Date.now()}-${Math.random()}`,
+        id: crypto.randomUUID(),
         name: file.name,
         type: file.type,
         size: file.size,
@@ -938,7 +938,7 @@ export function AIChatAssistant() {
       const result = await geminiService.executeAction(pendingAction);
       
       const resultMessage: Message = {
-        id: (Date.now() + 2).toString(),
+        id: crypto.randomUUID(),
         role: "assistant",
         content: result.message,
         timestamp: new Date(),
@@ -955,7 +955,7 @@ export function AIChatAssistant() {
       }
     } catch (error) {
       const errorMessage: Message = {
-        id: (Date.now() + 2).toString(),
+        id: crypto.randomUUID(),
         role: "assistant",
         content: `❌ Something went wrong. Please try again or rephrase your request.`,
         timestamp: new Date(),
@@ -969,7 +969,7 @@ export function AIChatAssistant() {
   const handleCancelAction = () => {
     setPendingAction(null);
     const cancelMessage: Message = {
-      id: (Date.now() + 1).toString(),
+      id: crypto.randomUUID(),
       role: "assistant",
       content: "👍 Got it! Action cancelled. What else can I help you with?",
       timestamp: new Date(),
@@ -989,7 +989,7 @@ export function AIChatAssistant() {
 
     const userInput = messageText;
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: "user",
       content: userInput || "[Sent attachments]",
       timestamp: new Date(),
@@ -1026,7 +1026,7 @@ export function AIChatAssistant() {
         ackMessage += `\n\nI can help you with:\n• Extracting financial data from documents\n• Analyzing receipts and invoices\n• Processing bank statements\n• Reading transaction details\n• Identifying items in photos\n\nWhat would you like me to do with ${fileCount > 1 ? 'these files' : 'this file'}?`;
 
         const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
+          id: crypto.randomUUID(),
           role: "assistant",
           content: ackMessage,
           timestamp: new Date(),
@@ -1046,7 +1046,7 @@ export function AIChatAssistant() {
 
       // Show text message immediately
       const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         role: "assistant",
         content: aiResponse.text,
         timestamp: new Date(),
@@ -1077,7 +1077,7 @@ export function AIChatAssistant() {
       console.error('Error processing message:', error);
       
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: crypto.randomUUID(),
         role: "assistant",
         content: "I apologize, but I'm having trouble processing that request. Could you try rephrasing it?",
         timestamp: new Date(),

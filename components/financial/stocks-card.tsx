@@ -642,7 +642,7 @@ function StocksModalContent() {
   });
 
   const addHolding = async (newHolding: Omit<StockHolding, 'id' | 'value' | 'change' | 'color'>) => {
-    const id = Date.now().toString();
+    const id = crypto.randomUUID();
     const currentPriceData = prices[newHolding.symbol];
     const currentPrice = currentPriceData?.price || popularStocks.find(s => s.symbol === newHolding.symbol)?.currentPrice || newHolding.entryPoint;
     const value = newHolding.shares * currentPrice;
@@ -1227,18 +1227,34 @@ function StocksHoverContent() {
   const { prices } = useAssetPrices(symbols);
 
   useEffect(() => {
+    let isMounted = true;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+
     const loadHoldings = async () => {
       const savedHoldings = await SupabaseDataService.getStockHoldings([]);
-      setStockHoldings(savedHoldings);
+      if (isMounted) {
+        setStockHoldings(savedHoldings);
+      }
     };
     loadHoldings();
     
     // Listen for data changes
-    const handleDataChange = () => loadHoldings();
+    const handleDataChange = () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(() => {
+        loadHoldings();
+      }, 2000);
+    };
     window.addEventListener('stockDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
     
     return () => {
+      isMounted = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       window.removeEventListener('stockDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);
     };
@@ -1247,7 +1263,8 @@ function StocksHoverContent() {
   // Calculate portfolio values with real-time prices
   const portfolioData = stockHoldings.map(holding => {
     const currentPriceData = prices[holding.symbol];
-    const currentPrice = currentPriceData?.price || 0;
+    // Fallback to entry price or calculated price from stored value if real-time price is missing
+    const currentPrice = currentPriceData?.price || (holding.value && holding.shares ? holding.value / holding.shares : holding.entryPoint) || 0;
     const currentValue = holding.shares * currentPrice;
     const costBasis = holding.shares * holding.entryPoint;
     const gainLoss = currentValue - costBasis;
@@ -1303,21 +1320,35 @@ function StocksCardWithPrices() {
 
   // Load data on component mount and when currency changes
   useEffect(() => {
+    let isMounted = true;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+
     const loadHoldings = async () => {
       const savedHoldings = await SupabaseDataService.getStockHoldings([]);
-      setStockHoldings(savedHoldings);
+      if (isMounted) {
+        setStockHoldings(savedHoldings);
+      }
     };
     loadHoldings();
     
     // Listen for data changes and reload
     const handleDataChange = () => {
-      loadHoldings();
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(() => {
+        loadHoldings();
+      }, 2000);
     };
     window.addEventListener('stockDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('currencyChanged', handleDataChange); // Re-render on currency change
     
     return () => {
+      isMounted = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       window.removeEventListener('stockDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('currencyChanged', handleDataChange);

@@ -804,28 +804,46 @@ function CryptoModalContent() {
   const [transactions, setTransactions] = useState<CryptoTransaction[]>([]);
   const [showSellModal, setShowSellModal] = useState(false);
   const [sellingHolding, setSellingHolding] = useState<CryptoHolding | null>(null);
-  const isInitialMount = useRef(true);
 
-  // Load data on component mount
+  // Helper to verify data consistency before dispatching events
+  const verifyDataConsistency = async (checkFn: (holdings: CryptoHolding[]) => boolean) => {
+    let retries = 0;
+    const maxRetries = 5;
+    const delay = 500;
+
+    const check = async () => {
+      const freshHoldings = await SupabaseDataService.getCryptoHoldings([]);
+      if (checkFn(freshHoldings)) {
+        setCryptoHoldings(freshHoldings);
+        window.dispatchEvent(new Event('cryptoDataChanged'));
+        window.dispatchEvent(new Event('financialDataChanged'));
+      } else if (retries < maxRetries) {
+        retries++;
+        setTimeout(check, delay);
+      } else {
+        // Fallback: dispatch anyway
+        window.dispatchEvent(new Event('cryptoDataChanged'));
+        window.dispatchEvent(new Event('financialDataChanged'));
+      }
+    };
+    
+    setTimeout(check, 200);
+  };
+
+  // Load data on component mount only - NOT on data change events
+  // Data changes are handled optimistically via setCryptoHoldings
   useEffect(() => {
     const loadHoldings = async () => {
       const savedHoldings = await SupabaseDataService.getCryptoHoldings([]);
       setCryptoHoldings(savedHoldings);
     };
+    
+    // Only load on initial mount
     loadHoldings();
-
-    // Transactions removed from localStorage - using Supabase only
-    // This prevents console spam from continuous localStorage access
-
-    // Listen for data changes from AI or other components
-    const handleDataChange = () => loadHoldings();
-    window.addEventListener('cryptoDataChanged', handleDataChange);
-    window.addEventListener('financialDataChanged', handleDataChange);
-
-    return () => {
-      window.removeEventListener('cryptoDataChanged', handleDataChange);
-      window.removeEventListener('financialDataChanged', handleDataChange);
-    };
+    
+    // We intentionally do NOT listen to cryptoDataChanged here
+    // because this component is the one dispatching those events
+    // and it already updates state optimistically
   }, [setCryptoHoldings]);
 
   // Data is now saved immediately on each operation (add/update/delete)
@@ -836,7 +854,8 @@ function CryptoModalContent() {
   const { prices, loading } = useAssetPrices(symbols);
 
   const addHolding = async (newHolding: Omit<CryptoHolding, 'id' | 'value' | 'change'>) => {
-    const id = Date.now().toString();
+    // Generate a proper UUID for Supabase compatibility
+    const id = crypto.randomUUID();
     const currentPriceData = prices[newHolding.symbol];
     const currentPrice = currentPriceData?.price || newHolding.entryPoint;
     const value = newHolding.amount * currentPrice;
@@ -850,17 +869,18 @@ function CryptoModalContent() {
       change
     };
 
-    // Save to database first
-    await SupabaseDataService.saveCryptoHolding(holding);
-
+    // Update state optimistically first for instant UI feedback
     setCryptoHoldings([...cryptoHoldings, holding]);
 
-    // Notify other components that crypto data changed
-    window.dispatchEvent(new Event('cryptoDataChanged'));
+    // Save to database
+    await SupabaseDataService.saveCryptoHolding(holding);
+
+    // Verify data consistency before dispatching events
+    verifyDataConsistency((holdings) => !!holdings.find(h => h.id === id));
 
     // Record transaction
     const transaction: CryptoTransaction = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       type: 'buy',
       symbol: newHolding.symbol,
       name: newHolding.name,
@@ -872,7 +892,6 @@ function CryptoModalContent() {
 
     const updatedTransactions = [transaction, ...transactions];
     setTransactions(updatedTransactions);
-    // Removed localStorage - using Supabase only
   };
 
   const updateHolding = async (id: string, updates: Partial<CryptoHolding>) => {
@@ -890,15 +909,21 @@ function CryptoModalContent() {
       return holding;
     });
 
-    // Save to database immediately
+    // Update state optimistically first
+    setCryptoHoldings(updatedHoldings);
+
+    // Save to database
     const updatedHolding = updatedHoldings.find(h => h.id === id);
     if (updatedHolding) {
       await SupabaseDataService.saveCryptoHolding(updatedHolding);
+      
+      // Verify data consistency
+      verifyDataConsistency((holdings) => {
+        const h = holdings.find(item => item.id === id);
+        // Check if amount matches (approximate for floats)
+        return !!(h && Math.abs(h.amount - updatedHolding.amount) < 0.000001);
+      });
     }
-
-    setCryptoHoldings(updatedHoldings);
-    // Notify other components that crypto data changed
-    window.dispatchEvent(new Event('cryptoDataChanged'));
   };
 
   const deleteHolding = async (id: string) => {
@@ -909,7 +934,7 @@ function CryptoModalContent() {
       const currentPriceData = prices[holding.symbol];
       const currentPrice = currentPriceData?.price || holding.entryPoint;
       const transaction: CryptoTransaction = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         type: 'sell',
         symbol: holding.symbol,
         name: holding.name,
@@ -921,14 +946,17 @@ function CryptoModalContent() {
 
       const updatedTransactions = [transaction, ...transactions];
       setTransactions(updatedTransactions);
-      // Removed localStorage - using Supabase only
     }
 
-    await SupabaseDataService.deleteCryptoHolding(id);
+    // Update state optimistically first
     const updatedHoldings = cryptoHoldings.filter((holding: CryptoHolding) => holding.id !== id);
     setCryptoHoldings(updatedHoldings);
-    // Notify other components that crypto data changed
-    window.dispatchEvent(new Event('cryptoDataChanged'));
+
+    // Delete from database
+    await SupabaseDataService.deleteCryptoHolding(id);
+
+    // Verify data consistency
+    verifyDataConsistency((holdings) => !holdings.find(h => h.id === id));
   };
 
   const sellHolding = async (holdingId: string, sellAmount: number, destination: any) => {
@@ -942,6 +970,9 @@ function CryptoModalContent() {
     if (sellAmount >= holding.amount) {
       // Selling entire position
       await SupabaseDataService.deleteCryptoHolding(holdingId);
+      
+      // Verify deletion
+      verifyDataConsistency((holdings) => !holdings.find(h => h.id === holdingId));
     } else {
       // Selling partial position
       const updatedHolding = {
@@ -949,6 +980,12 @@ function CryptoModalContent() {
         amount: holding.amount - sellAmount
       };
       await SupabaseDataService.saveCryptoHolding(updatedHolding);
+      
+      // Verify update
+      verifyDataConsistency((holdings) => {
+        const h = holdings.find(item => item.id === holdingId);
+        return !!(h && Math.abs(h.amount - updatedHolding.amount) < 0.000001);
+      });
     }
 
     // Handle destination
@@ -968,7 +1005,7 @@ function CryptoModalContent() {
       } else {
         // Create new stablecoin holding
         const newStablecoin: CryptoHolding = {
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
           symbol: destination.symbol,
           name: destination.symbol === 'USDT' ? 'Tether' :
             destination.symbol === 'USDC' ? 'USD Coin' :
@@ -1007,7 +1044,7 @@ function CryptoModalContent() {
 
     // Record transaction
     const transaction: CryptoTransaction = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       type: 'sell',
       symbol: holding.symbol,
       name: holding.name,
@@ -1019,14 +1056,6 @@ function CryptoModalContent() {
 
     const updatedTransactions = [transaction, ...transactions];
     setTransactions(updatedTransactions);
-
-    // Refresh data
-    const savedHoldings = await SupabaseDataService.getCryptoHoldings([]);
-    setCryptoHoldings(savedHoldings);
-
-    // Notify other components
-    window.dispatchEvent(new Event('cryptoDataChanged'));
-    window.dispatchEvent(new Event('financialDataChanged'));
   };
 
   // Update holdings with real-time prices - MEMOIZED to prevent glitchy re-renders
@@ -1524,18 +1553,34 @@ function CryptoHoverContent() {
   const { prices } = useAssetPrices(symbols);
 
   useEffect(() => {
+    let isMounted = true;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    
     const loadHoldings = async () => {
       const savedHoldings = await SupabaseDataService.getCryptoHoldings([]);
-      setCryptoHoldings(savedHoldings);
+      if (isMounted) {
+        setCryptoHoldings(savedHoldings);
+      }
     };
     loadHoldings();
 
-    // Listen for data changes
-    const handleDataChange = () => loadHoldings();
+    // Listen for data changes with debounce
+    const handleDataChange = () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(() => {
+        loadHoldings();
+      }, 500);
+    };
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
 
     return () => {
+      isMounted = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);
     };
@@ -1544,7 +1589,8 @@ function CryptoHoverContent() {
   // Calculate portfolio values with real-time prices
   const portfolioData = cryptoHoldings.map(holding => {
     const currentPriceData = prices[holding.symbol];
-    const currentPrice = currentPriceData?.price || 0;
+    // Fallback to entry price or calculated price from stored value if real-time price is missing
+    const currentPrice = currentPriceData?.price || (holding.value && holding.amount ? holding.value / holding.amount : holding.entryPoint) || 0;
     const currentValue = holding.amount * currentPrice;
     const entryPoint = holding.entryPoint || 0; // Safeguard against undefined
     const costBasis = holding.amount * entryPoint;
@@ -1607,21 +1653,35 @@ function CryptoCardWithPrices() {
 
   // Load data on component mount and when currency changes
   useEffect(() => {
+    let isMounted = true;
+    let debounceTimeout: NodeJS.Timeout | null = null;
+    
     const loadHoldings = async () => {
       const savedHoldings = await SupabaseDataService.getCryptoHoldings([]);
-      setCryptoHoldings(savedHoldings);
+      if (isMounted) {
+        setCryptoHoldings(savedHoldings);
+      }
     };
     loadHoldings();
 
-    // Listen for data changes and reload
+    // Listen for data changes and reload with debounce
     const handleDataChange = () => {
-      loadHoldings();
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+      debounceTimeout = setTimeout(() => {
+        loadHoldings();
+      }, 500); // 500ms delay
     };
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('currencyChanged', handleDataChange); // Re-render on currency change
 
     return () => {
+      isMounted = false;
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('currencyChanged', handleDataChange);

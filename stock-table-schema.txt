@@ -1,0 +1,15 @@
+🔍 Checking stock_holdings table...
+
+✅ Table "stock_holdings": EXISTS
+   Columns (10):
+   - id (uuid) NOT NULL
+   - user_id (text) NOT NULL
+   - symbol (text) NOT NULL
+   - name (text) NOT NULL
+   - shares (numeric) NULL
+   - purchase_price (numeric) NULL
+   - sector (text) NULL
+   - color (text) NULL
+   - created_at (timestamp with time zone) NULL
+   - updated_at (timestamp with time zone) NULL
+

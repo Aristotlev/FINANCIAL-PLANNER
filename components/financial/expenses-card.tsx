@@ -727,7 +727,7 @@ function ExpensesModalContent() {
   const addCategory = async (categoryData: Omit<ExpenseCategory, 'id'>) => {
     const newCategory: ExpenseCategory = {
       ...categoryData,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     // Save to database first
     await SupabaseDataService.saveExpenseCategory(newCategory);
@@ -773,7 +773,7 @@ function ExpensesModalContent() {
   const addSubscription = async (subscription: Omit<SubscriptionItem, 'id'>) => {
     const newSubscription: SubscriptionItem = {
       ...subscription,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     await SupabaseDataService.saveSubscription(newSubscription);
     setSubscriptions([...subscriptions, newSubscription]);

@@ -1717,7 +1717,7 @@ function TradingAccountModalContent() {
   const addPosition = async (positionData: Omit<TradingPosition, 'id'>) => {
     const newPosition: TradingPosition = {
       ...positionData,
-      id: Date.now().toString()
+      id: crypto.randomUUID()
     };
     // Save to database first
     await SupabaseDataService.saveTradingAccount(newPosition);

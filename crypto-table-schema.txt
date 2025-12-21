@@ -1,0 +1,17 @@
+🔍 Checking crypto_holdings table...
+
+✅ Table "crypto_holdings": EXISTS
+   Columns (12):
+   - id (uuid) NOT NULL
+   - user_id (text) NOT NULL
+   - symbol (text) NOT NULL
+   - name (text) NOT NULL
+   - amount (numeric) NULL
+   - purchase_price (numeric) NULL
+   - color (text) NULL
+   - created_at (timestamp with time zone) NULL
+   - updated_at (timestamp with time zone) NULL
+   - wallet_type (text) NULL
+   - wallet_name (text) NULL
+   - wallet_address (text) NULL
+
