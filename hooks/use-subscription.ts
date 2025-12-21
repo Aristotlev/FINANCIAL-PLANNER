@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { SubscriptionService } from '@/lib/subscription-service';
+import { supabase } from '@/lib/supabase/client';
 import type {
   UserSubscription,
   UserUsage,
@@ -66,15 +67,68 @@ export function useSubscription() {
     []
   );
 
+  const startCheckout = useCallback(async (plan: SubscriptionPlan) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan,
+          userId: user.id,
+          email: user.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Error starting checkout:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start checkout');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const cancel = useCallback(async (cancelAtPeriodEnd: boolean = true) => {
     try {
       setLoading(true);
       setError(null);
-      const success = await SubscriptionService.cancelSubscription(cancelAtPeriodEnd);
-      if (success) {
-        await refresh();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const response = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to cancel subscription');
       }
-      return success;
+
+      await refresh();
+      return true;
     } catch (err) {
       console.error('Error cancelling subscription:', err);
       setError(err instanceof Error ? err.message : 'Failed to cancel subscription');
@@ -90,6 +144,7 @@ export function useSubscription() {
     error,
     refresh,
     upgrade,
+    startCheckout,
     cancel,
     isTrialActive: subscription ? isTrialActive(subscription) : false,
     daysRemainingInTrial: subscription ? getDaysRemainingInTrial(subscription) : 0,

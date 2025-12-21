@@ -1074,69 +1074,87 @@ function TaxesModalContent() {
           <>
             {/* Overview Tab */}
             {activeTab === 'overview' && (
-              <div className="space-y-4">
+              <div className="space-y-4 animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Tax Components */}
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Tax Components</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Income Tax</span>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <PieChart className="w-5 h-5 text-blue-500" />
+                      Tax Components
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Income Tax</span>
+                        </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-red-600 dark:text-red-400">
+                          <div className="text-sm font-bold text-red-600 dark:text-red-400">
                             {formatCurrency(calculation.incomeTax.amount, activeProfile.country)}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                             {calculation.incomeTax.effectiveRate.toFixed(2)}% effective
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Capital Gains Tax</span>
+                      <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Capital Gains Tax</span>
+                        </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                          <div className="text-sm font-bold text-orange-600 dark:text-orange-400">
                             {formatCurrency(calculation.capitalGainsTax.amount, activeProfile.country)}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                             {calculation.capitalGainsTax.rate.toFixed(2)}% rate
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Dividend Tax</span>
+                      <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Dividend Tax</span>
+                        </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                          <div className="text-sm font-bold text-purple-600 dark:text-purple-400">
                             {formatCurrency(calculation.dividendTax.amount, activeProfile.country)}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                             {calculation.dividendTax.rate.toFixed(2)}% rate
                           </div>
                         </div>
                       </div>
 
                       {calculation.corporateTax && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Corporate Tax</span>
+                        <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Corporate Tax</span>
+                          </div>
                           <div className="text-right">
-                            <div className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                            <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
                               {formatCurrency(calculation.corporateTax.amount, activeProfile.country)}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                               {calculation.corporateTax.rate.toFixed(2)}% rate
                             </div>
                           </div>
                         </div>
                       )}
 
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Social Security</span>
+                      <div className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-cyan-500"></div>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Social Security</span>
+                        </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-cyan-600 dark:text-cyan-400">
+                          <div className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
                             {formatCurrency(calculation.socialSecurity.amount, activeProfile.country)}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-[10px] text-gray-500 uppercase tracking-wider">
                             {calculation.socialSecurity.rate.toFixed(2)}% rate
                           </div>
                         </div>
@@ -1145,61 +1163,64 @@ function TaxesModalContent() {
                   </div>
 
                   {/* Income Sources */}
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Income Sources</h4>
-                    <div className="space-y-2">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-green-500" />
+                      Income Sources
+                    </h4>
+                    <div className="space-y-3">
                       {activeProfile.salaryIncome > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Salary</span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Salary</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {formatCurrency(activeProfile.salaryIncome, activeProfile.country)}
                           </span>
                         </div>
                       )}
                       {activeProfile.businessIncome > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Business</span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Business</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {formatCurrency(activeProfile.businessIncome, activeProfile.country)}
                           </span>
                         </div>
                       )}
                       {activeProfile.capitalGains.shortTerm > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Short-term Gains</span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Short-term Gains</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {formatCurrency(activeProfile.capitalGains.shortTerm, activeProfile.country)}
                           </span>
                         </div>
                       )}
                       {activeProfile.capitalGains.longTerm > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Long-term Gains</span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Long-term Gains</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {formatCurrency(activeProfile.capitalGains.longTerm, activeProfile.country)}
                           </span>
                         </div>
                       )}
                       {activeProfile.dividends > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Dividends</span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Dividends</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {formatCurrency(activeProfile.dividends, activeProfile.country)}
                           </span>
                         </div>
                       )}
                       {activeProfile.rentalIncome > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Rental</span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Rental</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {formatCurrency(activeProfile.rentalIncome, activeProfile.country)}
                           </span>
                         </div>
                       )}
                       {activeProfile.cryptoGains > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Crypto</span>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-900/30 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Crypto</span>
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
                             {formatCurrency(activeProfile.cryptoGains, activeProfile.country)}
                           </span>
                         </div>
@@ -1212,36 +1233,122 @@ function TaxesModalContent() {
 
             {/* Breakdown Tab */}
             {activeTab === 'breakdown' && (
-              <div className="space-y-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Detailed Tax Breakdown</h4>
+              <div className="space-y-6 animate-fade-in">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <h4 className="font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                    <Calculator className="w-5 h-5 text-blue-500" />
+                    Detailed Tax Breakdown
+                  </h4>
                   
+                  {/* Visual Breakdown Chart */}
+                  <div className="mb-8 space-y-4">
+                    <div className="flex justify-between text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      <span>Tax Distribution</span>
+                      <span>Total: {formatCurrency(calculation.totalTax, activeProfile.country)}</span>
+                    </div>
+                    
+                    <div className="h-6 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex shadow-inner">
+                      {calculation.incomeTax.amount > 0 && (
+                        <div 
+                          className="h-full bg-red-500 hover:bg-red-600 transition-colors relative group"
+                          style={{ width: `${(calculation.incomeTax.amount / calculation.totalTax) * 100}%` }}
+                        >
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                            Income Tax: {formatCurrency(calculation.incomeTax.amount, activeProfile.country)}
+                          </div>
+                        </div>
+                      )}
+                      {calculation.capitalGainsTax.amount > 0 && (
+                        <div 
+                          className="h-full bg-orange-500 hover:bg-orange-600 transition-colors relative group"
+                          style={{ width: `${(calculation.capitalGainsTax.amount / calculation.totalTax) * 100}%` }}
+                        >
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                            Capital Gains: {formatCurrency(calculation.capitalGainsTax.amount, activeProfile.country)}
+                          </div>
+                        </div>
+                      )}
+                      {calculation.dividendTax.amount > 0 && (
+                        <div 
+                          className="h-full bg-purple-500 hover:bg-purple-600 transition-colors relative group"
+                          style={{ width: `${(calculation.dividendTax.amount / calculation.totalTax) * 100}%` }}
+                        >
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                            Dividend Tax: {formatCurrency(calculation.dividendTax.amount, activeProfile.country)}
+                          </div>
+                        </div>
+                      )}
+                      {calculation.socialSecurity.amount > 0 && (
+                        <div 
+                          className="h-full bg-cyan-500 hover:bg-cyan-600 transition-colors relative group"
+                          style={{ width: `${(calculation.socialSecurity.amount / calculation.totalTax) * 100}%` }}
+                        >
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                            Social Security: {formatCurrency(calculation.socialSecurity.amount, activeProfile.country)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-4 text-xs">
+                      {calculation.incomeTax.amount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <span className="text-gray-600 dark:text-gray-300">Income Tax</span>
+                        </div>
+                      )}
+                      {calculation.capitalGainsTax.amount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                          <span className="text-gray-600 dark:text-gray-300">Capital Gains</span>
+                        </div>
+                      )}
+                      {calculation.dividendTax.amount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                          <span className="text-gray-600 dark:text-gray-300">Dividends</span>
+                        </div>
+                      )}
+                      {calculation.socialSecurity.amount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                          <span className="text-gray-600 dark:text-gray-300">Social Security</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="space-y-6">
                     {/* Income Tax Breakdown */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Income Tax</h5>
-                        <span className="text-sm font-bold text-red-600 dark:text-red-400">
+                    <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                            <FileText className="w-4 h-4 text-red-600 dark:text-red-400" />
+                          </div>
+                          <h5 className="font-bold text-gray-900 dark:text-white">Income Tax</h5>
+                        </div>
+                        <span className="font-bold text-red-600 dark:text-red-400 text-lg">
                           {formatCurrency(calculation.incomeTax.amount, activeProfile.country)}
                         </span>
                       </div>
-                      <div className="space-y-1 pl-4 border-l-2 border-red-200 dark:border-red-800">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">Marginal Rate:</span>
-                          <span className="font-semibold">{calculation.incomeTax.marginalRate}%</span>
+                      <div className="space-y-2 pl-2 border-l-2 border-red-200 dark:border-red-800 ml-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Marginal Rate</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{calculation.incomeTax.marginalRate}%</span>
                         </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">Effective Rate:</span>
-                          <span className="font-semibold">{calculation.incomeTax.effectiveRate.toFixed(2)}%</span>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Effective Rate</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{calculation.incomeTax.effectiveRate.toFixed(2)}%</span>
                         </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-600 dark:text-gray-400">Taxable Income:</span>
-                          <span className="font-semibold">{formatCurrency(calculation.taxableIncome, activeProfile.country)}</span>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Taxable Income</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(calculation.taxableIncome, activeProfile.country)}</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Other Taxes */}
+                    {/* Other Taxes Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <ThemedStatBox
                         themeColor={CARD_THEME_COLORS.taxes}
@@ -1261,13 +1368,13 @@ function TaxesModalContent() {
                         label={`Social Security (${calculation.socialSecurity.rate}%)`}
                       />
 
-                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">VAT/GST Rate</div>
-                        <div className="text-lg font-bold text-gray-700 dark:text-gray-300">
+                      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider">VAT/GST Rate</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
                           {calculation.vatGst.rate}%
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          On goods & services
+                          Standard rate on goods & services
                         </div>
                       </div>
                     </div>
