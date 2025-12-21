@@ -7,6 +7,7 @@ export function ConsentBanner() {
 
   useEffect(() => {
     const consent = localStorage.getItem("cookie-consent");
+    console.log('OmniFolio: Consent Status:', consent);
     if (!consent) {
       setIsVisible(true);
     } else if (consent === "accepted") {
