@@ -385,9 +385,9 @@ const Layer2: React.FC<{
               : `0 10px 40px ${color}30, 0 0 0 1px ${color}20`,
           }}
         >
-          {/* PULSING border accent - SUPER visible */}
+          {/* Border accent */}
           <div 
-            className="absolute inset-0 rounded-2xl pointer-events-none animate-pulse"
+            className="absolute inset-0 rounded-2xl pointer-events-none"
             style={{
               border: `2px solid ${color}`,
               opacity: 0.5,
@@ -486,7 +486,7 @@ const Layer2: React.FC<{
                       color: 'white'
                     }}
                   >
-                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                    <span className="w-1.5 h-1.5 bg-white rounded-full" />
                     Active
                   </span>
                 </div>
@@ -513,44 +513,41 @@ const Layer2: React.FC<{
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">Live</span>
                 <div className="flex gap-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" style={{ animationDelay: "0.2s" }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" style={{ animationDelay: "0.4s" }} />
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* PROMINENT animated corner brackets */}
-          <div className="absolute top-0 left-0 w-6 h-6 border-t-[3px] border-l-[3px] rounded-tl-xl animate-pulse" 
+          {/* Corner brackets */}
+          <div className="absolute top-0 left-0 w-6 h-6 border-t-[3px] border-l-[3px] rounded-tl-xl" 
             style={{ 
               borderColor: color,
               opacity: 0.8,
               boxShadow: `0 0 10px ${color}50`
             }} 
           />
-          <div className="absolute top-0 right-0 w-6 h-6 border-t-[3px] border-r-[3px] rounded-tr-xl animate-pulse" 
+          <div className="absolute top-0 right-0 w-6 h-6 border-t-[3px] border-r-[3px] rounded-tr-xl" 
             style={{ 
               borderColor: color,
               opacity: 0.8,
-              boxShadow: `0 0 10px ${color}50`,
-              animationDelay: "0.15s"
+              boxShadow: `0 0 10px ${color}50`
             }} 
           />
-          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-[3px] border-l-[3px] rounded-bl-xl animate-pulse" 
+          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-[3px] border-l-[3px] rounded-bl-xl" 
             style={{ 
               borderColor: color,
               opacity: 0.8,
-              boxShadow: `0 0 10px ${color}50`,
-              animationDelay: "0.3s"
+              boxShadow: `0 0 10px ${color}50`
             }} 
           />
-          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-[3px] border-r-[3px] rounded-br-xl animate-pulse" 
+          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-[3px] border-r-[3px] rounded-br-xl" 
             style={{ 
               borderColor: color,
               opacity: 0.8,
-              boxShadow: `0 0 10px ${color}50`,
-              animationDelay: "0.45s"
+              boxShadow: `0 0 10px ${color}50`
             }} 
           />
         </div>
