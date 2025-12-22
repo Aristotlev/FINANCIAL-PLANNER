@@ -15,6 +15,7 @@
   "dependencies": {
     "@dagrejs/dagre": "^1.1.5",
     "@google/generative-ai": "^0.24.1",
+    "@next/third-parties": "^16.1.1",
     "@react-google-maps/api": "^2.20.7",
     "@supabase/supabase-js": "^2.74.0",
     "@types/google.maps": "^3.58.1",

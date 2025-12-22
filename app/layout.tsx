@@ -12,7 +12,7 @@ import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
 import { ExtensionErrorBoundary } from "../components/ui/extension-error-boundary";
 import { ConsentBanner } from "../components/ui/consent-banner";
-import GoogleAnalytics from "../components/google-analytics";
+import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from "next/script";
 
 // Force dynamic rendering for all pages (disable static generation)
@@ -91,8 +91,28 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        {/* Google Analytics */}
-        <GoogleAnalytics GA_MEASUREMENT_ID="G-6CJBH3X6XC" GA_ADS_ID="AW-17821905669" />
+        {/* Google Analytics - Default Consent */}
+        <Script id="ga-consent" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('consent', 'default', {
+              'ad_storage': 'denied',
+              'ad_user_data': 'denied',
+              'ad_personalization': 'denied',
+              'analytics_storage': 'denied'
+            });
+          `}
+        </Script>
+        <GoogleAnalytics gaId="G-6CJBH3X6XC" />
+        {/* Google Ads */}
+        <Script id="google-ads" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('config', 'AW-17821905669');
+          `}
+        </Script>
         <ExtensionErrorBoundary>
           <ReduxWarningsSuppressor />
           <ZoomHandler />
