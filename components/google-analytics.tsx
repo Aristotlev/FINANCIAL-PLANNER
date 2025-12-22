@@ -31,6 +31,15 @@ function GoogleAnalyticsContent({ GA_MEASUREMENT_ID, GA_ADS_ID }: { GA_MEASUREME
           __html: `
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
+            
+            // Set default consent to 'denied'
+            gtag('consent', 'default', {
+              'ad_storage': 'denied',
+              'ad_user_data': 'denied',
+              'ad_personalization': 'denied',
+              'analytics_storage': 'denied'
+            });
+
             gtag('js', new Date());
 
             gtag('config', '${GA_MEASUREMENT_ID}', {
