@@ -51,17 +51,17 @@ export function DataVisualization3D({
           className={cn(
             "bg-gradient-to-br from-white via-gray-50 to-white",
             "dark:from-gray-900 dark:via-gray-800 dark:to-gray-900",
-            "rounded-2xl shadow-2xl border-2",
+            "rounded-xl sm:rounded-2xl shadow-2xl border-2",
             "border-gray-200 dark:border-gray-700",
-            "p-8 min-w-[600px] max-w-4xl",
+            "p-4 sm:p-6 md:p-8 w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[500px] md:min-w-[600px] max-w-[calc(100vw-2rem)] sm:max-w-4xl",
             "transform transition-all duration-500 ease-out",
-            "hover:scale-105",
-            "animate-float"
+            "sm:hover:scale-105",
+            "sm:animate-float"
           )}
           style={{
-            transform: "translateZ(100px) rotateX(5deg)",
+            transform: "translateZ(50px) rotateX(2deg)",
             transformStyle: "preserve-3d",
-            boxShadow: "0 50px 100px -20px rgba(0, 0, 0, 0.25), 0 30px 60px -30px rgba(0, 0, 0, 0.3)",
+            boxShadow: "0 25px 50px -10px rgba(0, 0, 0, 0.2), 0 15px 30px -15px rgba(0, 0, 0, 0.25)",
             willChange: "transform", // Hint to browser for GPU optimization
           }}
         >
@@ -74,19 +74,19 @@ export function DataVisualization3D({
           </button>
 
           {/* Header */}
-          <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-              <PieChart className="w-7 h-7 text-blue-600" />
-              {title}
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2 sm:gap-3">
+              <PieChart className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-600 flex-shrink-0" />
+              <span className="truncate">{title}</span>
             </h3>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400">
               {totalLabel}: <span className="font-bold text-gray-900 dark:text-white">${calculatedTotal.toLocaleString()}</span>
             </p>
           </div>
 
           {/* Visualization */}
           {chartType === "bar" ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {data.map((item, index) => {
                 const percentage = (item.value / maxValue) * 100;
                 const isPositive = item.change && item.change.startsWith('+');
@@ -96,34 +96,34 @@ export function DataVisualization3D({
                     key={index}
                     className="group"
                     style={{
-                      transform: `translateZ(${20 + index * 10}px)`,
+                      transform: `translateZ(${10 + index * 5}px)`,
                       transformStyle: "preserve-3d",
                     }}
                   >
                     {/* Label and value */}
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-1 sm:mb-2 gap-1 sm:gap-0">
                       <div className="flex items-center gap-2">
                         <div 
-                          className="w-3 h-3 rounded-full shadow-lg"
+                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shadow-lg flex-shrink-0"
                           style={{ backgroundColor: item.color }}
                         />
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                        <span className="font-medium text-gray-700 dark:text-gray-300 text-sm sm:text-base truncate">
                           {item.label}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-gray-900 dark:text-white">
+                      <div className="flex items-center gap-2 sm:gap-3 ml-4 sm:ml-0">
+                        <span className="text-sm sm:text-base md:text-lg font-bold text-gray-900 dark:text-white">
                           ${item.value.toLocaleString()}
                         </span>
                         {item.change && (
                           <span className={cn(
-                            "text-sm font-medium flex items-center gap-1",
+                            "text-xs sm:text-sm font-medium flex items-center gap-1",
                             isPositive ? "text-green-600" : "text-red-600"
                           )}>
                             {isPositive ? (
-                              <TrendingUp className="w-4 h-4" />
+                              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
                             ) : (
-                              <TrendingDown className="w-4 h-4" />
+                              <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4" />
                             )}
                             {item.change}
                           </span>
@@ -132,21 +132,21 @@ export function DataVisualization3D({
                     </div>
                     
                     {/* Progress bar */}
-                    <div className="relative h-8 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden shadow-inner">
+                    <div className="relative h-6 sm:h-8 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden shadow-inner">
                       <div
                         className="absolute inset-y-0 left-0 rounded-lg transition-all duration-1000 ease-out group-hover:opacity-90"
                         style={{
                           width: `${percentage}%`,
                           backgroundColor: item.color,
-                          boxShadow: `0 0 20px ${item.color}40`,
+                          boxShadow: `0 0 15px ${item.color}30`,
                         }}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
                       </div>
                       
                       {/* Percentage label inside bar */}
-                      <div className="absolute inset-0 flex items-center px-3">
-                        <span className="text-xs font-semibold text-white drop-shadow-lg">
+                      <div className="absolute inset-0 flex items-center px-2 sm:px-3">
+                        <span className="text-[10px] sm:text-xs font-semibold text-white drop-shadow-lg">
                           {calculatedTotal > 0 ? ((item.value / calculatedTotal) * 100).toFixed(1) : '0.0'}%
                         </span>
                       </div>
@@ -157,9 +157,9 @@ export function DataVisualization3D({
             </div>
           ) : (
             // Pie chart visualization
-            <div className="flex items-center justify-center gap-8">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
               {/* Simple pie chart */}
-              <div className="relative w-64 h-64">
+              <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-64 flex-shrink-0">
                 <svg viewBox="0 0 100 100" className="transform -rotate-90">
                   {data.map((item, index) => {
                     const total = data.reduce((sum, d) => sum + d.value, 0);
@@ -182,7 +182,7 @@ export function DataVisualization3D({
                         fill={item.color}
                         className="transition-all duration-300 hover:opacity-80"
                         style={{
-                          filter: `drop-shadow(0 4px 8px ${item.color}40)`,
+                          filter: `drop-shadow(0 2px 4px ${item.color}30)`,
                         }}
                       />
                     );
@@ -191,18 +191,18 @@ export function DataVisualization3D({
               </div>
               
               {/* Legend */}
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3 w-full sm:w-auto">
                 {data.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3">
+                  <div key={index} className="flex items-center gap-2 sm:gap-3">
                     <div 
-                      className="w-4 h-4 rounded shadow-lg"
+                      className="w-3 h-3 sm:w-4 sm:h-4 rounded shadow-lg flex-shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
+                    <div className="min-w-0">
+                      <div className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">
                         {item.label}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         ${item.value.toLocaleString()} ({calculatedTotal > 0 ? ((item.value / calculatedTotal) * 100).toFixed(1) : '0.0'}%)
                       </div>
                     </div>
@@ -213,20 +213,20 @@ export function DataVisualization3D({
           )}
 
           {/* Footer stats */}
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-4">
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700 grid grid-cols-3 gap-2 sm:gap-4">
             <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400">Categories</div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">{data.length}</div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Categories</div>
+              <div className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">{data.length}</div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400">Highest</div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Highest</div>
+              <div className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate">
                 ${Math.max(...data.map(d => d.value)).toLocaleString()}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400">Average</div>
-              <div className="text-xl font-bold text-gray-900 dark:text-white">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Average</div>
+              <div className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate">
                 ${data.length > 0 ? (calculatedTotal / data.length).toLocaleString(undefined, {maximumFractionDigits: 0}) : '0'}
               </div>
             </div>
@@ -243,22 +243,28 @@ if (typeof document !== 'undefined') {
   style.textContent = `
     @keyframes float {
       0%, 100% {
-        transform: translateZ(100px) rotateX(5deg) translateY(0px);
+        transform: translateZ(50px) rotateX(2deg) translateY(0px);
       }
       50% {
-        transform: translateZ(100px) rotateX(5deg) translateY(-10px);
+        transform: translateZ(50px) rotateX(2deg) translateY(-6px);
       }
     }
     
-    .animate-float {
-      animation: float 3s ease-in-out infinite;
+    .sm\\:animate-float {
+      animation: none;
+    }
+    
+    @media (min-width: 640px) {
+      .sm\\:animate-float {
+        animation: float 3s ease-in-out infinite;
+      }
     }
     
     /* Respect user's motion preferences for better accessibility and performance */
     @media (prefers-reduced-motion: reduce) {
-      .animate-float {
+      .sm\\:animate-float {
         animation: none;
-        transform: translateZ(100px) rotateX(5deg);
+        transform: translateZ(50px) rotateX(2deg);
       }
     }
   `;

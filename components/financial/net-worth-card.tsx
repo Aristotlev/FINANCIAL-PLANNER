@@ -772,7 +772,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
       <div className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
         <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Asset Performance Timeline</h4>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Track all financial categories over the past 9 months</p>
-        <div className="h-80">
+        <div className="h-64 md:h-80">
           <LazyRechartsWrapper height={320}>
             {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
               <ResponsiveContainer width="100%" height="100%">
@@ -895,7 +895,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Assets vs Liabilities</h4>
-          <div className="h-48">
+          <div className="h-40 md:h-48">
             <LazyRechartsWrapper height={192}>
               {({ BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer }) => (
                 <ResponsiveContainer width="100%" height="100%">
@@ -1007,12 +1007,11 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
     <text
       x={x}
       y={y}
-      className="pie-chart-label"
+      className="pie-chart-label text-[10px] md:text-[12px]"
       textAnchor={x > cx ? 'start' : 'end'}
       dominantBaseline="central"
       data-fill={fill}
       style={{
-        fontSize: '12px',
         fontWeight: 500,
         '--label-color': fill
       } as React.CSSProperties}
@@ -1071,7 +1070,7 @@ function NetWorthBreakdown({ assets, pieChartData, portfolio }: { assets: any[];
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="relative">
           <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Portfolio Distribution</h4>
-          <div className="h-[300px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
+          <div className="h-[250px] md:h-[300px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
             <LazyRechartsWrapper height={300}>
               {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
                 <ResponsiveContainer width="100%" height="100%">
@@ -1082,7 +1081,7 @@ function NetWorthBreakdown({ assets, pieChartData, portfolio }: { assets: any[];
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={90}
+                      outerRadius="70%"
                       innerRadius={0}
                       fill="#8884d8"
                       paddingAngle={2}
@@ -1124,21 +1123,21 @@ function NetWorthBreakdown({ assets, pieChartData, portfolio }: { assets: any[];
 
         <div>
           <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Detailed Breakdown</h4>
-          <div className="space-y-3 px-2 -mx-2">
+          <div className="space-y-3 px-2 -mx-2 max-h-[300px] overflow-y-auto md:max-h-none md:overflow-visible">
             {assets.map((asset, index) => (
               <div key={index} className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer" style={{boxShadow: `0 0 0 0 ${asset.color}`}}>
                 <div className="flex items-center gap-3">
                   <div 
-                    className="w-4 h-4 rounded-full"
+                    className="w-4 h-4 rounded-full flex-shrink-0"
                     style={{ backgroundColor: asset.color }}
                   ></div>
-                  <span className="font-medium text-gray-900 dark:text-white">{asset.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm md:text-base truncate">{asset.name}</span>
                 </div>
-                <div className="text-right">
-                  <div className="font-semibold text-gray-900 dark:text-white">
-                    ${(asset.value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                <div className="text-right flex-shrink-0 ml-2">
+                  <div className="font-semibold text-gray-900 dark:text-white text-sm md:text-base">
+                    ${(asset.value || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
                     {(asset.percentage || 0).toFixed(1)}%
                   </div>
                 </div>
@@ -1311,7 +1310,7 @@ function NetWorthTrends({ data, financialData, portfolio }: { data: any[]; finan
             transition: all 0.3s ease;
           }
         `}</style>
-        <div className="h-96">
+        <div className="h-64 md:h-96">
           <LazyRechartsWrapper height={384}>
             {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer }) => (
               <ResponsiveContainer width="100%" height="100%">

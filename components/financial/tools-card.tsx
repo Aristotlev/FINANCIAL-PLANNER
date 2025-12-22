@@ -12,11 +12,363 @@ import {
   BarChart3,
   LineChart,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Bell,
+  History,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+  Mail,
+  Search,
+  Loader2
 } from "lucide-react";
 import { TbChartCandle, TbChartLine } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { formatNumber } from "../../lib/utils";
+import { TRADING_DATABASE } from "../../lib/trading-database";
+
+// Types
+interface Alert {
+  id: string;
+  symbol: string;
+  targetPrice: number;
+  currentPrice: number;
+  condition: 'above' | 'below';
+  active: boolean;
+}
+
+interface Trade {
+  id: string;
+  date: string;
+  symbol: string;
+  type: 'buy' | 'sell';
+  amount: number;
+  price: number;
+  total: number;
+  status: 'completed' | 'pending';
+}
+
+// Mock Data for History
+const MOCK_TRADES: Trade[] = [
+  { id: '1', date: '2024-03-15', symbol: 'AAPL', type: 'buy', amount: 10, price: 175.50, total: 1755.00, status: 'completed' },
+  { id: '2', date: '2024-02-28', symbol: 'BTC', type: 'buy', amount: 0.05, price: 62000.00, total: 3100.00, status: 'completed' },
+  { id: '3', date: '2023-11-10', symbol: 'TSLA', type: 'sell', amount: 5, price: 210.00, total: 1050.00, status: 'completed' },
+  { id: '4', date: '2023-08-05', symbol: 'ETH', type: 'buy', amount: 1.5, price: 1800.00, total: 2700.00, status: 'completed' },
+  { id: '5', date: '2022-12-15', symbol: 'NVDA', type: 'buy', amount: 20, price: 145.00, total: 2900.00, status: 'completed' },
+  { id: '6', date: '2022-06-20', symbol: 'AMD', type: 'sell', amount: 50, price: 85.00, total: 4250.00, status: 'completed' },
+  { id: '7', date: '2021-11-01', symbol: 'SOL', type: 'buy', amount: 100, price: 200.00, total: 20000.00, status: 'completed' },
+  { id: '8', date: '2021-05-15', symbol: 'DOGE', type: 'sell', amount: 10000, price: 0.50, total: 5000.00, status: 'completed' },
+];
+
+// Alerts Tab Component
+function AlertsTab() {
+  const [alerts, setAlerts] = useState<Alert[]>([
+    { id: '1', symbol: 'AAPL', targetPrice: 180.00, currentPrice: 175.43, condition: 'above', active: true },
+    { id: '2', symbol: 'BTC', targetPrice: 60000.00, currentPrice: 64230.00, condition: 'below', active: true },
+  ]);
+  const [selectedSymbol, setSelectedSymbol] = useState('');
+  const [targetPrice, setTargetPrice] = useState('');
+  const [email, setEmail] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  const filteredAssets = TRADING_DATABASE.filter(asset => 
+    asset.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    asset.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ).slice(0, 10);
+
+  const handleAddAlert = async () => {
+    if (!selectedSymbol || !targetPrice) return;
+    
+    setIsCreating(true);
+    
+    const asset = TRADING_DATABASE.find(a => a.symbol === selectedSymbol);
+    const price = parseFloat(targetPrice);
+    const currentPrice = asset?.currentPrice || 0;
+    const condition = price > currentPrice ? 'above' : 'below';
+    
+    try {
+      // Call the API to send the email
+      const response = await fetch('/api/alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          symbol: selectedSymbol,
+          targetPrice: price,
+          condition,
+          userEmail: email || 'delivered@resend.dev' // Fallback for testing
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create alert');
+      }
+
+      const newAlert: Alert = {
+        id: Math.random().toString(36).substr(2, 9),
+        symbol: selectedSymbol,
+        targetPrice: price,
+        currentPrice: currentPrice,
+        condition,
+        active: true
+      };
+
+      setAlerts([...alerts, newAlert]);
+      setSelectedSymbol('');
+      setTargetPrice('');
+      setSearchQuery('');
+      // Don't clear email so they can add another easily
+    } catch (error) {
+      console.error('Error creating alert:', error);
+      alert('Failed to create alert. Please check your connection and try again.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleDeleteAlert = (id: string) => {
+    setAlerts(alerts.filter(a => a.id !== id));
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Add Alert Form */}
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <Bell className="w-4 h-4 text-purple-600" />
+          Create New Alert
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="relative">
+            <label className="block text-xs text-gray-500 mb-1">Asset</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search asset..."
+                className="w-full pl-8 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+            </div>
+            {searchQuery && (
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filteredAssets.map(asset => (
+                  <button
+                    key={asset.symbol}
+                    onClick={() => {
+                      setSelectedSymbol(asset.symbol);
+                      setSearchQuery(`${asset.symbol} - ${asset.name}`);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex justify-between items-center"
+                  >
+                    <span>{asset.symbol}</span>
+                    <span className="text-gray-500 text-xs">{asset.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Target Price</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <input
+                type="number"
+                value={targetPrice}
+                onChange={(e) => setTargetPrice(e.target.value)}
+                placeholder="0.00"
+                className="w-full pl-7 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Email Notification</label>
+            <div className="relative">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full pl-8 pr-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              <Mail className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+            </div>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={handleAddAlert}
+              disabled={!selectedSymbol || !targetPrice || isCreating}
+              className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Setting Alert...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Set Alert
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+        
+        <p className="text-xs text-gray-500 mt-3 flex items-center gap-1">
+          <Mail className="w-3 h-3" />
+          We'll send a confirmation email to verify the alert.
+        </p>
+      </div>
+
+      {/* Alerts List */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Active Alerts</h3>
+        {alerts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-200 dark:border-gray-700">
+            <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>No active alerts</p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {alerts.map(alert => (
+              <div key={alert.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-sm">
+                    {alert.symbol.substring(0, 2)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900 dark:text-white">{alert.symbol}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        alert.condition === 'above' 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {alert.condition === 'above' ? '≥' : '≤'} ${formatNumber(alert.targetPrice)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Current: ${formatNumber(alert.currentPrice)}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteAlert(alert.id)}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// History Tab Component
+function HistoryTab() {
+  const [expandedYears, setExpandedYears] = useState<string[]>([]);
+
+  const toggleYear = (year: string) => {
+    setExpandedYears(prev => 
+      prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
+    );
+  };
+
+  // Group trades by year
+  const groupedTrades = MOCK_TRADES.reduce((acc, trade) => {
+    const year = new Date(trade.date).getFullYear().toString();
+    if (!acc[year]) acc[year] = [];
+    acc[year].push(trade);
+    return acc;
+  }, {} as Record<string, Trade[]>);
+
+  const years = Object.keys(groupedTrades).sort((a, b) => Number(b) - Number(a));
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Trade History</h3>
+        <div className="text-xs text-gray-500">
+          {MOCK_TRADES.length} total trades
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {years.map(year => (
+          <div key={year} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <button
+              onClick={() => toggleYear(year)}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700/80 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-purple-600" />
+                <span className="font-semibold text-gray-900 dark:text-white">{year}</span>
+                <span className="text-xs text-gray-500 bg-white dark:bg-gray-900 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700">
+                  {groupedTrades[year].length} trades
+                </span>
+              </div>
+              {expandedYears.includes(year) ? (
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-gray-500" />
+              )}
+            </button>
+
+            {expandedYears.includes(year) && (
+              <div className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                {groupedTrades[year].map(trade => (
+                  <div key={trade.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        trade.type === 'buy' 
+                          ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {trade.type === 'buy' ? <TrendingUp className="w-4 h-4" /> : <TrendingUp className="w-4 h-4 transform rotate-180" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900 dark:text-white">{trade.symbol}</span>
+                          <span className={`text-xs font-medium uppercase ${
+                            trade.type === 'buy' ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {trade.type}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(trade.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        ${formatNumber(trade.total)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {trade.amount} @ ${formatNumber(trade.price)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Tools Hover Content
 function ToolsHoverContent() {
@@ -50,7 +402,7 @@ function ToolsHoverContent() {
 
 // Tools Modal Content
 function ToolsModalContent() {
-  const [activeTab, setActiveTab] = useState<'chart' | 'stocks' | 'crypto' | 'forex'>('chart');
+  const [activeTab, setActiveTab] = useState<'chart' | 'stocks' | 'crypto' | 'forex' | 'alerts' | 'history'>('chart');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -473,17 +825,19 @@ function ToolsModalContent() {
       <div className="space-y-6">
         {/* Tab Navigation */}
         <div className="flex justify-between items-center">
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
             {[
               { id: 'chart', label: 'Chart', icon: TbChartCandle },
               { id: 'stocks', label: 'Stocks', icon: TrendingUp },
               { id: 'crypto', label: 'Crypto', icon: Coins },
-              { id: 'forex', label: 'Forex', icon: DollarSign }
+              { id: 'forex', label: 'Forex', icon: DollarSign },
+              { id: 'alerts', label: 'Alerts', icon: Bell },
+              { id: 'history', label: 'History', icon: History }
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id as any)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === id
                     ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
@@ -737,6 +1091,16 @@ function ToolsModalContent() {
                 <p className="text-xs text-gray-600 dark:text-gray-400">24h percentage changes</p>
               </div>
             </div>
+        </div>
+
+        {/* Alerts Tab */}
+        <div className={`space-y-4 ${activeTab === 'alerts' ? 'block' : 'hidden'}`}>
+          <AlertsTab />
+        </div>
+
+        {/* History Tab */}
+        <div className={`space-y-4 ${activeTab === 'history' ? 'block' : 'hidden'}`}>
+          <HistoryTab />
         </div>
       </div>
     </div>
