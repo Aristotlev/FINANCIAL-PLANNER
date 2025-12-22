@@ -1,18 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
+import { LazyRechartsWrapper, ChartLoadingPlaceholder } from "../ui/lazy-charts";
 import { Coins, Plus, Search, X, Edit3, Trash2, TrendingUp, DollarSign, RefreshCw, Percent, ArrowDownLeft } from "lucide-react";
 import {
   SiBitcoin,
@@ -1166,67 +1155,71 @@ function CryptoModalContent() {
                   </div>
                 ) : pieChartData.length > 0 ? (
                   <div className="relative [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100" style={{ height: '300px', width: '100%' }}>
-                    <ResponsiveContainer width="100%" height="100%" debounce={200}>
-                      <PieChart>
-                        <Pie
-                          data={pieChartData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={false}
-                          outerRadius={70}
-                          innerRadius={0}
-                          fill="#8884d8"
-                          dataKey="value"
-                          isAnimationActive={false}
-                          animationDuration={0}
-                          animationBegin={0}
-                          animationEasing="linear"
-                          paddingAngle={0}
-                          startAngle={90}
-                          endAngle={-270}
-                          activeShape={false as any}
-                        >
-                          {pieChartData.map((entry) => (
-                            <Cell
-                              key={`cell-${entry.id}`}
-                              fill={entry.color}
-                              stroke={pieChartData.length > 1 ? "#fff" : "none"}
-                              strokeWidth={pieChartData.length > 1 ? 2 : 0}
+                    <LazyRechartsWrapper height={300}>
+                      {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={pieChartData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={false}
+                              outerRadius={70}
+                              innerRadius={0}
+                              fill="#8884d8"
+                              dataKey="value"
+                              isAnimationActive={false}
+                              animationDuration={0}
+                              animationBegin={0}
+                              animationEasing="linear"
+                              paddingAngle={0}
+                              startAngle={90}
+                              endAngle={-270}
+                              activeShape={false as any}
+                            >
+                              {pieChartData.map((entry) => (
+                                <Cell
+                                  key={`cell-${entry.id}`}
+                                  fill={entry.color}
+                                  stroke={pieChartData.length > 1 ? "#fff" : "none"}
+                                  strokeWidth={pieChartData.length > 1 ? 2 : 0}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              isAnimationActive={false}
+                              animationDuration={0}
+                              trigger="hover"
+                              wrapperStyle={{ zIndex: 50, pointerEvents: 'none', visibility: 'visible' }}
+                              allowEscapeViewBox={{ x: true, y: true }}
+                              content={(props: any) => {
+                                const { active, payload } = props;
+                                if (!active || !payload || !payload.length) return null;
+                                const data = payload[0];
+                                const displayPercent = pieChartData.length === 1 ? 100 : Number(data.value);
+                                return (
+                                  <div
+                                    className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-2xl border-2 border-orange-200 dark:border-orange-700"
+                                    style={{ boxShadow: '0 10px 40px rgba(249, 115, 22, 0.3), 0 4px 20px rgba(0,0,0,0.15)', pointerEvents: 'none' }}
+                                  >
+                                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                      {data.name}
+                                    </p>
+                                    <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                                      {data.payload.symbol}
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">
+                                      {displayPercent.toFixed(1)}% • {formatMain(data.payload.actualValue)}
+                                    </p>
+                                  </div>
+                                );
+                              }}
                             />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          isAnimationActive={false}
-                          animationDuration={0}
-                          trigger="hover"
-                          wrapperStyle={{ zIndex: 50, pointerEvents: 'none', visibility: 'visible' }}
-                          allowEscapeViewBox={{ x: true, y: true }}
-                          content={(props) => {
-                            const { active, payload } = props;
-                            if (!active || !payload || !payload.length) return null;
-                            const data = payload[0];
-                            const displayPercent = pieChartData.length === 1 ? 100 : Number(data.value);
-                            return (
-                              <div
-                                className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-2xl border-2 border-orange-200 dark:border-orange-700"
-                                style={{ boxShadow: '0 10px 40px rgba(249, 115, 22, 0.3), 0 4px 20px rgba(0,0,0,0.15)', pointerEvents: 'none' }}
-                              >
-                                <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                  {data.name}
-                                </p>
-                                <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                                  {data.payload.symbol}
-                                </p>
-                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">
-                                  {displayPercent.toFixed(1)}% • {formatMain(data.payload.actualValue)}
-                                </p>
-                              </div>
-                            );
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </LazyRechartsWrapper>
                   </div>
                 ) : cryptoHoldings.length > 0 ? (
                   <div className="flex items-center justify-center text-gray-500 dark:text-gray-400" style={{ height: '300px' }}>
@@ -1440,21 +1433,25 @@ function CryptoModalContent() {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">6-Month Performance</h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={cryptoHistory}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`$${formatNumber(Number(value))}`, 'Portfolio Value']} />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#f59e0b"
-                      strokeWidth={3}
-                      dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <LazyRechartsWrapper height={256}>
+                  {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={cryptoHistory}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip formatter={(value: any) => [`$${formatNumber(Number(value))}`, 'Portfolio Value']} />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#f59e0b"
+                          strokeWidth={3}
+                          dot={{ fill: "#f59e0b", strokeWidth: 2, r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </LazyRechartsWrapper>
               </div>
             </div>
 

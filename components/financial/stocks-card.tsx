@@ -1,20 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
+import { LazyRechartsWrapper, ChartLoadingPlaceholder } from "../ui/lazy-charts";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -836,74 +823,78 @@ function StocksModalContent() {
                   </div>
                 ) : stockAllocation.length > 0 ? (
                   <div className="h-[280px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
-                    <ResponsiveContainer width="100%" height="100%" debounce={200}>
-                      <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                      <Pie
-                        data={stockAllocation}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={false}
-                        outerRadius={80}
-                        innerRadius={0}
-                        fill="#8884d8"
-                        dataKey="value"
-                        isAnimationActive={false}
-                        animationDuration={0}
-                        animationBegin={0}
-                        animationEasing="linear"
-                        paddingAngle={0}
-                        startAngle={90}
-                        endAngle={-270}
-                        activeShape={false as any}
-                      >
-                        {stockAllocation.map((entry) => (
-                          <Cell 
-                            key={`cell-${entry.id}`} 
-                            fill={entry.color}
-                            stroke={stockAllocation.length > 1 ? "#fff" : "none"}
-                            strokeWidth={stockAllocation.length > 1 ? 2 : 0}
+                    <LazyRechartsWrapper height={280}>
+                      {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                          <Pie
+                            data={stockAllocation}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={false}
+                            outerRadius={80}
+                            innerRadius={0}
+                            fill="#8884d8"
+                            dataKey="value"
+                            isAnimationActive={false}
+                            animationDuration={0}
+                            animationBegin={0}
+                            animationEasing="linear"
+                            paddingAngle={0}
+                            startAngle={90}
+                            endAngle={-270}
+                            activeShape={false as any}
+                          >
+                            {stockAllocation.map((entry) => (
+                              <Cell 
+                                key={`cell-${entry.id}`} 
+                                fill={entry.color}
+                                stroke={stockAllocation.length > 1 ? "#fff" : "none"}
+                                strokeWidth={stockAllocation.length > 1 ? 2 : 0}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            isAnimationActive={false}
+                            animationDuration={0}
+                            trigger="hover"
+                            wrapperStyle={{
+                              zIndex: 50,
+                              pointerEvents: 'none',
+                              visibility: 'visible'
+                            }}
+                            allowEscapeViewBox={{ x: true, y: true }}
+                            content={(props: any) => {
+                              const { active, payload } = props;
+                              if (!active || !payload || !payload.length) return null;
+                              const data = payload[0];
+                              const displayPercent = stockAllocation.length === 1 ? 100 : Number(data.value);
+                              return (
+                                <div 
+                                  className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-2xl border-2 border-purple-200 dark:border-purple-700"
+                                  style={{ 
+                                    boxShadow: '0 10px 40px rgba(139, 92, 246, 0.3), 0 4px 20px rgba(0,0,0,0.15)',
+                                    pointerEvents: 'none'
+                                  }}
+                                >
+                                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                    {data.payload.fullName || data.name}
+                                  </p>
+                                  <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                                    {data.name}
+                                  </p>
+                                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">
+                                    {displayPercent.toFixed(1)}% • {formatMain(data.payload.actualValue)}
+                                  </p>
+                                </div>
+                              );
+                            }}
                           />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        isAnimationActive={false}
-                        animationDuration={0}
-                        trigger="hover"
-                        wrapperStyle={{
-                          zIndex: 50,
-                          pointerEvents: 'none',
-                          visibility: 'visible'
-                        }}
-                        allowEscapeViewBox={{ x: true, y: true }}
-                        content={(props) => {
-                          const { active, payload } = props;
-                          if (!active || !payload || !payload.length) return null;
-                          const data = payload[0];
-                          const displayPercent = stockAllocation.length === 1 ? 100 : Number(data.value);
-                          return (
-                            <div 
-                              className="bg-white dark:bg-gray-800 px-4 py-3 rounded-xl shadow-2xl border-2 border-purple-200 dark:border-purple-700"
-                              style={{ 
-                                boxShadow: '0 10px 40px rgba(139, 92, 246, 0.3), 0 4px 20px rgba(0,0,0,0.15)',
-                                pointerEvents: 'none'
-                              }}
-                            >
-                              <p className="text-sm font-bold text-gray-900 dark:text-white">
-                                {data.payload.fullName || data.name}
-                              </p>
-                              <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-                                {data.name}
-                              </p>
-                              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-1">
-                                {displayPercent.toFixed(1)}% • {formatMain(data.payload.actualValue)}
-                              </p>
-                            </div>
-                          );
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </LazyRechartsWrapper>
                 </div>
                 ) : stockHoldings.length > 0 ? (
                   <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
@@ -1025,21 +1016,25 @@ function StocksModalContent() {
             <div>
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Portfolio Performance</h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={stockHistory}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`$${formatNumber(Number(value))}`, 'Portfolio Value']} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#8b5cf6" 
-                      strokeWidth={3}
-                      dot={{ fill: "#8b5cf6", strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <LazyRechartsWrapper height={256}>
+                  {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={stockHistory}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip formatter={(value: any) => [`$${formatNumber(Number(value))}`, 'Portfolio Value']} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke="#8b5cf6" 
+                          strokeWidth={3}
+                          dot={{ fill: "#8b5cf6", strokeWidth: 2, r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </LazyRechartsWrapper>
               </div>
             </div>
 
@@ -1069,15 +1064,19 @@ function StocksModalContent() {
             <div>
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Quarterly Dividends</h3>
               <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dividendHistory}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="quarter" />
-                    <YAxis />
-                    <Tooltip cursor={false} formatter={(value) => [`$${value}`, 'Dividend']} />
-                    <Bar dataKey="dividend" fill="#8b5cf6" isAnimationActive={true} animationDuration={300} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <LazyRechartsWrapper height={256}>
+                  {({ BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dividendHistory}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="quarter" />
+                        <YAxis />
+                        <Tooltip cursor={false} formatter={(value: any) => [`$${value}`, 'Dividend']} />
+                        <Bar dataKey="dividend" fill="#8b5cf6" isAnimationActive={true} animationDuration={300} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </LazyRechartsWrapper>
               </div>
             </div>
 

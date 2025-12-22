@@ -1,6 +1,6 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector } from 'recharts';
+import { LazyRechartsWrapper, ChartLoadingPlaceholder } from './lazy-charts';
 import { Wallet } from 'lucide-react';
 import { getWalletById } from '@/lib/crypto-wallets-database';
 import { formatNumber } from '@/lib/utils';
@@ -183,53 +183,57 @@ export function PortfolioWalletPieChart({ holdings, prices }: PortfolioWalletPie
       </div>
 
       <div className="h-[300px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
-        <ResponsiveContainer width="100%" height="100%" debounce={200}>
-          <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-            <Pie
-              data={walletData}
-              dataKey="value"
-              nameKey="displayName"
-              cx="50%"
-              cy="50%"
-              outerRadius={90}
-              innerRadius={0}
-              fill="#8884d8"
-              paddingAngle={2}
-              isAnimationActive={false}
-              animationDuration={0}
-              animationBegin={0}
-              animationEasing="linear"
-              activeShape={false as any}
-              label={(entry: any) => {
-                const percentage = totalValue > 0 ? (entry.value / totalValue) * 100 : 0;
-                return percentage > 5 ? `${entry.displayName} (${percentage.toFixed(0)}%)` : '';
-              }}
-              labelLine={{ stroke: 'currentColor', strokeWidth: 1 }}
-            >
-              {walletData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.color}
-                  stroke="#fff"
-                  strokeWidth={2}
+        <LazyRechartsWrapper height={300}>
+          {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                <Pie
+                  data={walletData}
+                  dataKey="value"
+                  nameKey="displayName"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  innerRadius={0}
+                  fill="#8884d8"
+                  paddingAngle={2}
+                  isAnimationActive={false}
+                  animationDuration={0}
+                  animationBegin={0}
+                  animationEasing="linear"
+                  activeShape={false as any}
+                  label={(entry: any) => {
+                    const percentage = totalValue > 0 ? (entry.value / totalValue) * 100 : 0;
+                    return percentage > 5 ? `${entry.displayName} (${percentage.toFixed(0)}%)` : '';
+                  }}
+                  labelLine={{ stroke: 'currentColor', strokeWidth: 1 }}
+                >
+                  {walletData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.color}
+                      stroke="#fff"
+                      strokeWidth={2}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  content={<CustomTooltip />}
+                  trigger="hover"
+                  wrapperStyle={{ 
+                    zIndex: 9999,
+                    pointerEvents: 'none',
+                    visibility: 'visible'
+                  }}
+                  cursor={false}
+                  isAnimationActive={false}
+                  animationDuration={0}
+                  allowEscapeViewBox={{ x: true, y: true }}
                 />
-              ))}
-            </Pie>
-            <RechartsTooltip 
-              content={<CustomTooltip />}
-              trigger="hover"
-              wrapperStyle={{ 
-                zIndex: 9999,
-                pointerEvents: 'none',
-                visibility: 'visible'
-              }}
-              cursor={false}
-              isAnimationActive={false}
-              animationDuration={0}
-              allowEscapeViewBox={{ x: true, y: true }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </LazyRechartsWrapper>
       </div>
 
       {/* Legend */}

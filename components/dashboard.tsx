@@ -17,7 +17,6 @@ import {
   TaxesCard
 } from "./financial/financial-cards";
 import { useBetterAuth } from '../contexts/better-auth-context';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, LayoutGrid } from "lucide-react";
 import { AIChatAssistant } from './ui/ai-chat';
 import { ThemeToggle } from './ui/theme-toggle';

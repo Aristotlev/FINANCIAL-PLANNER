@@ -1,6 +1,6 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { LazyRechartsWrapper, ChartLoadingPlaceholder } from './lazy-charts';
 import { Wallet } from 'lucide-react';
 import { getWalletById } from '@/lib/crypto-wallets-database';
 import { useCurrencyConversion } from '@/hooks/use-currency-conversion';
@@ -121,46 +121,50 @@ export function PortfolioWalletPieChartV2({ holdings, prices }: PortfolioWalletP
       </div>
 
       <div className="relative rounded-lg [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100" style={{ height: '300px', width: '100%' }}>
-        <ResponsiveContainer width="100%" height="100%" debounce={200}>
-          <PieChart>
-            <Pie 
-              data={displayWalletData} 
-              dataKey="value" 
-              nameKey="displayName" 
-              cx="50%" 
-              cy="50%"
-              outerRadius={100} 
-              innerRadius={0} 
-              paddingAngle={0}
-              strokeWidth={displayWalletData.length > 1 ? 2 : 0} 
-              stroke="#ffffff" 
-              isAnimationActive={false}
-              animationDuration={0}
-              animationBegin={0}
-              animationEasing="linear"
-              startAngle={90}
-              endAngle={-270}
-              activeShape={false as any}
-            >
-              {displayWalletData.map((entry, index) => (
-                <Cell 
-                  key={'cell-' + index} 
-                  fill={entry.color}
-                  stroke={displayWalletData.length > 1 ? "#ffffff" : "none"}
-                  strokeWidth={displayWalletData.length > 1 ? 2 : 0}
+        <LazyRechartsWrapper height={300}>
+          {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie 
+                  data={displayWalletData} 
+                  dataKey="value" 
+                  nameKey="displayName" 
+                  cx="50%" 
+                  cy="50%"
+                  outerRadius={100} 
+                  innerRadius={0} 
+                  paddingAngle={0}
+                  strokeWidth={displayWalletData.length > 1 ? 2 : 0} 
+                  stroke="#ffffff" 
+                  isAnimationActive={false}
+                  animationDuration={0}
+                  animationBegin={0}
+                  animationEasing="linear"
+                  startAngle={90}
+                  endAngle={-270}
+                  activeShape={false as any}
+                >
+                  {displayWalletData.map((entry, index) => (
+                    <Cell 
+                      key={'cell-' + index} 
+                      fill={entry.color}
+                      stroke={displayWalletData.length > 1 ? "#ffffff" : "none"}
+                      strokeWidth={displayWalletData.length > 1 ? 2 : 0}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  isAnimationActive={false}
+                  animationDuration={0}
+                  trigger="hover"
+                  wrapperStyle={{ zIndex: 50, pointerEvents: 'none', visibility: 'visible' }}
+                  allowEscapeViewBox={{ x: true, y: true }} 
+                  content={<CustomTooltip />} 
                 />
-              ))}
-            </Pie>
-            <Tooltip 
-              isAnimationActive={false}
-              animationDuration={0}
-              trigger="hover"
-              wrapperStyle={{ zIndex: 50, pointerEvents: 'none', visibility: 'visible' }}
-              allowEscapeViewBox={{ x: true, y: true }} 
-              content={<CustomTooltip />} 
-            />
-          </PieChart>
-        </ResponsiveContainer>
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </LazyRechartsWrapper>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

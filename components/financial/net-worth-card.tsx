@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, AreaChart, Area, Legend } from "recharts";
+import { LazyRechartsWrapper, ChartLoadingPlaceholder } from "../ui/lazy-charts";
 import { TrendingUp, PieChart as PieChartIcon, BarChart3, Target, GitBranch } from "lucide-react";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { usePortfolioValues } from "../../hooks/use-portfolio";
@@ -773,80 +773,84 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
         <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Asset Performance Timeline</h4>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Track all financial categories over the past 9 months</p>
         <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={comprehensiveOverviewData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-              <defs>
-                {/* Holographic glow filters for each category */}
-                {assetCategories.map((category) => (
-                  <React.Fragment key={category.key}>
-                    <filter id={`glow-${category.key}`} x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur stdDeviation={hoveredLine === category.key ? 4 : 0} result="coloredBlur"/>
-                      <feMerge>
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                    {/* Gradient for area under line */}
-                    <linearGradient id={`gradient-${category.key}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={category.color} stopOpacity={0.3}/>
-                      <stop offset="100%" stopColor={category.color} stopOpacity={0.0}/>
-                    </linearGradient>
-                  </React.Fragment>
-                ))}
-              </defs>
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="#374151" 
-                opacity={0.15}
-                vertical={false}
-              />
-              <XAxis 
-                dataKey="month" 
-                stroke="#9CA3AF"
-                tick={{ fill: '#9CA3AF', fontSize: 11 }}
-                tickLine={{ stroke: '#9CA3AF' }}
-              />
-              <YAxis 
-                stroke="#9CA3AF"
-                tick={{ fill: '#9CA3AF', fontSize: 11 }}
-                tickLine={{ stroke: '#9CA3AF' }}
-                tickFormatter={(value) => value >= 1000 ? `$${(value / 1000).toFixed(0)}K` : `$${value}`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              
-              {assetCategories.map((category) => {
-                const isHovered = hoveredLine === category.key;
-                const isNetWorth = category.key === 'netWorth';
-                
-                return (
-                  <Line
-                    key={category.key}
-                    type="monotone"
-                    dataKey={category.key}
-                    name={category.name}
-                    stroke={category.color}
-                    strokeWidth={isNetWorth ? 4 : 3}
-                    strokeDasharray="0"
-                    dot={{ 
-                      r: 4, 
-                      fill: category.color, 
-                      strokeWidth: 2,
-                      stroke: '#fff'
-                    }}
-                    activeDot={{ 
-                      r: 8, 
-                      stroke: category.color, 
-                      strokeWidth: 3,
-                      fill: '#fff'
-                    }}
-                    opacity={hoveredLine ? (isHovered ? 1 : 0.3) : 1}
-                    isAnimationActive={false}
-                    connectNulls={true}
+          <LazyRechartsWrapper height={320}>
+            {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={comprehensiveOverviewData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                  <defs>
+                    {/* Holographic glow filters for each category */}
+                    {assetCategories.map((category) => (
+                      <React.Fragment key={category.key}>
+                        <filter id={`glow-${category.key}`} x="-50%" y="-50%" width="200%" height="200%">
+                          <feGaussianBlur stdDeviation={hoveredLine === category.key ? 4 : 0} result="coloredBlur"/>
+                          <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                          </feMerge>
+                        </filter>
+                        {/* Gradient for area under line */}
+                        <linearGradient id={`gradient-${category.key}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={category.color} stopOpacity={0.3}/>
+                          <stop offset="100%" stopColor={category.color} stopOpacity={0.0}/>
+                        </linearGradient>
+                      </React.Fragment>
+                    ))}
+                  </defs>
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="#374151" 
+                    opacity={0.15}
+                    vertical={false}
                   />
-                );
-              })}
-            </LineChart>
-          </ResponsiveContainer>
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                    tickLine={{ stroke: '#9CA3AF' }}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                    tickLine={{ stroke: '#9CA3AF' }}
+                    tickFormatter={(value: any) => value >= 1000 ? `$${(value / 1000).toFixed(0)}K` : `$${value}`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  
+                  {assetCategories.map((category) => {
+                    const isHovered = hoveredLine === category.key;
+                    const isNetWorth = category.key === 'netWorth';
+                    
+                    return (
+                      <Line
+                        key={category.key}
+                        type="monotone"
+                        dataKey={category.key}
+                        name={category.name}
+                        stroke={category.color}
+                        strokeWidth={isNetWorth ? 4 : 3}
+                        strokeDasharray="0"
+                        dot={{ 
+                          r: 4, 
+                          fill: category.color, 
+                          strokeWidth: 2,
+                          stroke: '#fff'
+                        }}
+                        activeDot={{ 
+                          r: 8, 
+                          stroke: category.color, 
+                          strokeWidth: 3,
+                          fill: '#fff'
+                        }}
+                        opacity={hoveredLine ? (isHovered ? 1 : 0.3) : 1}
+                        isAnimationActive={false}
+                        connectNulls={true}
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </LazyRechartsWrapper>
         </div>
         
         {/* Enhanced Legend with Holographic Effects */}
@@ -892,22 +896,26 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
         <div>
           <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Assets vs Liabilities</h4>
           <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={breakdown}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
-                <YAxis />
-                <Tooltip cursor={false} formatter={(value) => [`$${formatNumber(Number(value))}`, 'Amount']} />
-                <Bar dataKey="value" isAnimationActive={true} animationDuration={300}>
-                  {breakdown.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.type === 'positive' ? '#10b981' : entry.type === 'negative' ? '#ef4444' : '#8b5cf6'} 
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <LazyRechartsWrapper height={192}>
+              {({ BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer }) => (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={breakdown}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="category" />
+                    <YAxis />
+                    <Tooltip cursor={false} formatter={(value: any) => [`$${formatNumber(Number(value))}`, 'Amount']} />
+                    <Bar dataKey="value" isAnimationActive={true} animationDuration={300}>
+                      {breakdown.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.type === 'positive' ? '#10b981' : entry.type === 'negative' ? '#ef4444' : '#8b5cf6'} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </LazyRechartsWrapper>
           </div>
         </div>
 
@@ -1064,49 +1072,53 @@ function NetWorthBreakdown({ assets, pieChartData, portfolio }: { assets: any[];
         <div className="relative">
           <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Portfolio Distribution</h4>
           <div className="h-[300px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
-            <ResponsiveContainer width="100%" height="100%" debounce={200}>
-              <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <Pie
-                  data={pieChartData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  innerRadius={0}
-                  fill="#8884d8"
-                  paddingAngle={2}
-                  isAnimationActive={false}
-                  animationDuration={0}
-                  animationBegin={0}
-                  animationEasing="linear"
-                  label={false}
-                  labelLine={false}
-                  activeShape={false as any}
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.color}
-                      stroke="#fff"
-                      strokeWidth={2}
+            <LazyRechartsWrapper height={300}>
+              {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <Pie
+                      data={pieChartData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={90}
+                      innerRadius={0}
+                      fill="#8884d8"
+                      paddingAngle={2}
+                      isAnimationActive={false}
+                      animationDuration={0}
+                      animationBegin={0}
+                      animationEasing="linear"
+                      label={false}
+                      labelLine={false}
+                      activeShape={false as any}
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color}
+                          stroke="#fff"
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      content={<CustomPieTooltip />}
+                      trigger="hover"
+                      wrapperStyle={{ 
+                        zIndex: 50,
+                        pointerEvents: 'none',
+                        visibility: 'visible'
+                      }}
+                      allowEscapeViewBox={{ x: true, y: true }}
+                      isAnimationActive={false}
+                      animationDuration={0}
                     />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  content={<CustomPieTooltip />}
-                  trigger="hover"
-                  wrapperStyle={{ 
-                    zIndex: 50,
-                    pointerEvents: 'none',
-                    visibility: 'visible'
-                  }}
-                  allowEscapeViewBox={{ x: true, y: true }}
-                  isAnimationActive={false}
-                  animationDuration={0}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </LazyRechartsWrapper>
           </div>
         </div>
 
@@ -1300,72 +1312,76 @@ function NetWorthTrends({ data, financialData, portfolio }: { data: any[]; finan
           }
         `}</style>
         <div className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart 
-              data={comprehensiveData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                {assetCategories.map((category) => (
-                  <filter key={category.key} id={`glow-${category.key}`} x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation={hoveredLine === category.key ? category.glowIntensity : 0} result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                ))}
-              </defs>
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="#374151" 
-                opacity={0.2}
-                vertical={false}
-              />
-              <XAxis 
-                dataKey="month" 
-                stroke="#9CA3AF"
-                tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                tickLine={{ stroke: '#9CA3AF' }}
-              />
-              <YAxis 
-                stroke="#9CA3AF"
-                tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                tickLine={{ stroke: '#9CA3AF' }}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
-              
-              {/* Render all categories as lines */}
-              {assetCategories.map((category) => {
-                const isNetWorth = category.key === 'netWorth';
-                const isHovered = hoveredLine === category.key;
-                
-                return (
-                  <Line
-                    key={category.key}
-                    type="monotone"
-                    dataKey={category.key}
-                    name={category.name}
-                    stroke={category.color}
-                    strokeWidth={isNetWorth ? 4 : category.strokeWidth || 2.5}
-                    strokeDasharray="0"
-                    dot={{ r: 4, fill: category.color, strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ 
-                      r: 8, 
-                      stroke: category.color, 
-                      strokeWidth: 3,
-                      fill: '#fff'
-                    }}
-                    opacity={hoveredLine ? (isHovered ? 1 : 0.3) : 1}
-                    isAnimationActive={false}
-                    connectNulls={true}
+          <LazyRechartsWrapper height={384}>
+            {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer }) => (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart 
+                  data={comprehensiveData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    {assetCategories.map((category) => (
+                      <filter key={category.key} id={`glow-${category.key}`} x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation={hoveredLine === category.key ? category.glowIntensity : 0} result="coloredBlur"/>
+                        <feMerge>
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
+                    ))}
+                  </defs>
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="#374151" 
+                    opacity={0.2}
+                    vertical={false}
                   />
-                );
-              })}
-            </LineChart>
-          </ResponsiveContainer>
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tickLine={{ stroke: '#9CA3AF' }}
+                  />
+                  <YAxis 
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tickLine={{ stroke: '#9CA3AF' }}
+                    tickFormatter={(value: any) => `$${(value / 1000).toFixed(0)}K`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend content={<CustomLegend />} />
+                  
+                  {/* Render all categories as lines */}
+                  {assetCategories.map((category) => {
+                    const isNetWorth = category.key === 'netWorth';
+                    const isHovered = hoveredLine === category.key;
+                    
+                    return (
+                      <Line
+                        key={category.key}
+                        type="monotone"
+                        dataKey={category.key}
+                        name={category.name}
+                        stroke={category.color}
+                        strokeWidth={isNetWorth ? 4 : category.strokeWidth || 2.5}
+                        strokeDasharray="0"
+                        dot={{ r: 4, fill: category.color, strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ 
+                          r: 8, 
+                          stroke: category.color, 
+                          strokeWidth: 3,
+                          fill: '#fff'
+                        }}
+                        opacity={hoveredLine ? (isHovered ? 1 : 0.3) : 1}
+                        isAnimationActive={false}
+                        connectNulls={true}
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </LazyRechartsWrapper>
         </div>
       </div>
 

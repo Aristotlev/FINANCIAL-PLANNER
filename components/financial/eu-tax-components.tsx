@@ -1,19 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from "recharts";
+import { BarChart as BarChartIcon } from "lucide-react";
+import { LazyRechartsWrapper } from "../ui/lazy-charts";
 import {
   TrendingUp,
   TrendingDown,
@@ -263,7 +252,7 @@ export function EUTaxBreakdown({
           }`}
         >
           <div className="flex items-center gap-2">
-            <BarChart className="w-4 h-4" />
+            <BarChartIcon className="w-4 h-4" />
             Visual
           </div>
         </button>
@@ -363,46 +352,54 @@ export function EUTaxBreakdown({
         <div className="space-y-4">
           {/* Pie Chart */}
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%" debounce={100}>
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry: any) => `${entry.name}: ${((entry.value / totalIncome) * 100).toFixed(1)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  isAnimationActive={false}
-                  animationDuration={0}
-                  animationBegin={0}
-                  style={{ outline: 'none' }}
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: number) => formatCurrency(value, country)} 
-                  isAnimationActive={false}
-                  animationDuration={0}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <LazyRechartsWrapper height={256}>
+              {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
+                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry: any) => `${entry.name}: ${((entry.value / totalIncome) * 100).toFixed(1)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      isAnimationActive={false}
+                      animationDuration={0}
+                      animationBegin={0}
+                      style={{ outline: 'none' }}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: any) => formatCurrency(value, country)} 
+                      isAnimationActive={false}
+                      animationDuration={0}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </LazyRechartsWrapper>
           </div>
 
           {/* Bar Chart */}
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData.slice(0, -1)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value: number) => formatCurrency(value, country)} />
-                <Bar dataKey="value" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
+            <LazyRechartsWrapper height={256}>
+              {({ BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer }) => (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.slice(0, -1)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value: any) => formatCurrency(value, country)} />
+                    <Bar dataKey="value" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </LazyRechartsWrapper>
           </div>
         </div>
       )}
