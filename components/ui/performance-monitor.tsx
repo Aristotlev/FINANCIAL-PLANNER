@@ -78,6 +78,9 @@ export function PerformanceMonitor() {
   
   // Update cache stats
   useEffect(() => {
+    // Only run if visible to save CPU
+    if (!isVisible) return;
+
     const interval = setInterval(() => {
       const cacheStats = enhancedCache.getStats();
       const now = Date.now();
@@ -95,10 +98,10 @@ export function PerformanceMonitor() {
           : 0,
         dataFreshness: latestUpdate ? now - latestUpdate : 0,
       }));
-    }, 1000);
+    }, 3000); // Reduced frequency from 1000ms to 3000ms
     
     return () => clearInterval(interval);
-  }, [portfolio.lastUpdated, marketPrices.lastUpdated]);
+  }, [isVisible, portfolio.lastUpdated, marketPrices.lastUpdated]);
   
   // Toggle with keyboard shortcut (Ctrl/Cmd + Shift + P)
   useEffect(() => {

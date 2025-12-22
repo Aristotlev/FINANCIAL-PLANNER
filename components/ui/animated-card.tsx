@@ -24,6 +24,7 @@ export function AnimatedCard({ className, children, ...props }: CardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const [isHovered, setIsHovered] = useState(false);
+  const rafRef = useRef<number | null>(null);
 
   // Listen for drag events to disable 3D effects during dragging
   React.useEffect(() => {
@@ -45,6 +46,9 @@ export function AnimatedCard({ className, children, ...props }: CardProps) {
     return () => {
       window.removeEventListener('cardDragStart', handleDragStart);
       window.removeEventListener('cardDragEnd', handleDragEnd);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
   }, []);
 
@@ -52,12 +56,19 @@ export function AnimatedCard({ className, children, ...props }: CardProps) {
     // Skip all processing if dragging
     if (!containerRef.current || isDraggingRef.current) return;
 
-    const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - left - width / 2) / 20; // Sensitivity for tilt
-    const y = (e.clientY - top - height / 2) / 20;
+    // Use requestAnimationFrame to throttle updates and reduce CPU usage
+    if (rafRef.current) return;
 
-    // Apply 3D tilt transform based on mouse position
-    containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / 20; // Sensitivity for tilt
+    const y = (e.clientY - rect.top - rect.height / 2) / 20;
+
+    rafRef.current = requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+      }
+      rafRef.current = null;
+    });
   }, []);
 
   const handleMouseEnter = useCallback(() => {
@@ -259,6 +270,7 @@ export function Visual3({
   );
 }
 
+// ...existing code...
 interface LayerProps {
   color: string;
   secondaryColor?: string;
@@ -267,7 +279,7 @@ interface LayerProps {
   onChartClick?: (e: React.MouseEvent) => void;
 }
 
-const GridLayer: React.FC<{ color: string; hovered?: boolean }> = ({ color, hovered }) => {
+const GridLayer = React.memo(({ color, hovered }: { color: string; hovered?: boolean }) => {
   return (
     <div
       style={{ 
@@ -282,9 +294,10 @@ const GridLayer: React.FC<{ color: string; hovered?: boolean }> = ({ color, hove
       )}
     />
   );
-};
+});
+GridLayer.displayName = "GridLayer";
 
-const EllipseGradient: React.FC<{ color: string }> = ({ color }) => {
+const EllipseGradient = React.memo(({ color }: { color: string }) => {
   return (
     <div className="absolute inset-0 z-[1] flex h-full w-full items-center justify-center">
       <svg
@@ -312,7 +325,8 @@ const EllipseGradient: React.FC<{ color: string }> = ({ color }) => {
       </svg>
     </div>
   );
-};
+});
+EllipseGradient.displayName = "EllipseGradient";
 
 interface Layer1Props {
   color: string;
@@ -323,7 +337,7 @@ interface Layer1Props {
   };
 }
 
-const Layer1: React.FC<Layer1Props> = ({ color, secondaryColor, hovered, hologramData }) => {
+const Layer1 = React.memo(({ color, secondaryColor, hovered, hologramData }: Layer1Props) => {
   // Extract percentage values from stats if available
   const stat1 = hologramData?.stats?.[0]?.value || "+0%";
   const stat2 = hologramData?.stats?.[1]?.value || "+0%";
@@ -369,9 +383,14 @@ const Layer1: React.FC<Layer1Props> = ({ color, secondaryColor, hovered, hologra
       </div>
     </div>
   );
-};
+});
+Layer1.displayName = "Layer1";
 
-const Layer2: React.FC<{ 
+const Layer2 = React.memo(({ 
+  color,
+  hovered,
+  hologramData
+}: { 
   color: string;
   hovered?: boolean;
   hologramData?: {
@@ -383,7 +402,7 @@ const Layer2: React.FC<{
     convertedAmount?: string;
     sourceCurrency?: string;
   };
-}> = ({ color, hologramData, hovered }) => {
+}) => {
   // Calculate performance percentage from change string
   const performanceValue = hologramData?.change || "+24.5%";
   const isPositive = hologramData?.changeType === "positive";
@@ -444,9 +463,11 @@ const Layer2: React.FC<{
           )}
           style={{
             borderColor: color,
+            // Optimize box-shadow - simplify when not hovered
             boxShadow: hovered 
               ? `0 25px 80px ${color}60, 0 10px 40px ${color}40, 0 0 60px ${color}30, 0 0 0 2px ${color}40, inset 0 0 40px ${color}10`
-              : `0 10px 40px ${color}30, 0 0 0 1px ${color}20`,
+              : `0 5px 20px ${color}20`,
+            willChange: "transform, opacity, box-shadow",
           }}
         >
           {/* Border accent */}
@@ -618,9 +639,10 @@ const Layer2: React.FC<{
       </div>
     </>
   );
-};
+});
+Layer2.displayName = "Layer2";
 
-const Layer3: React.FC<{ color: string; hovered?: boolean }> = ({ color, hovered }) => {
+const Layer3 = React.memo(({ color, hovered }: { color: string; hovered?: boolean }) => {
   return (
     <div 
       className={cn(
@@ -657,11 +679,12 @@ const Layer3: React.FC<{ color: string; hovered?: boolean }> = ({ color, hovered
       </svg>
     </div>
   );
-};
+});
+Layer3.displayName = "Layer3";
 
-const Layer4: React.FC<LayerProps> = ({ color, secondaryColor, hovered, data, onChartClick }) => {
+const Layer4 = React.memo(({ color, secondaryColor, hovered, data, onChartClick }: LayerProps) => {
   // Generate dynamic line chart data if provided
-  const generateLinePoints = () => {
+  const linePoints = React.useMemo(() => {
     if (!data || data.length === 0) return null;
     
     // Filter out invalid data points
@@ -688,12 +711,10 @@ const Layer4: React.FC<LayerProps> = ({ color, secondaryColor, hovered, data, on
         value: item.value
       };
     });
-  };
+  }, [data]);
 
-  const linePoints = generateLinePoints();
-  
   // Fallback default line points if no data
-  const defaultLinePoints = [
+  const defaultLinePoints = React.useMemo(() => [
     { x: 40, y: 100 },
     { x: 80, y: 85 },
     { x: 120, y: 70 },
@@ -702,12 +723,13 @@ const Layer4: React.FC<LayerProps> = ({ color, secondaryColor, hovered, data, on
     { x: 240, y: 75 },
     { x: 280, y: 55 },
     { x: 320, y: 45 },
-  ];
+  ], []);
 
   const points = linePoints || defaultLinePoints;
   
   // Create SVG path from points using smooth curves
-  const createSmoothPath = (pts: Array<{x: number, y: number}>) => {
+  const linePath = React.useMemo(() => {
+    const pts = points;
     // Validate input
     if (!pts || pts.length === 0) return 'M 0 0';
     if (pts.length < 2) return `M ${pts[0].x} ${pts[0].y}`;
@@ -738,9 +760,7 @@ const Layer4: React.FC<LayerProps> = ({ color, secondaryColor, hovered, data, on
     }
     
     return path;
-  };
-
-  const linePath = createSmoothPath(points);
+  }, [points]);
 
   return (
     <div 
@@ -752,7 +772,9 @@ const Layer4: React.FC<LayerProps> = ({ color, secondaryColor, hovered, data, on
         transform: hovered ? "translateZ(45px) scale(1.02)" : "translateZ(25px)",
         transformStyle: "preserve-3d",
         transition: "transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)",
-        filter: hovered ? `drop-shadow(0 15px 30px rgba(0,0,0,0.2))` : "drop-shadow(0 8px 16px rgba(0,0,0,0.1))",
+        // Optimize filter usage - reduce complexity when not hovered
+        filter: hovered ? `drop-shadow(0 15px 30px rgba(0,0,0,0.2))` : "none",
+        willChange: "transform, filter",
       }}
     >
       <svg width="356" height="180" xmlns="http://www.w3.org/2000/svg" className="pointer-events-auto">
@@ -778,7 +800,8 @@ const Layer4: React.FC<LayerProps> = ({ color, secondaryColor, hovered, data, on
           strokeLinejoin="round"
           className="transition-all duration-200 ease-out"
           style={{ 
-            filter: hovered ? `drop-shadow(0 0 12px ${color}) drop-shadow(0 0 20px ${color}80)` : `drop-shadow(0 0 4px ${color}40)`
+            // Optimize filter usage
+            filter: hovered ? `drop-shadow(0 0 12px ${color}) drop-shadow(0 0 20px ${color}80)` : "none"
           }}
         />
         
@@ -827,4 +850,6 @@ const Layer4: React.FC<LayerProps> = ({ color, secondaryColor, hovered, data, on
       </svg>
     </div>
   );
-};
+});
+Layer4.displayName = "Layer4";
+// ...existing code...

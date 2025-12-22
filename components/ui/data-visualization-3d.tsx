@@ -62,6 +62,7 @@ export function DataVisualization3D({
             transform: "translateZ(100px) rotateX(5deg)",
             transformStyle: "preserve-3d",
             boxShadow: "0 50px 100px -20px rgba(0, 0, 0, 0.25), 0 30px 60px -30px rgba(0, 0, 0, 0.3)",
+            willChange: "transform", // Hint to browser for GPU optimization
           }}
         >
           {/* Close button */}

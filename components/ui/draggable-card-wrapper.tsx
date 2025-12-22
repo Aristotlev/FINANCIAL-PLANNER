@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useHiddenCards, CardType } from '../../contexts/hidden-cards-context';
 import { useCardOrder } from '../../contexts/card-order-context';
 
@@ -14,15 +14,11 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
   const [isHovered, setIsHovered] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Listen for card drag events from DraggableCardBody and set the cardId
-  useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
-      // Check if this wrapper or its children contain the mousedown target
-      if (wrapperRef.current?.contains(e.target as Node)) {
-        // Set the current drag card ID when mouse down on this card
-        (window as any).__currentDragCard = cardId;
-      }
-    };
+  // Optimized: Only attach global mouseup listener when drag starts
+  // This replaces 20+ constant global listeners with 0 (until interaction)
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Set the current drag card ID
+    (window as any).__currentDragCard = cardId;
 
     const handleMouseUp = () => {
       // Clear after a short delay to allow drop detection
@@ -31,15 +27,12 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
           (window as any).__currentDragCard = null;
         }
       }, 100);
-    };
-
-    document.addEventListener('mousedown', handleMouseDown, true);
-    document.addEventListener('mouseup', handleMouseUp, true);
-
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown, true);
+      
+      // Remove the listener immediately after use
       document.removeEventListener('mouseup', handleMouseUp, true);
     };
+
+    document.addEventListener('mouseup', handleMouseUp, true);
   }, [cardId]);
 
   return (
@@ -47,6 +40,7 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
       ref={wrapperRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onMouseDownCapture={handleMouseDown}
       className="transition-all duration-200 relative group cursor-grab hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]"
       style={{
         touchAction: 'none',

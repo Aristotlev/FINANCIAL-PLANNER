@@ -123,9 +123,9 @@ export const BackgroundBeams = React.memo(() => {
       }
     }
 
-    // Create fewer beams for better performance (12 instead of 20)
+    // Create fewer beams for better performance (8 instead of 12)
     const beams: Beam[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 8; i++) {
       beams.push(new Beam());
     }
 
@@ -133,8 +133,8 @@ export const BackgroundBeams = React.memo(() => {
     const animate = () => {
       frameCountRef.current++;
       
-      // Skip every other frame for 30fps instead of 60fps - still smooth, half the CPU
-      if (frameCountRef.current % 2 === 0) {
+      // Skip frames for 20fps instead of 60fps - still smooth, significantly less CPU
+      if (frameCountRef.current % 3 === 0) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
         ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 

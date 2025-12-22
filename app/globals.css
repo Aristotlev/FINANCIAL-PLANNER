@@ -185,14 +185,17 @@ canvas.fixed {
 
 .animate-float-slow {
   animation: float-slow 4s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .animate-float-medium {
   animation: float-medium 3s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .animate-float-slower {
   animation: float-slower 5s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 /* Hologram Effects */
@@ -243,18 +246,22 @@ canvas.fixed {
 
 .animate-scan-lines {
   animation: scan-lines 3s linear infinite;
+  will-change: transform;
 }
 
 .animate-shimmer {
   animation: shimmer 3s linear infinite;
+  will-change: transform;
 }
 
 .animate-hologram-float {
   animation: hologram-float 3s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-hologram-shimmer {
   animation: hologram-shimmer 2s ease-in-out infinite;
+  /* filter is expensive, use sparingly */
 }
 
 /* Light mode tooltip styling with subtle shadow */

@@ -25,6 +25,7 @@ export const CardContainer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMouseEntered, setIsMouseEntered] = useState(false);
   const isDraggingRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
 
   // Listen for drag events to disable 3D effects during dragging
   useEffect(() => {
@@ -46,6 +47,9 @@ export const CardContainer = ({
     return () => {
       window.removeEventListener('cardDragStart', handleDragStart);
       window.removeEventListener('cardDragEnd', handleDragEnd);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
   }, []);
 
@@ -53,12 +57,19 @@ export const CardContainer = ({
     // Skip all processing if dragging - this is the key performance fix
     if (!containerRef.current || isDraggingRef.current) return;
 
-    const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - left - width / 2) / 25; // Reduced sensitivity for more stable experience
-    const y = (e.clientY - top - height / 2) / 25;
+    // Use requestAnimationFrame to throttle updates and reduce CPU usage
+    if (rafRef.current) return;
 
-    // Apply transform directly without requestAnimationFrame for immediate response
-    containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / 25; // Reduced sensitivity for more stable experience
+    const y = (e.clientY - rect.top - rect.height / 2) / 25;
+
+    rafRef.current = requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+      }
+      rafRef.current = null;
+    });
   }, []);
 
   const handleMouseEnter = useCallback(() => {

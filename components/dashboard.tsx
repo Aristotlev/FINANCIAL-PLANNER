@@ -212,41 +212,43 @@ export function Dashboard() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [resetCardPositions]);
 
-  // Smooth wheel-based zoom with momentum - optimized with throttling
+  // Smooth wheel-based zoom with momentum - optimized with requestAnimationFrame
   React.useEffect(() => {
-    let zoomTimeout: NodeJS.Timeout;
-    let lastZoomTime = 0;
-    const ZOOM_THROTTLE = 16; // ~60fps max
+    let rafId: number | null = null;
+    let isZoomingTimeout: NodeJS.Timeout;
     
     const handleWheel = (e: WheelEvent) => {
       // Check if Ctrl/Cmd key is pressed for zoom
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         
-        const now = Date.now();
-        if (now - lastZoomTime < ZOOM_THROTTLE) return;
-        lastZoomTime = now;
-        
+        if (rafId) return;
+
         setIsZooming(true);
-        clearTimeout(zoomTimeout);
+        clearTimeout(isZoomingTimeout);
         
-        // Calculate zoom delta - smoother increments
-        const delta = -e.deltaY * 0.001;
-        
-        setZoomLevel(prevZoom => {
-          const newZoom = prevZoom * (1 + delta);
-          return Math.max(0.5, Math.min(1.0, newZoom));
+        rafId = requestAnimationFrame(() => {
+          // Calculate zoom delta - smoother increments
+          const delta = -e.deltaY * 0.001;
+          
+          setZoomLevel(prevZoom => {
+            const newZoom = prevZoom * (1 + delta);
+            return Math.max(0.5, Math.min(1.0, newZoom));
+          });
+          
+          rafId = null;
         });
         
         // Reset zooming state after animation completes
-        zoomTimeout = setTimeout(() => setIsZooming(false), 150);
+        isZoomingTimeout = setTimeout(() => setIsZooming(false), 150);
       }
     };
 
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => {
       window.removeEventListener('wheel', handleWheel);
-      clearTimeout(zoomTimeout);
+      if (rafId) cancelAnimationFrame(rafId);
+      clearTimeout(isZoomingTimeout);
     };
   }, []);
 
