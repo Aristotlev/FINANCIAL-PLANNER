@@ -39,6 +39,8 @@ export function HiddenCardsFolder() {
 
   // Update dropdown position when button position changes or when open
   useEffect(() => {
+    let rafId: number;
+    
     const updatePosition = () => {
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
@@ -49,14 +51,20 @@ export function HiddenCardsFolder() {
       }
     };
 
+    const onScrollOrResize = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updatePosition);
+    };
+
     if (isOpen) {
       updatePosition();
       // Also update on scroll/resize while open
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', onScrollOrResize, true);
+      window.addEventListener('resize', onScrollOrResize);
       return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', onScrollOrResize, true);
+        window.removeEventListener('resize', onScrollOrResize);
+        cancelAnimationFrame(rafId);
       };
     }
   }, [isOpen]);

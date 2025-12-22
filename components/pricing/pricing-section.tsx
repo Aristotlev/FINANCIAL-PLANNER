@@ -105,14 +105,15 @@ function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
   const config = PLAN_CONFIG[plan];
   const features = PLAN_FEATURES[plan];
 
-  const isFeatured = plan === 'PRO';
-  const isPremium = plan === 'UNLIMITED';
-  const isFree = plan === 'FREE';
+  const isFeatured = plan === 'TRADER';
+  const isPremium = plan === 'INVESTOR' || plan === 'WHALE';
+  const isFree = plan === 'STARTER';
 
   const planBadgeText: Record<SubscriptionPlan, string | null> = {
-    FREE: null,
-    PRO: '🔥 Best value',
-    UNLIMITED: '⚡ Most powerful',
+    STARTER: null,
+    TRADER: '🔥 Best value',
+    INVESTOR: '⚡ Most powerful',
+    WHALE: '💎 Ultimate',
   };
 
   const getButtonVariant = (): 'ghost' | 'pro' | 'premium' | 'primary' | 'secondary' => {
@@ -163,7 +164,7 @@ function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
         <p className="text-sm text-gray-500">
           per month
         </p>
-        {plan === 'FREE' && (
+        {plan === 'STARTER' && (
           <div className="mt-2 space-y-1">
             <p className="text-cyan-400 text-xs font-semibold">✨ 7-day trial with UNLIMITED features</p>
             <p className="text-gray-500 text-xs">Then free forever with basic limits</p>
@@ -230,7 +231,7 @@ export default function PricingSection() {
       return;
     }
 
-    if (plan === 'FREE') {
+    if (plan === 'STARTER') {
       alert('Free plan is automatically available after your trial ends');
       return;
     }
@@ -268,26 +269,31 @@ export default function PricingSection() {
         )}
 
         {/* Pricing Cards Grid */}
-        <div className="not-prose mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-4xl">
+        <div className="not-prose mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl">
           <PricingCard
-            plan="FREE"
-            isCurrentPlan={subscription?.plan === 'FREE'}
+            plan="STARTER"
+            isCurrentPlan={subscription?.plan === 'STARTER'}
             onSelect={handleSelectPlan}
           />
           <PricingCard
-            plan="PRO"
-            isCurrentPlan={subscription?.plan === 'PRO'}
+            plan="TRADER"
+            isCurrentPlan={subscription?.plan === 'TRADER'}
             onSelect={handleSelectPlan}
           />
           <PricingCard
-            plan="UNLIMITED"
-            isCurrentPlan={subscription?.plan === 'UNLIMITED'}
+            plan="INVESTOR"
+            isCurrentPlan={subscription?.plan === 'INVESTOR'}
+            onSelect={handleSelectPlan}
+          />
+          <PricingCard
+            plan="WHALE"
+            isCurrentPlan={subscription?.plan === 'WHALE'}
             onSelect={handleSelectPlan}
           />
         </div>
 
         {/* Comparison Table */}
-        <div className="mt-12 w-full max-w-4xl">
+        <div className="mt-12 w-full max-w-6xl">
           <h3 className="text-2xl font-bold text-white mb-6">
             Compare All Features
           </h3>
@@ -297,22 +303,22 @@ export default function PricingSection() {
                 <thead>
                   <tr className="bg-gray-800/50">
                     <th className="p-4 text-left text-gray-300 font-semibold text-sm">Feature</th>
-                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Free</th>
-                    <th className="p-4 text-center text-gray-300 font-semibold text-sm bg-purple-900/20">Pro</th>
-                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Unlimited</th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Starter</th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm bg-purple-900/20">Trader</th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Investor</th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Whale</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   {[
-                    { feature: 'Entries per asset class', values: ['5', '20', '50'] },
-                    { feature: 'AI calls per day', values: ['0', '20', '50'] },
-                    { feature: 'Basic analytics', values: [true, true, true] },
-                    { feature: 'Advanced analytics', values: [false, true, true] },
-                    { feature: 'Email support', values: [true, true, true] },
-                    { feature: 'Priority support', values: [false, false, true] },
-                    { feature: 'Custom categories', values: [false, true, true] },
-                    { feature: 'Export data', values: [false, true, true] },
-                    { feature: 'API access', values: [false, false, true] },
+                    { feature: 'Assets per Asset Class', values: ['3', 'Unlimited', 'Unlimited', 'Unlimited'] },
+                    { feature: 'Manual Inputs', values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'] },
+                    { feature: 'Imports & Exports', values: [false, true, true, true] },
+                    { feature: 'Automated Data', values: [false, true, true, true] },
+                    { feature: 'AI Analytics', values: [false, 'Basic', 'Deep', 'Deep'] },
+                    { feature: 'AI Assistant', values: [false, false, '50 Qs/day', 'Unlimited'] },
+                    { feature: 'Priority Support', values: [false, false, false, true] },
+                    { feature: 'Early Access', values: [false, false, false, true] },
                   ].map((row, index) => (
                     <tr key={index} className="hover:bg-gray-800/30 transition-colors">
                       <td className="p-4 text-gray-300 font-medium text-sm">{row.feature}</td>

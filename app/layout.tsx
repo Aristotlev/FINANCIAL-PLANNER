@@ -8,6 +8,7 @@ import { FinancialDataProvider } from "../contexts/financial-data-context";
 import { HiddenCardsProvider } from "../contexts/hidden-cards-context";
 import { CardOrderProvider } from "../contexts/card-order-context";
 import { CurrencyProvider } from "../contexts/currency-context";
+import { HybridDataProvider } from "../contexts/hybrid-data-context";
 import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
 import { ExtensionErrorBoundary } from "../components/ui/extension-error-boundary";
@@ -79,10 +80,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.google-analytics.com" />
         {/* Runtime environment variables - loaded at runtime, not build time */}
-        <Script
-          src="/api/env"
-          strategy="beforeInteractive"
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__ENV__ = {
+                NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
+                NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
+                NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
+                NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_APP_URL || '')} || window.location.origin,
+              };
+            `,
+          }}
         />
         {/* Ethereum safeguard - prevents wallet extension conflicts */}
         <Script
@@ -119,18 +130,20 @@ export default function RootLayout({
           <ThemeProvider>
             <BetterAuthProvider>
               <CurrencyProvider>
-                <APIConnectionProvider>
-                  <PortfolioProvider>
-                    <FinancialDataProvider>
-                      <HiddenCardsProvider>
-                        <CardOrderProvider>
-                          {children}
-                          <ConsentBanner />
-                        </CardOrderProvider>
-                      </HiddenCardsProvider>
-                    </FinancialDataProvider>
-                  </PortfolioProvider>
-                </APIConnectionProvider>
+                <HybridDataProvider>
+                  <APIConnectionProvider>
+                    <PortfolioProvider>
+                      <FinancialDataProvider>
+                        <HiddenCardsProvider>
+                          <CardOrderProvider>
+                            {children}
+                            <ConsentBanner />
+                          </CardOrderProvider>
+                        </HiddenCardsProvider>
+                      </FinancialDataProvider>
+                    </PortfolioProvider>
+                  </APIConnectionProvider>
+                </HybridDataProvider>
               </CurrencyProvider>
             </BetterAuthProvider>
           </ThemeProvider>

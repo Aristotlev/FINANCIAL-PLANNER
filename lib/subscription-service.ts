@@ -74,7 +74,7 @@ export class SubscriptionService {
     return {
       id: 'default-trial',
       user_id: 'offline',
-      plan: 'FREE',
+      plan: 'STARTER',
       status: 'TRIAL',
       trial_start_date: now.toISOString(),
       trial_end_date: trialEnd.toISOString(),
@@ -249,16 +249,19 @@ export class SubscriptionService {
       usage.debt_entries_count +
       usage.trading_accounts_entries_count;
 
+    const maxEntries = limits.max_entries_per_card === 'unlimited' ? 999999 : limits.max_entries_per_card;
+    const maxAICalls = limits.max_ai_calls_per_day === 'unlimited' ? 999999 : limits.max_ai_calls_per_day;
+
     return {
       entries: {
         current: totalEntries,
-        max: limits.max_entries_per_card,
-        percentage: (totalEntries / limits.max_entries_per_card) * 100,
+        max: maxEntries,
+        percentage: (totalEntries / maxEntries) * 100,
       },
       aiCalls: {
         current: usage.ai_calls_count,
-        max: limits.max_ai_calls_per_day,
-        percentage: (usage.ai_calls_count / limits.max_ai_calls_per_day) * 100,
+        max: maxAICalls,
+        percentage: (usage.ai_calls_count / maxAICalls) * 100,
       },
     };
   }
@@ -290,13 +293,13 @@ export class SubscriptionService {
 
       if (!data) {
         const subscription = await this.getCurrentSubscription();
-        const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.FREE;
+        const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
 
         return {
           canProceed: false,
           reason: `You've reached your limit of ${limits.max_entries_per_card} entries for this card today.`,
           upgradeRequired: true,
-          maxAllowed: limits.max_entries_per_card,
+          maxAllowed: typeof limits.max_entries_per_card === 'number' ? limits.max_entries_per_card : 999999,
         };
       }
 
@@ -353,14 +356,14 @@ export class SubscriptionService {
       if (!data) {
         const subscription = await this.getCurrentSubscription();
         const usage = await this.getTodayUsage();
-        const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.FREE;
+        const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
 
         return {
           canProceed: false,
           reason: `You've reached your daily limit of ${limits.max_ai_calls_per_day} AI assistant calls.`,
           upgradeRequired: true,
           currentUsage: usage?.ai_calls_count || 0,
-          maxAllowed: limits.max_ai_calls_per_day,
+          maxAllowed: typeof limits.max_ai_calls_per_day === 'number' ? limits.max_ai_calls_per_day : 999999,
         };
       }
 
@@ -413,7 +416,7 @@ export class SubscriptionService {
       return data as PlanLimits;
     } catch (error) {
       console.error('Error fetching plan limits:', error);
-      return PLAN_CONFIG[plan];
+      return PLAN_CONFIG[plan] || PLAN_CONFIG.STARTER;
     }
   }
 

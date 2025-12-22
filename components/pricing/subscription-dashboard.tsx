@@ -54,7 +54,7 @@ export default function SubscriptionDashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-8">
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
-              {subscription.plan === 'PRO' || subscription.plan === 'UNLIMITED' || isTrialActive ? <Crown className="w-10 h-10" /> : <Zap className="w-10 h-10" />}
+              {subscription.plan === 'INVESTOR' || subscription.plan === 'WHALE' || isTrialActive ? <Crown className="w-10 h-10" /> : <Zap className="w-10 h-10" />}
             </div>
             <div>
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
@@ -86,7 +86,7 @@ export default function SubscriptionDashboard() {
                   🎉 {daysRemainingInTrial} days left with UNLIMITED features!
                 </p>
                 <p className="text-purple-700 dark:text-purple-300 text-base">
-                  You have full access to all features. Upgrade to Pro or Unlimited to keep these benefits after your trial ends.
+                  You have full access to all features. Upgrade to Investor or Whale to keep these benefits after your trial ends.
                 </p>
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function SubscriptionDashboard() {
                 <div className="mt-4 flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-700 rounded-xl">
                   <AlertCircle className="w-6 h-6 text-yellow-700 dark:text-yellow-300 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
-                    Running low on AI calls. Upgrade to Pro for 5x more!
+                    Running low on AI calls. Upgrade to Investor for more!
                   </p>
                 </div>
               )}
@@ -196,8 +196,8 @@ export default function SubscriptionDashboard() {
         </div>
       )}
 
-      {/* Upgrade CTA (if not on Pro/Unlimited) */}
-      {!['PRO', 'UNLIMITED'].includes(subscription.plan) && (
+      {/* Upgrade CTA (if not on Investor/Whale) */}
+      {!['INVESTOR', 'WHALE'].includes(subscription.plan) && (
         <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-purple-700 to-blue-600 rounded-3xl shadow-2xl p-10 text-white">
           {/* Decorative blobs */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 blur-3xl"></div>
@@ -209,16 +209,16 @@ export default function SubscriptionDashboard() {
                 <Crown className="w-12 h-12" />
               </div>
               <div>
-                <h3 className="text-3xl font-bold mb-1">Upgrade to Pro</h3>
-                <p className="text-purple-100 text-lg">4x more capacity + AI assistant</p>
+                <h3 className="text-3xl font-bold mb-1">Upgrade to Investor</h3>
+                <p className="text-purple-100 text-lg">Unlimited Assets + AI assistant</p>
               </div>
             </div>
             
             <div className="grid sm:grid-cols-2 gap-4 mb-8">
               {[
-                `20 entries per asset class`,
-                `20 AI calls per day`,
-                'Advanced analytics',
+                `Unlimited Assets`,
+                `50 AI calls per day`,
+                'Deep analytics',
                 'Custom categories'
               ].map((feature, index) => (
                 <div key={index} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-4">
@@ -229,7 +229,7 @@ export default function SubscriptionDashboard() {
             </div>
             
             <button className="w-full bg-white text-purple-600 font-bold py-5 px-8 rounded-2xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-lg">
-              Upgrade Now - {formatPrice(PLAN_CONFIG.PRO.price_monthly_usd)}/month
+              Upgrade Now - {formatPrice(PLAN_CONFIG.INVESTOR.price_monthly_usd)}/month
             </button>
           </div>
         </div>

@@ -5,16 +5,18 @@
 
 // ==================== SUBSCRIPTION PLANS ====================
 
-export type SubscriptionPlan = 'FREE' | 'PRO' | 'UNLIMITED';
+export type SubscriptionPlan = 'STARTER' | 'TRADER' | 'INVESTOR' | 'WHALE';
 export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'TRIAL';
 
 export interface PlanLimits {
   plan: SubscriptionPlan;
-  max_entries_per_card: number;
-  max_ai_calls_per_day: number;
+  max_entries_per_card: number | 'unlimited';
+  max_ai_calls_per_day: number | 'unlimited';
   advanced_analytics: boolean;
   priority_support: boolean;
   custom_categories: boolean;
+  imports_exports: boolean;
+  ai_assistant: boolean;
   price_monthly_usd: number;
   created_at?: string;
   updated_at?: string;
@@ -94,32 +96,49 @@ export type CardType =
 // ==================== PLAN CONFIGURATIONS ====================
 
 export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
-  FREE: {
-    plan: 'FREE',
-    max_entries_per_card: 5,
+  STARTER: {
+    plan: 'STARTER',
+    max_entries_per_card: 3,
     max_ai_calls_per_day: 0,
     advanced_analytics: false,
     priority_support: false,
     custom_categories: false,
+    imports_exports: false,
+    ai_assistant: false,
     price_monthly_usd: 0.00,
   },
-  PRO: {
-    plan: 'PRO',
-    max_entries_per_card: 20,
-    max_ai_calls_per_day: 20,
-    advanced_analytics: true,
+  TRADER: {
+    plan: 'TRADER',
+    max_entries_per_card: 'unlimited',
+    max_ai_calls_per_day: 0,
+    advanced_analytics: true, // Basic AI Analytics (PnL, Diversity Score)
     priority_support: false,
     custom_categories: true,
+    imports_exports: true,
+    ai_assistant: false,
+    price_monthly_usd: 9.99,
+  },
+  INVESTOR: {
+    plan: 'INVESTOR',
+    max_entries_per_card: 'unlimited',
+    max_ai_calls_per_day: 50,
+    advanced_analytics: true, // Deep Analytics
+    priority_support: false,
+    custom_categories: true,
+    imports_exports: true,
+    ai_assistant: true,
     price_monthly_usd: 19.99,
   },
-  UNLIMITED: {
-    plan: 'UNLIMITED',
-    max_entries_per_card: 50,
-    max_ai_calls_per_day: 50,
+  WHALE: {
+    plan: 'WHALE',
+    max_entries_per_card: 'unlimited',
+    max_ai_calls_per_day: 'unlimited',
     advanced_analytics: true,
     priority_support: true,
     custom_categories: true,
-    price_monthly_usd: 39.99,
+    imports_exports: true,
+    ai_assistant: true,
+    price_monthly_usd: 49.99,
   },
 };
 
@@ -132,33 +151,32 @@ export interface PlanFeature {
 }
 
 export const PLAN_FEATURES: Record<SubscriptionPlan, PlanFeature[]> = {
-  FREE: [
-    { name: '5 entries per asset class', included: true },
-    { name: 'Basic analytics', included: true },
-    { name: 'Email support', included: true },
-    { name: 'AI Assistant', included: false, tooltip: 'Upgrade to Pro for AI features' },
-    { name: 'Advanced analytics', included: false },
-    { name: 'Priority support', included: false },
-    { name: 'Custom categories', included: false },
+  STARTER: [
+    { name: '3 Assets per Asset Class', included: true },
+    { name: 'Unlimited Manual Transactions', included: true },
+    { name: 'Basic Portfolio Tracking', included: true },
+    { name: 'No Credit Card Required', included: true },
+    { name: 'Imports & Exports', included: false },
+    { name: 'AI Analytics', included: false },
   ],
-  PRO: [
-    { name: '20 entries per asset class', included: true, tooltip: '4x more than Free' },
-    { name: '20 AI calls per day', included: true, tooltip: 'Get AI-powered insights' },
-    { name: 'Advanced analytics', included: true, tooltip: 'Performance tracking, trends, predictions' },
-    { name: 'Custom categories', included: true, tooltip: 'Create your own expense categories' },
-    { name: 'Export to CSV/Excel', included: true },
-    { name: 'Email support', included: true },
-    { name: 'Priority support', included: false },
+  TRADER: [
+    { name: 'Unlimited Assets', included: true },
+    { name: 'Imports & Exports (CSV, PDF)', included: true },
+    { name: 'Automated Data', included: true },
+    { name: 'Basic AI Analytics', included: true },
+    { name: 'AI Assistant', included: false },
   ],
-  UNLIMITED: [
-    { name: '50 entries per asset class', included: true, tooltip: '10x more than Free' },
-    { name: '50 AI calls per day', included: true, tooltip: 'More AI power for your needs' },
-    { name: 'Advanced analytics', included: true },
-    { name: 'Priority support', included: true, tooltip: '24/7 priority email support' },
-    { name: 'Custom categories', included: true },
-    { name: 'Export to CSV/Excel', included: true },
-    { name: 'API access', included: true },
-    { name: 'Early access to features', included: true },
+  INVESTOR: [
+    { name: 'Unlimited Assets', included: true },
+    { name: 'AI Assistant (50 Qs/day)', included: true },
+    { name: 'Deep Analytics', included: true },
+    { name: 'Everything in Trader', included: true },
+  ],
+  WHALE: [
+    { name: 'Unlimited Everything', included: true },
+    { name: 'Unlimited AI Assistant', included: true },
+    { name: 'Priority Support', included: true },
+    { name: 'Early Access to new tools', included: true },
   ],
 };
 
@@ -201,27 +219,39 @@ export interface StripeProduct {
 }
 
 export const STRIPE_PRODUCTS: Record<SubscriptionPlan, StripeProduct | null> = {
-  FREE: null, // No Stripe product for free plan
-  PRO: {
-    id: 'prod_pro_money_hub',
-    name: 'Money Hub Pro',
-    description: '20 entries per asset class, 20 AI calls/day',
+  STARTER: null, // No Stripe product for free plan
+  TRADER: {
+    id: 'prod_trader_money_hub',
+    name: 'Money Hub Trader',
+    description: 'Unlimited Assets, Imports & Exports, Basic AI Analytics',
     prices: {
       monthly: {
-        id: 'price_pro_monthly',
+        id: 'price_trader_monthly',
+        amount: 999, // $9.99 in cents
+        currency: 'usd',
+      },
+    },
+  },
+  INVESTOR: {
+    id: 'prod_investor_money_hub',
+    name: 'Money Hub Investor',
+    description: 'AI Assistant (50 Qs/day), Deep Analytics',
+    prices: {
+      monthly: {
+        id: 'price_investor_monthly',
         amount: 1999, // $19.99 in cents
         currency: 'usd',
       },
     },
   },
-  UNLIMITED: {
-    id: 'prod_unlimited_money_hub',
-    name: 'Money Hub Unlimited',
-    description: '50 entries per asset class, 50 AI calls/day, all features',
+  WHALE: {
+    id: 'prod_whale_money_hub',
+    name: 'Money Hub Whale',
+    description: 'Unlimited AI & Priority Support',
     prices: {
       monthly: {
-        id: 'price_unlimited_monthly',
-        amount: 3999, // $39.99 in cents
+        id: 'price_whale_monthly',
+        amount: 4999, // $49.99 in cents
         currency: 'usd',
       },
     },
@@ -233,7 +263,7 @@ export const STRIPE_PRODUCTS: Record<SubscriptionPlan, StripeProduct | null> = {
 /**
  * Trial users get UNLIMITED plan features for 7 days
  */
-export const TRIAL_PLAN_LIMITS = PLAN_CONFIG.UNLIMITED;
+export const TRIAL_PLAN_LIMITS = PLAN_CONFIG.WHALE;
 
 /**
  * Get the effective plan limits based on subscription status
@@ -243,7 +273,7 @@ export function getEffectivePlanLimits(subscription: UserSubscription): PlanLimi
   if (isTrialActive(subscription)) {
     return TRIAL_PLAN_LIMITS;
   }
-  return PLAN_CONFIG[subscription.plan];
+  return PLAN_CONFIG[subscription.plan] || PLAN_CONFIG.STARTER;
 }
 
 export function isTrialActive(subscription: UserSubscription): boolean {
@@ -290,19 +320,21 @@ export function formatPrice(amount: number, currency: string = 'USD'): string {
 
 export function getPlanDisplayName(plan: SubscriptionPlan): string {
   switch (plan) {
-    case 'FREE':
-      return 'Free Plan';
-    case 'PRO':
-      return 'Pro Plan';
-    case 'UNLIMITED':
-      return 'Unlimited Plan';
+    case 'STARTER':
+      return 'The Starter';
+    case 'TRADER':
+      return 'The Trader';
+    case 'INVESTOR':
+      return 'The Investor';
+    case 'WHALE':
+      return 'The Whale';
     default:
       return plan;
   }
 }
 
 export function canUpgradeTo(currentPlan: SubscriptionPlan, targetPlan: SubscriptionPlan): boolean {
-  const planOrder: SubscriptionPlan[] = ['FREE', 'PRO', 'UNLIMITED'];
+  const planOrder: SubscriptionPlan[] = ['STARTER', 'TRADER', 'INVESTOR', 'WHALE'];
   const currentIndex = planOrder.indexOf(currentPlan);
   const targetIndex = planOrder.indexOf(targetPlan);
   

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -20,25 +20,89 @@ export function cn(...inputs: ClassValue[]) {
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function AnimatedCard({ className, ...props }: CardProps) {
+export function AnimatedCard({ className, children, ...props }: CardProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Listen for drag events to disable 3D effects during dragging
+  React.useEffect(() => {
+    const handleDragStart = () => {
+      isDraggingRef.current = true;
+      // Reset transform immediately when drag starts
+      if (containerRef.current) {
+        containerRef.current.style.transform = 'rotateY(0deg) rotateX(0deg)';
+      }
+      setIsHovered(false);
+    };
+    const handleDragEnd = () => {
+      isDraggingRef.current = false;
+    };
+
+    window.addEventListener('cardDragStart', handleDragStart);
+    window.addEventListener('cardDragEnd', handleDragEnd);
+
+    return () => {
+      window.removeEventListener('cardDragStart', handleDragStart);
+      window.removeEventListener('cardDragEnd', handleDragEnd);
+    };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Skip all processing if dragging
+    if (!containerRef.current || isDraggingRef.current) return;
+
+    const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+    const x = (e.clientX - left - width / 2) / 20; // Sensitivity for tilt
+    const y = (e.clientY - top - height / 2) / 20;
+
+    // Apply 3D tilt transform based on mouse position
+    containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!isDraggingRef.current) {
+      setIsHovered(true);
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!containerRef.current) return;
+    setIsHovered(false);
+    containerRef.current.style.transform = 'rotateY(0deg) rotateX(0deg)';
+  }, []);
+
   return (
     <div
-      role="region"
-      aria-labelledby="card-title"
-      aria-describedby="card-description"
-      className={cn(
-        "group/animated-card relative w-[356px] overflow-visible rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-900 dark:bg-black",
-        className
-      )}
       style={{
-        perspective: "2500px",
+        perspective: "2000px",
         perspectiveOrigin: "50% 50%",
-        transformStyle: "preserve-3d",
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
       }}
-      {...props}
-    />
+    >
+      <div
+        ref={containerRef}
+        role="region"
+        aria-labelledby="card-title"
+        aria-describedby="card-description"
+        onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className={cn(
+          "group/animated-card relative w-[356px] overflow-visible rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-900 dark:bg-black",
+          className
+        )}
+        style={{
+          transformStyle: "preserve-3d",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          transition: "transform 0.15s ease-out",
+          willChange: "transform",
+        }}
+        {...props}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -149,7 +213,7 @@ export function Visual3({
   return (
     <div
       className={cn(
-        "relative h-[180px] w-[356px] overflow-visible rounded-t-lg pointer-events-none"
+        "relative h-[180px] w-[356px] overflow-visible rounded-t-lg"
       )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

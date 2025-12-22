@@ -25,7 +25,7 @@ export default function UpgradeModal({
   isOpen,
   onClose,
   reason,
-  currentPlan = 'FREE',
+  currentPlan = 'STARTER',
   feature,
   currentLimit,
   upgradeLimit,
@@ -33,7 +33,10 @@ export default function UpgradeModal({
 }: UpgradeModalProps) {
   if (!isOpen) return null;
 
-  const recommendedPlan: SubscriptionPlan = currentPlan === 'FREE' ? 'PRO' : 'UNLIMITED';
+  const recommendedPlan: SubscriptionPlan = 
+    currentPlan === 'STARTER' ? 'TRADER' : 
+    currentPlan === 'TRADER' ? 'INVESTOR' : 
+    'WHALE';
   const config = PLAN_CONFIG[recommendedPlan];
 
   const handleUpgrade = () => {
@@ -96,11 +99,13 @@ export default function UpgradeModal({
             <div className="border-2 border-purple-300 dark:border-purple-700 rounded-lg p-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center text-white">
-                  {recommendedPlan === 'UNLIMITED' ? <Crown className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
+                  {recommendedPlan === 'WHALE' ? <Crown className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
                 </div>
                 <div>
                   <h4 className="font-bold text-gray-900 dark:text-white">
-                    {recommendedPlan === 'PRO' ? 'Pro Plan' : 'Unlimited Plan'}
+                    {recommendedPlan === 'TRADER' ? 'Trader Plan' : 
+                     recommendedPlan === 'INVESTOR' ? 'Investor Plan' : 
+                     'Whale Plan'}
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {formatPrice(config.price_monthly_usd)}/month
@@ -110,11 +115,11 @@ export default function UpgradeModal({
               <ul className="space-y-2">
                 <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-600"></div>
-                  <span>{config.max_entries_per_card} entries per asset class</span>
+                  <span>{config.max_entries_per_card === 'unlimited' ? 'Unlimited' : config.max_entries_per_card} entries per asset class</span>
                 </li>
                 <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-600"></div>
-                  <span>{config.max_ai_calls_per_day} AI calls per day</span>
+                  <span>{config.max_ai_calls_per_day === 'unlimited' ? 'Unlimited' : config.max_ai_calls_per_day} AI calls per day</span>
                 </li>
                 {config.advanced_analytics && (
                   <li className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

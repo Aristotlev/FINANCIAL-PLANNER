@@ -63,14 +63,12 @@ const mockPaymentMethods: PaymentMethod[] = [
   { id: '2', type: 'card', last4: '8888', brand: 'Mastercard', expMonth: 6, expYear: 2026, isDefault: false },
 ];
 
-const mockInvoices: Invoice[] = [
-  { id: 'INV-2024-001', date: '2024-12-01', amount: 19.99, status: 'paid', description: 'Pro Plan - Monthly' },
-  { id: 'INV-2024-002', date: '2024-11-01', amount: 19.99, status: 'paid', description: 'Pro Plan - Monthly' },
-  { id: 'INV-2024-003', date: '2024-10-01', amount: 19.99, status: 'paid', description: 'Pro Plan - Monthly' },
-  { id: 'INV-2024-004', date: '2024-09-01', amount: 0, status: 'paid', description: 'Free Plan' },
-];
-
-export default function BillingPage() {
+  const mockInvoices: Invoice[] = [
+  { id: 'INV-2024-001', date: '2024-12-01', amount: 19.99, status: 'paid', description: 'Investor Plan - Monthly' },
+  { id: 'INV-2024-002', date: '2024-11-01', amount: 19.99, status: 'paid', description: 'Investor Plan - Monthly' },
+  { id: 'INV-2024-003', date: '2024-10-01', amount: 19.99, status: 'paid', description: 'Investor Plan - Monthly' },
+  { id: 'INV-2024-004', date: '2024-09-01', amount: 0, status: 'paid', description: 'Starter Plan' },
+];export default function BillingPage() {
   const router = useRouter();
   const { subscription, cancel } = useSubscription();
   const [activeTab, setActiveTab] = useState<BillingTab>('overview');
@@ -128,7 +126,9 @@ export default function BillingPage() {
     ? new Date(subscription.subscription_end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : 'January 18, 2025';
 
-  const currentPlanConfig = subscription?.plan ? PLAN_CONFIG[subscription.plan] : PLAN_CONFIG.FREE;
+  const currentPlanConfig = (subscription?.plan && PLAN_CONFIG[subscription.plan]) 
+    ? PLAN_CONFIG[subscription.plan] 
+    : PLAN_CONFIG.STARTER;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
@@ -205,7 +205,7 @@ export default function BillingPage() {
                     <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Current Plan</span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {subscription ? getPlanDisplayName(subscription.plan) : 'Free Plan'}
+                    {subscription ? getPlanDisplayName(subscription.plan) : 'Starter Plan'}
                   </p>
                 </div>
 
@@ -704,7 +704,7 @@ export default function BillingPage() {
               {[
                 {
                   q: "How does billing work?",
-                  a: "You're billed monthly. Your subscription automatically renews unless you cancel. Free plan users are never charged."
+                  a: "You're billed monthly. Your subscription automatically renews unless you cancel. Starter plan users are never charged."
                 },
                 {
                   q: "Can I upgrade or downgrade?",
@@ -716,7 +716,7 @@ export default function BillingPage() {
                 },
                 {
                   q: "What happens after my free trial?",
-                  a: "During your 7-day trial, you get UNLIMITED features (50 entries per asset class, 50 AI calls/day). After that, you can continue with the Free plan (5 entries, no AI) or upgrade to Pro ($19.99/mo) or Unlimited ($39.99/mo)."
+                  a: "During your 7-day trial, you get UNLIMITED features (Unlimited entries, Unlimited AI calls/day). After that, you can continue with the Starter plan (3 entries per class, no AI) or upgrade to Trader ($9.99/mo), Investor ($19.99/mo) or Whale ($49.99/mo)."
                 }
               ].map((faq, index) => (
                 <div 

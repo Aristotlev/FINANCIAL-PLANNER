@@ -28,6 +28,11 @@ class PriceService {
   private updateTimeout: NodeJS.Timeout | null = null;
   private readonly UPDATE_INTERVAL = 300000; // 5 minutes (reduced API calls to avoid rate limiting)
   private readonly CACHE_DURATION = 360000; // 6 minutes (keep cache longer than update interval)
+  
+  // Batch request queue for reducing API calls
+  private batchQueue: Set<string> = new Set();
+  private batchTimeout: NodeJS.Timeout | null = null;
+  private readonly BATCH_DELAY = 100; // 100ms to batch requests
 
   // Crypto symbol mapping to CoinGecko IDs
   private readonly cryptoIdMap: { [key: string]: string } = {
@@ -281,26 +286,19 @@ class PriceService {
     
     this.subscribers.get(symbol)!.add(callback);
 
-    // Return cached price if available
+    // Return cached price if available and fresh
     const cached = this.cache.get(symbol);
     if (cached && Date.now() - cached.lastUpdated < this.CACHE_DURATION) {
+      // Immediately call with cached data
       callback(cached);
     } else {
-      // Check if we're already fetching this symbol to prevent duplicate requests
+      // Check if we're already fetching this symbol
       const existingFetch = this.pendingFetches.get(symbol);
       if (existingFetch) {
-        existingFetch.then(callback);
+        existingFetch.then(callback).catch(() => {});
       } else {
-        // Fetch individual price
-        const fetchPromise = this.fetchPriceForSymbol(symbol);
-        this.pendingFetches.set(symbol, fetchPromise);
-        fetchPromise.then((price) => {
-          this.pendingFetches.delete(symbol);
-          callback(price);
-        }).catch(err => {
-          this.pendingFetches.delete(symbol);
-          console.error('Error in fetchPriceForSymbol:', err);
-        });
+        // Add to batch queue for efficient fetching
+        this.addToBatchQueue(symbol, callback);
       }
     }
 
@@ -436,6 +434,75 @@ class PriceService {
     this.updateTimeout = setTimeout(() => {
       this.updatePrices();
     }, 2000); // 2 second delay before first fetch
+  }
+
+  /**
+   * Add symbol to batch queue - batches multiple requests into one API call
+   * This significantly reduces API calls when multiple components mount simultaneously
+   */
+  private addToBatchQueue(symbol: string, callback: (price: AssetPrice) => void): void {
+    this.batchQueue.add(symbol);
+
+    // Clear existing timeout
+    if (this.batchTimeout) {
+      clearTimeout(this.batchTimeout);
+    }
+
+    // Set timeout to process batch
+    this.batchTimeout = setTimeout(() => {
+      this.processBatchQueue();
+    }, this.BATCH_DELAY);
+  }
+
+  /**
+   * Process all queued symbols in a single batch request
+   */
+  private async processBatchQueue(): Promise<void> {
+    if (this.batchQueue.size === 0) return;
+
+    const symbols = Array.from(this.batchQueue);
+    this.batchQueue.clear();
+    this.batchTimeout = null;
+
+    // Split into crypto and stock symbols
+    const cryptoSymbols = symbols.filter(s => this.cryptoIdMap[s]);
+    const stockSymbols = symbols.filter(s => !this.cryptoIdMap[s]);
+
+    try {
+      // Fetch all prices in parallel
+      const [cryptoPrices, stockPrices] = await Promise.all([
+        cryptoSymbols.length > 0 ? this.fetchCryptoPrices(cryptoSymbols) : [],
+        stockSymbols.length > 0 ? this.fetchStockPrices(stockSymbols) : []
+      ]);
+
+      const allPrices = [...cryptoPrices, ...stockPrices];
+
+      // Update cache and notify all subscribers
+      for (const price of allPrices) {
+        this.cache.set(price.symbol, price);
+        
+        const symbolSubscribers = this.subscribers.get(price.symbol);
+        if (symbolSubscribers) {
+          symbolSubscribers.forEach(callback => callback(price));
+        }
+      }
+    } catch (error) {
+      console.error('Error processing batch queue:', error);
+      
+      // Fallback: notify subscribers with fallback prices
+      for (const symbol of symbols) {
+        const fallbackPrice = this.cryptoIdMap[symbol]
+          ? this.getFallbackCryptoPrices([symbol])[0]
+          : this.getFallbackStockPrice(symbol);
+        
+        this.cache.set(symbol, fallbackPrice);
+        
+        const symbolSubscribers = this.subscribers.get(symbol);
+        if (symbolSubscribers) {
+          symbolSubscribers.forEach(callback => callback(fallbackPrice));
+        }
+      }
+    }
   }
 
   getPrice(symbol: string): AssetPrice | null {

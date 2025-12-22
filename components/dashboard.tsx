@@ -626,7 +626,7 @@ export function Dashboard() {
           transform: `scale(${zoomLevel})`,
           transformOrigin: 'center center',
           transition: isZooming ? 'transform 0.05s cubic-bezier(0.4, 0.0, 0.2, 1)' : 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
-          willChange: 'transform'
+          willChange: isZooming ? 'transform' : 'auto'
         }}
       >
         
