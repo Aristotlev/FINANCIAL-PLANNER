@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Newspaper,
   ExternalLink,
@@ -152,19 +152,51 @@ function parseTimeToMinutes(pubDate: string): number {
 // News Modal Content
 function NewsModalContent() {
   const [activeTab, setActiveTab] = useState<'mynews' | 'crypto' | 'stocks' | 'forex' | 'indices'>('mynews');
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true); // Start with loading state
   const [error, setError] = useState<string | null>(null);
-  const [newsCache, setNewsCache] = useState<Record<string, NewsItem[]>>({});
-  const [lastRefresh, setLastRefresh] = useState<Record<string, number>>({});
+  
+  // Store news for each tab separately for instant switching
+  const [tabNews, setTabNews] = useState<Record<string, NewsItem[]>>({
+    mynews: [],
+    crypto: [],
+    stocks: [],
+    forex: [],
+    indices: []
+  });
+  
+  // Track loading state for each tab
+  const [tabLoading, setTabLoading] = useState<Record<string, boolean>>({
+    mynews: true,
+    crypto: false,
+    stocks: false,
+    forex: false,
+    indices: false
+  });
+  
+  // Track which tabs have been loaded
+  const loadedTabsRef = useRef<Set<string>>(new Set());
+  const lastRefreshRef = useRef<Record<string, number>>({});
+  
+  // Get current tab's news
+  const news = tabNews[activeTab] || [];
+  const isTabLoading = tabLoading[activeTab];
   
   // Get portfolio context safely
   const portfolioContext = usePortfolioContext();
   const cryptoHoldings = portfolioContext?.cryptoHoldings || [];
   const stockHoldings = portfolioContext?.stockHoldings || [];
 
+  // Helper to update news for a specific tab
+  const updateTabNews = useCallback((tab: string, newsItems: NewsItem[]) => {
+    setTabNews(prev => ({ ...prev, [tab]: newsItems }));
+  }, []);
+
+  // Helper to update loading state for a specific tab
+  const updateTabLoading = useCallback((tab: string, isLoading: boolean) => {
+    setTabLoading(prev => ({ ...prev, [tab]: isLoading }));
+  }, []);
+
   // Fetch personalized news from API - returns real articles for each holding
-  const fetchPersonalizedNewsFromAPI = React.useCallback(async (forceRefresh = false): Promise<NewsItem[]> => {
+  const fetchPersonalizedNewsFromAPI = useCallback(async (forceRefresh = false): Promise<NewsItem[]> => {
     // If no holdings, fetch general market news from API instead of mock data
     if (cryptoHoldings.length === 0 && stockHoldings.length === 0) {
       try {
@@ -243,27 +275,21 @@ function NewsModalContent() {
     }
   }, [cryptoHoldings, stockHoldings]);
 
-  const fetchNews = async (category: string, showLoader = true, forceRefresh = false) => {
-    // Clear current news immediately to prevent flash of old content
-    setError(null);
+  // Optimized fetch function that stores news per tab
+  const fetchNewsForTab = useCallback(async (category: string, forceRefresh = false) => {
+    // Check if already loaded and not forcing refresh
+    const cacheAge = lastRefreshRef.current[category] ? Date.now() - lastRefreshRef.current[category] : Infinity;
+    const isCacheValid = cacheAge < 2 * 60 * 1000; // 2 minutes cache
+    
+    // Skip if already loaded and cache is valid (unless forcing refresh)
+    if (loadedTabsRef.current.has(category) && isCacheValid && !forceRefresh) {
+      return;
+    }
     
     // For "My News" tab, fetch personalized news from API
     if (category === 'mynews') {
-      // Check cache first (unless force refresh)
-      const cached = newsCache['mynews'];
-      const cacheAge = lastRefresh['mynews'] ? Date.now() - lastRefresh['mynews'] : Infinity;
-      const cacheValid = cached && cached.length > 0 && cacheAge < 5 * 60 * 1000; // 5 minutes cache
-      
-      // Return cached data immediately if available and not forcing refresh
-      if (cacheValid && !forceRefresh) {
-        setNews(cached);
-        setLoading(false);
-        return;
-      }
-      
-      // Show loading state and clear old content
-      setNews([]);
-      if (showLoader) setLoading(true);
+      updateTabLoading('mynews', true);
+      setError(null);
       
       try {
         const personalizedNews = await fetchPersonalizedNewsFromAPI(forceRefresh);
@@ -272,12 +298,12 @@ function NewsModalContent() {
         personalizedNews.sort((a, b) => {
           const aMinutes = parseTimeToMinutes(a.pubDate);
           const bMinutes = parseTimeToMinutes(b.pubDate);
-          return aMinutes - bMinutes; // Lower minutes = more recent
+          return aMinutes - bMinutes;
         });
         
-        setNews(personalizedNews);
-        setNewsCache(prev => ({ ...prev, mynews: personalizedNews }));
-        setLastRefresh(prev => ({ ...prev, mynews: Date.now() }));
+        updateTabNews('mynews', personalizedNews);
+        loadedTabsRef.current.add('mynews');
+        lastRefreshRef.current['mynews'] = Date.now();
         
         if (personalizedNews.length === 0) {
           setError('No personalized news found. Try refreshing or add more holdings.');
@@ -285,54 +311,22 @@ function NewsModalContent() {
       } catch (err) {
         console.error('Error loading personalized news:', err);
         setError('Unable to load personalized news. Please try refreshing.');
-        // Show empty state on error - no fake mock data
-        setNews([]);
       } finally {
-        setLoading(false);
+        updateTabLoading('mynews', false);
       }
       return;
     }
     
-    // Check cache first - use cached data if available and not forcing refresh
-    const cached = newsCache[category];
-    const cacheAge = lastRefresh[category] ? Date.now() - lastRefresh[category] : Infinity;
-    const cacheValid = cached && cacheAge < 2 * 60 * 1000; // 2 minutes cache for fresher content
-    
-    // On force refresh, clear cache and refetch
-    if (forceRefresh) {
-      setNews([]);
-      if (showLoader) setLoading(true);
-      await fetchNewsFromAPI(category, true, true);
-      return;
+    // Show loading only if no cached data
+    if (tabNews[category]?.length === 0) {
+      updateTabLoading(category, true);
     }
-    
-    // Instantly show cached data for smooth tab switching (no flicker)
-    if (cached && cached.length > 0) {
-      setNews(cached);
-      setLoading(false);
-      // Only fetch in background if cache is old
-      if (!cacheValid) {
-        // Silent background refresh - don't show loader
-        fetchNewsFromAPI(category, false, false);
-      }
-      return;
-    }
-    
-    // No cache - show loading state while fetching
-    setNews([]);
-    if (showLoader) setLoading(true);
-    await fetchNewsFromAPI(category, showLoader, false);
-  };
-  
-  const fetchNewsFromAPI = async (category: string, showLoader = true, forceRefresh = false) => {
-    if (showLoader) setLoading(true);
     setError(null);
     
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout to allow CORS proxy fallbacks
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
-      // Add timestamp and force refresh parameter to bust cache
       const cacheBuster = forceRefresh ? `&t=${Date.now()}` : '';
       const url = `/api/news?category=${category}${cacheBuster}`;
       
@@ -347,14 +341,11 @@ function NewsModalContent() {
       if (!response.ok) {
         throw new Error(`Failed to fetch news: ${response.status}`);
       }
+      
       const data = await response.json();
+      const newsData = (data.news && data.news.length > 0) ? data.news : [];
       
-      // Only use real news from API - no fake mock data fallback
-      const newsData = (data.news && data.news.length > 0) 
-        ? data.news 
-        : [];
-      
-      // Remove duplicates based on title and link
+      // Remove duplicates
       const uniqueNews: NewsItem[] = [];
       const seenTitles = new Set<string>();
       const seenLinks = new Set<string>();
@@ -369,82 +360,60 @@ function NewsModalContent() {
         }
       });
       
-      // Sort news by time (newest first)
+      // Sort by time
       uniqueNews.sort((a: NewsItem, b: NewsItem) => {
-        const aMinutes = parseTimeToMinutes(a.pubDate);
-        const bMinutes = parseTimeToMinutes(b.pubDate);
-        return aMinutes - bMinutes; // Lower minutes = more recent
-      });
-      
-      setNews(uniqueNews);
-      setNewsCache(prev => ({ ...prev, [category]: uniqueNews }));
-      setLastRefresh(prev => ({ ...prev, [category]: Date.now() }));
-    } catch (err) {
-      if ((err as Error).name === 'AbortError') {
-        console.log('News fetch timeout - using cached data');
-        setError('Loading took longer than expected. Showing cached news.');
-      } else {
-        console.error('Error fetching news:', err);
-        setError('Unable to load fresh news. Showing cached articles.');
-      }
-      // Use cached data only (no fake mock data fallback)
-      const cached = newsCache[category];
-      const fallbackData = cached || [];
-      
-      // Remove duplicates from fallback data
-      const uniqueFallback: NewsItem[] = [];
-      const seenTitles = new Set<string>();
-      const seenLinks = new Set<string>();
-      
-      fallbackData.forEach((item: NewsItem) => {
-        const normalizedTitle = item.title.toLowerCase().trim();
-        const normalizedLink = item.link.toLowerCase().trim();
-        if (!seenTitles.has(normalizedTitle) && !seenLinks.has(normalizedLink)) {
-          seenTitles.add(normalizedTitle);
-          seenLinks.add(normalizedLink);
-          uniqueFallback.push(item);
-        }
-      });
-      
-      // Sort fallback data by time (newest first)
-      uniqueFallback.sort((a: NewsItem, b: NewsItem) => {
         const aMinutes = parseTimeToMinutes(a.pubDate);
         const bMinutes = parseTimeToMinutes(b.pubDate);
         return aMinutes - bMinutes;
       });
       
-      setNews(uniqueFallback);
-      if (!cached) {
-        setNewsCache(prev => ({ ...prev, [category]: fallbackData }));
-        setLastRefresh(prev => ({ ...prev, [category]: Date.now() }));
+      updateTabNews(category, uniqueNews);
+      loadedTabsRef.current.add(category);
+      lastRefreshRef.current[category] = Date.now();
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') {
+        setError('Loading took longer than expected.');
+      } else {
+        console.error('Error fetching news:', err);
+        setError('Unable to load fresh news.');
       }
     } finally {
-      setLoading(false);
+      updateTabLoading(category, false);
     }
-  };
+  }, [fetchPersonalizedNewsFromAPI, tabNews, updateTabLoading, updateTabNews]);
 
+  // Load initial tab and prefetch adjacent tabs
   useEffect(() => {
-    // Only show loader on initial load of each tab
-    const cached = newsCache[activeTab];
-    fetchNews(activeTab, !cached, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+    // Load current tab
+    fetchNewsForTab(activeTab);
+    
+    // Prefetch other tabs in background (with delay to not overwhelm the API)
+    const tabs = ['mynews', 'crypto', 'stocks', 'forex', 'indices'];
+    const currentIndex = tabs.indexOf(activeTab);
+    
+    // Prefetch next and previous tabs after a short delay
+    const prefetchTimeout = setTimeout(() => {
+      const adjacentTabs = [
+        tabs[(currentIndex + 1) % tabs.length],
+        tabs[(currentIndex - 1 + tabs.length) % tabs.length]
+      ];
+      
+      adjacentTabs.forEach((tab, index) => {
+        if (!loadedTabsRef.current.has(tab)) {
+          setTimeout(() => fetchNewsForTab(tab), index * 500);
+        }
+      });
+    }, 1000);
+    
+    return () => clearTimeout(prefetchTimeout);
+  }, [activeTab, fetchNewsForTab]);
 
   const refreshNews = async () => {
-    setLoading(true);
     setError(null);
-    // Clear cache for current tab before refreshing
-    setNewsCache(prev => {
-      const newCache = { ...prev };
-      delete newCache[activeTab];
-      return newCache;
-    });
-    setLastRefresh(prev => {
-      const newRefresh = { ...prev };
-      delete newRefresh[activeTab];
-      return newRefresh;
-    });
-    await fetchNews(activeTab, true, true); // Force refresh with cache bypass
+    // Remove from loaded set to force refetch
+    loadedTabsRef.current.delete(activeTab);
+    delete lastRefreshRef.current[activeTab];
+    await fetchNewsForTab(activeTab, true);
   };
 
   const getTabIcon = (tab: string) => {
@@ -505,10 +474,10 @@ function NewsModalContent() {
           
           <button
             onClick={refreshNews}
-            disabled={loading}
+            disabled={isTabLoading}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isTabLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
@@ -631,7 +600,7 @@ function NewsModalContent() {
 
         {/* News Feed */}
         <div className="relative space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-          {loading && news.length === 0 ? (
+          {isTabLoading && news.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <RefreshCw className="w-8 h-8 text-orange-600 dark:text-orange-400 animate-spin mb-3" />
               <span className="text-gray-600 dark:text-gray-400 font-medium">Loading latest news...</span>
@@ -696,7 +665,7 @@ function NewsModalContent() {
           )}
           
           {/* Loading overlay when refreshing with existing content */}
-          {loading && news.length > 0 && (
+          {isTabLoading && news.length > 0 && (
             <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
               <div className="flex flex-col items-center">
                 <RefreshCw className="w-6 h-6 text-orange-600 dark:text-orange-400 animate-spin mb-2" />

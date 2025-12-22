@@ -13,22 +13,9 @@ export const metadata = {
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden relative">
-      {/* Animated Background Gradients */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-[128px] animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[128px] animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
-      </div>
-
-      {/* Grid Pattern Overlay */}
-      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
-        backgroundSize: '50px 50px'
-      }}></div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
       {/* Header */}
-      <header className="relative z-20 border-b border-gray-800/50 backdrop-blur-xl bg-gray-900/50">
+      <header className="border-b border-gray-800/50 backdrop-blur-xl bg-gray-900/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <a href="/">

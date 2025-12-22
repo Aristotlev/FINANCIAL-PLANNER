@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Wrench,
   Plus,
@@ -53,6 +53,11 @@ function ToolsModalContent() {
   const [activeTab, setActiveTab] = useState<'chart' | 'stocks' | 'crypto' | 'forex'>('chart');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Track which tabs have been loaded to avoid re-loading
+  const loadedTabsRef = useRef<Set<string>>(new Set());
+  // Track if initial load is complete
+  const initialLoadRef = useRef(false);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -112,6 +117,12 @@ function ToolsModalContent() {
   }, []);
 
   useEffect(() => {
+    // If this tab was already loaded, just show it without reloading
+    if (loadedTabsRef.current.has(activeTab)) {
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     
     const loadTradingViewWidget = () => {
@@ -127,13 +138,20 @@ function ToolsModalContent() {
         originalError.apply(console, args);
       };
 
-      // Delay to ensure DOM is ready
-      const timer = setTimeout(() => {
+      // Load immediately - no artificial delay
+      const loadWidget = () => {
         try {
           if (activeTab === 'chart') {
             const container = document.getElementById('tradingview-chart-widget');
             if (!container) {
               console.error('TradingView chart container not found');
+              setIsLoading(false);
+              return;
+            }
+            
+            // Skip if already has content (cached)
+            if (container.querySelector('.tradingview-widget-container__widget iframe')) {
+              loadedTabsRef.current.add(activeTab);
               setIsLoading(false);
               return;
             }
@@ -154,13 +172,13 @@ function ToolsModalContent() {
             script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
             script.async = true;
             script.onload = () => {
+              // Mark as loaded immediately, no artificial delay
+              loadedTabsRef.current.add(activeTab);
+              setIsLoading(false);
+              // Restore console.error after a short delay
               setTimeout(() => {
-                setIsLoading(false);
-                // Restore original console.error after widget loads
-                setTimeout(() => {
-                  console.error = originalError;
-                }, 2000);
-              }, 1000);
+                console.error = originalError;
+              }, 500);
             };
             script.onerror = (e) => {
               setIsLoading(false);
@@ -205,6 +223,13 @@ function ToolsModalContent() {
               return;
             }
             
+            // Skip if already has content (cached)
+            if (container.querySelector('.tradingview-widget-container__widget iframe')) {
+              loadedTabsRef.current.add(activeTab);
+              setIsLoading(false);
+              return;
+            }
+            
             container.innerHTML = '';
             
             // TradingView Stock Heatmap Widget
@@ -221,12 +246,11 @@ function ToolsModalContent() {
             script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js';
             script.async = true;
             script.onload = () => {
+              loadedTabsRef.current.add(activeTab);
+              setIsLoading(false);
               setTimeout(() => {
-                setIsLoading(false);
-                setTimeout(() => {
-                  console.error = originalError;
-                }, 2000);
-              }, 1000);
+                console.error = originalError;
+              }, 500);
             };
             script.onerror = (e) => {
               setIsLoading(false);
@@ -260,6 +284,13 @@ function ToolsModalContent() {
               return;
             }
             
+            // Skip if already has content (cached)
+            if (container.querySelector('.tradingview-widget-container__widget iframe')) {
+              loadedTabsRef.current.add(activeTab);
+              setIsLoading(false);
+              return;
+            }
+            
             container.innerHTML = '';
             
             const widgetHtml = `
@@ -275,12 +306,11 @@ function ToolsModalContent() {
             script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
             script.async = true;
             script.onload = () => {
+              loadedTabsRef.current.add(activeTab);
+              setIsLoading(false);
               setTimeout(() => {
-                setIsLoading(false);
-                setTimeout(() => {
-                  console.error = originalError;
-                }, 2000);
-              }, 1000);
+                console.error = originalError;
+              }, 500);
             };
             script.onerror = (e) => {
               setIsLoading(false);
@@ -306,6 +336,13 @@ function ToolsModalContent() {
               return;
             }
             
+            // Skip if already has content (cached)
+            if (container.querySelector('.tradingview-widget-container__widget iframe')) {
+              loadedTabsRef.current.add(activeTab);
+              setIsLoading(false);
+              return;
+            }
+            
             container.innerHTML = '';
             
             const widgetHtml = `
@@ -321,12 +358,11 @@ function ToolsModalContent() {
             script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js';
             script.async = true;
             script.onload = () => {
+              loadedTabsRef.current.add(activeTab);
+              setIsLoading(false);
               setTimeout(() => {
-                setIsLoading(false);
-                setTimeout(() => {
-                  console.error = originalError;
-                }, 2000);
-              }, 1000);
+                console.error = originalError;
+              }, 500);
             };
             script.onerror = (e) => {
               setIsLoading(false);
@@ -348,10 +384,14 @@ function ToolsModalContent() {
           console.error('Error loading TradingView widget:', error);
           setIsLoading(false);
         }
-      }, 150);
+      };
+
+      // Use requestAnimationFrame for smoother initialization
+      requestAnimationFrame(() => {
+        loadWidget();
+      });
 
       return () => {
-        clearTimeout(timer);
         console.error = originalError; // Ensure cleanup restores console.error
       };
     };
@@ -476,8 +516,7 @@ function ToolsModalContent() {
         </div>
 
         {/* Chart Tab */}
-        {activeTab === 'chart' && (
-          <div className="space-y-4">
+        <div className={`space-y-4 ${activeTab === 'chart' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Live</div>
@@ -495,7 +534,7 @@ function ToolsModalContent() {
 
             {/* Chart Widget */}
             <div id="tradingview-chart-container" className="rounded-lg overflow-hidden relative" style={{ minHeight: '600px', backgroundColor: '#131722' }}>
-              {isLoading && (
+              {isLoading && activeTab === 'chart' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#131722] z-10">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
@@ -530,12 +569,10 @@ function ToolsModalContent() {
                 <p className="text-xs text-gray-600 dark:text-gray-400">Search and compare any stock</p>
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Stocks Tab */}
-        {activeTab === 'stocks' && (
-          <div className="space-y-4">
+        <div className={`space-y-4 ${activeTab === 'stocks' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">500+</div>
@@ -553,7 +590,7 @@ function ToolsModalContent() {
 
             {/* Stocks Screener Widget */}
             <div id="tradingview-stocks-container" className="rounded-lg overflow-hidden relative" style={{ minHeight: '600px', backgroundColor: '#131722' }}>
-              {isLoading && (
+              {isLoading && activeTab === 'stocks' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#131722] z-10">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
@@ -588,12 +625,10 @@ function ToolsModalContent() {
                 <p className="text-xs text-gray-600 dark:text-gray-400">Real-time tracking</p>
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Crypto Tab */}
-        {activeTab === 'crypto' && (
-          <div className="space-y-4">
+        <div className={`space-y-4 ${activeTab === 'crypto' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">24/7</div>
@@ -611,7 +646,7 @@ function ToolsModalContent() {
 
             {/* Crypto Screener Widget */}
             <div id="tradingview-crypto-container" className="rounded-lg overflow-hidden relative" style={{ minHeight: '600px', backgroundColor: '#131722' }}>
-              {isLoading && (
+              {isLoading && activeTab === 'crypto' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#131722] z-10">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
@@ -646,12 +681,10 @@ function ToolsModalContent() {
                 <p className="text-xs text-gray-600 dark:text-gray-400">24h trading volume data</p>
               </div>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Forex Tab */}
-        {activeTab === 'forex' && (
-          <div className="space-y-4">
+        <div className={`space-y-4 ${activeTab === 'forex' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">8</div>
@@ -669,7 +702,7 @@ function ToolsModalContent() {
 
             {/* Forex Cross Rates Widget */}
             <div id="tradingview-forex-container" className="rounded-lg overflow-hidden relative" style={{ minHeight: '600px', backgroundColor: '#131722' }}>
-              {isLoading && (
+              {isLoading && activeTab === 'forex' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#131722] z-10">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
@@ -704,8 +737,7 @@ function ToolsModalContent() {
                 <p className="text-xs text-gray-600 dark:text-gray-400">24h percentage changes</p>
               </div>
             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -2615,6 +2615,9 @@ function TradingToolsModalContent() {
   const [tradingSubTab, setTradingSubTab] = useState<'forex' | 'crypto-futures' | 'options'>('forex');
   const [stocksSubTab, setStocksSubTab] = useState<'market-overview' | 'top-gainers' | 'heatmap' | 'ticker-tape'>('market-overview');
   
+  // Track which tabs/subtabs have been loaded to avoid re-loading
+  const loadedWidgetsRef = useRef<Set<string>>(new Set());
+  
   // Separate balances for each trading account type - default to 0 if not set
   const [forexBalance, setForexBalance] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -2667,265 +2670,255 @@ function TradingToolsModalContent() {
     // Load TradingView widgets when component mounts
     const loadTradingViewWidgets = () => {
       if (typeof window !== 'undefined') {
+        // Create a cache key based on current tab state
+        const cacheKey = mainTab === 'stocks' ? `${mainTab}-${stocksSubTab}` : mainTab;
+        
+        // Skip if this widget was already loaded
+        if (loadedWidgetsRef.current.has(cacheKey)) {
+          return;
+        }
+        
         // Advanced Chart Widget (Tools tab)
         if (mainTab === 'tools') {
-          const chartScript = document.createElement('script');
-          chartScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-          chartScript.async = true;
-          chartScript.innerHTML = JSON.stringify({
-            "autosize": true,
-            "symbol": "NASDAQ:AAPL",
-            "interval": "D",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "en",
-            "allow_symbol_change": true,
-            "calendar": false,
-            "hide_top_toolbar": false,
-            "hide_legend": false,
-            "hide_side_toolbar": false,
-            "details": true,
-            "hotlist": true,
-            "hide_volume": false,
-            "save_image": true,
-            "backgroundColor": "#0F0F0F",
-            "gridColor": "rgba(242, 242, 242, 0.06)",
-            "withdateranges": true,
-            "range": "12M",
-            "enable_publishing": false,
-            "toolbar_bg": "#131722",
-            "watchlist": [
-              "OANDA:XAUUSD",
-              "BINANCE:BTCUSD",
-              "BINANCE:ETHUSD",
-              "NASDAQ:NVDA",
-              "NASDAQ:MSFT",
-              "NASDAQ:TSLA",
-              "IG:NASDAQ",
-              "BLACKBULL:US30",
-              "BLACKBULL:WTI",
-              "BINANCE:BNBUSDT"
-            ],
-            "compareSymbols": [],
-            "studies": [
-              "STD;SMA"
-            ]
-          });
-
           const chartContainer = document.getElementById('tradingview-tools-widget');
-          if (chartContainer) {
+          if (chartContainer && !chartContainer.querySelector('iframe')) {
             chartContainer.innerHTML = '';
+            const chartScript = document.createElement('script');
+            chartScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+            chartScript.async = true;
+            chartScript.onload = () => loadedWidgetsRef.current.add(cacheKey);
+            chartScript.innerHTML = JSON.stringify({
+              "autosize": true,
+              "symbol": "NASDAQ:AAPL",
+              "interval": "D",
+              "timezone": "Etc/UTC",
+              "theme": "dark",
+              "style": "1",
+              "locale": "en",
+              "allow_symbol_change": true,
+              "calendar": false,
+              "hide_top_toolbar": false,
+              "hide_legend": false,
+              "hide_side_toolbar": false,
+              "details": true,
+              "hotlist": true,
+              "hide_volume": false,
+              "save_image": true,
+              "backgroundColor": "#0F0F0F",
+              "gridColor": "rgba(242, 242, 242, 0.06)",
+              "withdateranges": true,
+              "range": "12M",
+              "enable_publishing": false,
+              "toolbar_bg": "#131722",
+              "watchlist": [
+                "OANDA:XAUUSD",
+                "BINANCE:BTCUSD",
+                "BINANCE:ETHUSD",
+                "NASDAQ:NVDA",
+                "NASDAQ:MSFT",
+                "NASDAQ:TSLA",
+                "IG:NASDAQ",
+                "BLACKBULL:US30",
+                "BLACKBULL:WTI",
+                "BINANCE:BNBUSDT"
+              ],
+              "compareSymbols": [],
+              "studies": [
+                "STD;SMA"
+              ]
+            });
             chartContainer.appendChild(chartScript);
           }
         }
 
         // Stocks Tab Widgets
         if (mainTab === 'stocks') {
-          if (stocksSubTab === 'market-overview') {
-            const marketOverviewScript = document.createElement('script');
-            marketOverviewScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
-            marketOverviewScript.async = true;
-            marketOverviewScript.innerHTML = JSON.stringify({
-              "colorTheme": "dark",
-              "dateRange": "12M",
-              "showChart": true,
-              "locale": "en",
-              "width": "100%",
-              "height": "100%",
-              "largeChartUrl": "",
-              "isTransparent": false,
-              "showSymbolLogo": true,
-              "showFloatingTooltip": false,
-              "plotLineColorGrowing": "rgba(139, 92, 246, 1)",
-              "plotLineColorFalling": "rgba(239, 68, 68, 1)",
-              "gridLineColor": "rgba(240, 243, 250, 0.06)",
-              "scaleFontColor": "#DBDBDB",
-              "belowLineFillColorGrowing": "rgba(139, 92, 246, 0.12)",
-              "belowLineFillColorFalling": "rgba(239, 68, 68, 0.12)",
-              "belowLineFillColorGrowingBottom": "rgba(139, 92, 246, 0)",
-              "belowLineFillColorFallingBottom": "rgba(239, 68, 68, 0)",
-              "symbolActiveColor": "rgba(139, 92, 246, 0.12)",
-              "backgroundColor": "#0f0f0f",
-              "support_host": "https://www.tradingview.com",
-              "tabs": [
-                {
-                  "title": "US Stocks",
-                  "symbols": [
-                    { "s": "NASDAQ:AAPL", "d": "Apple Inc." },
-                    { "s": "NASDAQ:MSFT", "d": "Microsoft Corporation" },
-                    { "s": "NASDAQ:GOOGL", "d": "Alphabet Inc." },
-                    { "s": "NASDAQ:AMZN", "d": "Amazon.com Inc." },
-                    { "s": "NASDAQ:NVDA", "d": "NVIDIA Corporation" },
-                    { "s": "NASDAQ:TSLA", "d": "Tesla Inc." },
-                    { "s": "NASDAQ:META", "d": "Meta Platforms Inc." }
-                  ],
-                  "originalTitle": "US Stocks"
-                },
-                {
-                  "title": "Indices",
-                  "symbols": [
-                    { "s": "FOREXCOM:SPXUSD", "d": "S&P 500 Index" },
-                    { "s": "FOREXCOM:NSXUSD", "d": "US 100 Cash CFD" },
-                    { "s": "FOREXCOM:DJI", "d": "Dow Jones Industrial Average Index" }
-                  ],
-                  "originalTitle": "Indices"
-                }
-              ]
-            });
-
-            const marketOverviewContainer = document.getElementById('tradingview-stocks-widget');
-            if (marketOverviewContainer) {
-              marketOverviewContainer.innerHTML = '';
-              marketOverviewContainer.appendChild(marketOverviewScript);
-            }
-          }
-
-          if (stocksSubTab === 'top-gainers') {
-            const topStoriesScript = document.createElement('script');
-            topStoriesScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js';
-            topStoriesScript.async = true;
-            topStoriesScript.innerHTML = JSON.stringify({
-              "colorTheme": "dark",
-              "dateRange": "12M",
-              "exchange": "US",
-              "showChart": true,
-              "locale": "en",
-              "width": "100%",
-              "height": "100%",
-              "largeChartUrl": "",
-              "isTransparent": false,
-              "showSymbolLogo": true,
-              "showFloatingTooltip": false,
-              "plotLineColorGrowing": "rgba(139, 92, 246, 1)",
-              "plotLineColorFalling": "rgba(239, 68, 68, 1)",
-              "gridLineColor": "rgba(240, 243, 250, 0.06)",
-              "scaleFontColor": "#DBDBDB",
-              "belowLineFillColorGrowing": "rgba(139, 92, 246, 0.12)",
-              "belowLineFillColorFalling": "rgba(239, 68, 68, 0.12)",
-              "belowLineFillColorGrowingBottom": "rgba(139, 92, 246, 0)",
-              "belowLineFillColorFallingBottom": "rgba(239, 68, 68, 0)",
-              "symbolActiveColor": "rgba(139, 92, 246, 0.12)",
-              "backgroundColor": "#0f0f0f"
-            });
-
-            const topStoriesContainer = document.getElementById('tradingview-stocks-widget');
-            if (topStoriesContainer) {
-              topStoriesContainer.innerHTML = '';
-              topStoriesContainer.appendChild(topStoriesScript);
-            }
-          }
-
-          if (stocksSubTab === 'heatmap') {
-            const heatmapScript = document.createElement('script');
-            heatmapScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js';
-            heatmapScript.async = true;
-            heatmapScript.innerHTML = JSON.stringify({
-              "exchanges": [],
-              "dataSource": "SPX500",
-              "grouping": "sector",
-              "blockSize": "market_cap_basic",
-              "blockColor": "change",
-              "locale": "en",
-              "symbolUrl": "",
-              "colorTheme": "dark",
-              "hasTopBar": true,
-              "isDataSetEnabled": true,
-              "isZoomEnabled": true,
-              "hasSymbolTooltip": true,
-              "width": "100%",
-              "height": "100%"
-            });
-
-            const heatmapContainer = document.getElementById('tradingview-stocks-widget');
-            if (heatmapContainer) {
-              heatmapContainer.innerHTML = '';
-              heatmapContainer.appendChild(heatmapScript);
-            }
-          }
-
-          if (stocksSubTab === 'ticker-tape') {
-            const tickerScript = document.createElement('script');
-            tickerScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
-            tickerScript.async = true;
-            tickerScript.innerHTML = JSON.stringify({
-              "symbols": [
-                { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500 Index" },
-                { "proName": "FOREXCOM:NSXUSD", "title": "US 100 Cash CFD" },
-                { "proName": "FX_IDC:EURUSD", "title": "EUR to USD" },
-                { "proName": "BITSTAMP:BTCUSD", "title": "Bitcoin" },
-                { "proName": "BITSTAMP:ETHUSD", "title": "Ethereum" },
-                { "description": "Apple", "proName": "NASDAQ:AAPL" },
-                { "description": "Microsoft", "proName": "NASDAQ:MSFT" },
-                { "description": "Tesla", "proName": "NASDAQ:TSLA" },
-                { "description": "Amazon", "proName": "NASDAQ:AMZN" },
-                { "description": "NVIDIA", "proName": "NASDAQ:NVDA" }
-              ],
-              "showSymbolLogo": true,
-              "isTransparent": false,
-              "displayMode": "adaptive",
-              "colorTheme": "dark",
-              "locale": "en"
-            });
-
-            const tickerContainer = document.getElementById('tradingview-stocks-widget');
-            if (tickerContainer) {
-              tickerContainer.innerHTML = '';
-              tickerContainer.appendChild(tickerScript);
+          const stocksContainer = document.getElementById('tradingview-stocks-widget');
+          if (stocksContainer && !stocksContainer.querySelector('iframe')) {
+            stocksContainer.innerHTML = '';
+            
+            if (stocksSubTab === 'market-overview') {
+              const marketOverviewScript = document.createElement('script');
+              marketOverviewScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
+              marketOverviewScript.async = true;
+              marketOverviewScript.onload = () => loadedWidgetsRef.current.add(cacheKey);
+              marketOverviewScript.innerHTML = JSON.stringify({
+                "colorTheme": "dark",
+                "dateRange": "12M",
+                "showChart": true,
+                "locale": "en",
+                "width": "100%",
+                "height": "100%",
+                "largeChartUrl": "",
+                "isTransparent": false,
+                "showSymbolLogo": true,
+                "showFloatingTooltip": false,
+                "plotLineColorGrowing": "rgba(139, 92, 246, 1)",
+                "plotLineColorFalling": "rgba(239, 68, 68, 1)",
+                "gridLineColor": "rgba(240, 243, 250, 0.06)",
+                "scaleFontColor": "#DBDBDB",
+                "belowLineFillColorGrowing": "rgba(139, 92, 246, 0.12)",
+                "belowLineFillColorFalling": "rgba(239, 68, 68, 0.12)",
+                "belowLineFillColorGrowingBottom": "rgba(139, 92, 246, 0)",
+                "belowLineFillColorFallingBottom": "rgba(239, 68, 68, 0)",
+                "symbolActiveColor": "rgba(139, 92, 246, 0.12)",
+                "backgroundColor": "#0f0f0f",
+                "support_host": "https://www.tradingview.com",
+                "tabs": [
+                  {
+                    "title": "US Stocks",
+                    "symbols": [
+                      { "s": "NASDAQ:AAPL", "d": "Apple Inc." },
+                      { "s": "NASDAQ:MSFT", "d": "Microsoft Corporation" },
+                      { "s": "NASDAQ:GOOGL", "d": "Alphabet Inc." },
+                      { "s": "NASDAQ:AMZN", "d": "Amazon.com Inc." },
+                      { "s": "NASDAQ:NVDA", "d": "NVIDIA Corporation" },
+                      { "s": "NASDAQ:TSLA", "d": "Tesla Inc." },
+                      { "s": "NASDAQ:META", "d": "Meta Platforms Inc." }
+                    ],
+                    "originalTitle": "US Stocks"
+                  },
+                  {
+                    "title": "Indices",
+                    "symbols": [
+                      { "s": "FOREXCOM:SPXUSD", "d": "S&P 500 Index" },
+                      { "s": "FOREXCOM:NSXUSD", "d": "US 100 Cash CFD" },
+                      { "s": "FOREXCOM:DJI", "d": "Dow Jones Industrial Average Index" }
+                    ],
+                    "originalTitle": "Indices"
+                  }
+                ]
+              });
+              stocksContainer.appendChild(marketOverviewScript);
+            } else if (stocksSubTab === 'top-gainers') {
+              const topStoriesScript = document.createElement('script');
+              topStoriesScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-hotlists.js';
+              topStoriesScript.async = true;
+              topStoriesScript.onload = () => loadedWidgetsRef.current.add(cacheKey);
+              topStoriesScript.innerHTML = JSON.stringify({
+                "colorTheme": "dark",
+                "dateRange": "12M",
+                "exchange": "US",
+                "showChart": true,
+                "locale": "en",
+                "width": "100%",
+                "height": "100%",
+                "largeChartUrl": "",
+                "isTransparent": false,
+                "showSymbolLogo": true,
+                "showFloatingTooltip": false,
+                "plotLineColorGrowing": "rgba(139, 92, 246, 1)",
+                "plotLineColorFalling": "rgba(239, 68, 68, 1)",
+                "gridLineColor": "rgba(240, 243, 250, 0.06)",
+                "scaleFontColor": "#DBDBDB",
+                "belowLineFillColorGrowing": "rgba(139, 92, 246, 0.12)",
+                "belowLineFillColorFalling": "rgba(239, 68, 68, 0.12)",
+                "belowLineFillColorGrowingBottom": "rgba(139, 92, 246, 0)",
+                "belowLineFillColorFallingBottom": "rgba(239, 68, 68, 0)",
+                "symbolActiveColor": "rgba(139, 92, 246, 0.12)",
+                "backgroundColor": "#0f0f0f"
+              });
+              stocksContainer.appendChild(topStoriesScript);
+            } else if (stocksSubTab === 'heatmap') {
+              const heatmapScript = document.createElement('script');
+              heatmapScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js';
+              heatmapScript.async = true;
+              heatmapScript.onload = () => loadedWidgetsRef.current.add(cacheKey);
+              heatmapScript.innerHTML = JSON.stringify({
+                "exchanges": [],
+                "dataSource": "SPX500",
+                "grouping": "sector",
+                "blockSize": "market_cap_basic",
+                "blockColor": "change",
+                "locale": "en",
+                "symbolUrl": "",
+                "colorTheme": "dark",
+                "hasTopBar": true,
+                "isDataSetEnabled": true,
+                "isZoomEnabled": true,
+                "hasSymbolTooltip": true,
+                "width": "100%",
+                "height": "100%"
+              });
+              stocksContainer.appendChild(heatmapScript);
+            } else if (stocksSubTab === 'ticker-tape') {
+              const tickerScript = document.createElement('script');
+              tickerScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
+              tickerScript.async = true;
+              tickerScript.onload = () => loadedWidgetsRef.current.add(cacheKey);
+              tickerScript.innerHTML = JSON.stringify({
+                "symbols": [
+                  { "proName": "FOREXCOM:SPXUSD", "title": "S&P 500 Index" },
+                  { "proName": "FOREXCOM:NSXUSD", "title": "US 100 Cash CFD" },
+                  { "proName": "FX_IDC:EURUSD", "title": "EUR to USD" },
+                  { "proName": "BITSTAMP:BTCUSD", "title": "Bitcoin" },
+                  { "proName": "BITSTAMP:ETHUSD", "title": "Ethereum" },
+                  { "description": "Apple", "proName": "NASDAQ:AAPL" },
+                  { "description": "Microsoft", "proName": "NASDAQ:MSFT" },
+                  { "description": "Tesla", "proName": "NASDAQ:TSLA" },
+                  { "description": "Amazon", "proName": "NASDAQ:AMZN" },
+                  { "description": "NVIDIA", "proName": "NASDAQ:NVDA" }
+                ],
+                "showSymbolLogo": true,
+                "isTransparent": false,
+                "displayMode": "adaptive",
+                "colorTheme": "dark",
+                "locale": "en"
+              });
+              stocksContainer.appendChild(tickerScript);
             }
           }
         }
 
         // Crypto Tab Widget
         if (mainTab === 'crypto') {
-          const cryptoScript = document.createElement('script');
-          cryptoScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
-          cryptoScript.async = true;
-          cryptoScript.innerHTML = JSON.stringify({
-            "width": "100%",
-            "height": "100%",
-            "defaultColumn": "overview",
-            "defaultScreen": "general",
-            "market": "crypto",
-            "showToolbar": true,
-            "colorTheme": "dark",
-            "locale": "en",
-            "isTransparent": false
-          });
-
           const cryptoContainer = document.getElementById('tradingview-crypto-widget');
-          if (cryptoContainer) {
+          if (cryptoContainer && !cryptoContainer.querySelector('iframe')) {
             cryptoContainer.innerHTML = '';
+            const cryptoScript = document.createElement('script');
+            cryptoScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-screener.js';
+            cryptoScript.async = true;
+            cryptoScript.onload = () => loadedWidgetsRef.current.add(cacheKey);
+            cryptoScript.innerHTML = JSON.stringify({
+              "width": "100%",
+              "height": "100%",
+              "defaultColumn": "overview",
+              "defaultScreen": "general",
+              "market": "crypto",
+              "showToolbar": true,
+              "colorTheme": "dark",
+              "locale": "en",
+              "isTransparent": false
+            });
             cryptoContainer.appendChild(cryptoScript);
           }
         }
 
         // Forex Tab Widget
         if (mainTab === 'forex') {
-          const forexScript = document.createElement('script');
-          forexScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js';
-          forexScript.async = true;
-          forexScript.innerHTML = JSON.stringify({
-            "width": "100%",
-            "height": "100%",
-            "currencies": ["EUR", "USD", "JPY", "GBP", "CHF", "AUD", "CAD", "NZD"],
-            "isTransparent": false,
-            "colorTheme": "dark",
-            "locale": "en"
-          });
-
           const forexContainer = document.getElementById('tradingview-forex-widget');
-          if (forexContainer) {
+          if (forexContainer && !forexContainer.querySelector('iframe')) {
             forexContainer.innerHTML = '';
+            const forexScript = document.createElement('script');
+            forexScript.src = 'https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js';
+            forexScript.async = true;
+            forexScript.onload = () => loadedWidgetsRef.current.add(cacheKey);
+            forexScript.innerHTML = JSON.stringify({
+              "width": "100%",
+              "height": "100%",
+              "currencies": ["EUR", "USD", "JPY", "GBP", "CHF", "AUD", "CAD", "NZD"],
+              "isTransparent": false,
+              "colorTheme": "dark",
+              "locale": "en"
+            });
             forexContainer.appendChild(forexScript);
           }
         }
       }
     };
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(loadTradingViewWidgets, 100);
-    return () => clearTimeout(timer);
+    // Load immediately using requestAnimationFrame
+    requestAnimationFrame(loadTradingViewWidgets);
   }, [mainTab, stocksSubTab]);
 
   return (

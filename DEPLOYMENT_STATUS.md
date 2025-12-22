@@ -1,8 +1,8 @@
 # Deployment Status
 
 **Date:** 2025-12-21
-**Build ID:** `90c19dbe-078a-46d6-8197-d5edab568c74`
-**Commit SHA:** `3b30460`
+**Build ID:** `78a07ffc-254d-4b10-8291-35e112eb1722`
+**Commit SHA:** `fb3b516`
 **Trigger:** Manual trigger via `gcloud builds triggers run`
 
 ## Status
@@ -10,6 +10,17 @@
 - [x] Build triggered
 - [x] Build success
 - [x] Deployment success
+
+## Changes Deployed
+1. **Stripe Integration**: Full checkout and webhook flow.
+2. **Google Analytics/Ads**: Tags added to `layout.tsx` with debug logs.
+3. **CSP Updates**: `middleware.ts` updated to allow Google scripts.
+4. **Build Fix**: Conditional Stripe and Supabase initialization.
+
+## Action Items
+- **Verified**: Deployment `financial-planner-00071-p2l` is live.
+- **Check**: Visit the site and verify Google Analytics tags in source.
+- **Debug**: Check console for "OmniFolio: GA Initialized".
 
 ## Changes Deployed
 1. **Stripe Integration**: Full checkout and webhook flow.
