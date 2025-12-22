@@ -4,7 +4,10 @@
 **Status:** Pending Deployment
 
 ## Recent Changes
-1. **Google Analytics/Ads Fixes**: 
+1. **CORS Fix for Auth**:
+   - **CRITICAL**: Removed `api/auth` from middleware exclusion list.
+   - This ensures CORS headers are applied to auth requests, fixing the "blocked by CORS policy" error when accessing from `omnifolio.app` to `www.omnifolio.app`.
+2. **Google Analytics/Ads Fixes**: 
    - **MIGRATED**: Switched to `@next/third-parties/google` for robust SPA tracking.
    - **CONSENT**: Added explicit default consent state (denied) via `beforeInteractive` script.
    - **ADS**: Added manual config for Google Ads ID `AW-17821905669`.
