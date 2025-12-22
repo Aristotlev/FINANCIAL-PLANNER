@@ -12,6 +12,7 @@ import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
 import { ExtensionErrorBoundary } from "../components/ui/extension-error-boundary";
 import { ConsentBanner } from "../components/ui/consent-banner";
+import GoogleAnalytics from "../components/google-analytics";
 import Script from "next/script";
 
 // Force dynamic rendering for all pages (disable static generation)
@@ -91,22 +92,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-6CJBH3X6XC"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            console.log('OmniFolio: GA Initialized');
-            gtag('config', 'G-6CJBH3X6XC', {
-              page_path: window.location.pathname,
-            });
-            gtag('config', 'AW-17821905669');
-          `}
-        </Script>
+        <GoogleAnalytics GA_MEASUREMENT_ID="G-6CJBH3X6XC" GA_ADS_ID="AW-17821905669" />
         <ExtensionErrorBoundary>
           <ReduxWarningsSuppressor />
           <ZoomHandler />

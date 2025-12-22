@@ -5,6 +5,23 @@ import { useState, useEffect } from "react";
 export function ConsentBanner() {
   const [isVisible, setIsVisible] = useState(false);
 
+  const updateConsent = (consentState: 'granted' | 'denied') => {
+    if (typeof window === 'undefined') return;
+
+    // Ensure gtag is defined
+    if (!(window as any).gtag) {
+      (window as any).dataLayer = (window as any).dataLayer || [];
+      (window as any).gtag = function() { (window as any).dataLayer.push(arguments); };
+    }
+
+    (window as any).gtag('consent', 'update', {
+      'ad_storage': consentState,
+      'ad_user_data': consentState,
+      'ad_personalization': consentState,
+      'analytics_storage': consentState
+    });
+  };
+
   useEffect(() => {
     const consent = localStorage.getItem("cookie-consent");
     console.log('OmniFolio: Consent Status:', consent);
@@ -12,14 +29,10 @@ export function ConsentBanner() {
       setIsVisible(true);
     } else if (consent === "accepted") {
       // Restore consent if previously accepted
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('consent', 'update', {
-          'ad_storage': 'granted',
-          'ad_user_data': 'granted',
-          'ad_personalization': 'granted',
-          'analytics_storage': 'granted'
-        });
-      }
+      updateConsent('granted');
+    } else if (consent === "declined") {
+      // Ensure declined state is enforced
+      updateConsent('denied');
     }
   }, []);
 
@@ -27,28 +40,14 @@ export function ConsentBanner() {
     localStorage.setItem("cookie-consent", "accepted");
     setIsVisible(false);
     // Trigger Google Analytics consent update
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
-        'ad_storage': 'granted',
-        'ad_user_data': 'granted',
-        'ad_personalization': 'granted',
-        'analytics_storage': 'granted'
-      });
-    }
+    updateConsent('granted');
   };
 
   const declineCookies = () => {
     localStorage.setItem("cookie-consent", "declined");
     setIsVisible(false);
     // Trigger Google Analytics consent update
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('consent', 'update', {
-        'ad_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied',
-        'analytics_storage': 'denied'
-      });
-    }
+    updateConsent('denied');
   };
 
   if (!isVisible) return null;

@@ -13,7 +13,10 @@
 
 ## Changes Deployed
 1. **Stripe Integration**: Full checkout and webhook flow.
-2. **Google Analytics/Ads**: Tags added to `layout.tsx` with debug logs.
+2. **Google Analytics/Ads**: 
+   - Implemented `components/google-analytics.tsx` for proper SPA tracking.
+   - Fixed consent banner race conditions.
+   - IDs: `G-6CJBH3X6XC` (GA), `AW-17821905669` (Ads).
 3. **CSP Updates**: `middleware.ts` updated to allow Google scripts.
 4. **Build Fix**: Conditional Stripe and Supabase initialization.
 
@@ -24,7 +27,10 @@
 
 ## Changes Deployed
 1. **Stripe Integration**: Full checkout and webhook flow.
-2. **Google Analytics/Ads**: Tags added to `layout.tsx`.
+2. **Google Analytics/Ads**: 
+   - Implemented `components/google-analytics.tsx` for proper SPA tracking.
+   - Fixed consent banner race conditions.
+   - IDs: `G-6CJBH3X6XC` (GA), `AW-17821905669` (Ads).
 3. **CSP Updates**: `middleware.ts` updated to allow Google scripts.
 4. **Build Fix**: Conditional Stripe and Supabase initialization to prevent build-time crashes.
 
