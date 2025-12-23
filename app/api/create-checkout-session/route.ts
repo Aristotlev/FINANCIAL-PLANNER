@@ -55,8 +55,9 @@ export async function POST(req: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      // Don't specify payment_method_types - let Stripe automatically enable all configured methods
-      // This enables: Card, Apple Pay, Google Pay, Link, and any other methods enabled in Dashboard
+      // Explicitly enable card payments - Apple Pay and Google Pay work automatically on top of cards
+      // when enabled in your Stripe Dashboard settings
+      payment_method_types: ['card'],
       line_items: [
         {
           price: priceId,
@@ -79,8 +80,6 @@ export async function POST(req: Request) {
       cancel_url: `${baseUrl}/billing?canceled=true`,
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
-      // Enable automatic tax calculation if configured in Stripe
-      // automatic_tax: { enabled: true },
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
