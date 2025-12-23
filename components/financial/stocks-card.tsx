@@ -298,8 +298,9 @@ function AddPositionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000001]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-96" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000001] overflow-y-auto" onClick={onClose}>
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8 sm:py-4">
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-[384px]" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Stock Position</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-900 dark:text-white">
@@ -416,6 +417,7 @@ function AddPositionModal({
             Add Position
           </button>
         </div>
+        </div>
       </div>
     </div>
   );
@@ -459,8 +461,9 @@ function EditPositionModal({
   if (!isOpen || !holding) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-96" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto" onClick={onClose}>
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8 sm:py-4">
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-[384px]" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Position</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-900 dark:text-white">
@@ -534,6 +537,7 @@ function EditPositionModal({
             Update
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
