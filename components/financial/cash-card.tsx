@@ -1164,54 +1164,59 @@ function CashModalContent() {
     <div className="p-6">
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <div className="flex justify-between items-center">
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
-            {[
-              { id: 'accounts', label: 'Accounts', icon: Wallet },
-              { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-              { id: 'income', label: 'Income', icon: Briefcase }
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === id
-                    ? 'border-green-500 text-green-600 dark:text-green-400'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+            <div className="flex overflow-x-auto scrollbar-hide w-full">
+              {[
+                { id: 'accounts', label: 'Accounts', icon: Wallet },
+                { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+                { id: 'income', label: 'Income', icon: Briefcase }
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeTab === id
+                      ? 'border-green-500 text-green-600 dark:text-green-400 font-semibold'
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             {activeTab === 'accounts' && (
               <>
                 <button
                   onClick={resetToDefaults}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                   title="Reset to default accounts"
                 >
-                  Reset
+                  <span className="hidden sm:inline">Reset</span>
+                  <span className="sm:hidden">↺</span>
                 </button>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Account
+                  <span className="hidden sm:inline">Add Account</span>
+                  <span className="sm:hidden">Add</span>
                 </button>
               </>
             )}
             {activeTab === 'income' && (
               <button
                 onClick={() => setShowAddIncomeModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Add Income Source
+                <span className="hidden sm:inline">Add Income Source</span>
+                <span className="sm:hidden">Add</span>
               </button>
             )}
           </div>

@@ -1569,7 +1569,7 @@ function RealEstateModalContent() {
 
       {/* Tabs Navigation */}
       <div className="border-b dark:border-gray-700 -mx-6 px-6">
-        <div className="flex space-x-8">
+        <div className="flex overflow-x-auto scrollbar-hide w-full">
           {[
             { id: 'properties', label: 'Properties', icon: Building },
             { id: 'analytics', label: 'Analytics', icon: TrendingUp },
@@ -1578,7 +1578,7 @@ function RealEstateModalContent() {
             <button
               key={id}
               onClick={() => setActiveTab(id as any)}
-              className={`flex items-center gap-2 py-3 px-1 border-b-2 transition-colors font-medium ${
+              className={`flex items-center gap-2 py-3 px-3 sm:px-4 border-b-2 transition-all duration-200 font-medium whitespace-nowrap flex-shrink-0 ${
                 activeTab === id
                   ? 'border-lime-500 text-lime-600 dark:text-lime-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'

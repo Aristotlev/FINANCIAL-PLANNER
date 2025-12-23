@@ -993,35 +993,38 @@ function SavingsModalContent() {
     <div className="p-6">
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <div className="flex justify-between items-center">
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
-            {[
-              { id: 'goals', label: 'Goals', icon: Target },
-              { id: 'accounts', label: 'Accounts', icon: Wallet },
-              { id: 'analytics', label: 'Analytics', icon: TrendingUp }
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+            <div className="flex overflow-x-auto scrollbar-hide w-full">
+              {[
+                { id: 'goals', label: 'Goals', icon: Target },
+                { id: 'accounts', label: 'Accounts', icon: Wallet },
+                { id: 'analytics', label: 'Analytics', icon: TrendingUp }
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeTab === id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
           
           {activeTab === 'goals' && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
-              Add Goal
+              <span className="hidden sm:inline">Add Goal</span>
+              <span className="sm:hidden">Add</span>
             </button>
           )}
         </div>

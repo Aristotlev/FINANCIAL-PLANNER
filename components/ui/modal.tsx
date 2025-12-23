@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
@@ -13,17 +13,73 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl" }: ModalProps) {
+  const scrollYRef = useRef(0);
+  const modalContentRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
     if (isOpen) {
+      // Save scroll position
+      scrollYRef.current = window.scrollY;
+      
+      // Lock body scroll - comprehensive approach for iOS/mobile
       document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollYRef.current}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      // Restore body scroll
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      document.documentElement.style.overflow = '';
+      
+      // Restore scroll position
+      window.scrollTo(0, scrollYRef.current);
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      document.documentElement.style.overflow = '';
+      window.scrollTo(0, scrollYRef.current);
     };
   }, [isOpen]);
+  
+  // Prevent touchmove from propagating to body on mobile
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // Allow scrolling within the modal content
+    const target = e.target as HTMLElement;
+    const modalContent = modalContentRef.current;
+    
+    if (modalContent && modalContent.contains(target)) {
+      // Check if the element or any parent is scrollable
+      let element: HTMLElement | null = target;
+      while (element && element !== modalContent) {
+        if (element.scrollHeight > element.clientHeight) {
+          // Element is scrollable, allow the event
+          return;
+        }
+        element = element.parentElement;
+      }
+      // Modal content itself is scrollable
+      if (modalContent.scrollHeight > modalContent.clientHeight) {
+        return;
+      }
+    }
+    
+    // Prevent scroll if not in a scrollable area
+    e.preventDefault();
+  }, []);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -45,7 +101,8 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
 
   const modalContent = (
     <div 
-      className="fixed inset-0 z-[1000000] overflow-y-auto"
+      className="fixed inset-0 z-[1000000] overflow-hidden"
+      onTouchMove={handleTouchMove}
       style={{
         position: 'fixed',
         top: 0,
@@ -54,6 +111,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
         bottom: 0,
         width: '100vw',
         height: '100vh',
+        touchAction: 'none',
       }}
     >
       {/* Backdrop */}
@@ -71,7 +129,8 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
       
       {/* Modal */}
       <div 
-        className="flex min-h-full items-center justify-center p-2 sm:p-4"
+        className="flex min-h-full items-center justify-center p-2 sm:p-4 overflow-y-auto"
+        style={{ touchAction: 'pan-y' }}
       >
         <div 
           className={`relative w-full ${maxWidth} bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-2xl transition-all modal-content`}
@@ -92,7 +151,14 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
           </div>
           
           {/* Content */}
-          <div className="max-h-[calc(90vh-80px)] sm:max-h-[80vh] overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch" style={{ overflowX: 'visible' }}>
+          <div 
+            ref={modalContentRef}
+            className="max-h-[calc(90vh-80px)] sm:max-h-[80vh] overflow-y-auto overflow-x-hidden overscroll-contain"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y',
+            }}
+          >
             {children}
           </div>
         </div>

@@ -824,46 +824,48 @@ function ToolsModalContent() {
       `}</style>
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <div className="flex justify-between items-center">
-          <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-            {[
-              { id: 'chart', label: 'Chart', icon: TbChartCandle },
-              { id: 'stocks', label: 'Stocks', icon: TrendingUp },
-              { id: 'crypto', label: 'Crypto', icon: Coins },
-              { id: 'forex', label: 'Forex', icon: DollarSign },
-              { id: 'alerts', label: 'Alerts', icon: Bell },
-              { id: 'history', label: 'History', icon: History }
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === id
-                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+            <div className="flex overflow-x-auto scrollbar-hide w-full">
+              {[
+                { id: 'chart', label: 'Chart', icon: TbChartCandle },
+                { id: 'stocks', label: 'Stocks', icon: TrendingUp },
+                { id: 'crypto', label: 'Crypto', icon: Coins },
+                { id: 'forex', label: 'Forex', icon: DollarSign },
+                { id: 'alerts', label: 'Alerts', icon: Bell },
+                { id: 'history', label: 'History', icon: History }
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeTab === id
+                      ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-semibold'
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Fullscreen Toggle Button */}
           <button
             onClick={toggleFullscreen}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex-shrink-0"
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
           >
             {isFullscreen ? (
               <>
                 <Minimize2 className="w-4 h-4" />
-                <span className="text-sm">Exit Fullscreen</span>
+                <span className="text-sm hidden sm:inline">Exit Fullscreen</span>
               </>
             ) : (
               <>
                 <Maximize2 className="w-4 h-4" />
-                <span className="text-sm">Fullscreen</span>
+                <span className="text-sm hidden sm:inline">Fullscreen</span>
               </>
             )}
           </button>

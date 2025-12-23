@@ -1752,27 +1752,30 @@ function TradingAccountModalContent() {
     <div className="p-6">
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <div className="flex justify-between items-center">
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
-            {[
-              { id: 'positions', label: 'Positions', icon: Briefcase },
-              { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-              { id: 'performance', label: 'Performance', icon: TrendingUp },
-              { id: 'signals', label: 'AI Signals', icon: Zap }
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === id
-                    ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+            <div className="flex overflow-x-auto scrollbar-hide w-full">
+              {[
+                { id: 'positions', label: 'Positions', icon: Briefcase },
+                { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+                { id: 'performance', label: 'Performance', icon: TrendingUp },
+                { id: 'signals', label: 'AI Signals', icon: Zap }
+              ].map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    activeTab === id
+                      ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400 font-semibold'
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                  <span className="sm:hidden">{label.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -2925,68 +2928,70 @@ function TradingToolsModalContent() {
     <div className="p-6">
       <div className="space-y-6">
         {/* Main Tab Navigation */}
-        <div className="flex justify-between items-center">
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => setMainTab('trading')}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                mainTab === 'trading'
-                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              <Target className="w-4 h-4" />
-              Trading
-            </button>
-            <button
-              onClick={() => setMainTab('stocks')}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                mainTab === 'stocks'
-                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              Stocks
-            </button>
-            <button
-              onClick={() => setMainTab('crypto')}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                mainTab === 'crypto'
-                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              <CoinsIcon className="w-4 h-4" />
-              Crypto
-            </button>
-            <button
-              onClick={() => setMainTab('forex')}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                mainTab === 'forex'
-                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              <DollarSign className="w-4 h-4" />
-              Forex
-            </button>
-            <button
-              onClick={() => setMainTab('tools')}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                mainTab === 'tools'
-                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Tools
-            </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+            <div className="flex overflow-x-auto scrollbar-hide w-full">
+              <button
+                onClick={() => setMainTab('trading')}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  mainTab === 'trading'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-semibold'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <Target className="w-4 h-4" />
+                Trading
+              </button>
+              <button
+                onClick={() => setMainTab('stocks')}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  mainTab === 'stocks'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-semibold'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <TrendingUp className="w-4 h-4" />
+                Stocks
+              </button>
+              <button
+                onClick={() => setMainTab('crypto')}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  mainTab === 'crypto'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-semibold'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <CoinsIcon className="w-4 h-4" />
+                Crypto
+              </button>
+              <button
+                onClick={() => setMainTab('forex')}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  mainTab === 'forex'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-semibold'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <DollarSign className="w-4 h-4" />
+                Forex
+              </button>
+              <button
+                onClick={() => setMainTab('tools')}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  mainTab === 'tools'
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-semibold'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Tools
+              </button>
+            </div>
           </div>
           
           <button 
             title="Enter Fullscreen" 
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex-shrink-0"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <polyline points="15 3 21 3 21 9"></polyline>

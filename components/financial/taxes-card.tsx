@@ -1046,7 +1046,7 @@ function TaxesModalContent() {
         {/* Tabs */}
         {calculation && (
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex gap-4">
+            <div className="flex overflow-x-auto scrollbar-hide w-full">
               {[
                 { id: 'overview', label: 'Overview', icon: PieChart },
                 { id: 'breakdown', label: 'Tax Breakdown', icon: Calculator },
@@ -1055,14 +1055,15 @@ function TaxesModalContent() {
                 <button
                   key={id}
                   onClick={() => setActiveTab(id as any)}
-                  className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeTab === id
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400 font-semibold'
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  {label}
+                  <span className="hidden sm:inline">{label}</span>
+                  <span className="sm:hidden">{label.split(' ')[0]}</span>
                 </button>
               ))}
             </div>

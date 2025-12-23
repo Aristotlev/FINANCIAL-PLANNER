@@ -182,28 +182,31 @@ function NetWorthModalContent() {
     <div className="p-6">
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
-          {[
-            { id: 'overview', label: 'Overview', icon: TrendingUp },
-            { id: 'breakdown', label: 'Breakdown', icon: PieChartIcon },
-            { id: 'trends', label: 'Trends', icon: BarChart3 },
-            { id: 'goals', label: 'Goals', icon: Target },
-            { id: 'flow', label: 'Flow Diagram', icon: GitBranch },
-            { id: 'analysis', label: 'AI Analysis', icon: TrendingUp }
-          ].map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id as any)}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === id
-                  ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
+        <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
+          <div className="flex overflow-x-auto scrollbar-hide w-full">
+            {[
+              { id: 'overview', label: 'Overview', icon: TrendingUp },
+              { id: 'breakdown', label: 'Breakdown', icon: PieChartIcon },
+              { id: 'trends', label: 'Trends', icon: BarChart3 },
+              { id: 'goals', label: 'Goals', icon: Target },
+              { id: 'flow', label: 'Flow Diagram', icon: GitBranch },
+              { id: 'analysis', label: 'AI Analysis', icon: TrendingUp }
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as any)}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 border-b-2 transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  activeTab === id
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400 font-semibold'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{label.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Tab Content */}
