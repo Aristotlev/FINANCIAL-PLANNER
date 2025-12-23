@@ -634,7 +634,7 @@ export function Dashboard() {
         
         <div className="container mx-auto px-2 sm:px-4">
           {/* All Financial Cards - Dynamic Order with Drag-and-Drop */}
-          <div className="flex flex-wrap gap-3 sm:gap-6 justify-center">
+          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center py-4 px-2">
             {cardOrder.map(cardId => {
               if (isCardHidden(cardId)) return null;
               

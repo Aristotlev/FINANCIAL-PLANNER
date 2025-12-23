@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useHiddenCards, CardType } from '../../contexts/hidden-cards-context';
 import { useCardOrder } from '../../contexts/card-order-context';
 
@@ -12,11 +12,20 @@ interface DraggableCardWrapperProps {
 export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperProps) {
   const { moveCard } = useCardOrder();
   const [isHovered, setIsHovered] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Detect touch device on mount
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   // Optimized: Only attach global mouseup listener when drag starts
   // This replaces 20+ constant global listeners with 0 (until interaction)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Don't enable drag on touch devices
+    if (isTouchDevice) return;
+    
     // Set the current drag card ID
     (window as any).__currentDragCard = cardId;
 
@@ -33,7 +42,7 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
     };
 
     document.addEventListener('mouseup', handleMouseUp, true);
-  }, [cardId]);
+  }, [cardId, isTouchDevice]);
 
   return (
     <div
@@ -41,9 +50,11 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onMouseDownCapture={handleMouseDown}
-      className="transition-all duration-200 relative group cursor-grab hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]"
+      className={`transition-all duration-200 relative group ${isTouchDevice ? '' : 'cursor-grab hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]'}`}
       style={{
-        touchAction: 'none',
+        // Only disable touch-action on non-touch devices (for mouse drag)
+        // On touch devices, allow normal scrolling
+        touchAction: isTouchDevice ? 'auto' : 'none',
         userSelect: 'none',
         WebkitUserSelect: 'none',
         zIndex: isHovered ? 50 : 1,
