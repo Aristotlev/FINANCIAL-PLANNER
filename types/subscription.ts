@@ -100,6 +100,8 @@ export type CardType =
  * 
  * STARTER ($0/forever) - "Unlimited tracking for those willing to do the work"
  *   ✅ Unlimited Assets & Inputs (manual entry only)
+ *   ✅ Multi-Currency Support (30) & Live Rates
+ *   ✅ 100+ Major Banks Database
  *   ✅ Basic Analytics (Portfolio Value & Allocation)
  *   ❌ No Imports/Exports (Manual Entry Only)
  *   ❌ No AI Assistant / Recommendations
@@ -184,6 +186,8 @@ export interface PlanFeature {
 export const PLAN_FEATURES: Record<SubscriptionPlan, PlanFeature[]> = {
   STARTER: [
     { name: 'Unlimited Assets & Inputs', included: true, tooltip: 'Track as many assets as you want across all categories' },
+    { name: 'Multi-Currency Support (30)', included: true, tooltip: 'Live exchange rates for 30 global currencies' },
+    { name: '100+ Major Banks Database', included: true, tooltip: 'Connect with major banks worldwide' },
     { name: 'Basic Analytics', included: true, tooltip: 'Portfolio Value & Allocation charts' },
     { name: 'No Imports (Manual Entry Only)', included: false, tooltip: 'You must manually enter all your data' },
     { name: 'No AI Assistant', included: false, tooltip: 'Upgrade to get AI-powered insights' },

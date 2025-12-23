@@ -13,6 +13,7 @@ import { PLAN_CONFIG, PLAN_FEATURES, formatPrice, getPlanDisplayName } from '@/t
 import type { SubscriptionPlan } from '@/types/subscription';
 import { LoginForm } from '@/components/auth/login-form';
 import { SignupForm } from '@/components/auth/signup-form';
+import { CardContainer, CardItem } from '@/components/ui/3d-card';
 
 // ---- Utility: cn (className merge) ----
 import clsx, { type ClassValue } from 'clsx';
@@ -135,99 +136,109 @@ function PricingCard({ plan, isCurrentPlan, onSelect, isLoading }: PricingCardPr
   };
 
   return (
-    <div
-      className={cn(
-        "relative flex flex-col rounded-2xl border p-6 text-left transition-all duration-300",
-        "bg-gray-900/50 backdrop-blur-sm hover:bg-gray-900/70",
-        isCurrentPlan && "border-green-500/50 ring-2 ring-green-500/20",
-        isFeatured && !isCurrentPlan && "border-purple-500/50 ring-1 ring-purple-500/20 shadow-xl shadow-purple-500/10 scale-105",
-        isPremium && !isCurrentPlan && "border-orange-500/30 hover:border-orange-500/50",
-        !isFeatured && !isPremium && !isCurrentPlan && "border-gray-800 hover:border-gray-700"
-      )}
-      aria-label={`${getPlanDisplayName(plan)} plan`}
-    >
-      {/* Top Badge */}
-      {planBadgeText[plan] && (
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-          <Badge variant={getBadgeVariant()}>
-            {planBadgeText[plan]}
-          </Badge>
-        </div>
-      )}
+    <CardContainer className="inter-var h-full">
+      <div
+        className={cn(
+          "relative flex flex-col h-full rounded-3xl border p-8 text-left transition-all duration-300 group/card w-full",
+          "bg-gray-900/40 backdrop-blur-sm",
+          isCurrentPlan ? "border-green-500/50 shadow-2xl shadow-green-500/10" :
+          isFeatured ? "border-purple-500/50 shadow-2xl shadow-purple-500/10" :
+          isPremium ? "border-orange-500/30 hover:border-orange-500/50" :
+          "border-white/5 hover:border-white/10 hover:shadow-2xl hover:shadow-purple-500/[0.1]"
+        )}
+        aria-label={`${getPlanDisplayName(plan)} plan`}
+      >
+        {/* Top Badge */}
+        {planBadgeText[plan] && (
+          <CardItem translateZ={50} className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-auto">
+            <Badge variant={getBadgeVariant()}>
+              {planBadgeText[plan]}
+            </Badge>
+          </CardItem>
+        )}
 
-      {/* Header */}
-      <div className="text-center pt-2">
-        <Badge variant={getBadgeVariant()} className="mb-4">
-          {getPlanDisplayName(plan)}
-        </Badge>
-        
-        {/* Price */}
-        <h4 className="mb-2 mt-4 text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-          {formatPrice(config.price_monthly_usd)}
-        </h4>
-        <p className="text-sm text-gray-500">
-          {plan === 'STARTER' ? 'forever' : 'per month'}
-        </p>
-        {plan === 'STARTER' && (
-          <div className="mt-2 space-y-1">
-            <p className="text-cyan-400 text-xs font-semibold">✨ 7-day trial with UNLIMITED features</p>
-            <p className="text-gray-500 text-xs">Then free forever</p>
-          </div>
+        {/* Header */}
+        <CardItem translateZ={40} className="text-center pt-2 w-full">
+          <Badge variant={getBadgeVariant()} className="mb-4">
+            {getPlanDisplayName(plan)}
+          </Badge>
+          
+          {/* Price */}
+          <h4 className="mb-2 mt-4 text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            {formatPrice(config.price_monthly_usd)}
+          </h4>
+          <p className="text-sm text-gray-500">
+            {plan === 'STARTER' ? 'forever' : 'per month'}
+          </p>
+          {plan === 'STARTER' && (
+            <div className="mt-2 space-y-1">
+              <p className="text-cyan-400 text-xs font-semibold">✨ 7-day trial with UNLIMITED features</p>
+              <p className="text-gray-500 text-xs">Then free forever</p>
+            </div>
+          )}
+        </CardItem>
+
+        <CardItem translateZ={30} className="w-full">
+          <div className="my-5 border-t border-gray-800" />
+        </CardItem>
+
+        {/* Features List */}
+        <CardItem translateZ={30} className="flex-grow w-full">
+          <ul className="space-y-3">
+            {features.map((feature, index) => (
+              <li 
+                key={index} 
+                className={cn(
+                  "flex items-center text-sm",
+                  feature.included ? "text-gray-300" : "text-gray-600"
+                )}
+              >
+                <CircleCheck 
+                  className={cn(
+                    "mr-2.5 h-4 w-4 flex-shrink-0",
+                    feature.included ? "text-cyan-400" : "text-gray-700"
+                  )} 
+                  aria-hidden 
+                />
+                <span className={!feature.included ? "line-through" : ""}>
+                  {feature.name}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </CardItem>
+
+        {/* CTA Button */}
+        <CardItem translateZ={50} className="mt-6 pt-4 w-full">
+          <Button
+            size="md"
+            variant={getButtonVariant()}
+            className="w-full"
+            onClick={() => onSelect(plan)}
+            disabled={isCurrentPlan || isLoading}
+          >
+            {isCurrentPlan ? '✓ Current Plan' : isLoading ? 'Loading...' : 'Choose Plan'}
+          </Button>
+        </CardItem>
+
+        {/* Current Plan Indicator */}
+        {isCurrentPlan && (
+          <CardItem translateZ={60} className="absolute -top-2 -right-2 w-auto">
+            <div className="bg-green-500 text-white rounded-full p-1.5 shadow-lg shadow-green-500/30">
+              <CircleCheck className="w-4 h-4" />
+            </div>
+          </CardItem>
         )}
       </div>
-
-      <div className="my-5 border-t border-gray-800" />
-
-      {/* Features List */}
-      <ul className="space-y-3 flex-grow">
-        {features.map((feature, index) => (
-          <li 
-            key={index} 
-            className={cn(
-              "flex items-center text-sm",
-              feature.included ? "text-gray-300" : "text-gray-600"
-            )}
-          >
-            <CircleCheck 
-              className={cn(
-                "mr-2.5 h-4 w-4 flex-shrink-0",
-                feature.included ? "text-cyan-400" : "text-gray-700"
-              )} 
-              aria-hidden 
-            />
-            <span className={!feature.included ? "line-through" : ""}>
-              {feature.name}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      {/* CTA Button */}
-      <div className="mt-6 pt-4">
-        <Button
-          size="md"
-          variant={getButtonVariant()}
-          className="w-full"
-          onClick={() => onSelect(plan)}
-          disabled={isCurrentPlan || isLoading}
-        >
-          {isCurrentPlan ? '✓ Current Plan' : isLoading ? 'Loading...' : 'Choose Plan'}
-        </Button>
-      </div>
-
-      {/* Current Plan Indicator */}
-      {isCurrentPlan && (
-        <div className="absolute -top-2 -right-2">
-          <div className="bg-green-500 text-white rounded-full p-1.5 shadow-lg shadow-green-500/30">
-            <CircleCheck className="w-4 h-4" />
-          </div>
-        </div>
-      )}
-    </div>
+    </CardContainer>
   );
 }
 
-export default function PricingSection() {
+interface PricingSectionProps {
+  showHeader?: boolean;
+}
+
+export default function PricingSection({ showHeader = true }: PricingSectionProps) {
   const { subscription, startCheckout, loading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const { user } = useBetterAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -330,18 +341,20 @@ export default function PricingSection() {
         )}
         
         {/* Header */}
-        <div className="mb-4">
-          <span className="text-sm font-medium text-cyan-400 uppercase tracking-widest">Pricing</span>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-white">
-            Choose Your{' '}
-            <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-              Plan
-            </span>
-          </h2>
-          <p className="mt-3 text-gray-400 text-lg max-w-xl mx-auto">
-            Simple, transparent pricing for everyone. Start free, upgrade when you need more.
-          </p>
-        </div>
+        {showHeader && (
+          <div className="mb-4">
+            <span className="text-sm font-medium text-cyan-400 uppercase tracking-widest">Pricing</span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-white">
+              Choose Your{' '}
+              <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                Plan
+              </span>
+            </h2>
+            <p className="mt-3 text-gray-400 text-lg max-w-xl mx-auto">
+              Simple, transparent pricing for everyone. Start free, upgrade when you need more.
+            </p>
+          </div>
+        )}
 
         {/* Trial Banner */}
         {subscription && subscription.status === 'TRIAL' && (
@@ -403,6 +416,8 @@ export default function PricingSection() {
                 <tbody className="divide-y divide-gray-800">
                   {[
                     { feature: 'Assets & Inputs', values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'] },
+                    { feature: 'Multi-Currency (30)', values: [true, true, true, true], tooltip: 'Live exchange rates' },
+                    { feature: '100+ Major Banks', values: [true, true, true, true], tooltip: 'Connect with major banks' },
                     { feature: 'Basic Analytics', values: [true, true, true, true], tooltip: 'Portfolio Value & Allocation' },
                     { feature: 'Advanced Analytics', values: [false, true, true, true], tooltip: 'PnL, Charts, Diversity Scores' },
                     { feature: 'Imports & Exports', values: ['❌ Manual Only', 'Unlimited', 'Unlimited', 'Unlimited'] },
