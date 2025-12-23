@@ -218,39 +218,43 @@ export interface StripeProduct {
   };
 }
 
+/**
+ * Stripe Product configuration with real product IDs
+ * Price IDs should be set via environment variables
+ */
 export const STRIPE_PRODUCTS: Record<SubscriptionPlan, StripeProduct | null> = {
   STARTER: null, // No Stripe product for free plan
   TRADER: {
-    id: 'prod_trader_money_hub',
-    name: 'Money Hub Trader',
+    id: 'prod_Tet932v2B53Owv',
+    name: 'Omnifolio Trader',
     description: 'Unlimited Assets, Imports & Exports, Basic AI Analytics',
     prices: {
       monthly: {
-        id: 'price_trader_monthly',
+        id: process.env.STRIPE_TRADER_PRICE_ID || 'price_trader_monthly',
         amount: 999, // $9.99 in cents
         currency: 'usd',
       },
     },
   },
   INVESTOR: {
-    id: 'prod_investor_money_hub',
-    name: 'Money Hub Investor',
+    id: 'prod_TetJXzh000d3eK',
+    name: 'Omnifolio Investor',
     description: 'AI Assistant (50 Qs/day), Deep Analytics',
     prices: {
       monthly: {
-        id: 'price_investor_monthly',
+        id: process.env.STRIPE_INVESTOR_PRICE_ID || 'price_investor_monthly',
         amount: 1999, // $19.99 in cents
         currency: 'usd',
       },
     },
   },
   WHALE: {
-    id: 'prod_whale_money_hub',
-    name: 'Money Hub Whale',
+    id: 'prod_TetJCuGPxuKNCu',
+    name: 'Omnifolio Whale',
     description: 'Unlimited AI & Priority Support',
     prices: {
       monthly: {
-        id: 'price_whale_monthly',
+        id: process.env.STRIPE_WHALE_PRICE_ID || 'price_whale_monthly',
         amount: 4999, // $49.99 in cents
         currency: 'usd',
       },

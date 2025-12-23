@@ -5,11 +5,14 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { CircleCheck, X, Sparkles, Lock, Shield, CreditCard } from 'lucide-react';
 import { useSubscription } from '@/hooks/use-subscription';
+import { useBetterAuth } from '@/contexts/better-auth-context';
 import { PLAN_CONFIG, PLAN_FEATURES, formatPrice, getPlanDisplayName } from '@/types/subscription';
 import type { SubscriptionPlan } from '@/types/subscription';
+import { LoginForm } from '@/components/auth/login-form';
+import { SignupForm } from '@/components/auth/signup-form';
 
 // ---- Utility: cn (className merge) ----
 import clsx, { type ClassValue } from 'clsx';
@@ -225,9 +228,18 @@ function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
 
 export default function PricingSection() {
   const { subscription, startCheckout } = useSubscription();
+  const { user } = useBetterAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
+  const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
 
   const handleSelectPlan = async (plan: SubscriptionPlan) => {
+    console.log('handleSelectPlan called with:', plan);
+    console.log('Current subscription:', subscription);
+    console.log('Current user:', user);
+    
     if (subscription && subscription.plan === plan) {
+      console.log('Plan is already current, returning');
       return;
     }
 
@@ -236,7 +248,27 @@ export default function PricingSection() {
       return;
     }
 
-    await startCheckout(plan);
+    // If user is not authenticated, show auth modal
+    if (!user) {
+      console.log('User not authenticated, showing auth modal');
+      setPendingPlan(plan);
+      setAuthMode('signup');
+      setShowAuthModal(true);
+      return;
+    }
+
+    console.log('Starting checkout for plan:', plan);
+    // Pass the BetterAuth user directly to startCheckout
+    await startCheckout(plan, { id: user.id, email: user.email });
+  };
+
+  const handleAuthClose = () => {
+    setShowAuthModal(false);
+    // If user just authenticated and had a pending plan, proceed to checkout
+    if (user && pendingPlan) {
+      startCheckout(pendingPlan, { id: user.id, email: user.email });
+      setPendingPlan(null);
+    }
   };
 
   return (
@@ -380,6 +412,29 @@ export default function PricingSection() {
           </div>
         </div>
       </Container>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" 
+            onClick={() => setShowAuthModal(false)} 
+          />
+          <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {authMode === 'login' ? (
+              <LoginForm
+                onClose={handleAuthClose}
+                onSwitchToSignup={() => setAuthMode('signup')}
+              />
+            ) : (
+              <SignupForm
+                onClose={handleAuthClose}
+                onSwitchToLogin={() => setAuthMode('login')}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </Section>
   );
 }

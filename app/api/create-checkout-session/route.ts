@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { STRIPE_CONFIG, getPriceIdForPlan } from '@/lib/stripe/config';
+import type { SubscriptionPlan } from '@/types/subscription';
 
 // Initialize Stripe only if the secret key is available
 const stripe = process.env.STRIPE_SECRET_KEY 
@@ -25,37 +27,36 @@ export async function POST(req: Request) {
       );
     }
 
-    let priceId;
-    let mode: Stripe.Checkout.SessionCreateParams.Mode = 'subscription';
-
-    switch (plan) {
-      case 'BASIC':
-        priceId = process.env.STRIPE_BASIC_PRICE_ID;
-        break;
-      case 'PRO':
-        priceId = process.env.STRIPE_PRO_PRICE_ID;
-        break;
-      case 'UNLIMITED':
-        priceId = process.env.STRIPE_UNLIMITED_PRICE_ID;
-        break;
-      case 'LIFETIME':
-        priceId = process.env.STRIPE_LIFETIME_PRICE_ID;
-        mode = 'payment'; // Lifetime is a one-time payment
-        break;
-      default:
-        return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+    // Validate plan
+    const validPlans: SubscriptionPlan[] = ['TRADER', 'INVESTOR', 'WHALE'];
+    if (!validPlans.includes(plan)) {
+      return NextResponse.json(
+        { error: 'Invalid plan. Must be TRADER, INVESTOR, or WHALE.' },
+        { status: 400 }
+      );
     }
 
+    // Get price ID from configuration
+    const priceId = getPriceIdForPlan(plan as SubscriptionPlan);
+    
     if (!priceId) {
+      console.error(`Price ID not configured for plan: ${plan}`);
       return NextResponse.json(
-        { error: 'Price ID not configured for this plan' },
+        { error: `Price ID not configured for ${plan} plan. Please create prices in Stripe Dashboard.` },
         { status: 500 }
       );
     }
 
+    // Get product configuration for metadata
+    const productConfig = STRIPE_CONFIG[plan as Exclude<SubscriptionPlan, 'STARTER'>];
+
+    // Get the base URL - use NEXT_PUBLIC_APP_URL, fallback to localhost for dev
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+
     const session = await stripe.checkout.sessions.create({
-      mode: mode,
-      payment_method_types: ['card'],
+      mode: 'subscription',
+      // Don't specify payment_method_types - let Stripe automatically enable all configured methods
+      // This enables: Card, Apple Pay, Google Pay, Link, and any other methods enabled in Dashboard
       line_items: [
         {
           price: priceId,
@@ -66,9 +67,20 @@ export async function POST(req: Request) {
       metadata: {
         userId: userId,
         plan: plan,
+        productId: productConfig.productId,
       },
-      success_url: `${process.env.NEXT_PUBLIC_URL}/billing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/billing?canceled=true`,
+      subscription_data: {
+        metadata: {
+          userId: userId,
+          plan: plan,
+        },
+      },
+      success_url: `${baseUrl}/billing?success=true&plan=${plan}`,
+      cancel_url: `${baseUrl}/billing?canceled=true`,
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
+      // Enable automatic tax calculation if configured in Stripe
+      // automatic_tax: { enabled: true },
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });

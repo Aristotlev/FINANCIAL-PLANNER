@@ -100,6 +100,11 @@ export default function RootLayout({
           src="/ethereum-safeguard.js"
           strategy="beforeInteractive"
         />
+        {/* Anti-inspect protection - prevents casual code inspection */}
+        <Script
+          src="/anti-inspect.js"
+          strategy="afterInteractive"
+        />
       </head>
       <body className="antialiased">
         {/* Google Analytics - Default Consent */}

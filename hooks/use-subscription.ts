@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { SubscriptionService } from '@/lib/subscription-service';
-import { supabase } from '@/lib/supabase/client';
+import { authClient } from '@/lib/auth-client';
 import type {
   UserSubscription,
   UserUsage,
@@ -17,6 +17,20 @@ import type {
   SubscriptionPlan,
 } from '@/types/subscription';
 import { isTrialActive, getDaysRemainingInTrial } from '@/types/subscription';
+
+// Helper function to get current user from BetterAuth
+async function getCurrentUser() {
+  try {
+    const response = await authClient.getSession();
+    if (response.data && 'user' in response.data && response.data.user) {
+      return response.data.user;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+}
 
 // ==================== useSubscription ====================
 
@@ -67,13 +81,23 @@ export function useSubscription() {
     []
   );
 
-  const startCheckout = useCallback(async (plan: SubscriptionPlan) => {
+  const startCheckout = useCallback(async (plan: SubscriptionPlan, user?: { id: string; email: string }) => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      // Use provided user or fetch from BetterAuth
+      let currentUser = user;
+      if (!currentUser) {
+        const authUser = await getCurrentUser();
+        if (!authUser) {
+          setError('Please sign in to continue with checkout');
+          return false;
+        }
+        currentUser = { id: authUser.id, email: authUser.email };
+      }
+
+      console.log('Starting checkout for user:', currentUser.id, 'plan:', plan);
 
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -82,23 +106,27 @@ export function useSubscription() {
         },
         body: JSON.stringify({
           plan,
-          userId: user.id,
-          email: user.email,
+          userId: currentUser.id,
+          email: currentUser.email,
         }),
       });
 
       const data = await response.json();
+      console.log('Checkout session response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
       if (data.url) {
+        console.log('Redirecting to Stripe:', data.url);
         window.location.href = data.url;
       }
+      return true;
     } catch (err) {
       console.error('Error starting checkout:', err);
       setError(err instanceof Error ? err.message : 'Failed to start checkout');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -109,7 +137,7 @@ export function useSubscription() {
       setLoading(true);
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) throw new Error('User not authenticated');
 
       const response = await fetch('/api/cancel-subscription', {
@@ -138,6 +166,41 @@ export function useSubscription() {
     }
   }, [refresh]);
 
+  const openCustomerPortal = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const user = await getCurrentUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const response = await fetch('/api/create-customer-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to open customer portal');
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Error opening customer portal:', err);
+      setError(err instanceof Error ? err.message : 'Failed to open customer portal');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     subscription,
     loading,
@@ -146,6 +209,7 @@ export function useSubscription() {
     upgrade,
     startCheckout,
     cancel,
+    openCustomerPortal,
     isTrialActive: subscription ? isTrialActive(subscription) : false,
     daysRemainingInTrial: subscription ? getDaysRemainingInTrial(subscription) : 0,
   };

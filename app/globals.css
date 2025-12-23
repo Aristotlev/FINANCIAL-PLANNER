@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Anti-Inspect Protection Styles */
+@layer base {
+  /* Disable text selection on the entire page in production */
+  body {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Allow text selection on input fields and textareas */
+  input,
+  textarea,
+  [contenteditable="true"],
+  .selectable {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+  
+  /* Disable image dragging */
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    pointer-events: none;
+  }
+  
+  /* Allow pointer events on clickable images */
+  a img,
+  button img,
+  .clickable-image {
+    pointer-events: auto;
+  }
+}
+
 /* Browser Compatibility & Mobile-First Optimizations */
 @layer base {
   /* Universal box-sizing with vendor prefixes */
