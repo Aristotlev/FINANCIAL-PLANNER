@@ -394,6 +394,66 @@ export class SubscriptionService {
     }
   }
 
+  // ==================== FEATURE CHECKS ====================
+
+  /**
+   * Check if user can use import/export features
+   * Only available for TRADER, INVESTOR, and WHALE plans
+   */
+  static async canUseImportExport(): Promise<LimitCheckResult> {
+    if (!this.isConfigured) {
+      // In offline mode, allow imports/exports
+      return { canProceed: true };
+    }
+
+    try {
+      const subscription = await this.getCurrentSubscription();
+      const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
+
+      if (!limits.imports_exports) {
+        return {
+          canProceed: false,
+          reason: 'Import/Export features are only available on Trader plan and above. Upgrade to unlock this feature!',
+          upgradeRequired: true,
+        };
+      }
+
+      return { canProceed: true };
+    } catch (error) {
+      console.error('Error checking import/export permission:', error);
+      return { canProceed: true }; // Fail open to avoid blocking users
+    }
+  }
+
+  /**
+   * Check if user can use AI assistant
+   * Only available for TRADER (10/day), INVESTOR (50/day), and WHALE (unlimited) plans
+   */
+  static async canUseAIAssistant(): Promise<LimitCheckResult> {
+    if (!this.isConfigured) {
+      return { canProceed: true };
+    }
+
+    try {
+      const subscription = await this.getCurrentSubscription();
+      const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
+
+      if (!limits.ai_assistant) {
+        return {
+          canProceed: false,
+          reason: 'AI Assistant is only available on Trader plan and above. Upgrade to unlock this feature!',
+          upgradeRequired: true,
+        };
+      }
+
+      // If AI assistant is enabled, also check daily limit
+      return this.canMakeAICall();
+    } catch (error) {
+      console.error('Error checking AI assistant permission:', error);
+      return { canProceed: true }; // Fail open
+    }
+  }
+
   // ==================== PLAN LIMITS ====================
 
   /**

@@ -34,6 +34,11 @@ export interface StripeProductConfig {
 /**
  * Stripe Product IDs and Price configurations
  * Using environment variables for all IDs
+ * 
+ * Pricing Strategy:
+ * - TRADER ($9.99): Saves time with imports/exports + 10 AI msgs/day teaser
+ * - INVESTOR ($19.99): Power user with 50 AI msgs/day + Priority Support
+ * - WHALE ($49.99): Ultimate experience with unlimited AI + VIP Support + Beta Access
  */
 export const STRIPE_CONFIG: Record<Exclude<SubscriptionPlan, 'STARTER'>, StripeProductConfig> = {
   TRADER: {
@@ -42,7 +47,7 @@ export const STRIPE_CONFIG: Record<Exclude<SubscriptionPlan, 'STARTER'>, StripeP
       monthly: process.env.STRIPE_TRADER_PRICE_ID || 'price_1ShZN4E5xZWoLB7alzjybz7e',
     },
     name: 'Omnifolio Trader',
-    description: 'Unlimited Assets, Imports & Exports, Basic AI Analytics',
+    description: 'Unlimited Imports & Exports, All Analytics, AI Assistant (10 msgs/day)',
     priceMonthlyUsd: 9.99,
   },
   INVESTOR: {
@@ -51,7 +56,7 @@ export const STRIPE_CONFIG: Record<Exclude<SubscriptionPlan, 'STARTER'>, StripeP
       monthly: process.env.STRIPE_INVESTOR_PRICE_ID || 'price_1ShZWZE5xZWoLB7afhQ67UIW',
     },
     name: 'Omnifolio Investor',
-    description: 'AI Assistant (50 Qs/day), Deep Analytics, Everything in Trader',
+    description: 'AI Assistant (50 msgs/day), Priority Support, Everything in Trader',
     priceMonthlyUsd: 19.99,
   },
   WHALE: {
@@ -60,7 +65,7 @@ export const STRIPE_CONFIG: Record<Exclude<SubscriptionPlan, 'STARTER'>, StripeP
       monthly: process.env.STRIPE_WHALE_PRICE_ID || 'price_1ShZX4E5xZWoLB7aVXbMsKF3',
     },
     name: 'Omnifolio Whale',
-    description: 'Unlimited AI & Priority Support, Early Access to new tools',
+    description: 'Unlimited AI, VIP Priority Support, Beta Access to new features',
     priceMonthlyUsd: 49.99,
   },
 };

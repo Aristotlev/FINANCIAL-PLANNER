@@ -1,12 +1,14 @@
 /**
  * Bulk Operations Modal
  * Add or remove multiple assets at once
+ * Requires TRADER plan or higher for import/export features
  */
 
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, Upload, Download, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, Upload, Download, X, Lock } from "lucide-react";
+import { useImportExportLimit } from "@/hooks/use-subscription";
 
 interface BulkItem {
   symbol?: string;
@@ -26,6 +28,7 @@ interface BulkOperationsModalProps {
 }
 
 export function BulkOperationsModal({ type, onClose, onSuccess }: BulkOperationsModalProps) {
+  const { canUse: canUseImportExport, checking: checkingPermission, limitInfo } = useImportExportLimit();
   const [operation, setOperation] = useState<'add' | 'remove'>('add');
   const [items, setItems] = useState<BulkItem[]>([{}]);
   const [loading, setLoading] = useState(false);
@@ -116,6 +119,8 @@ export function BulkOperationsModal({ type, onClose, onSuccess }: BulkOperations
   };
 
   const exportTemplate = () => {
+    if (!canUseImportExport) return; // Guard against usage
+    
     let csv = '';
     if (type === 'stocks') {
       csv = 'Symbol,Shares,EntryPrice\nAAPL,10,150.00\nMSFT,5,300.00';
@@ -132,6 +137,42 @@ export function BulkOperationsModal({ type, onClose, onSuccess }: BulkOperations
     a.download = `${type}_template.csv`;
     a.click();
   };
+
+  // Show upgrade prompt if user doesn't have permission
+  if (!canUseImportExport && !checkingPermission) {
+    return (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full border border-gray-800">
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-3">Upgrade to Unlock</h2>
+            <p className="text-gray-400 mb-6">
+              Import/Export features are only available on <span className="text-purple-400 font-semibold">Trader</span> plan and above.
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Upgrade to save time by importing CSV files and syncing with brokers instead of manual entry.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 px-6 bg-gray-800 hover:bg-gray-700 rounded-lg font-medium transition-colors text-white"
+              >
+                Cancel
+              </button>
+              <a
+                href="/pricing"
+                className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-medium transition-colors text-white text-center"
+              >
+                View Plans
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">

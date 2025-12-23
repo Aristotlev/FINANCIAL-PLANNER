@@ -95,35 +95,62 @@ export type CardType =
 
 // ==================== PLAN CONFIGURATIONS ====================
 
+/**
+ * Plan Configuration Strategy:
+ * 
+ * STARTER ($0/forever) - "Unlimited tracking for those willing to do the work"
+ *   ✅ Unlimited Assets & Inputs (manual entry only)
+ *   ✅ Basic Analytics (Portfolio Value & Allocation)
+ *   ❌ No Imports/Exports (Manual Entry Only)
+ *   ❌ No AI Assistant / Recommendations
+ *   ❌ No AI Chat
+ * 
+ * TRADER ($9.99/month) - "Saves time & provides deeper insights"
+ *   ✅ Everything in Starter, plus:
+ *   🚀 Unlimited Imports & Exports (CSV, Broker Sync)
+ *   📊 All Analytics (PnL, Advanced Charts, Diversity Scores)
+ *   🤖 AI Assistant: 10 messages/day
+ * 
+ * INVESTOR ($19.99/month) - "For users who actively analyze portfolio with AI"
+ *   ✅ Everything in Trader, plus:
+ *   🧠 AI Assistant: 50 messages/day
+ *   💎 Priority Support (Faster email response)
+ * 
+ * WHALE ($49.99/month) - "The ultimate experience with zero friction"
+ *   ✅ Everything in Investor, plus:
+ *   ♾️ Unlimited AI Assistant messages
+ *   ⚡ VIP Priority Support (Skip the line)
+ *   🧪 Beta Access (Try new features before anyone else)
+ */
 export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
   STARTER: {
     plan: 'STARTER',
-    max_entries_per_card: 3,
-    max_ai_calls_per_day: 0,
-    advanced_analytics: false,
+    max_entries_per_card: 'unlimited', // Unlimited assets - key growth engine
+    max_ai_calls_per_day: 0,           // No AI access
+    advanced_analytics: false,          // Basic analytics only (Portfolio Value & Allocation)
     priority_support: false,
     custom_categories: false,
-    imports_exports: false,
-    ai_assistant: false,
+    imports_exports: false,             // Manual Entry Only - NO imports/exports
+    ai_assistant: false,                // No AI Assistant
     price_monthly_usd: 0.00,
   },
   TRADER: {
     plan: 'TRADER',
     max_entries_per_card: 'unlimited',
-    max_ai_calls_per_day: 0,
-    advanced_analytics: true, // Basic AI Analytics (PnL, Diversity Score)
+    max_ai_calls_per_day: 10,           // 10 messages/day - teaser to upgrade
+    advanced_analytics: true,            // All Analytics (PnL, Charts, Diversity)
     priority_support: false,
     custom_categories: true,
-    imports_exports: true,
-    ai_assistant: false,
+    imports_exports: true,               // Unlimited Imports & Exports
+    ai_assistant: true,                  // AI Assistant enabled (10 msgs/day)
     price_monthly_usd: 9.99,
   },
   INVESTOR: {
     plan: 'INVESTOR',
     max_entries_per_card: 'unlimited',
-    max_ai_calls_per_day: 50,
-    advanced_analytics: true, // Deep Analytics
-    priority_support: false,
+    max_ai_calls_per_day: 50,            // 50 messages/day - deep conversations
+    advanced_analytics: true,
+    priority_support: true,              // Priority Support (faster email response)
     custom_categories: true,
     imports_exports: true,
     ai_assistant: true,
@@ -132,9 +159,9 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
   WHALE: {
     plan: 'WHALE',
     max_entries_per_card: 'unlimited',
-    max_ai_calls_per_day: 'unlimited',
+    max_ai_calls_per_day: 'unlimited',   // Unlimited AI messages
     advanced_analytics: true,
-    priority_support: true,
+    priority_support: true,              // VIP Priority Support
     custom_categories: true,
     imports_exports: true,
     ai_assistant: true,
@@ -150,33 +177,34 @@ export interface PlanFeature {
   tooltip?: string;
 }
 
+/**
+ * Plan Features for UI Display
+ * These are shown on pricing cards and comparison tables
+ */
 export const PLAN_FEATURES: Record<SubscriptionPlan, PlanFeature[]> = {
   STARTER: [
-    { name: '3 Assets per Asset Class', included: true },
-    { name: 'Unlimited Manual Transactions', included: true },
-    { name: 'Basic Portfolio Tracking', included: true },
-    { name: 'No Credit Card Required', included: true },
-    { name: 'Imports & Exports', included: false },
-    { name: 'AI Analytics', included: false },
+    { name: 'Unlimited Assets & Inputs', included: true, tooltip: 'Track as many assets as you want across all categories' },
+    { name: 'Basic Analytics', included: true, tooltip: 'Portfolio Value & Allocation charts' },
+    { name: 'No Imports (Manual Entry Only)', included: false, tooltip: 'You must manually enter all your data' },
+    { name: 'No AI Assistant', included: false, tooltip: 'Upgrade to get AI-powered insights' },
+    { name: 'No AI Recommendations', included: false },
   ],
   TRADER: [
-    { name: 'Unlimited Assets', included: true },
-    { name: 'Imports & Exports (CSV, PDF)', included: true },
-    { name: 'Automated Data', included: true },
-    { name: 'Basic AI Analytics', included: true },
-    { name: 'AI Assistant', included: false },
+    { name: 'Everything in Starter', included: true },
+    { name: 'Unlimited Imports & Exports', included: true, tooltip: 'CSV, PDF, Broker Sync' },
+    { name: 'All Analytics (PnL, Diversity)', included: true, tooltip: 'Advanced charts and scores' },
+    { name: 'AI Assistant (10 msgs/day)', included: true, tooltip: 'Quick daily check-ins' },
   ],
   INVESTOR: [
-    { name: 'Unlimited Assets', included: true },
-    { name: 'AI Assistant (50 Qs/day)', included: true },
-    { name: 'Deep Analytics', included: true },
     { name: 'Everything in Trader', included: true },
+    { name: 'AI Assistant (50 msgs/day)', included: true, tooltip: 'Deep portfolio conversations' },
+    { name: 'Priority Support', included: true, tooltip: 'Faster email response times' },
   ],
   WHALE: [
-    { name: 'Unlimited Everything', included: true },
-    { name: 'Unlimited AI Assistant', included: true },
-    { name: 'Priority Support', included: true },
-    { name: 'Early Access to new tools', included: true },
+    { name: 'Everything in Investor', included: true },
+    { name: 'Unlimited AI Messages', included: true, tooltip: 'No limits on AI conversations' },
+    { name: 'VIP Priority Support', included: true, tooltip: 'Skip the support line' },
+    { name: 'Beta Access', included: true, tooltip: 'Try new features before anyone else' },
   ],
 };
 
@@ -227,7 +255,7 @@ export const STRIPE_PRODUCTS: Record<SubscriptionPlan, StripeProduct | null> = {
   TRADER: {
     id: 'prod_Tet932v2B53Owv',
     name: 'Omnifolio Trader',
-    description: 'Unlimited Assets, Imports & Exports, Basic AI Analytics',
+    description: 'Unlimited Imports & Exports, All Analytics, AI Assistant (10 msgs/day)',
     prices: {
       monthly: {
         id: process.env.STRIPE_TRADER_PRICE_ID || 'price_trader_monthly',
@@ -239,7 +267,7 @@ export const STRIPE_PRODUCTS: Record<SubscriptionPlan, StripeProduct | null> = {
   INVESTOR: {
     id: 'prod_TetJXzh000d3eK',
     name: 'Omnifolio Investor',
-    description: 'AI Assistant (50 Qs/day), Deep Analytics',
+    description: 'AI Assistant (50 msgs/day), Priority Support, Everything in Trader',
     prices: {
       monthly: {
         id: process.env.STRIPE_INVESTOR_PRICE_ID || 'price_investor_monthly',
@@ -251,7 +279,7 @@ export const STRIPE_PRODUCTS: Record<SubscriptionPlan, StripeProduct | null> = {
   WHALE: {
     id: 'prod_TetJCuGPxuKNCu',
     name: 'Omnifolio Whale',
-    description: 'Unlimited AI & Priority Support',
+    description: 'Unlimited AI, VIP Priority Support, Beta Access',
     prices: {
       monthly: {
         id: process.env.STRIPE_WHALE_PRICE_ID || 'price_whale_monthly',

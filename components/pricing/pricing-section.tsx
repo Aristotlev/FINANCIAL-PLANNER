@@ -165,12 +165,12 @@ function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
           {formatPrice(config.price_monthly_usd)}
         </h4>
         <p className="text-sm text-gray-500">
-          per month
+          {plan === 'STARTER' ? 'forever' : 'per month'}
         </p>
         {plan === 'STARTER' && (
           <div className="mt-2 space-y-1">
             <p className="text-cyan-400 text-xs font-semibold">✨ 7-day trial with UNLIMITED features</p>
-            <p className="text-gray-500 text-xs">Then free forever with basic limits</p>
+            <p className="text-gray-500 text-xs">Then free forever</p>
           </div>
         )}
       </div>
@@ -335,25 +335,31 @@ export default function PricingSection() {
                 <thead>
                   <tr className="bg-gray-800/50">
                     <th className="p-4 text-left text-gray-300 font-semibold text-sm">Feature</th>
-                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Starter</th>
-                    <th className="p-4 text-center text-gray-300 font-semibold text-sm bg-purple-900/20">Trader</th>
-                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Investor</th>
-                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Whale</th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Starter<br/><span className="text-xs text-gray-500">Free Forever</span></th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm bg-purple-900/20">Trader<br/><span className="text-xs text-purple-300">$9.99/mo</span></th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Investor<br/><span className="text-xs text-orange-300">$19.99/mo</span></th>
+                    <th className="p-4 text-center text-gray-300 font-semibold text-sm">Whale<br/><span className="text-xs text-yellow-300">$49.99/mo</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
                   {[
-                    { feature: 'Assets per Asset Class', values: ['3', 'Unlimited', 'Unlimited', 'Unlimited'] },
-                    { feature: 'Manual Inputs', values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'] },
-                    { feature: 'Imports & Exports', values: [false, true, true, true] },
-                    { feature: 'Automated Data', values: [false, true, true, true] },
-                    { feature: 'AI Analytics', values: [false, 'Basic', 'Deep', 'Deep'] },
-                    { feature: 'AI Assistant', values: [false, false, '50 Qs/day', 'Unlimited'] },
-                    { feature: 'Priority Support', values: [false, false, false, true] },
-                    { feature: 'Early Access', values: [false, false, false, true] },
+                    { feature: 'Assets & Inputs', values: ['Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'] },
+                    { feature: 'Basic Analytics', values: [true, true, true, true], tooltip: 'Portfolio Value & Allocation' },
+                    { feature: 'Advanced Analytics', values: [false, true, true, true], tooltip: 'PnL, Charts, Diversity Scores' },
+                    { feature: 'Imports & Exports', values: ['❌ Manual Only', 'Unlimited', 'Unlimited', 'Unlimited'] },
+                    { feature: 'AI Assistant', values: ['❌ None', '10 msgs/day', '50 msgs/day', 'Unlimited'] },
+                    { feature: 'AI Recommendations', values: [false, true, true, true] },
+                    { feature: 'Priority Support', values: [false, false, true, true], tooltip: 'Faster email response' },
+                    { feature: 'VIP Support', values: [false, false, false, true], tooltip: 'Skip the line' },
+                    { feature: 'Beta Access', values: [false, false, false, true], tooltip: 'Try new features first' },
                   ].map((row, index) => (
                     <tr key={index} className="hover:bg-gray-800/30 transition-colors">
-                      <td className="p-4 text-gray-300 font-medium text-sm">{row.feature}</td>
+                      <td className="p-4 text-gray-300 font-medium text-sm">
+                        {row.feature}
+                        {row.tooltip && (
+                          <span className="block text-xs text-gray-500">{row.tooltip}</span>
+                        )}
+                      </td>
                       {row.values.map((value, i) => (
                         <td key={i} className={cn("p-4 text-center", i === 1 && "bg-purple-900/10")}>
                           {typeof value === 'boolean' ? (
@@ -366,8 +372,8 @@ export default function PricingSection() {
                             )
                           ) : (
                             <span className={cn(
-                              "font-bold",
-                              value === '0' ? 'text-gray-600' : 'text-gray-400'
+                              "font-bold text-sm",
+                              value.startsWith('❌') ? 'text-gray-600' : 'text-gray-400'
                             )}>
                               {value}
                             </span>

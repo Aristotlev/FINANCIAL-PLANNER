@@ -17,7 +17,7 @@ import {
   TaxesCard
 } from "./financial/financial-cards";
 import { useBetterAuth } from '../contexts/better-auth-context';
-import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, LayoutGrid } from "lucide-react";
+import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, LayoutGrid, Lock } from "lucide-react";
 import { AIChatAssistant } from './ui/ai-chat';
 import { ThemeToggle } from './ui/theme-toggle';
 import { CurrencySelector } from './ui/currency-selector';
@@ -32,6 +32,7 @@ import { useCardOrder } from '../contexts/card-order-context';
 import { useFinancialData } from '../contexts/financial-data-context';
 import { usePortfolioValues } from '../hooks/use-portfolio';
 import { useCurrency } from '../contexts/currency-context';
+import { useImportExportLimit } from '../hooks/use-subscription';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -54,6 +55,7 @@ export function Dashboard() {
   const { cash, savings, valuableItems, realEstate, tradingAccount, expenses } = useFinancialData();
   const { crypto, stocks } = usePortfolioValues();
   const { mainCurrency, convert } = useCurrency();
+  const { canUse: canUseImportExport, limitInfo: importExportLimitInfo } = useImportExportLimit();
   const [showVisualization, setShowVisualization] = useState(true);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [showApiKeysMenu, setShowApiKeysMenu] = useState(false);
@@ -66,6 +68,7 @@ export function Dashboard() {
   const [isZooming, setIsZooming] = useState(false);
   const [showZoomHint, setShowZoomHint] = useState(false);
   const [showCardOrderPanel, setShowCardOrderPanel] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Memoized currency update trigger - debounced to prevent cascading renders
   const currencyUpdateTriggerRef = React.useRef(0);
@@ -497,32 +500,52 @@ export function Dashboard() {
                       
                       {/* Actions */}
                       <div className="p-2">
-                        <button
-                          onClick={exportDataAsJSON}
-                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                        >
-                          <Download className="w-4 h-4 text-blue-500" />
-                          <span>Export JSON Backup</span>
-                        </button>
-                        
-                        <button
-                          onClick={exportDataAsPDF}
-                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                        >
-                          <Download className="w-4 h-4 text-green-500" />
-                          <span>Export PDF Report</span>
-                        </button>
-                        
-                        <label className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-colors">
-                          <Upload className="w-4 h-4 text-green-500" />
-                          <span>Import Backup</span>
-                          <input
-                            type="file"
-                            accept=".json"
-                            onChange={importData}
-                            className="hidden"
-                          />
-                        </label>
+                        {canUseImportExport ? (
+                          <>
+                            <button
+                              onClick={exportDataAsJSON}
+                              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                            >
+                              <Download className="w-4 h-4 text-blue-500" />
+                              <span>Export JSON Backup</span>
+                            </button>
+                            
+                            <button
+                              onClick={exportDataAsPDF}
+                              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                            >
+                              <Download className="w-4 h-4 text-green-500" />
+                              <span>Export PDF Report</span>
+                            </button>
+                            
+                            <label className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-colors">
+                              <Upload className="w-4 h-4 text-green-500" />
+                              <span>Import Backup</span>
+                              <input
+                                type="file"
+                                accept=".json"
+                                onChange={importData}
+                                className="hidden"
+                              />
+                            </label>
+                          </>
+                        ) : (
+                          <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Lock className="w-4 h-4 text-purple-400" />
+                              <span className="text-sm font-medium text-purple-300">Upgrade Required</span>
+                            </div>
+                            <p className="text-xs text-gray-400 mb-3">
+                              Import/Export features are only available on Trader plan and above.
+                            </p>
+                            <a
+                              href="/pricing"
+                              className="block w-full text-center py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white text-sm font-medium hover:from-purple-600 hover:to-pink-600 transition-all"
+                            >
+                              View Plans
+                            </a>
+                          </div>
+                        )}
                         
                         <div className="border-t border-gray-200 dark:border-gray-700 my-2" />
                         

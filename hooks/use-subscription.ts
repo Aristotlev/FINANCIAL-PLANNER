@@ -378,6 +378,45 @@ export function useAILimit() {
   };
 }
 
+// ==================== useImportExportLimit ====================
+
+/**
+ * Hook to check if user can use import/export features
+ * Only available for TRADER, INVESTOR, and WHALE plans
+ */
+export function useImportExportLimit() {
+  const [canUse, setCanUse] = useState(true);
+  const [checking, setChecking] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<LimitCheckResult | null>(null);
+
+  const checkLimit = useCallback(async (): Promise<boolean> => {
+    setChecking(true);
+    try {
+      const result = await SubscriptionService.canUseImportExport();
+      setCanUse(result.canProceed);
+      setLimitInfo(result);
+      return result.canProceed;
+    } catch (error) {
+      console.error('Error checking import/export limit:', error);
+      setCanUse(true); // Fail open
+      return true;
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkLimit();
+  }, [checkLimit]);
+
+  return {
+    canUse,
+    checking,
+    limitInfo,
+    checkLimit,
+  };
+}
+
 // ==================== useUpgradePrompt ====================
 
 /**
