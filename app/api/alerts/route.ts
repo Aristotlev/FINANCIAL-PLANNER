@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to avoid build-time errors when RESEND_API_KEY is not set
+let resend: Resend | null = null;
+
+function getResendClient(): Resend | null {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 export async function POST(request: Request) {
   try {
@@ -16,10 +24,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.error('Failed to initialize Resend client');
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
     // In a real application, you would save the alert to your database here.
     // For this demo, we'll send a confirmation email immediately.
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await resendClient.emails.send({
       from: 'Money Hub Alerts <onboarding@resend.dev>', // Use your verified domain in production
       to: userEmail || 'delivered@resend.dev', // Default for testing if no email provided
       subject: `Alert Set: ${symbol} ${condition === 'above' ? '≥' : '≤'} $${targetPrice}`,
