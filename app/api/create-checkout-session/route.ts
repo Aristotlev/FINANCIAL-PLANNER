@@ -82,11 +82,28 @@ export async function POST(req: Request) {
       billing_address_collection: 'auto',
     });
 
+    if (!session.url) {
+      console.error('Stripe session created but no URL returned');
+      return NextResponse.json(
+        { error: 'Failed to create checkout session. Please try again.' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error: any) {
     console.error('Error creating checkout session:', error);
+    
+    // Provide user-friendly error messages
+    let userMessage = 'Unable to start checkout. Please try again.';
+    if (error.code === 'resource_missing') {
+      userMessage = 'Payment configuration error. Please contact support.';
+    } else if (error.type === 'StripeInvalidRequestError') {
+      userMessage = 'Invalid payment request. Please contact support.';
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
+      { error: userMessage, details: error.message },
       { status: 500 }
     );
   }

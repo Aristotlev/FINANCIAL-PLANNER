@@ -102,9 +102,10 @@ interface PricingCardProps {
   plan: SubscriptionPlan;
   isCurrentPlan?: boolean;
   onSelect: (plan: SubscriptionPlan) => void;
+  isLoading?: boolean;
 }
 
-function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
+function PricingCard({ plan, isCurrentPlan, onSelect, isLoading }: PricingCardProps) {
   const config = PLAN_CONFIG[plan];
   const features = PLAN_FEATURES[plan];
 
@@ -208,9 +209,9 @@ function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
           variant={getButtonVariant()}
           className="w-full"
           onClick={() => onSelect(plan)}
-          disabled={isCurrentPlan}
+          disabled={isCurrentPlan || isLoading}
         >
-          {isCurrentPlan ? '✓ Current Plan' : 'Choose Plan'}
+          {isCurrentPlan ? '✓ Current Plan' : isLoading ? 'Loading...' : 'Choose Plan'}
         </Button>
       </div>
 
@@ -227,16 +228,21 @@ function PricingCard({ plan, isCurrentPlan, onSelect }: PricingCardProps) {
 }
 
 export default function PricingSection() {
-  const { subscription, startCheckout } = useSubscription();
+  const { subscription, startCheckout, loading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const { user } = useBetterAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
   const [pendingPlan, setPendingPlan] = useState<SubscriptionPlan | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const handleSelectPlan = async (plan: SubscriptionPlan) => {
     console.log('handleSelectPlan called with:', plan);
     console.log('Current subscription:', subscription);
     console.log('Current user:', user);
+    
+    // Clear any previous error
+    setCheckoutError(null);
     
     if (subscription && subscription.plan === plan) {
       console.log('Plan is already current, returning');
@@ -258,22 +264,71 @@ export default function PricingSection() {
     }
 
     console.log('Starting checkout for plan:', plan);
-    // Pass the BetterAuth user directly to startCheckout
-    await startCheckout(plan, { id: user.id, email: user.email });
+    setCheckoutLoading(true);
+    
+    try {
+      // Pass the BetterAuth user directly to startCheckout
+      const success = await startCheckout(plan, { id: user.id, email: user.email });
+      
+      if (!success) {
+        // If startCheckout returns false, show an error
+        setCheckoutError('Failed to start checkout. Please try again or contact support.');
+      }
+      // If successful, the user will be redirected to Stripe
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setCheckoutError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
-  const handleAuthClose = () => {
+  const handleAuthClose = async () => {
     setShowAuthModal(false);
     // If user just authenticated and had a pending plan, proceed to checkout
     if (user && pendingPlan) {
-      startCheckout(pendingPlan, { id: user.id, email: user.email });
-      setPendingPlan(null);
+      setCheckoutLoading(true);
+      try {
+        await startCheckout(pendingPlan, { id: user.id, email: user.email });
+      } catch (err) {
+        console.error('Checkout error after auth:', err);
+        setCheckoutError(err instanceof Error ? err.message : 'Failed to start checkout');
+      } finally {
+        setCheckoutLoading(false);
+        setPendingPlan(null);
+      }
     }
   };
 
   return (
     <Section>
       <Container className="flex flex-col items-center gap-6 text-center">
+        {/* Error Banner */}
+        {(checkoutError || subscriptionError) && (
+          <div className="w-full max-w-2xl p-4 bg-red-500/10 border border-red-500/30 rounded-xl mb-4">
+            <div className="flex items-center justify-center gap-3 text-red-300">
+              <X className="w-5 h-5 flex-shrink-0" />
+              <p className="font-medium">{checkoutError || subscriptionError}</p>
+              <button 
+                onClick={() => setCheckoutError(null)}
+                className="ml-2 text-red-400 hover:text-red-200"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {/* Loading Overlay */}
+        {checkoutLoading && (
+          <div className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            <div className="bg-gray-900 rounded-2xl p-8 flex flex-col items-center gap-4 border border-gray-700">
+              <div className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <p className="text-white font-medium">Redirecting to checkout...</p>
+            </div>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="mb-4">
           <span className="text-sm font-medium text-cyan-400 uppercase tracking-widest">Pricing</span>
@@ -306,21 +361,25 @@ export default function PricingSection() {
             plan="STARTER"
             isCurrentPlan={subscription?.plan === 'STARTER'}
             onSelect={handleSelectPlan}
+            isLoading={checkoutLoading}
           />
           <PricingCard
             plan="TRADER"
             isCurrentPlan={subscription?.plan === 'TRADER'}
             onSelect={handleSelectPlan}
+            isLoading={checkoutLoading}
           />
           <PricingCard
             plan="INVESTOR"
             isCurrentPlan={subscription?.plan === 'INVESTOR'}
             onSelect={handleSelectPlan}
+            isLoading={checkoutLoading}
           />
           <PricingCard
             plan="WHALE"
             isCurrentPlan={subscription?.plan === 'WHALE'}
             onSelect={handleSelectPlan}
+            isLoading={checkoutLoading}
           />
         </div>
 

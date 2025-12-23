@@ -121,8 +121,10 @@ export function useSubscription() {
       if (data.url) {
         console.log('Redirecting to Stripe:', data.url);
         window.location.href = data.url;
+        return true;
+      } else {
+        throw new Error('No checkout URL received. Please try again.');
       }
-      return true;
     } catch (err) {
       console.error('Error starting checkout:', err);
       setError(err instanceof Error ? err.message : 'Failed to start checkout');
