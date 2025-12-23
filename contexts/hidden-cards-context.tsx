@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 
 // All available card types
 export type CardType = 
@@ -52,25 +52,67 @@ const HiddenCardsContext = createContext<HiddenCardsContextType | undefined>(und
 
 const STORAGE_KEY = 'moneyHub_hiddenCards';
 
+// Debounce helper
+function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), delay);
+  };
+}
+
 export function HiddenCardsProvider({ children }: { children: ReactNode }) {
   const [hiddenCards, setHiddenCards] = useState<CardType[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const supabaseSyncRef = useRef<((cards: CardType[]) => void) | null>(null);
 
-  // Load hidden cards from localStorage on mount
+  // Initialize Supabase sync function
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setHiddenCards(parsed);
+    import('../lib/supabase/supabase-data-service').then(({ SupabaseDataService }) => {
+      supabaseSyncRef.current = debounce(async (cards: CardType[]) => {
+        try {
+          await SupabaseDataService.updateHiddenCards(cards);
+        } catch (error) {
+          console.error('Error syncing hidden cards to Supabase:', error);
         }
+      }, 1000);
+    }).catch(() => {
+      // Supabase not available
+    });
+  }, []);
+
+  // Load hidden cards from localStorage and Supabase on mount
+  useEffect(() => {
+    const loadHiddenCards = async () => {
+      try {
+        // First, load from localStorage for immediate display
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setHiddenCards(parsed);
+          }
+        }
+
+        // Then try to load from Supabase
+        try {
+          const { SupabaseDataService } = await import('../lib/supabase/supabase-data-service');
+          const prefs = await SupabaseDataService.getUserPreferences();
+          if (prefs?.hiddenCards && Array.isArray(prefs.hiddenCards)) {
+            setHiddenCards(prefs.hiddenCards as CardType[]);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs.hiddenCards));
+          }
+        } catch {
+          // Supabase not available
+        }
+      } catch (error) {
+        console.error('Error loading hidden cards:', error);
+      } finally {
+        setIsLoaded(true);
       }
-    } catch (error) {
-      console.error('Error loading hidden cards:', error);
-    } finally {
-      setIsLoaded(true);
-    }
+    };
+
+    loadHiddenCards();
   }, []);
 
   // Save to localStorage whenever hiddenCards changes
@@ -78,32 +120,35 @@ export function HiddenCardsProvider({ children }: { children: ReactNode }) {
     if (isLoaded) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(hiddenCards));
+        if (supabaseSyncRef.current) {
+          supabaseSyncRef.current(hiddenCards);
+        }
       } catch (error) {
         console.error('Error saving hidden cards:', error);
       }
     }
   }, [hiddenCards, isLoaded]);
 
-  const hideCard = (cardId: CardType) => {
+  const hideCard = useCallback((cardId: CardType) => {
     setHiddenCards(prev => {
       if (!prev.includes(cardId)) {
         return [...prev, cardId];
       }
       return prev;
     });
-  };
+  }, []);
 
-  const showCard = (cardId: CardType) => {
+  const showCard = useCallback((cardId: CardType) => {
     setHiddenCards(prev => prev.filter(id => id !== cardId));
-  };
+  }, []);
 
-  const isCardHidden = (cardId: CardType) => {
+  const isCardHidden = useCallback((cardId: CardType) => {
     return hiddenCards.includes(cardId);
-  };
+  }, [hiddenCards]);
 
-  const getHiddenCardInfo = (): CardInfo[] => {
+  const getHiddenCardInfo = useCallback((): CardInfo[] => {
     return hiddenCards.map(id => CARD_METADATA[id]);
-  };
+  }, [hiddenCards]);
 
   return (
     <HiddenCardsContext.Provider

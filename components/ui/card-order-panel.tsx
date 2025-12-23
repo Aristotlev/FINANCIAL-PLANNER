@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GripVertical, X, RotateCcw, Check } from 'lucide-react';
 import { useCardOrder, DEFAULT_CARD_ORDER } from '../../contexts/card-order-context';
 import { CardType, CARD_METADATA } from '../../contexts/hidden-cards-context';
@@ -14,7 +14,58 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
   const { cardOrder, moveCard, resetOrder } = useCardOrder();
   const [draggedCard, setDraggedCard] = useState<CardType | null>(null);
   const [dragOverCard, setDragOverCard] = useState<CardType | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const dragNodeRef = useRef<HTMLDivElement | null>(null);
+  const touchStartY = useRef<number>(0);
+  const touchCurrentCard = useRef<CardType | null>(null);
+  const listContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Detect touch device on mount
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  // Get card element at a given Y position
+  const getCardAtPosition = useCallback((y: number): CardType | null => {
+    if (!listContainerRef.current) return null;
+    
+    const cardElements = listContainerRef.current.querySelectorAll('[data-card-id]');
+    for (const element of cardElements) {
+      const rect = element.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        return element.getAttribute('data-card-id') as CardType;
+      }
+    }
+    return null;
+  }, []);
+
+  // Touch event handlers for mobile drag and drop
+  const handleTouchStart = useCallback((e: React.TouchEvent, cardId: CardType) => {
+    const touch = e.touches[0];
+    touchStartY.current = touch.clientY;
+    touchCurrentCard.current = cardId;
+    setDraggedCard(cardId);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!draggedCard) return;
+    
+    const touch = e.touches[0];
+    const cardAtPosition = getCardAtPosition(touch.clientY);
+    
+    if (cardAtPosition && cardAtPosition !== draggedCard) {
+      setDragOverCard(cardAtPosition);
+    }
+  }, [draggedCard, getCardAtPosition]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (draggedCard && dragOverCard && draggedCard !== dragOverCard) {
+      moveCard(draggedCard, dragOverCard);
+    }
+    setDraggedCard(null);
+    setDragOverCard(null);
+    touchCurrentCard.current = null;
+  }, [draggedCard, dragOverCard, moveCard]);
 
   if (!isOpen) return null;
 
@@ -109,7 +160,12 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
         </div>
 
         {/* Card List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div 
+          ref={listContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-2"
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {cardOrder.map((cardId, index) => {
             const cardInfo = CARD_METADATA[cardId];
             const isDragging = draggedCard === cardId;
@@ -119,16 +175,18 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
               <div
                 key={cardId}
                 ref={isDragging ? dragNodeRef : null}
-                draggable
+                data-card-id={cardId}
+                draggable={!isTouchDevice}
                 onDragStart={(e) => handleDragStart(e, cardId)}
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
                 onDragEnter={(e) => handleDragEnter(e, cardId)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, cardId)}
+                onTouchStart={(e) => handleTouchStart(e, cardId)}
                 className={`
                   flex items-center gap-3 p-3 rounded-xl cursor-grab active:cursor-grabbing
-                  transition-all duration-200 select-none
+                  transition-all duration-200 select-none touch-none
                   ${isDragging 
                     ? 'opacity-50 scale-95 bg-gray-100 dark:bg-gray-800' 
                     : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'

@@ -1534,4 +1534,137 @@ export class SupabaseDataService {
       throw error;
     }
   }
+
+  // ==================== USER PREFERENCES (Card Order, Hidden Cards, etc.) ====================
+  
+  static async getUserPreferences(): Promise<{
+    cardOrder?: string[];
+    hiddenCards?: string[];
+    theme?: string;
+    currency?: string;
+    [key: string]: any;
+  } | null> {
+    if (!this.isConfigured) return null;
+
+    try {
+      const userId = await this.getUserId();
+      if (!userId) return null;
+
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        // PGRST116 means no rows returned, which is fine for new users
+        if (error.code !== 'PGRST116') {
+          console.error('Error fetching user preferences:', error);
+        }
+        return null;
+      }
+
+      // Type assertion for the data
+      const prefData = data as any;
+      
+      // Merge the preferences JSON with top-level fields
+      return {
+        theme: prefData?.theme,
+        currency: prefData?.currency,
+        language: prefData?.language,
+        notifications_enabled: prefData?.notifications_enabled,
+        ...(prefData?.preferences as Record<string, any> || {})
+      };
+    } catch (error) {
+      if (!this.isAuthError(error)) {
+        console.error('Error in getUserPreferences:', error);
+      }
+      return null;
+    }
+  }
+
+  static async saveUserPreferences(preferences: {
+    cardOrder?: string[];
+    hiddenCards?: string[];
+    theme?: string;
+    currency?: string;
+    [key: string]: any;
+  }): Promise<void> {
+    if (!this.isConfigured) return;
+
+    try {
+      const userId = await this.getUserId();
+      if (!userId) return;
+
+      // Separate top-level fields from the preferences JSON
+      const { theme, currency, language, notifications_enabled, ...otherPrefs } = preferences;
+
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: userId,
+          theme: theme || 'system',
+          currency: currency || 'USD',
+          language: language || 'en',
+          notifications_enabled: notifications_enabled ?? true,
+          preferences: otherPrefs,
+          updated_at: new Date().toISOString()
+        } as any, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving user preferences:', error);
+        throw error;
+      }
+    } catch (error) {
+      if (!this.isAuthError(error)) {
+        console.error('Error in saveUserPreferences:', error);
+      }
+    }
+  }
+
+  static async updateCardOrder(cardOrder: string[]): Promise<void> {
+    if (!this.isConfigured) return;
+
+    try {
+      const userId = await this.getUserId();
+      if (!userId) return;
+
+      // First, get existing preferences
+      const existing = await this.getUserPreferences();
+      
+      // Merge with new card order
+      await this.saveUserPreferences({
+        ...existing,
+        cardOrder
+      });
+    } catch (error) {
+      if (!this.isAuthError(error)) {
+        console.error('Error in updateCardOrder:', error);
+      }
+    }
+  }
+
+  static async updateHiddenCards(hiddenCards: string[]): Promise<void> {
+    if (!this.isConfigured) return;
+
+    try {
+      const userId = await this.getUserId();
+      if (!userId) return;
+
+      // First, get existing preferences
+      const existing = await this.getUserPreferences();
+      
+      // Merge with new hidden cards
+      await this.saveUserPreferences({
+        ...existing,
+        hiddenCards
+      });
+    } catch (error) {
+      if (!this.isAuthError(error)) {
+        console.error('Error in updateHiddenCards:', error);
+      }
+    }
+  }
 }
