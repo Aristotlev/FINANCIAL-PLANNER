@@ -1550,15 +1550,10 @@ export class SupabaseDataService {
         return defaultProfiles;
       }
 
-      const { data, error } = await supabase
-        .from('tax_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      // Use secure API route instead of direct Supabase call
+      const data = await fetchData<any[]>('tax_profiles');
 
-      if (error) {
-        console.error('Error fetching tax profiles:', error.message || error);
-        if (Object.keys(error).length > 0) console.error('Error details:', error);
+      if (!data) {
         return defaultProfiles;
       }
 
@@ -1631,13 +1626,11 @@ export class SupabaseDataService {
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
-        .from('tax_profiles')
-        .upsert(dbProfile);
+      // Use secure API route instead of direct Supabase call
+      const result = await saveData('tax_profiles', dbProfile);
 
-      if (error) {
-        console.error('Error saving tax profile:', error);
-        throw error;
+      if (!result) {
+        throw new Error('Failed to save tax profile');
       }
       
       this.invalidateCache('tax_profiles');
@@ -1658,15 +1651,11 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('tax_profiles')
-        .delete()
-        .eq('id', profileId)
-        .eq('user_id', userId);
+      // Use secure API route instead of direct Supabase call
+      const success = await deleteData('tax_profiles', profileId);
 
-      if (error) {
-        console.error('Error deleting tax profile:', error);
-        throw error;
+      if (!success) {
+        throw new Error('Failed to delete tax profile');
       }
       
       this.invalidateCache('tax_profiles');

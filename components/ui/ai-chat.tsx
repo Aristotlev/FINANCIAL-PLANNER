@@ -113,17 +113,15 @@ export function AIChatAssistant() {
   const sendMessageRef = useRef<() => Promise<void>>();
   const isListeningRef = useRef<boolean>(false); // Track listening state to avoid closure issues
 
-  // Load financial context when chat opens AND request mic permission
+  // Load financial context when chat opens
   // Also refresh data periodically (every 2 minutes)
   useEffect(() => {
     if (isOpen) {
       // Initial load
       geminiService.loadFinancialContext().catch(console.error);
       
-      // Auto-request microphone permission when chat opens
-      if (!micPermissionGranted) {
-        requestMicrophonePermission().catch(console.error);
-      }
+      // Don't auto-request microphone - only request when user clicks mic button
+      // This avoids "Permission denied" errors and browser blocking
       
       // Set up periodic refresh (every 2 minutes)
       const refreshInterval = setInterval(() => {
@@ -133,7 +131,7 @@ export function AIChatAssistant() {
       // Cleanup interval on unmount
       return () => clearInterval(refreshInterval);
     }
-  }, [isOpen, geminiService, micPermissionGranted]);
+  }, [isOpen, geminiService]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -321,12 +319,17 @@ export function AIChatAssistant() {
       setCheckingPermission(false);
       setMicPermissionGranted(false);
       
-      console.error('❌ Microphone permission error:', error);
+      // Only show alerts when user explicitly clicked the mic button (not on auto-check)
+      // The error.name check determines if we should show UI feedback
+      const showAlert = error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError';
+      
+      // Log as warning instead of error to avoid error interceptors
+      console.warn('🎤 Microphone permission not granted:', error.name);
       
       // Check if Brave browser for custom message
       const isBrave = (navigator as any).brave !== undefined;
       
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      if (showAlert && error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         if (isBrave) {
           alert('🦁 Brave Browser: Microphone Access Blocked\n\nBrave has stricter privacy settings. To enable:\n\n1. Click the 🦁 Shields icon in address bar\n2. Click "Advanced View" or "Site settings"\n3. Scroll to "Microphone"\n4. Change from "Block" to "Allow"\n5. Refresh the page (F5)\n6. Try microphone again\n\nAlternative: Use Chrome if issues persist.');
         } else {

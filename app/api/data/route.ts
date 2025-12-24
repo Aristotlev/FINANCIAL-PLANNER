@@ -35,7 +35,9 @@ type DataTable =
   | 'subscriptions'
   | 'debt_accounts'
   | 'user_preferences'
-  | 'portfolio_snapshots';
+  | 'portfolio_snapshots'
+  | 'user_subscriptions'
+  | 'user_usage';
 
 const ALLOWED_TABLES: DataTable[] = [
   'cash_accounts',
@@ -52,6 +54,8 @@ const ALLOWED_TABLES: DataTable[] = [
   'debt_accounts',
   'user_preferences',
   'portfolio_snapshots',
+  'user_subscriptions',
+  'user_usage',
 ];
 
 // Fields that should be encrypted in the database

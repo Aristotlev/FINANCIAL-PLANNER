@@ -14,6 +14,7 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
   const [isHovered, setIsHovered] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const [rotation, setRotation] = useState({ x: 0, y: 0 });
 
   // Detect touch device on mount
   useEffect(() => {
@@ -52,14 +53,38 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
     }
   }, [cardId, moveCard]);
 
+  // 3D Tilt Effect - GPU Accelerated
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (isTouchDevice || !wrapperRef.current) return;
+
+    const rect = wrapperRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    // Calculate rotation (max 10 degrees)
+    const rotateX = ((y - centerY) / centerY) * -5;
+    const rotateY = ((x - centerX) / centerX) * 5;
+
+    setRotation({ x: rotateX, y: rotateY });
+  }, [isTouchDevice]);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    setRotation({ x: 0, y: 0 });
+  }, []);
+
   return (
     <div
       ref={wrapperRef}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
       onMouseDownCapture={handleMouseDown}
       onMouseUp={handleMouseUp}
-      className={`transition-all duration-200 relative group ${isTouchDevice ? '' : 'cursor-grab hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]'}`}
+      className={`transition-all duration-200 relative group ${isTouchDevice ? '' : 'cursor-grab hover:shadow-2xl active:scale-[0.98]'}`}
       style={{
         // Only disable touch-action on non-touch devices (for mouse drag)
         // On touch devices, allow normal scrolling
@@ -67,7 +92,11 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
         userSelect: 'none',
         WebkitUserSelect: 'none',
         zIndex: isHovered ? 50 : 1,
-        transition: 'all 0.2s ease',
+        transform: isHovered && !isTouchDevice 
+          ? `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.02)` 
+          : 'perspective(1000px) rotateX(0) rotateY(0) scale(1)',
+        transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out',
+        willChange: 'transform',
       }}
     >
       {children}

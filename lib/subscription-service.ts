@@ -1,6 +1,8 @@
 /**
  * Subscription Service
  * Manages user subscriptions, usage tracking, and plan limits
+ * 
+ * Uses the secure /api/data route which runs with service role to bypass RLS
  */
 
 "use client";
@@ -20,6 +22,55 @@ import { PLAN_CONFIG, getEffectivePlanLimits, isTrialActive } from '@/types/subs
 
 export class SubscriptionService {
   private static isConfigured = isSupabaseConfigured();
+
+  // ==================== API HELPERS ====================
+
+  /**
+   * Make a GET request to the secure data API
+   */
+  private static async apiGet<T>(table: string): Promise<{ data: T[] | null; error: Error | null }> {
+    try {
+      const response = await fetch(`/api/data?table=${table}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        return { data: null, error: new Error(errorData.error || `HTTP ${response.status}`) };
+      }
+      
+      const data = await response.json();
+      return { data: data.data || data, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+    }
+  }
+
+  /**
+   * Make a POST request to the secure data API (insert or update)
+   */
+  private static async apiPost<T>(table: string, payload: any, id?: string): Promise<{ data: T | null; error: Error | null }> {
+    try {
+      const url = id ? `/api/data?table=${table}&id=${id}` : `/api/data?table=${table}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        return { data: null, error: new Error(errorData.error || `HTTP ${response.status}`) };
+      }
+      
+      const data = await response.json();
+      return { data: data.data || data, error: null };
+    } catch (error) {
+      return { data: null, error: error instanceof Error ? error : new Error('Unknown error') };
+    }
+  }
 
   // ==================== USER ID ====================
 
@@ -46,6 +97,7 @@ export class SubscriptionService {
 
   /**
    * Get current user's subscription
+   * Uses the secure /api/data route which runs with service role
    */
   static async getCurrentSubscription(): Promise<UserSubscription | null> {
     if (!this.isConfigured) {
@@ -57,48 +109,37 @@ export class SubscriptionService {
       const userId = await this.getUserId();
       if (!userId) return this.getDefaultTrialSubscription();
 
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      // Use the secure API route instead of direct Supabase call
+      const { data, error } = await this.apiGet<UserSubscription>('user_subscriptions');
 
-      if (error) {
-        // If no subscription found (PGRST116), create a default trial one
-        if (error.code === 'PGRST116') {
-          console.log('No subscription found, creating default trial for user:', userId);
+      if (error || !data || data.length === 0) {
+        // No subscription found, create a default trial one
+        console.log('No subscription found, creating default trial for user:', userId);
+        
+        const now = new Date();
+        const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        
+        const newSubscription = {
+          user_id: userId,
+          plan: 'FREE_TRIAL',
+          status: 'TRIAL',
+          trial_start_date: now.toISOString(),
+          trial_end_date: trialEnd.toISOString(),
+          trial_used: false
+        };
+        
+        const { data: createdSub, error: createError } = await this.apiPost<UserSubscription>('user_subscriptions', newSubscription);
           
-          const now = new Date();
-          const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-          
-          const newSubscription = {
-            user_id: userId,
-            plan: 'FREE_TRIAL',
-            status: 'TRIAL',
-            trial_start_date: now.toISOString(),
-            trial_end_date: trialEnd.toISOString(),
-            trial_used: false
-          };
-          
-          const { data: createdSub, error: createError } = await (supabase as any)
-            .from('user_subscriptions')
-            .insert(newSubscription)
-            .select()
-            .single();
-            
-          if (createError) {
-            console.error('Error creating default subscription:', createError);
-            return this.getDefaultTrialSubscription();
-          }
-          
-          return createdSub as UserSubscription;
+        if (createError || !createdSub) {
+          console.error('Error creating default subscription:', createError?.message);
+          return this.getDefaultTrialSubscription();
         }
         
-        console.error('Error fetching subscription:', error);
-        return this.getDefaultTrialSubscription();
+        return createdSub;
       }
 
-      return data as UserSubscription;
+      // Return the first (and should be only) subscription
+      return data[0];
     } catch (error) {
       console.error('Error in getCurrentSubscription:', error);
       return this.getDefaultTrialSubscription();
@@ -128,6 +169,7 @@ export class SubscriptionService {
 
   /**
    * Update user subscription plan
+   * Uses the secure /api/data route which runs with service role
    */
   static async updateSubscription(
     plan: SubscriptionPlan,
@@ -143,6 +185,10 @@ export class SubscriptionService {
       const userId = await this.getUserId();
       if (!userId) return null;
 
+      // First get the current subscription to get its ID
+      const { data: existing } = await this.apiGet<UserSubscription>('user_subscriptions');
+      if (!existing || existing.length === 0) return null;
+
       const updateData = {
         plan: plan as string,
         status: 'ACTIVE',
@@ -154,18 +200,11 @@ export class SubscriptionService {
         }),
       };
 
-      // Use type assertion to work around strict Database type checking
-      // The user_subscriptions table exists but types may be out of sync
-      const { data, error } = await (supabase as any)
-        .from('user_subscriptions')
-        .update(updateData)
-        .eq('user_id', userId)
-        .select()
-        .single();
+      const { data, error } = await this.apiPost<UserSubscription>('user_subscriptions', updateData, existing[0].id);
 
       if (error) throw error;
 
-      return data as UserSubscription;
+      return data;
     } catch (error) {
       console.error('Error updating subscription:', error);
       return null;
@@ -174,6 +213,7 @@ export class SubscriptionService {
 
   /**
    * Cancel subscription
+   * Uses the secure /api/data route which runs with service role
    */
   static async cancelSubscription(cancelAtPeriodEnd: boolean = true): Promise<boolean> {
     if (!this.isConfigured) return false;
@@ -182,15 +222,15 @@ export class SubscriptionService {
       const userId = await this.getUserId();
       if (!userId) return false;
 
-      // Use type assertion to work around strict Database type checking
-      const { error } = await (supabase as any)
-        .from('user_subscriptions')
-        .update({
-          cancel_at_period_end: cancelAtPeriodEnd,
-          cancelled_at: new Date().toISOString(),
-          status: cancelAtPeriodEnd ? 'ACTIVE' : 'CANCELLED',
-        })
-        .eq('user_id', userId);
+      // First get the current subscription to get its ID
+      const { data: existing } = await this.apiGet<UserSubscription>('user_subscriptions');
+      if (!existing || existing.length === 0) return false;
+
+      const { error } = await this.apiPost<UserSubscription>('user_subscriptions', {
+        cancel_at_period_end: cancelAtPeriodEnd,
+        cancelled_at: new Date().toISOString(),
+        status: cancelAtPeriodEnd ? 'ACTIVE' : 'CANCELLED',
+      }, existing[0].id);
 
       if (error) throw error;
 
@@ -205,6 +245,7 @@ export class SubscriptionService {
 
   /**
    * Get today's usage for current user
+   * Uses the secure /api/data route which runs with service role
    */
   static async getTodayUsage(): Promise<UserUsage | null> {
     if (!this.isConfigured) {
@@ -215,21 +256,19 @@ export class SubscriptionService {
       const userId = await this.getUserId();
       if (!userId) return this.getDefaultUsage();
 
-      const today = new Date().toISOString().split('T')[0];
+      // Use the secure API route - it automatically filters by user_id
+      const { data, error } = await this.apiGet<UserUsage>('user_usage');
 
-      const { data, error } = await supabase
-        .from('user_usage')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('date', today)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 = no rows found, which is fine
+      if (error) {
         console.error('Error fetching usage:', error);
+        return this.getDefaultUsage();
       }
 
-      return data ? (data as UserUsage) : this.getDefaultUsage();
+      // Filter for today's date
+      const today = new Date().toISOString().split('T')[0];
+      const todayUsage = data?.find(u => u.date === today);
+
+      return todayUsage || this.getDefaultUsage();
     } catch (error) {
       console.error('Error in getTodayUsage:', error);
       return this.getDefaultUsage();

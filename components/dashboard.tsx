@@ -33,6 +33,7 @@ import { useFinancialData } from '../contexts/financial-data-context';
 import { usePortfolioValues } from '../hooks/use-portfolio';
 import { useCurrency } from '../contexts/currency-context';
 import { useImportExportLimit } from '../hooks/use-subscription';
+import { GPUOptimizedWrapper } from './ui/gpu-optimized-wrapper';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -657,7 +658,7 @@ export function Dashboard() {
         
         <div className="container mx-auto px-2 sm:px-4">
           {/* All Financial Cards - Dynamic Order with Drag-and-Drop */}
-          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center py-4 px-2">
+          <GPUOptimizedWrapper estimatedHeight="800px" className="flex flex-wrap gap-4 sm:gap-6 justify-center py-4 px-2">
             {cardOrder.map(cardId => {
               if (isCardHidden(cardId)) return null;
               
@@ -667,7 +668,7 @@ export function Dashboard() {
                 </DraggableCardWrapper>
               );
             })}
-          </div>
+          </GPUOptimizedWrapper>
         </div>
       </div>
 

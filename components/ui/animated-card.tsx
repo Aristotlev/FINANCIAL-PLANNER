@@ -108,6 +108,7 @@ export function AnimatedCard({ className, children, ...props }: CardProps) {
           WebkitBackfaceVisibility: "hidden",
           transition: "transform 0.15s ease-out",
           willChange: "transform",
+          contain: "layout style",
         }}
         {...props}
       >
