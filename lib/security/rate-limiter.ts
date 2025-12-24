@@ -2,15 +2,23 @@
  * Advanced Rate Limiter with Multiple Strategies
  * 
  * Features:
- * - In-memory rate limiting (for single instance)
+ * - Redis-based rate limiting (for multi-instance deployments)
+ * - Falls back to in-memory for development
  * - User-based and IP-based limiting
  * - Tiered limits based on subscription
  * - Automatic cleanup of stale entries
  * 
- * For distributed systems, integrate with Upstash Redis or similar
+ * For distributed systems, configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+  isRedisConfigured, 
+  redisGet, 
+  redisSet, 
+  RedisKeys, 
+  RedisRateLimitData 
+} from './redis';
 
 interface RateLimitRecord {
   count: number;
@@ -19,7 +27,7 @@ interface RateLimitRecord {
   blockUntil?: number;
 }
 
-// In-memory store
+// In-memory store (fallback for development)
 const rateLimitStore = new Map<string, RateLimitRecord>();
 
 // Cleanup interval (run every 60 seconds)
@@ -61,7 +69,7 @@ export function getClientIdentifier(request: NextRequest, userId?: string): stri
 }
 
 /**
- * Start cleanup interval if not already running
+ * Start cleanup interval if not already running (for in-memory fallback)
  */
 function ensureCleanupInterval() {
   if (!cleanupInterval) {
@@ -81,7 +89,109 @@ function ensureCleanupInterval() {
 }
 
 /**
- * Check rate limit for a request
+ * Check rate limit using Redis (async version for distributed deployments)
+ */
+export async function checkRateLimitAsync(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<{
+  success: boolean;
+  remaining: number;
+  retryAfter?: number;
+  headers: Record<string, string>;
+}> {
+  // If Redis is not configured, fall back to in-memory
+  if (!isRedisConfigured()) {
+    return checkRateLimit(identifier, config);
+  }
+
+  const now = Date.now();
+  const key = RedisKeys.rateLimit(identifier);
+  
+  // Try to get existing record from Redis
+  let record = await redisGet<RedisRateLimitData>(key);
+
+  // Check if client is blocked
+  if (record?.blocked && record.blockUntil && now < record.blockUntil) {
+    const retryAfter = Math.ceil((record.blockUntil - now) / 1000);
+    return {
+      success: false,
+      remaining: 0,
+      retryAfter,
+      headers: {
+        'X-RateLimit-Limit': config.limit.toString(),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': new Date(record.blockUntil).toISOString(),
+        'Retry-After': retryAfter.toString(),
+      },
+    };
+  }
+
+  // Reset or create new record
+  if (!record || now > record.resetTime) {
+    record = {
+      count: 1,
+      resetTime: now + config.windowMs,
+      blocked: false,
+    };
+    const ttlSeconds = Math.ceil(config.windowMs / 1000);
+    await redisSet(key, record, ttlSeconds);
+
+    return {
+      success: true,
+      remaining: config.limit - 1,
+      headers: {
+        'X-RateLimit-Limit': config.limit.toString(),
+        'X-RateLimit-Remaining': (config.limit - 1).toString(),
+        'X-RateLimit-Reset': new Date(record.resetTime).toISOString(),
+      },
+    };
+  }
+
+  // Increment counter
+  record.count++;
+
+  // Check if limit exceeded
+  if (record.count > config.limit) {
+    if (config.blockDuration) {
+      record.blocked = true;
+      record.blockUntil = now + config.blockDuration;
+    }
+    
+    const ttlSeconds = Math.ceil((config.blockDuration || config.windowMs) / 1000);
+    await redisSet(key, record, ttlSeconds);
+
+    const retryAfter = Math.ceil((record.resetTime - now) / 1000);
+    return {
+      success: false,
+      remaining: 0,
+      retryAfter,
+      headers: {
+        'X-RateLimit-Limit': config.limit.toString(),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': new Date(record.resetTime).toISOString(),
+        'Retry-After': retryAfter.toString(),
+      },
+    };
+  }
+
+  // Update record in Redis
+  const ttlSeconds = Math.ceil((record.resetTime - now) / 1000);
+  await redisSet(key, record, ttlSeconds);
+
+  return {
+    success: true,
+    remaining: config.limit - record.count,
+    headers: {
+      'X-RateLimit-Limit': config.limit.toString(),
+      'X-RateLimit-Remaining': (config.limit - record.count).toString(),
+      'X-RateLimit-Reset': new Date(record.resetTime).toISOString(),
+    },
+  };
+}
+
+/**
+ * Check rate limit for a request (in-memory fallback)
  */
 export function checkRateLimit(
   identifier: string,
@@ -190,6 +300,58 @@ export function withRateLimit(
     : getClientIdentifier(request, userId);
     
   const result = checkRateLimit(identifier, config);
+
+  if (!result.success) {
+    const response = NextResponse.json(
+      {
+        error: 'Too many requests',
+        message: config.message || `Rate limit exceeded. Please try again in ${result.retryAfter} seconds.`,
+        retryAfter: result.retryAfter,
+      },
+      { status: 429 }
+    );
+
+    // Add rate limit headers
+    Object.entries(result.headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return {
+      success: false,
+      response,
+      headers: result.headers,
+    };
+  }
+
+  return {
+    success: true,
+    headers: result.headers,
+  };
+}
+
+/**
+ * Async rate limit middleware wrapper (uses Redis when available)
+ * Recommended for production multi-instance deployments
+ */
+export async function withRateLimitAsync(
+  request: NextRequest,
+  config: RateLimitConfig,
+  userId?: string
+): Promise<{
+  success: boolean;
+  response?: NextResponse;
+  headers: Record<string, string>;
+}> {
+  // Check if we should skip
+  if (config.skip && config.skip(request)) {
+    return { success: true, headers: {} };
+  }
+
+  const identifier = config.identifier 
+    ? config.identifier(request) 
+    : getClientIdentifier(request, userId);
+    
+  const result = await checkRateLimitAsync(identifier, config);
 
   if (!result.success) {
     const response = NextResponse.json(
