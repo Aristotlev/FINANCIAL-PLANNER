@@ -20,7 +20,7 @@ A comprehensive financial management application built with Next.js, TypeScript,
   - Dual currency display (original + converted)
   - Multi-currency bank accounts (EUR, GBP, CHF, etc.)
   - Automatic conversion for totals and analytics
-  - See [MULTI_CURRENCY_SYSTEM.md](MULTI_CURRENCY_SYSTEM.md) for details
+  - See [MULTI_CURRENCY_SYSTEM.md](docs/MULTI_CURRENCY_SYSTEM.md) for details
 - **Portfolio Analytics**: Performance tracking, allocation charts, and trend analysis
 - **Trading Accounts**: Manage multiple brokerage and crypto exchange accounts
 
@@ -147,20 +147,17 @@ A comprehensive financial management application built with Next.js, TypeScript,
 
 Learn how to use the advanced multi-currency features:
 
-- **[MULTI_CURRENCY_QUICK_START.md](./MULTI_CURRENCY_QUICK_START.md)** - Get started in 60 seconds
-- **[MULTI_CURRENCY_SYSTEM.md](./MULTI_CURRENCY_SYSTEM.md)** - Complete technical guide
-- **[MULTI_CURRENCY_VISUAL_GUIDE.md](./MULTI_CURRENCY_VISUAL_GUIDE.md)** - Visual examples and UI flows
-- **[MULTI_CURRENCY_IMPLEMENTATION_SUMMARY.md](./MULTI_CURRENCY_IMPLEMENTATION_SUMMARY.md)** - Implementation details
+- **[MULTI_CURRENCY_SYSTEM.md](./docs/MULTI_CURRENCY_SYSTEM.md)** - Complete technical guide
 
 ### Tax System Documentation
 
-Comprehensive documentation is available in the `/Docks/` directory:
+Comprehensive documentation is available in the `/docs/` directory:
 
-- **[EU_TAX_DOCUMENTATION_INDEX.md](./Docks/EU_TAX_DOCUMENTATION_INDEX.md)** - Master navigation guide
-- **[EU_TAX_PROJECT_SUMMARY.md](./Docks/EU_TAX_PROJECT_SUMMARY.md)** - 10-minute project overview
-- **[EU_TAX_QUICK_REFERENCE.md](./Docks/EU_TAX_QUICK_REFERENCE.md)** - Quick tax rate lookups
-- **[EU_TAX_SYSTEM_IMPLEMENTATION.md](./Docks/EU_TAX_SYSTEM_IMPLEMENTATION.md)** - Complete implementation guide
-- **[EU_TAX_IMPLEMENTATION_CHECKLIST.md](./Docks/EU_TAX_IMPLEMENTATION_CHECKLIST.md)** - UI/UX specs & roadmap
+- **[EU_TAX_DOCUMENTATION_INDEX.md](./docs/EU_TAX_DOCUMENTATION_INDEX.md)** - Master navigation guide
+- **[EU_TAX_PROJECT_SUMMARY.md](./docs/EU_TAX_PROJECT_SUMMARY.md)** - 10-minute project overview
+- **[EU_TAX_QUICK_REFERENCE.md](./docs/EU_TAX_QUICK_REFERENCE.md)** - Quick tax rate lookups
+- **[EU_TAX_SYSTEM_IMPLEMENTATION.md](./docs/EU_TAX_SYSTEM_IMPLEMENTATION.md)** - Complete implementation guide
+- **[EU_TAX_IMPLEMENTATION_CHECKLIST.md](./docs/EU_TAX_IMPLEMENTATION_CHECKLIST.md)** - UI/UX specs & roadmap
 
 ### Quick Multi-Currency Example
 
@@ -243,7 +240,7 @@ money-hub-app/
 │   ├── theme-context.tsx         # Dark mode
 │   └── ...
 ├── hooks/                        # Custom React hooks
-├── Docks/                        # Documentation
+├── docs/                         # Documentation
 │   ├── EU_TAX_*.md               # Tax system docs
 │   ├── CURRENCY_*.md             # Currency docs
 │   └── ...
@@ -514,9 +511,7 @@ Money Hub App works flawlessly across 95.8% of global users:
 - ✅ Feature detection with graceful fallbacks
 
 ### Documentation
-- **[BROWSER_OPTIMIZATION_INDEX.md](./BROWSER_OPTIMIZATION_INDEX.md)** - Start here!
-- **[BROWSER_COMPATIBILITY_QUICK_REF.md](./BROWSER_COMPATIBILITY_QUICK_REF.md)** - Quick reference
-- **[BROWSER_TESTING_GUIDE.md](./BROWSER_TESTING_GUIDE.md)** - Testing procedures
+- **[BROWSER_TESTING_GUIDE.md](./docs/BROWSER_TESTING_GUIDE.md)** - Testing procedures
 - **[lib/browser-compatibility.ts](./lib/browser-compatibility.ts)** - Feature detection utilities
 
 **No manual browser-specific code needed!** Everything is automatic. 🚀
@@ -541,8 +536,8 @@ Money Hub App works flawlessly across 95.8% of global users:
 For questions, issues, or feature requests:
 
 - **GitHub Issues**: [Create an issue](https://github.com/your-repo/issues)
-- **Documentation**: Check the `/Docks/` directory
-- **Tax System**: See [EU_TAX_DOCUMENTATION_INDEX.md](./Docks/EU_TAX_DOCUMENTATION_INDEX.md)
+- **Documentation**: Check the `/docs/` directory
+- **Tax System**: See [EU_TAX_DOCUMENTATION_INDEX.md](./docs/EU_TAX_DOCUMENTATION_INDEX.md)
 
 ---
 
