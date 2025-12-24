@@ -8,11 +8,17 @@
  * - User is validated via Better Auth session
  * - Service role key is used server-side only
  * - All queries are filtered by the authenticated user's ID
+ * - Rate limiting prevents abuse (100 requests/minute per user)
+ * - All access is logged for auditing
+ * - CSRF protection on mutations
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, AuthenticatedRequest } from '@/lib/api/auth-wrapper';
 import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase/server';
+import { withRateLimit, RateLimitPresets, getSubscriptionRateLimit } from '@/lib/security/rate-limiter';
+import { dataAudit, logApiRequest, logApiResponse } from '@/lib/security/audit-logger';
+import { validateCsrf } from '@/lib/security/csrf';
 
 type DataTable = 
   | 'cash_accounts'
@@ -51,12 +57,43 @@ function isValidTable(table: string): table is DataTable {
   return ALLOWED_TABLES.includes(table as DataTable);
 }
 
+/**
+ * Apply rate limiting based on user subscription
+ * Premium users get higher limits
+ */
+async function checkRateLimitForUser(request: NextRequest, userId: string): Promise<{
+  success: boolean;
+  response?: NextResponse;
+}> {
+  // TODO: Get user's subscription plan from database
+  // For now, use standard rate limits
+  const rateLimitConfig = RateLimitPresets.API_DATA;
+  
+  const result = withRateLimit(request, rateLimitConfig, userId);
+  
+  if (!result.success && result.response) {
+    return { success: false, response: result.response };
+  }
+  
+  return { success: true };
+}
+
 // GET: Fetch user data
 export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
+  const requestId = logApiRequest(request, user.id);
+  
+  // Apply rate limiting
+  const rateLimitResult = await checkRateLimitForUser(request, user.id);
+  if (!rateLimitResult.success && rateLimitResult.response) {
+    logApiResponse(request, 429, requestId, user.id);
+    return rateLimitResult.response;
+  }
+
   const { searchParams } = new URL(request.url);
   const table = searchParams.get('table');
 
   if (!table || !isValidTable(table)) {
+    logApiResponse(request, 400, requestId, user.id);
     return NextResponse.json(
       { error: 'Invalid table', message: 'Specify a valid table parameter' },
       { status: 400 }
@@ -64,6 +101,7 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
   }
 
   if (!isSupabaseAdminConfigured()) {
+    logApiResponse(request, 500, requestId, user.id);
     return NextResponse.json(
       { error: 'Configuration error', message: 'Database not configured' },
       { status: 500 }
@@ -85,6 +123,9 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
         throw error;
       }
 
+      // Log data access
+      dataAudit.access(user.id, table, data ? 1 : 0, request);
+      logApiResponse(request, 200, requestId, user.id);
       return NextResponse.json({ data: data || null });
     }
 
@@ -97,9 +138,13 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
 
     if (error) throw error;
 
+    // Log data access
+    dataAudit.access(user.id, table, data?.length || 0, request);
+    logApiResponse(request, 200, requestId, user.id);
     return NextResponse.json({ data: data || [] });
   } catch (error: any) {
     console.error(`Error fetching ${table}:`, error);
+    logApiResponse(request, 500, requestId, user.id, { error: error.message });
     return NextResponse.json(
       { error: 'Database error', message: error.message },
       { status: 500 }
@@ -109,10 +154,27 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
 
 // POST: Create or update user data
 export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => {
+  const requestId = logApiRequest(request, user.id);
+  
+  // Apply rate limiting
+  const rateLimitResult = await checkRateLimitForUser(request, user.id);
+  if (!rateLimitResult.success && rateLimitResult.response) {
+    logApiResponse(request, 429, requestId, user.id);
+    return rateLimitResult.response;
+  }
+
+  // Validate CSRF token for mutations
+  const csrfCheck = validateCsrf(request, user.id);
+  if (!csrfCheck.valid && csrfCheck.error) {
+    logApiResponse(request, 403, requestId, user.id, { reason: 'CSRF validation failed' });
+    return csrfCheck.error;
+  }
+
   const { searchParams } = new URL(request.url);
   const table = searchParams.get('table');
 
   if (!table || !isValidTable(table)) {
+    logApiResponse(request, 400, requestId, user.id);
     return NextResponse.json(
       { error: 'Invalid table', message: 'Specify a valid table parameter' },
       { status: 400 }
@@ -120,6 +182,7 @@ export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => 
   }
 
   if (!isSupabaseAdminConfigured()) {
+    logApiResponse(request, 500, requestId, user.id);
     return NextResponse.json(
       { error: 'Configuration error', message: 'Database not configured' },
       { status: 500 }
@@ -150,6 +213,10 @@ export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => 
         .single();
 
       if (error) throw error;
+      
+      // Log data modification
+      dataAudit.modify(user.id, table, user.id, request);
+      logApiResponse(request, 200, requestId, user.id);
       return NextResponse.json({ data });
     }
 
@@ -161,9 +228,13 @@ export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => 
 
     if (error) throw error;
 
+    // Log data modification
+    dataAudit.modify(user.id, table, (data as any)?.id || 'new', request);
+    logApiResponse(request, 200, requestId, user.id);
     return NextResponse.json({ data });
   } catch (error: any) {
     console.error(`Error saving to ${table}:`, error);
+    logApiResponse(request, 500, requestId, user.id, { error: error.message });
     return NextResponse.json(
       { error: 'Database error', message: error.message },
       { status: 500 }
@@ -173,11 +244,28 @@ export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => 
 
 // DELETE: Delete user data
 export const DELETE = withAuth(async ({ user, request }: AuthenticatedRequest) => {
+  const requestId = logApiRequest(request, user.id);
+  
+  // Apply rate limiting
+  const rateLimitResult = await checkRateLimitForUser(request, user.id);
+  if (!rateLimitResult.success && rateLimitResult.response) {
+    logApiResponse(request, 429, requestId, user.id);
+    return rateLimitResult.response;
+  }
+
+  // Validate CSRF token for mutations
+  const csrfCheck = validateCsrf(request, user.id);
+  if (!csrfCheck.valid && csrfCheck.error) {
+    logApiResponse(request, 403, requestId, user.id, { reason: 'CSRF validation failed' });
+    return csrfCheck.error;
+  }
+
   const { searchParams } = new URL(request.url);
   const table = searchParams.get('table');
   const id = searchParams.get('id');
 
   if (!table || !isValidTable(table)) {
+    logApiResponse(request, 400, requestId, user.id);
     return NextResponse.json(
       { error: 'Invalid table', message: 'Specify a valid table parameter' },
       { status: 400 }
@@ -185,6 +273,7 @@ export const DELETE = withAuth(async ({ user, request }: AuthenticatedRequest) =
   }
 
   if (!id) {
+    logApiResponse(request, 400, requestId, user.id);
     return NextResponse.json(
       { error: 'Missing id', message: 'Specify an id parameter' },
       { status: 400 }
@@ -192,6 +281,7 @@ export const DELETE = withAuth(async ({ user, request }: AuthenticatedRequest) =
   }
 
   if (!isSupabaseAdminConfigured()) {
+    logApiResponse(request, 500, requestId, user.id);
     return NextResponse.json(
       { error: 'Configuration error', message: 'Database not configured' },
       { status: 500 }
@@ -210,9 +300,13 @@ export const DELETE = withAuth(async ({ user, request }: AuthenticatedRequest) =
 
     if (error) throw error;
 
+    // Log data deletion
+    dataAudit.delete(user.id, table, id, request);
+    logApiResponse(request, 200, requestId, user.id);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error(`Error deleting from ${table}:`, error);
+    logApiResponse(request, 500, requestId, user.id, { error: error.message });
     return NextResponse.json(
       { error: 'Database error', message: error.message },
       { status: 500 }
