@@ -58,13 +58,13 @@ BEGIN
     EXECUTE format('CREATE POLICY "Service role full access to %I" ON %I FOR ALL TO service_role USING (true) WITH CHECK (true)', table_name, table_name);
 
     -- 2. User Select (Own rows)
-    EXECUTE format('CREATE POLICY "Users can view own %I" ON %I FOR SELECT TO authenticated USING (auth.uid() = user_id)', table_name, table_name);
+    EXECUTE format('CREATE POLICY "Users can view own %I" ON %I FOR SELECT TO authenticated USING (auth.uid()::text = user_id)', table_name, table_name);
 
     -- 3. User Insert (Own rows)
-    EXECUTE format('CREATE POLICY "Users can insert own %I" ON %I FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id)', table_name, table_name);
+    EXECUTE format('CREATE POLICY "Users can insert own %I" ON %I FOR INSERT TO authenticated WITH CHECK (auth.uid()::text = user_id)', table_name, table_name);
 
     -- 4. User Update (Own rows)
-    EXECUTE format('CREATE POLICY "Users can update own %I" ON %I FOR UPDATE TO authenticated USING (auth.uid() = user_id)', table_name, table_name);
+    EXECUTE format('CREATE POLICY "Users can update own %I" ON %I FOR UPDATE TO authenticated USING (auth.uid()::text = user_id)', table_name, table_name);
 
     RAISE NOTICE 'Applied User Owner policies to table: %', table_name;
 EXCEPTION
