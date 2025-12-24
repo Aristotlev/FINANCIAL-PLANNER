@@ -33,7 +33,8 @@ export type AuditEventType =
   | 'WEBHOOK_RECEIVED'
   | 'WEBHOOK_VERIFIED'
   | 'WEBHOOK_FAILED'
-  | 'SECURITY_ALERT';
+  | 'SECURITY_ALERT'
+  | 'BOT_BLOCKED';
 
 export interface AuditLogEntry {
   timestamp: string;

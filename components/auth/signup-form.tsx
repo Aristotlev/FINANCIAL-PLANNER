@@ -17,6 +17,8 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  // Honeypot field - hidden from real users, filled by bots
+  const [website, setWebsite] = useState('');
   const [error, setError] = useState('');
   const { register, loginWithGoogle, isLoading } = useBetterAuth();
 
@@ -37,6 +39,14 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Bot detection: If honeypot is filled, silently fail (or pretend to succeed)
+    if (website) {
+      console.log('Bot detected via honeypot');
+      // Fake success to confuse the bot
+      onClose();
+      return;
+    }
 
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
@@ -111,6 +121,20 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
               disabled={isLoading}
             />
           </div>
+        </div>
+
+        {/* Honeypot field for bot detection */}
+        <div style={{ opacity: 0, position: 'absolute', top: 0, left: 0, height: 0, width: 0, zIndex: -1 }} aria-hidden="true">
+          <label htmlFor="website-field">Website</label>
+          <input
+            id="website-field"
+            type="text"
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
         </div>
 
         <div>
