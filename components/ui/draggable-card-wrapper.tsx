@@ -44,12 +44,21 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
     document.addEventListener('mouseup', handleMouseUp, true);
   }, [cardId, isTouchDevice]);
 
+  const handleMouseUp = useCallback(() => {
+    const draggedCardId = (window as any).__currentDragCard;
+    if (draggedCardId && draggedCardId !== cardId) {
+      moveCard(draggedCardId, cardId);
+      (window as any).__currentDragCard = null;
+    }
+  }, [cardId, moveCard]);
+
   return (
     <div
       ref={wrapperRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onMouseDownCapture={handleMouseDown}
+      onMouseUp={handleMouseUp}
       className={`transition-all duration-200 relative group ${isTouchDevice ? '' : 'cursor-grab hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]'}`}
       style={{
         // Only disable touch-action on non-touch devices (for mouse drag)
