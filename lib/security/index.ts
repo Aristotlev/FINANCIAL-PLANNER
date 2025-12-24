@@ -10,7 +10,6 @@
  * - Secret management
  * - Redis client for distributed security
  * - HTML sanitization for XSS prevention
- * - Auth protection (rate limiting + bot detection)
  */
 
 export * from './rate-limiter';
@@ -20,4 +19,5 @@ export * from './ip-allowlist';
 export * from './secrets';
 export * from './redis';
 export * from './sanitize';
+export * from './encryption';
 export * from './auth-protection';

@@ -19,6 +19,7 @@ import { getSupabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabase/serv
 import { withRateLimit, RateLimitPresets, getSubscriptionRateLimit } from '@/lib/security/rate-limiter';
 import { dataAudit, logApiRequest, logApiResponse } from '@/lib/security/audit-logger';
 import { validateCsrf } from '@/lib/security/csrf';
+import { encrypt, decrypt } from '@/lib/security/encryption';
 
 type DataTable = 
   | 'cash_accounts'
@@ -52,6 +53,87 @@ const ALLOWED_TABLES: DataTable[] = [
   'user_preferences',
   'portfolio_snapshots',
 ];
+
+// Fields that should be encrypted in the database
+const SENSITIVE_FIELDS = [
+  'openai_api_key',
+  'gemini_api_key',
+  'finnhub_api_key',
+  'alpha_vantage_api_key',
+  'elevenlabs_api_key',
+  'replicate_api_token',
+  'stripe_customer_id',
+  'exchange_api_key',
+  'exchange_api_secret',
+  'wallet_private_key', // If ever stored (shouldn't be, but just in case)
+];
+
+/**
+ * Encrypt sensitive fields in a record (recursive)
+ */
+function encryptSensitiveData(data: any): any {
+  if (!data || typeof data !== 'object') return data;
+  
+  if (Array.isArray(data)) {
+    return data.map(item => encryptSensitiveData(item));
+  }
+  
+  const encrypted = { ...data };
+  
+  for (const key in encrypted) {
+    if (Object.prototype.hasOwnProperty.call(encrypted, key)) {
+      // Check if this key is in our sensitive list
+      if (SENSITIVE_FIELDS.includes(key)) {
+        if (encrypted[key] && typeof encrypted[key] === 'string' && !encrypted[key].includes(':')) {
+          try {
+            encrypted[key] = encrypt(encrypted[key]);
+          } catch (e) {
+            console.error(`Failed to encrypt field ${key}:`, e);
+          }
+        }
+      } else if (typeof encrypted[key] === 'object' && encrypted[key] !== null) {
+        // Recursively check nested objects (like 'preferences' JSON column)
+        encrypted[key] = encryptSensitiveData(encrypted[key]);
+      }
+    }
+  }
+  
+  return encrypted;
+}
+
+/**
+ * Decrypt sensitive fields in a record (recursive)
+ */
+function decryptSensitiveData(data: any): any {
+  if (!data || typeof data !== 'object') return data;
+  
+  if (Array.isArray(data)) {
+    return data.map(item => decryptSensitiveData(item));
+  }
+  
+  const decrypted = { ...data };
+  
+  for (const key in decrypted) {
+    if (Object.prototype.hasOwnProperty.call(decrypted, key)) {
+      // Check if this key is in our sensitive list
+      if (SENSITIVE_FIELDS.includes(key)) {
+        if (decrypted[key] && typeof decrypted[key] === 'string' && decrypted[key].includes(':')) {
+          try {
+            decrypted[key] = decrypt(decrypted[key]);
+          } catch (e) {
+            // If decryption fails, return original value
+            console.warn(`Failed to decrypt field ${key}:`, e);
+          }
+        }
+      } else if (typeof decrypted[key] === 'object' && decrypted[key] !== null) {
+        // Recursively check nested objects
+        decrypted[key] = decryptSensitiveData(decrypted[key]);
+      }
+    }
+  }
+  
+  return decrypted;
+}
 
 function isValidTable(table: string): table is DataTable {
   return ALLOWED_TABLES.includes(table as DataTable);
@@ -123,10 +205,13 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
         throw error;
       }
 
+      // Decrypt sensitive data before returning to client
+      const decryptedData = data ? decryptSensitiveData(data) : null;
+
       // Log data access
       dataAudit.access(user.id, table, data ? 1 : 0, request);
       logApiResponse(request, 200, requestId, user.id);
-      return NextResponse.json({ data: data || null });
+      return NextResponse.json({ data: decryptedData });
     }
 
     // Standard query for other tables
@@ -138,10 +223,13 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
 
     if (error) throw error;
 
+    // Decrypt sensitive data in list results (e.g. trading accounts with API keys)
+    const decryptedList = data ? data.map(decryptSensitiveData) : [];
+
     // Log data access
     dataAudit.access(user.id, table, data?.length || 0, request);
     logApiResponse(request, 200, requestId, user.id);
-    return NextResponse.json({ data: data || [] });
+    return NextResponse.json({ data: decryptedList });
   } catch (error: any) {
     console.error(`Error fetching ${table}:`, error);
     logApiResponse(request, 500, requestId, user.id, { error: error.message });
@@ -199,6 +287,9 @@ export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => 
       user_id: user.id,
     };
 
+    // Encrypt sensitive data before saving
+    const encryptedRecord = encryptSensitiveData(record);
+
     // Remove any user_id that was passed from client (security)
     if (body.user_id && body.user_id !== user.id) {
       console.warn(`Attempted to set user_id to ${body.user_id} but authenticated as ${user.id}`);
@@ -208,30 +299,36 @@ export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => 
     if (table === 'user_preferences') {
       const { data, error } = await supabase
         .from(table)
-        .upsert(record, { onConflict: 'user_id' })
+        .upsert(encryptedRecord, { onConflict: 'user_id' })
         .select()
         .single();
 
       if (error) throw error;
       
+      // Return decrypted data to client so they see what they just saved
+      const decryptedData = decryptSensitiveData(data);
+
       // Log data modification
       dataAudit.modify(user.id, table, user.id, request);
       logApiResponse(request, 200, requestId, user.id);
-      return NextResponse.json({ data });
+      return NextResponse.json({ data: decryptedData });
     }
 
     const { data, error } = await supabase
       .from(table)
-      .upsert(record)
+      .upsert(encryptedRecord)
       .select()
       .single();
 
     if (error) throw error;
 
+    // Return decrypted data
+    const decryptedData = decryptSensitiveData(data);
+
     // Log data modification
     dataAudit.modify(user.id, table, (data as any)?.id || 'new', request);
     logApiResponse(request, 200, requestId, user.id);
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: decryptedData });
   } catch (error: any) {
     console.error(`Error saving to ${table}:`, error);
     logApiResponse(request, 500, requestId, user.id, { error: error.message });
