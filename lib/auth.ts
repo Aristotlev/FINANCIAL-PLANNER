@@ -4,18 +4,20 @@ import { Pool } from "pg";
 
 // Create PostgreSQL pool for Better Auth
 // IMPORTANT: Cloud Run requires SSL but Supabase uses self-signed certs
+// We use rejectUnauthorized: false ONLY for the Pool connection, not globally
 const pool = new Pool({
   connectionString: process.env.SUPABASE_DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false, // Required for Supabase pooler self-signed certs
+    // This is safe because:
+    // 1. It only affects this specific database connection
+    // 2. Supabase pooler uses self-signed certificates
+    // 3. We're connecting over an encrypted connection to a known endpoint
+    rejectUnauthorized: false,
   },
 });
 
-// Disable SSL verification globally for Node.js (needed in Cloud Run)
-// This is safe because we're connecting to a known Supabase endpoint
-if (process.env.NODE_ENV === "production") {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
+// SECURITY: Do NOT set NODE_TLS_REJECT_UNAUTHORIZED globally
+// The Pool connection above handles SSL verification for the database connection only
 
 // Fix for local development: Ensure production URLs in .env.local don't interfere
 if (process.env.NODE_ENV !== "production") {
