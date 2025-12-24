@@ -141,6 +141,18 @@ export const POST = withAuth(async ({ user, request }: AuthenticatedRequest) => 
       console.warn(`Attempted to set user_id to ${body.user_id} but authenticated as ${user.id}`);
     }
 
+    // Special handling for user_preferences (uses user_id as primary key)
+    if (table === 'user_preferences') {
+      const { data, error } = await supabase
+        .from(table)
+        .upsert(record, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return NextResponse.json({ data });
+    }
+
     const { data, error } = await supabase
       .from(table)
       .upsert(record)

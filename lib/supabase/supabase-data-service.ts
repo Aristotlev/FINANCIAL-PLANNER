@@ -3,12 +3,16 @@
 import { supabase, isSupabaseConfigured } from './client';
 import { DataService } from '../data-service';
 import { authClient } from '../auth-client';
+import { fetchData, saveData, deleteData } from '../api/data-client';
 
 /**
  * Enhanced Data Service with Supabase backend
  * Falls back to localStorage if Supabase is not configured
  * 
  * IMPORTANT: Uses Better Auth for user authentication, NOT Supabase Auth
+ * 
+ * NOTE: User preferences now use the secure API endpoint to work with
+ * the new RLS policies that require service_role access.
  */
 export class SupabaseDataService {
   private static isConfigured = isSupabaseConfigured();
@@ -1536,6 +1540,7 @@ export class SupabaseDataService {
   }
 
   // ==================== USER PREFERENCES (Card Order, Hidden Cards, etc.) ====================
+  // NOTE: These methods now use the secure API endpoint to bypass RLS restrictions
   
   static async getUserPreferences(): Promise<{
     cardOrder?: string[];
@@ -1550,30 +1555,20 @@ export class SupabaseDataService {
       const userId = await this.getUserId();
       if (!userId) return null;
 
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        // PGRST116 means no rows returned, which is fine for new users
-        if (error.code !== 'PGRST116') {
-          console.error('Error fetching user preferences:', error);
-        }
+      // Use secure API endpoint instead of direct Supabase access
+      const data = await fetchData<any>('user_preferences');
+      
+      if (!data) {
         return null;
       }
 
-      // Type assertion for the data
-      const prefData = data as any;
-      
       // Merge the preferences JSON with top-level fields
       return {
-        theme: prefData?.theme,
-        currency: prefData?.currency,
-        language: prefData?.language,
-        notifications_enabled: prefData?.notifications_enabled,
-        ...(prefData?.preferences as Record<string, any> || {})
+        theme: data?.theme,
+        currency: data?.currency,
+        language: data?.language,
+        notifications_enabled: data?.notifications_enabled,
+        ...(data?.preferences as Record<string, any> || {})
       };
     } catch (error) {
       if (!this.isAuthError(error)) {
@@ -1599,23 +1594,18 @@ export class SupabaseDataService {
       // Separate top-level fields from the preferences JSON
       const { theme, currency, language, notifications_enabled, ...otherPrefs } = preferences;
 
-      const { error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: userId,
-          theme: theme || 'system',
-          currency: currency || 'USD',
-          language: language || 'en',
-          notifications_enabled: notifications_enabled ?? true,
-          preferences: otherPrefs,
-          updated_at: new Date().toISOString()
-        } as any, {
-          onConflict: 'user_id'
-        });
+      // Use secure API endpoint instead of direct Supabase access
+      const result = await saveData('user_preferences', {
+        theme: theme || 'system',
+        currency: currency || 'USD',
+        language: language || 'en',
+        notifications_enabled: notifications_enabled ?? true,
+        preferences: otherPrefs,
+        updated_at: new Date().toISOString()
+      });
 
-      if (error) {
-        console.error('Error saving user preferences:', error);
-        throw error;
+      if (!result) {
+        throw new Error('Failed to save user preferences');
       }
     } catch (error) {
       if (!this.isAuthError(error)) {
