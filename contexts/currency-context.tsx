@@ -218,6 +218,11 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       ? SUPPORTED_CURRENCIES.find(c => c.code === currencyCode) || mainCurrency
       : mainCurrency;
 
+    // Handle invalid inputs
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return `${currency.symbol}0.00`;
+    }
+
     // Format with appropriate decimal places
     const decimals = ['JPY', 'KRW', 'IDR'].includes(currency.code) ? 0 : 2;
     

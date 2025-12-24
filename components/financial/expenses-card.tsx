@@ -20,7 +20,6 @@ import {
   Receipt,
   ChevronDown
 } from "lucide-react";
-import { TbReceipt } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
@@ -353,7 +352,7 @@ function AddExpenseCategoryModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Amount</label>
             <input
               type="number"
-              value={formData.amount}
+              value={isNaN(formData.amount) ? '' : formData.amount}
               onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -365,7 +364,7 @@ function AddExpenseCategoryModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Budget</label>
             <input
               type="number"
-              value={formData.budget}
+              value={isNaN(formData.budget) ? '' : formData.budget}
               onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -481,7 +480,7 @@ function EditExpenseCategoryModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Amount</label>
             <input
               type="number"
-              value={formData.amount}
+              value={isNaN(formData.amount) ? '' : formData.amount}
               onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -493,7 +492,7 @@ function EditExpenseCategoryModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Budget</label>
             <input
               type="number"
-              value={formData.budget}
+              value={isNaN(formData.budget) ? '' : formData.budget}
               onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -609,7 +608,7 @@ function AddSubscriptionModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Amount</label>
             <input
               type="number"
-              value={formData.amount}
+              value={isNaN(formData.amount) ? '' : formData.amount}
               onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -1199,7 +1198,7 @@ export function ExpensesCard() {
         { label: "Total Debt Balance", value: `-${mainCurrency.symbol}${formatNumber(totalDebtBalance)}`, color: "#dc2626" },
         { label: "Debt Payments/mo", value: `-${mainCurrency.symbol}${formatNumber(totalDebtPayments)}`, color: "#f87171" }
       ]}
-      icon={TbReceipt}
+      icon={Receipt}
       hoverContent={<ExpensesHoverContent />}
       modalContent={<ExpensesModalContent />}
       chartData={chartData}

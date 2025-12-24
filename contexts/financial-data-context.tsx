@@ -46,12 +46,7 @@ export function FinancialDataProvider({ children }: { children: ReactNode }) {
     // Prevent concurrent loads
     if (isLoadingRef.current) return;
     
-    // Throttle: minimum 2 seconds between loads
-    const now = Date.now();
-    if (now - lastLoadTimeRef.current < 2000) return;
-    
     isLoadingRef.current = true;
-    lastLoadTimeRef.current = now;
     
     try {
       // Load all data in parallel for better performance
@@ -65,14 +60,28 @@ export function FinancialDataProvider({ children }: { children: ReactNode }) {
       ]);
 
       // Calculate totals
-      const totalCash = cashAccounts.reduce((sum, account) => sum + account.balance, 0);
-      const totalSavings = savingsGoals.reduce((sum, goal) => sum + goal.current, 0);
-      const totalItems = items.reduce((sum, item) => sum + item.currentValue, 0);
-      const totalRealEstate = properties.reduce((sum, prop) => sum + prop.currentValue, 0);
-      const totalTrading = tradingPositions.reduce((sum: number, position: any) => {
+      const totalCash = cashAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+      const totalSavings = savingsGoals.reduce((sum, goal) => sum + (goal.balance || goal.current || 0), 0);
+      const totalItems = items.reduce((sum, item) => sum + (item.currentValue || 0), 0);
+      const totalRealEstate = properties.reduce((sum, prop) => sum + (prop.currentValue || 0), 0);
+      
+      // Calculate trading account total: positions + forex/crypto/options account balances from localStorage
+      const positionsValue = tradingPositions.reduce((sum: number, position: any) => {
         const marketValue = Math.abs(position.shares || 0) * (position.currentPrice || 0);
         return sum + marketValue;
       }, 0);
+      
+      // Get trading account balances from localStorage (forex, crypto futures, options accounts)
+      let forexBalance = 0;
+      let cryptoFuturesBalance = 0;
+      let optionsBalance = 0;
+      if (typeof window !== 'undefined') {
+        forexBalance = parseFloat(localStorage.getItem('forexAccountBalance') || '0');
+        cryptoFuturesBalance = parseFloat(localStorage.getItem('cryptoAccountBalance') || '0');
+        optionsBalance = parseFloat(localStorage.getItem('optionsAccountBalance') || '0');
+      }
+      
+      const totalTrading = positionsValue + forexBalance + cryptoFuturesBalance + optionsBalance;
       const totalMonthlyExpenses = expenseCategories.reduce((sum: number, cat: any) => sum + cat.amount, 0);
 
       // Batch state updates to minimize re-renders
@@ -110,11 +119,13 @@ export function FinancialDataProvider({ children }: { children: ReactNode }) {
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('stockDataChanged', handleDataChange);
+    window.addEventListener('tradingDataChanged', handleDataChange);
 
     return () => {
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);
+      window.removeEventListener('tradingDataChanged', handleDataChange);
       
       // Cleanup debounce timeout
       if (debounceTimeoutRef.current) {

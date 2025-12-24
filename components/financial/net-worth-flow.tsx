@@ -15,7 +15,7 @@ import {
   Position,
 } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
-import '@xyflow/react/dist/style.css';
+// Styles are imported in app/layout.tsx to prevent chaining critical requests
 import { 
   TrendingUp, 
   Wallet, 
@@ -24,9 +24,10 @@ import {
   TrendingDown,
   Diamond,
   Building2,
-  BarChart3
+  BarChart3,
+  Coins,
+  LineChart
 } from 'lucide-react';
-import { TbCoin, TbChartLine, TbDiamond } from 'react-icons/tb';
 
 const dagreGraph = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
 
@@ -187,7 +188,7 @@ export function NetWorthFlow({
         label: 'Cash & Liquid',
         value: formatValue(cashValue),
         change: '+4.6%',
-        icon: TbCoin,
+        icon: Coins,
         type: 'asset',
         cardColor: '#10b981', // Emerald - matches Cash card
       },
@@ -226,7 +227,7 @@ export function NetWorthFlow({
         label: 'Stock Portfolio',
         value: formatValue(stocksValue),
         change: stocksChange,
-        icon: TbChartLine,
+        icon: LineChart,
         type: 'asset',
         cardColor: '#a855f7', // Purple - matches Stocks card
       },
@@ -239,7 +240,7 @@ export function NetWorthFlow({
         label: 'Valuable Items',
         value: formatValue(valuableItemsValue),
         change: '+8.1%',
-        icon: TbDiamond,
+        icon: Diamond,
         type: 'asset',
         cardColor: '#84cc16', // Lime - matches Valuable Items card
       },

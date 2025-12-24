@@ -31,9 +31,20 @@ import {
   Percent,
   PieChart,
   Coins as CoinsIcon,
-  TrendingUp as TrendingUpIcon
+  TrendingUp as TrendingUpIcon,
+  CandlestickChart,
+  AppWindow,
+  LineChart,
+  Landmark,
+  Heart,
+  Cpu,
+  ShoppingCart,
+  CreditCard,
+  Euro,
+  JapaneseYen,
+  PoundSterling,
+  Diamond
 } from "lucide-react";
-import { TbChartCandle, TbBrandWindows, TbChartLine, TbBuildingBank, TbHeartPlus, TbCpu, TbShoppingCart, TbCreditCard, TbCurrencyEuro, TbCurrencyYen, TbCurrencyPound, TbDiamond } from "react-icons/tb";
 import { 
   SiApple, 
   SiAmazon, 
@@ -2579,7 +2590,7 @@ export function TradingAccountCard() {
         { label: "Long Pos", value: longPositions.toString(), color: "#06b6d4" },
         { label: "Short Pos", value: shortPositions.toString(), color: "#22d3ee" }
       ]}
-      icon={TbChartCandle}
+      icon={CandlestickChart}
       hoverContent={<TradingAccountHoverContent />}
       modalContent={<TradingAccountModalContent />}
       chartData={chartData}
@@ -3195,7 +3206,7 @@ function TradingToolsModalContent() {
             <div className="grid grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <TbChartCandle className="w-4 h-4 text-purple-600" />
+                  <CandlestickChart className="w-4 h-4 text-purple-600" />
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Technical Analysis</h4>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Advanced charting tools and indicators</p>
@@ -3209,7 +3220,7 @@ function TradingToolsModalContent() {
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <TbChartLine className="w-4 h-4 text-purple-600" />
+                  <LineChart className="w-4 h-4 text-purple-600" />
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Symbol Search</h4>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Search and compare any stock</p>
@@ -3315,7 +3326,7 @@ function TradingToolsModalContent() {
             <div className="grid grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <TbChartCandle className="w-4 h-4 text-purple-600" />
+                  <CandlestickChart className="w-4 h-4 text-purple-600" />
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Drawing Tools</h4>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Trend lines, Fibonacci, patterns & more</p>

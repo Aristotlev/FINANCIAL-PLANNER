@@ -6,6 +6,7 @@
 "use client";
 
 import { supabase, isSupabaseConfigured } from './supabase/client';
+import { authClient } from './auth-client';
 import type {
   UserSubscription,
   UserUsage,
@@ -23,12 +24,22 @@ export class SubscriptionService {
   // ==================== USER ID ====================
 
   private static async getUserId(): Promise<string | null> {
+    // During SSR or build, we can't fetch the session
+    if (typeof window === 'undefined') return null;
+
     if (!this.isConfigured) return null;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    return user?.id || null;
+    try {
+      const session = await authClient.getSession();
+      return session.data?.user?.id || null;
+    } catch (error) {
+      // Suppress "Failed to fetch" errors which happen when server is unreachable
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        return null;
+      }
+      console.error('Error getting user ID from Better Auth:', error);
+      return null;
+    }
   }
 
   // ==================== SUBSCRIPTION MANAGEMENT ====================
@@ -53,6 +64,36 @@ export class SubscriptionService {
         .single();
 
       if (error) {
+        // If no subscription found (PGRST116), create a default trial one
+        if (error.code === 'PGRST116') {
+          console.log('No subscription found, creating default trial for user:', userId);
+          
+          const now = new Date();
+          const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+          
+          const newSubscription = {
+            user_id: userId,
+            plan: 'FREE_TRIAL',
+            status: 'TRIAL',
+            trial_start_date: now.toISOString(),
+            trial_end_date: trialEnd.toISOString(),
+            trial_used: false
+          };
+          
+          const { data: createdSub, error: createError } = await (supabase as any)
+            .from('user_subscriptions')
+            .insert(newSubscription)
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error('Error creating default subscription:', createError);
+            return this.getDefaultTrialSubscription();
+          }
+          
+          return createdSub as UserSubscription;
+        }
+        
         console.error('Error fetching subscription:', error);
         return this.getDefaultTrialSubscription();
       }
@@ -491,7 +532,9 @@ export class SubscriptionService {
     try {
       const { data, error } = await supabase.from('plan_limits').select('*');
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return (data as PlanLimits[]) || Object.values(PLAN_CONFIG);
     } catch (error) {
@@ -500,3 +543,4 @@ export class SubscriptionService {
     }
   }
 }
+

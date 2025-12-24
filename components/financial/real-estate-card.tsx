@@ -21,7 +21,6 @@ import {
   Satellite,
   ExternalLink
 } from "lucide-react";
-import { TbBuilding } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
@@ -1629,7 +1628,7 @@ function RealEstateModalContent() {
               // Determine property icon based on type
               const PropertyIcon = property.propertyType === 'Primary Residence' ? Home : 
                                   property.propertyType === 'Rental Property' ? Building : 
-                                  property.propertyType === 'Commercial' ? TbBuilding : 
+                                  property.propertyType === 'Commercial' ? Building : 
                                   property.propertyType === 'Vacation Home' ? Home :
                                   Building;
               
@@ -1918,7 +1917,7 @@ export function RealEstateCard() {
         { label: "Equity", value: `${mainCurrency.symbol}${formatNumber(totalEquity)}`, color: "#84cc16" },
         { label: "Rental Income", value: `${mainCurrency.symbol}${formatNumber(monthlyRentalIncome)}/mo`, color: "#a3e635" }
       ]}
-      icon={TbBuilding}
+      icon={Building}
       hoverContent={<RealEstateHoverContent />}
       modalContent={<RealEstateModalContent />}
       chartData={chartData}

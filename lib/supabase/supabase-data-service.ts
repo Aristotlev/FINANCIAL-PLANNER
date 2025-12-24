@@ -20,6 +20,75 @@ export class SupabaseDataService {
   private static lastUserIdCheck: number = 0;
   private static readonly USER_ID_CACHE_TTL = 30000; // 30 seconds
 
+  // Cache for data to prevent rate limiting
+  private static dataCache: Map<string, { data: any, timestamp: number }> = new Map();
+  private static readonly DATA_CACHE_TTL = 20000; // 20 seconds
+
+  // Request deduplication map
+  private static pendingRequests: Map<string, Promise<any>> = new Map();
+
+  private static getCachedData<T>(key: string): T | null {
+    const cached = this.dataCache.get(key);
+    if (cached && (Date.now() - cached.timestamp < this.DATA_CACHE_TTL)) {
+      return cached.data as T;
+    }
+    return null;
+  }
+
+  private static setCachedData<T>(key: string, data: T): void {
+    this.dataCache.set(key, { data, timestamp: Date.now() });
+  }
+
+  private static invalidateCache(key: string): void {
+    this.dataCache.delete(key);
+  }
+
+  /**
+   * Generic fetch with cache and request deduplication
+   */
+  private static async fetchWithDeduplication<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    fallbackFn: () => T
+  ): Promise<T> {
+    if (!this.isConfigured) {
+      return fallbackFn();
+    }
+
+    // 1. Try cache first
+    const cached = this.getCachedData<T>(key);
+    if (cached) return cached;
+
+    // 2. Check for pending request (deduplication)
+    if (this.pendingRequests.has(key)) {
+      return this.pendingRequests.get(key) as Promise<T>;
+    }
+
+    // 3. Create new request
+    const requestPromise = (async () => {
+      try {
+        const userId = await this.getUserId();
+        if (!userId) {
+          return fallbackFn();
+        }
+
+        const data = await fetchFn();
+        this.setCachedData(key, data);
+        return data;
+      } catch (error) {
+        if (!this.isAuthError(error)) {
+          console.error(`Error loading ${key} from Supabase:`, error);
+        }
+        return fallbackFn();
+      } finally {
+        this.pendingRequests.delete(key);
+      }
+    })();
+
+    this.pendingRequests.set(key, requestPromise);
+    return requestPromise;
+  }
+
   // Helper to get current user ID from Better Auth (NOT Supabase Auth)
   private static async getUserId(): Promise<string | null> {
     if (!this.isConfigured) return null;
@@ -80,32 +149,16 @@ export class SupabaseDataService {
   // ==================== CASH ACCOUNTS ====================
   
   static async getCashAccounts(defaultAccounts: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadCashAccounts([]);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      // If no user, fall back to localStorage
-      if (!userId) {
-        return DataService.loadCashAccounts([]);
-      }
-
-      const { data, error } = await supabase
-        .from('cash_accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      // Return data as-is (even if empty) - no defaults
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading cash accounts from Supabase:', error);
-      }
-      return DataService.loadCashAccounts([]);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'cash_accounts',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('cash_accounts');
+        // Return data as-is (even if empty) - no defaults
+        return data || [];
+      },
+      () => DataService.loadCashAccounts(defaultAccounts)
+    );
   }
 
   static async saveCashAccount(account: any): Promise<void> {
@@ -136,11 +189,24 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('cash_accounts')
-        .upsert({ ...account, user_id: userId });
+      // Map application fields to database fields
+      const dbAccount: any = {
+        id: account.id,
+        user_id: userId,
+        name: account.name || 'Unknown Account',
+        bank: account.bank || 'Unknown Bank',
+        balance: typeof account.balance === 'number' && !isNaN(account.balance) ? account.balance : 0,
+        type: account.type || 'checking',
+        apy: typeof account.apy === 'number' && !isNaN(account.apy) ? account.apy : 0,
+        color: account.color || '#10b981',
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('cash_accounts', dbAccount);
+
+      if (!result) throw new Error('Failed to save cash account via API');
+      
+      this.invalidateCache('cash_accounts');
     } catch (error) {
       console.error('Error saving cash account to Supabase:', error);
       // Fall back to localStorage on error
@@ -164,12 +230,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('cash_accounts')
-        .delete()
-        .eq('id', accountId);
+      // Use secure API endpoint
+      const result = await deleteData('cash_accounts', accountId);
 
-      if (error) throw error;
+      if (!result) throw new Error('Failed to delete cash account via API');
+      
+      this.invalidateCache('cash_accounts');
       
       // Also remove from localStorage to prevent stale data
       const accounts = DataService.loadCashAccounts([]);
@@ -187,33 +253,25 @@ export class SupabaseDataService {
   // ==================== INCOME SOURCES ====================
   
   static async getIncomeSources(defaultSources: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      const stored = localStorage.getItem('incomeSources');
-      return stored ? JSON.parse(stored) : defaultSources;
-    }
-
-    try {
-      const userId = await this.getUserId();
-      if (!userId) {
+    return this.fetchWithDeduplication<any[]>(
+      'income_sources',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('income_sources');
+        
+        // Map database fields to application fields
+        return (data || []).map((income: any) => ({
+          ...income,
+          connectedAccount: income.connected_account,
+          isRecurring: income.is_recurring,
+          nextPaymentDate: income.next_payment_date
+        }));
+      },
+      () => {
         const stored = localStorage.getItem('incomeSources');
         return stored ? JSON.parse(stored) : defaultSources;
       }
-
-      const { data, error } = await supabase
-        .from('income_sources')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading income sources from Supabase:', error);
-      }
-      const stored = localStorage.getItem('incomeSources');
-      return stored ? JSON.parse(stored) : defaultSources;
-    }
+    );
   }
 
   static async saveIncomeSource(income: any): Promise<void> {
@@ -245,17 +303,27 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('income_sources')
-        .upsert({ 
-          ...income, 
-          user_id: userId,
-          connected_account: income.connectedAccount,
-          is_recurring: income.isRecurring,
-          next_payment_date: income.nextPaymentDate
-        });
+      // Map application fields to database fields
+      const dbIncome: any = {
+        id: income.id,
+        user_id: userId,
+        name: income.name || 'Unknown Income',
+        amount: typeof income.amount === 'number' && !isNaN(income.amount) ? income.amount : 0,
+        frequency: income.frequency || 'monthly',
+        category: income.category || 'other',
+        connected_account: income.connectedAccount || null,
+        is_recurring: income.isRecurring === true,
+        next_payment_date: income.nextPaymentDate || null,
+        notes: income.notes || null,
+        color: income.color || '#10b981'
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('income_sources', dbIncome);
+
+      if (!result) throw new Error('Failed to save income source via API');
+      
+      this.invalidateCache('income_sources');
     } catch (error) {
       console.error('Error saving income source to Supabase:', error);
       const stored = localStorage.getItem('incomeSources');
@@ -280,12 +348,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('income_sources')
-        .delete()
-        .eq('id', incomeId);
+      // Use secure API endpoint
+      const result = await deleteData('income_sources', incomeId);
 
-      if (error) throw error;
+      if (!result) throw new Error('Failed to delete income source via API');
+      
+      this.invalidateCache('income_sources');
       
       const stored = localStorage.getItem('incomeSources');
       const sources = stored ? JSON.parse(stored) : [];
@@ -303,39 +371,23 @@ export class SupabaseDataService {
   // ==================== CRYPTO HOLDINGS ====================
   
   static async getCryptoHoldings(defaultHoldings: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadCryptoHoldings([]);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'crypto_holdings',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('crypto_holdings');
 
-    try {
-      const userId = await this.getUserId();
-      
-      // If no user, fall back to localStorage instead of returning empty array
-      if (!userId) {
-        return DataService.loadCryptoHoldings([]);
-      }
-
-      const { data, error } = await supabase
-        .from('crypto_holdings')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      // Map database fields to application fields
-      const mappedData = (data || []).map((holding: any) => ({
-        ...holding,
-        entryPoint: holding.purchase_price || 0,
-        walletType: holding.wallet_type,
-        walletName: holding.wallet_name,
-        walletAddress: holding.wallet_address,
-      }));
-      return mappedData;
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading crypto holdings:', error);
-      }
-      return DataService.loadCryptoHoldings([]);
-    }
+        // Map database fields to application fields
+        return (data || []).map((holding: any) => ({
+          ...holding,
+          entryPoint: holding.purchase_price || 0,
+          walletType: holding.wallet_type,
+          walletName: holding.wallet_name,
+          walletAddress: holding.wallet_address,
+        }));
+      },
+      () => DataService.loadCryptoHoldings(defaultHoldings)
+    );
   }
 
   static async saveCryptoHolding(holding: any): Promise<void> {
@@ -368,33 +420,41 @@ export class SupabaseDataService {
       }
 
       // Map application fields to database fields
+      // Ensure numeric values are valid numbers
       const dbHolding: any = {
         id: holding.id,
         user_id: userId,
-        symbol: holding.symbol,
-        name: holding.name,
-        amount: holding.amount,
-        purchase_price: holding.entryPoint || 0,
+        symbol: holding.symbol || 'UNKNOWN',
+        name: holding.name || 'Unknown',
+        amount: typeof holding.amount === 'number' && !isNaN(holding.amount) ? holding.amount : 0,
+        purchase_price: typeof holding.entryPoint === 'number' && !isNaN(holding.entryPoint) ? holding.entryPoint : 0,
         color: holding.color || '#f59e0b',
         wallet_type: holding.walletType || 'other',
         wallet_name: holding.walletName || null,
         wallet_address: holding.walletAddress || null,
       };
       
-      // console.log('Saving crypto holding to Supabase:', dbHolding);
-      
-      const { error } = await supabase
-        .from('crypto_holdings')
-        .upsert(dbHolding);
+      // Use secure API endpoint
+      console.log('Saving crypto holding via API:', dbHolding);
+      const result = await saveData('crypto_holdings', dbHolding);
 
-      if (error) throw error;
+      if (!result) {
+        console.error('saveData returned null for crypto_holdings');
+        throw new Error('Failed to save crypto holding via API - check server logs');
+      }
+      
+      this.invalidateCache('crypto_holdings');
     } catch (error: any) {
       console.error('Error saving crypto holding:', error);
-      if (error && typeof error === 'object') {
-        console.error('Error details:', JSON.stringify(error, null, 2));
+      if (error instanceof Error) {
         console.error('Error message:', error.message);
-        console.error('Error code:', error.code);
-        console.error('Error hint:', error.hint);
+        console.error('Error stack:', error.stack);
+      } else {
+        try {
+          console.error('Error object:', JSON.stringify(error, null, 2));
+        } catch (e) {
+          console.error('Error object (non-stringifiable):', error);
+        }
       }
       
       // Fall back to localStorage on error
@@ -418,12 +478,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('crypto_holdings')
-        .delete()
-        .eq('id', holdingId);
+      // Use secure API endpoint
+      const success = await deleteData('crypto_holdings', holdingId);
 
-      if (error) throw error;
+      if (!success) throw new Error('Failed to delete crypto holding via API');
+      
+      this.invalidateCache('crypto_holdings');
       
       // Also remove from localStorage to prevent stale data
       const holdings = DataService.loadCryptoHoldings([]);
@@ -441,31 +501,20 @@ export class SupabaseDataService {
   // ==================== STOCK HOLDINGS ====================
   
   static async getStockHoldings(defaultHoldings: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadStockHoldings([]);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      // If no user, fall back to localStorage
-      if (!userId) {
-        return DataService.loadStockHoldings([]);
-      }
-
-      const { data, error } = await supabase
-        .from('stock_holdings')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      // Return data as-is (even if empty) - no defaults
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading stock holdings from Supabase:', error);
-      }
-      return DataService.loadStockHoldings([]);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'stock_holdings',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('stock_holdings');
+        
+        // Map database fields to application fields
+        return (data || []).map((holding: any) => ({
+          ...holding,
+          entryPoint: holding.purchase_price || 0,
+        }));
+      },
+      () => DataService.loadStockHoldings(defaultHoldings)
+    );
   }
 
   static async saveStockHolding(holding: any): Promise<void> {
@@ -496,11 +545,24 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('stock_holdings')
-        .upsert({ ...holding, user_id: userId });
+      // Map application fields to database fields
+      const dbHolding: any = {
+        id: holding.id,
+        user_id: userId,
+        symbol: holding.symbol || 'UNKNOWN',
+        name: holding.name || 'Unknown',
+        shares: typeof holding.shares === 'number' && !isNaN(holding.shares) ? holding.shares : 0,
+        purchase_price: typeof holding.entryPoint === 'number' && !isNaN(holding.entryPoint) ? holding.entryPoint : 0,
+        sector: holding.sector || null,
+        color: holding.color || '#3b82f6',
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('stock_holdings', dbHolding);
+
+      if (!result) throw new Error('Failed to save stock holding via API');
+      
+      this.invalidateCache('stock_holdings');
     } catch (error) {
       console.error('Error saving stock holding to Supabase:', error);
       // Fall back to localStorage on error
@@ -524,12 +586,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('stock_holdings')
-        .delete()
-        .eq('id', holdingId);
+      // Use secure API endpoint
+      const success = await deleteData('stock_holdings', holdingId);
 
-      if (error) throw error;
+      if (!success) throw new Error('Failed to delete stock holding via API');
+      
+      this.invalidateCache('stock_holdings');
       
       // Also remove from localStorage to prevent stale data
       const holdings = DataService.loadStockHoldings([]);
@@ -547,31 +609,32 @@ export class SupabaseDataService {
   // ==================== TRADING ACCOUNTS ====================
   
   static async getTradingAccounts(defaultAccounts: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadTradingAccounts([]);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      // If no user, fall back to localStorage
-      if (!userId) {
-        return DataService.loadTradingAccounts([]);
-      }
-
-      const { data, error } = await supabase
-        .from('trading_accounts')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      // Return data as-is (even if empty) - no defaults
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading trading accounts from Supabase:', error);
-      }
-      return DataService.loadTradingAccounts([]);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'trading_accounts',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('trading_accounts');
+        
+        // Map database fields to application fields
+        // Handle both regular accounts and trading positions stored in this table
+        return (data || []).map((item: any) => {
+          // If it's a position stored in instruments column (as a single object)
+          if (item.type === 'position' && item.instruments && !Array.isArray(item.instruments)) {
+            return {
+              ...item.instruments,
+              id: item.id, // Ensure ID matches DB record
+            };
+          }
+          
+          // Regular account mapping
+          return {
+            ...item,
+            instruments: item.instruments || []
+          };
+        });
+      },
+      () => DataService.loadTradingAccounts(defaultAccounts)
+    );
   }
 
   static async saveTradingAccount(account: any): Promise<void> {
@@ -602,11 +665,29 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('trading_accounts')
-        .upsert({ ...account, user_id: userId });
+      // Check if this is a TradingPosition (has symbol) or a TradingAccount
+      const isPosition = !!account.symbol;
 
-      if (error) throw error;
+      // Map application fields to database fields
+      // If it's a position, we store the full object in 'instruments' JSON column
+      // and use generic values for required columns
+      const dbAccount: any = {
+        id: account.id,
+        user_id: userId,
+        name: isPosition ? account.symbol : (account.name || 'Unknown Account'),
+        broker: isPosition ? 'Trading Position' : (account.broker || 'Unknown Broker'),
+        balance: isPosition ? 0 : (typeof account.balance === 'number' && !isNaN(account.balance) ? account.balance : 0),
+        type: isPosition ? 'position' : (account.type || 'other'),
+        instruments: isPosition ? account : (account.instruments || []),
+        color: account.color || '#10b981',
+      };
+
+      // Use secure API endpoint
+      const result = await saveData('trading_accounts', dbAccount);
+
+      if (!result) throw new Error('Failed to save trading account via API');
+      
+      this.invalidateCache('trading_accounts');
     } catch (error) {
       console.error('Error saving trading account to Supabase:', error);
       // Fall back to localStorage on error
@@ -630,12 +711,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('trading_accounts')
-        .delete()
-        .eq('id', accountId);
+      // Use secure API endpoint
+      const success = await deleteData('trading_accounts', accountId);
 
-      if (error) throw error;
+      if (!success) throw new Error('Failed to delete trading account via API');
+      
+      this.invalidateCache('trading_accounts');
       
       // Also remove from localStorage to prevent stale data
       const accounts = DataService.loadTradingAccounts([]);
@@ -653,31 +734,24 @@ export class SupabaseDataService {
   // ==================== REAL ESTATE ====================
   
   static async getRealEstate(defaultProperties: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadRealEstate(defaultProperties);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      // If no user, fall back to localStorage
-      if (!userId) {
-        return DataService.loadRealEstate(defaultProperties);
-      }
-
-      const { data, error } = await supabase
-        .from('real_estate')
-        .select('*')
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      // Return data as-is (even if empty) - only use defaults on first load when no data exists
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading real estate from Supabase:', error);
-      }
-      return DataService.loadRealEstate(defaultProperties);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'real_estate',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('real_estate');
+        
+        // Map database fields to application fields
+        return (data || []).map((property: any) => ({
+          ...property,
+          purchasePrice: property.purchase_price,
+          currentValue: property.current_value,
+          mortgageBalance: property.mortgage_balance,
+          rentalIncome: property.rental_income,
+          propertyType: property.property_type,
+        }));
+      },
+      () => DataService.loadRealEstate(defaultProperties)
+    );
   }
 
   static async saveRealEstate(property: any): Promise<void> {
@@ -708,11 +782,29 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('real_estate')
-        .upsert({ ...property, user_id: userId });
+      // Map application fields to database fields
+      const dbProperty: any = {
+        id: property.id,
+        user_id: userId,
+        name: property.name || 'Unknown Property',
+        address: property.address || '',
+        property_type: property.propertyType || property.property_type || 'residential',
+        purchase_price: typeof property.purchasePrice === 'number' && !isNaN(property.purchasePrice) ? property.purchasePrice : (property.purchase_price || 0),
+        current_value: typeof property.currentValue === 'number' && !isNaN(property.currentValue) ? property.currentValue : (property.current_value || 0),
+        mortgage_balance: typeof property.mortgageBalance === 'number' && !isNaN(property.mortgageBalance) ? property.mortgageBalance : (property.mortgage_balance || 0),
+        rental_income: typeof property.rentalIncome === 'number' && !isNaN(property.rentalIncome) ? property.rentalIncome : (property.rental_income || 0),
+        expenses: typeof property.expenses === 'number' && !isNaN(property.expenses) ? property.expenses : 0,
+        latitude: property.latitude || null,
+        longitude: property.longitude || null,
+        color: property.color || '#8b5cf6',
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('real_estate', dbProperty);
+
+      if (!result) throw new Error('Failed to save real estate via API');
+      
+      this.invalidateCache('real_estate');
     } catch (error) {
       console.error('Error saving real estate to Supabase:', error);
       // Fall back to localStorage on error
@@ -736,12 +828,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('real_estate')
-        .delete()
-        .eq('id', propertyId);
+      // Use secure API endpoint
+      const success = await deleteData('real_estate', propertyId);
 
-      if (error) throw error;
+      if (!success) throw new Error('Failed to delete real estate via API');
+      
+      this.invalidateCache('real_estate');
       
       // Also remove from localStorage to prevent stale data
       const properties = DataService.loadRealEstate([]);
@@ -759,32 +851,22 @@ export class SupabaseDataService {
   // ==================== SAVINGS ACCOUNTS ====================
   
   static async getSavingsAccounts(defaultAccounts: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadSavingsAccounts(defaultAccounts);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      // If no user, fall back to localStorage
-      if (!userId) {
-        return DataService.loadSavingsAccounts(defaultAccounts);
-      }
-
-      const { data, error } = await supabase
-        .from('savings_accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      // Return data as-is (even if empty) - only use defaults on first load when no data exists
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading savings accounts from Supabase:', error);
-      }
-      return DataService.loadSavingsAccounts(defaultAccounts);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'savings_accounts',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('savings_accounts');
+        
+        // Map database fields to application fields
+        return (data || []).map((account: any) => ({
+          ...account,
+          goalAmount: account.goal_amount,
+          goalDate: account.goal_date,
+          current: account.balance, // Map balance to current for compatibility
+        }));
+      },
+      () => DataService.loadSavingsAccounts(defaultAccounts)
+    );
   }
 
   static async saveSavingsAccount(account: any): Promise<void> {
@@ -815,11 +897,25 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('savings_accounts')
-        .upsert({ ...account, user_id: userId });
+      // Map application fields to database fields
+      const dbAccount: any = {
+        id: account.id,
+        user_id: userId,
+        name: account.name || 'Unknown Savings',
+        bank: account.bank || 'Unknown Bank',
+        balance: typeof account.balance === 'number' && !isNaN(account.balance) ? account.balance : 0,
+        apy: typeof account.apy === 'number' && !isNaN(account.apy) ? account.apy : 0,
+        goal_amount: typeof account.goalAmount === 'number' && !isNaN(account.goalAmount) ? account.goalAmount : (account.goal_amount || 0),
+        goal_date: account.goalDate || account.goal_date || null,
+        color: account.color || '#3b82f6',
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('savings_accounts', dbAccount);
+
+      if (!result) throw new Error('Failed to save savings account via API');
+      
+      this.invalidateCache('savings_accounts');
     } catch (error) {
       console.error('Error saving savings account to Supabase:', error);
       // Fall back to localStorage on error
@@ -843,12 +939,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('savings_accounts')
-        .delete()
-        .eq('id', accountId);
+      // Use secure API endpoint
+      const result = await deleteData('savings_accounts', accountId);
 
-      if (error) throw error;
+      if (!result) throw new Error('Failed to delete savings account via API');
+      
+      this.invalidateCache('savings_accounts');
       
       // Also remove from localStorage to prevent stale data
       const accounts = DataService.loadSavingsAccounts([]);
@@ -866,32 +962,20 @@ export class SupabaseDataService {
   // ==================== EXPENSE CATEGORIES ====================
   
   static async getExpenseCategories(defaultCategories: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadExpenseCategories(defaultCategories);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      // If no user, fall back to localStorage
-      if (!userId) {
-        return DataService.loadExpenseCategories(defaultCategories);
-      }
-
-      const { data, error } = await supabase
-        .from('expense_categories')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      // Return data as-is (even if empty) - only use defaults on first load when no data exists
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading expense categories from Supabase:', error);
-      }
-      return DataService.loadExpenseCategories(defaultCategories);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'expense_categories',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('expense_categories');
+        
+        // Map database fields to application fields
+        return (data || []).map((category: any) => ({
+          ...category,
+          description: category.frequency || '', // Map frequency to description if needed, or just keep it
+        }));
+      },
+      () => DataService.loadExpenseCategories(defaultCategories)
+    );
   }
 
   static async saveExpenseCategory(category: any): Promise<void> {
@@ -922,11 +1006,24 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('expense_categories')
-        .upsert({ ...category, user_id: userId });
+      // Map application fields to database fields
+      const dbCategory: any = {
+        id: category.id,
+        user_id: userId,
+        name: category.name || 'Unknown Category',
+        amount: typeof category.amount === 'number' && !isNaN(category.amount) ? category.amount : 0,
+        budget: typeof category.budget === 'number' && !isNaN(category.budget) ? category.budget : 0,
+        icon: category.icon || null,
+        color: category.color || '#ef4444',
+        frequency: category.frequency || category.description || 'monthly', // Use description as frequency fallback or vice versa
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('expense_categories', dbCategory);
+
+      if (!result) throw new Error('Failed to save expense category via API');
+      
+      this.invalidateCache('expense_categories');
     } catch (error) {
       console.error('Error saving expense category to Supabase:', error);
       // Fall back to localStorage on error
@@ -950,12 +1047,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('expense_categories')
-        .delete()
-        .eq('id', categoryId);
+      // Use secure API endpoint
+      const result = await deleteData('expense_categories', categoryId);
 
-      if (error) throw error;
+      if (!result) throw new Error('Failed to delete expense category via API');
+      
+      this.invalidateCache('expense_categories');
       
       // Also remove from localStorage to prevent stale data
       const categories = DataService.loadExpenseCategories([]);
@@ -973,30 +1070,15 @@ export class SupabaseDataService {
   // ==================== SUBSCRIPTIONS ====================
   
   static async getSubscriptions(defaultSubscriptions: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadSubscriptions(defaultSubscriptions);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      if (!userId) {
-        return DataService.loadSubscriptions(defaultSubscriptions);
-      }
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading subscriptions from Supabase:', error);
-      }
-      return DataService.loadSubscriptions(defaultSubscriptions);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'subscriptions',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('subscriptions');
+        return data || [];
+      },
+      () => DataService.loadSubscriptions(defaultSubscriptions)
+    );
   }
 
   static async saveSubscription(subscription: any): Promise<void> {
@@ -1026,11 +1108,24 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('subscriptions')
-        .upsert({ ...subscription, user_id: userId });
+      // Map application fields to database fields
+      const dbSubscription: any = {
+        id: subscription.id,
+        user_id: userId,
+        name: subscription.name || 'Unknown Subscription',
+        amount: typeof subscription.amount === 'number' && !isNaN(subscription.amount) ? subscription.amount : 0,
+        billing_cycle: subscription.billing_cycle || 'monthly',
+        next_billing_date: subscription.next_billing_date || subscription.nextBillingDate || null,
+        category: subscription.category || 'Other',
+        description: subscription.description || ''
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('subscriptions', dbSubscription);
+
+      if (!result) throw new Error('Failed to save subscription via API');
+      
+      this.invalidateCache('subscriptions');
     } catch (error) {
       console.error('Error saving subscription to Supabase:', error);
       const subscriptions = DataService.loadSubscriptions([]);
@@ -1053,12 +1148,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('subscriptions')
-        .delete()
-        .eq('id', subscriptionId);
+      // Use secure API endpoint
+      const result = await deleteData('subscriptions', subscriptionId);
 
-      if (error) throw error;
+      if (!result) throw new Error('Failed to delete subscription via API');
+      
+      this.invalidateCache('subscriptions');
       
       const subscriptions = DataService.loadSubscriptions([]);
       const filtered = subscriptions.filter((s: any) => s.id !== subscriptionId);
@@ -1074,30 +1169,22 @@ export class SupabaseDataService {
   // ==================== DEBT ACCOUNTS ====================
   
   static async getDebtAccounts(defaultAccounts: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadDebtAccounts?.(defaultAccounts) || [];
-    }
-
-    try {
-      const userId = await this.getUserId();
-      if (!userId) {
-        return DataService.loadDebtAccounts?.(defaultAccounts) || [];
-      }
-
-      const { data, error } = await supabase
-        .from('debt_accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading debt accounts from Supabase:', error);
-      }
-      return DataService.loadDebtAccounts?.(defaultAccounts) || [];
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'debt_accounts',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('debt_accounts');
+        
+        // Map database fields to application fields
+        return (data || []).map((account: any) => ({
+          ...account,
+          minPayment: account.min_payment,
+          interestRate: account.interest_rate,
+          dueDate: account.due_date,
+        }));
+      },
+      () => DataService.loadDebtAccounts?.(defaultAccounts) || []
+    );
   }
 
   static async saveDebtAccount(account: any): Promise<void> {
@@ -1127,11 +1214,25 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('debt_accounts')
-        .upsert({ ...account, user_id: userId });
+      // Map application fields to database fields
+      const dbAccount: any = {
+        id: account.id,
+        user_id: userId,
+        name: account.name || 'Unknown Debt',
+        type: account.type || 'other',
+        balance: typeof account.balance === 'number' && !isNaN(account.balance) ? account.balance : 0,
+        min_payment: typeof account.minPayment === 'number' && !isNaN(account.minPayment) ? account.minPayment : (account.min_payment || 0),
+        interest_rate: typeof account.interestRate === 'number' && !isNaN(account.interestRate) ? account.interestRate : (account.interest_rate || 0),
+        due_date: account.dueDate || account.due_date || null,
+        description: account.description || '',
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('debt_accounts', dbAccount);
+
+      if (!result) throw new Error('Failed to save debt account via API');
+      
+      this.invalidateCache('debt_accounts');
     } catch (error) {
       console.error('Error saving debt account to Supabase:', error);
       const accounts = DataService.loadDebtAccounts?.([]) || [];
@@ -1154,12 +1255,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('debt_accounts')
-        .delete()
-        .eq('id', accountId);
+      // Use secure API endpoint
+      const result = await deleteData('debt_accounts', accountId);
 
-      if (error) throw error;
+      if (!result) throw new Error('Failed to delete debt account via API');
+      
+      this.invalidateCache('debt_accounts');
       
       const accounts = DataService.loadDebtAccounts?.([]) || [];
       const filtered = accounts.filter((a: any) => a.id !== accountId);
@@ -1175,32 +1276,22 @@ export class SupabaseDataService {
   // ==================== VALUABLE ITEMS ====================
   
   static async getValuableItems(defaultItems: any[] = []): Promise<any[]> {
-    if (!this.isConfigured) {
-      return DataService.loadValuableItems(defaultItems);
-    }
-
-    try {
-      const userId = await this.getUserId();
-      // If no user, fall back to localStorage
-      if (!userId) {
-        return DataService.loadValuableItems(defaultItems);
-      }
-
-      const { data, error } = await supabase
-        .from('valuable_items')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      // Return data as-is (even if empty) - only use defaults on first load when no data exists
-      return data || [];
-    } catch (error) {
-      if (!this.isAuthError(error)) {
-        console.error('Error loading valuable items from Supabase:', error);
-      }
-      return DataService.loadValuableItems(defaultItems);
-    }
+    return this.fetchWithDeduplication<any[]>(
+      'valuable_items',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('valuable_items');
+        
+        // Map database fields to application fields
+        return (data || []).map((item: any) => ({
+          ...item,
+          purchasePrice: item.purchase_price,
+          currentValue: item.current_value,
+          purchaseDate: item.purchase_date,
+        }));
+      },
+      () => DataService.loadValuableItems(defaultItems)
+    );
   }
 
   static async saveValuableItem(item: any): Promise<void> {
@@ -1231,11 +1322,26 @@ export class SupabaseDataService {
         return;
       }
 
-      const { error } = await supabase
-        .from('valuable_items')
-        .upsert({ ...item, user_id: userId });
+      // Map application fields to database fields
+      const dbItem: any = {
+        id: item.id,
+        user_id: userId,
+        name: item.name || 'Unknown Item',
+        category: item.category || 'Other',
+        purchase_price: typeof item.purchasePrice === 'number' && !isNaN(item.purchasePrice) ? item.purchasePrice : (item.purchase_price || 0),
+        current_value: typeof item.currentValue === 'number' && !isNaN(item.currentValue) ? item.currentValue : (item.current_value || 0),
+        purchase_date: item.purchaseDate || item.purchase_date || null,
+        condition: item.condition || null,
+        notes: item.notes || null,
+        color: item.color || '#8b5cf6',
+      };
 
-      if (error) throw error;
+      // Use secure API endpoint
+      const result = await saveData('valuable_items', dbItem);
+
+      if (!result) throw new Error('Failed to save valuable item via API');
+      
+      this.invalidateCache('valuable_items');
     } catch (error) {
       console.error('Error saving valuable item to Supabase:', error);
       // Fall back to localStorage on error
@@ -1259,12 +1365,12 @@ export class SupabaseDataService {
     }
 
     try {
-      const { error } = await supabase
-        .from('valuable_items')
-        .delete()
-        .eq('id', itemId);
+      // Use secure API endpoint
+      const result = await deleteData('valuable_items', itemId);
 
-      if (error) throw error;
+      if (!result) throw new Error('Failed to delete valuable item via API');
+      
+      this.invalidateCache('valuable_items');
       
       // Also remove from localStorage to prevent stale data
       const items = DataService.loadValuableItems([]);
@@ -1380,18 +1486,38 @@ export class SupabaseDataService {
 
       console.log('Clearing Supabase data for user:', userId);
 
-      // Delete from all tables in parallel
+      // Fetch all data first to get IDs
+      const [
+        cash, crypto, stocks, trading, realEstate, 
+        savings, expenses, debt, valuables, subscriptions, income
+      ] = await Promise.all([
+        this.getCashAccounts(),
+        this.getCryptoHoldings(),
+        this.getStockHoldings(),
+        this.getTradingAccounts(),
+        this.getRealEstate(),
+        this.getSavingsAccounts(),
+        this.getExpenseCategories(),
+        this.getDebtAccounts(),
+        this.getValuableItems(),
+        this.getSubscriptions(),
+        this.getIncomeSources()
+      ]);
+
+      // Delete all items using the secure API
+      // We use Promise.all to run deletions in parallel for each category
       await Promise.all([
-        supabase.from('cash_accounts').delete().eq('user_id', userId),
-        supabase.from('crypto_holdings').delete().eq('user_id', userId),
-        supabase.from('stock_holdings').delete().eq('user_id', userId),
-        supabase.from('trading_accounts').delete().eq('user_id', userId),
-        supabase.from('real_estate').delete().eq('user_id', userId),
-        supabase.from('savings_accounts').delete().eq('user_id', userId),
-        supabase.from('expense_categories').delete().eq('user_id', userId),
-        supabase.from('debt_accounts').delete().eq('user_id', userId),
-        supabase.from('valuable_items').delete().eq('user_id', userId),
-        supabase.from('tax_profiles').delete().eq('user_id', userId)
+        ...cash.map(item => this.deleteCashAccount(item.id)),
+        ...crypto.map(item => this.deleteCryptoHolding(item.id)),
+        ...stocks.map(item => this.deleteStockHolding(item.id)),
+        ...trading.map(item => this.deleteTradingAccount(item.id)),
+        ...realEstate.map(item => this.deleteRealEstate(item.id)),
+        ...savings.map(item => this.deleteSavingsAccount(item.id)),
+        ...expenses.map(item => this.deleteExpenseCategory(item.id)),
+        ...debt.map(item => this.deleteDebtAccount(item.id)),
+        ...valuables.map(item => this.deleteValuableItem(item.id)),
+        ...subscriptions.map(item => this.deleteSubscription(item.id)),
+        ...income.map(item => this.deleteIncomeSource(item.id))
       ]);
 
       console.log('All Supabase data cleared successfully');
@@ -1404,6 +1530,10 @@ export class SupabaseDataService {
   // ==================== TAX PROFILES ====================
   
   static async getTaxProfiles(defaultProfiles: any[] = []): Promise<any[]> {
+    // Try cache first
+    const cached = this.getCachedData<any[]>('tax_profiles');
+    if (cached) return cached;
+
     try {
       const userId = await this.getUserId();
       if (!userId) {
@@ -1433,7 +1563,7 @@ export class SupabaseDataService {
       }
 
       // Transform database format to app format
-      return (data || []).map((profile: any) => ({
+      const result = (data || []).map((profile: any) => ({
         id: profile.id,
         name: profile.name,
         country: profile.country,
@@ -1455,6 +1585,9 @@ export class SupabaseDataService {
         created_at: profile.created_at,
         updated_at: profile.updated_at
       }));
+      
+      this.setCachedData('tax_profiles', result);
+      return result;
     } catch (error) {
       console.error('Error in getTaxProfiles:', error);
       return defaultProfiles;
@@ -1506,6 +1639,8 @@ export class SupabaseDataService {
         console.error('Error saving tax profile:', error);
         throw error;
       }
+      
+      this.invalidateCache('tax_profiles');
     } catch (error) {
       console.error('Error in saveTaxProfile:', error);
       throw error;
@@ -1533,6 +1668,8 @@ export class SupabaseDataService {
         console.error('Error deleting tax profile:', error);
         throw error;
       }
+      
+      this.invalidateCache('tax_profiles');
     } catch (error) {
       console.error('Error in deleteTaxProfile:', error);
       throw error;
@@ -1551,6 +1688,10 @@ export class SupabaseDataService {
   } | null> {
     if (!this.isConfigured) return null;
 
+    // Try cache first
+    const cached = this.getCachedData<any>('user_preferences');
+    if (cached) return cached;
+
     try {
       const userId = await this.getUserId();
       if (!userId) return null;
@@ -1563,13 +1704,16 @@ export class SupabaseDataService {
       }
 
       // Merge the preferences JSON with top-level fields
-      return {
+      const result = {
         theme: data?.theme,
         currency: data?.currency,
         language: data?.language,
         notifications_enabled: data?.notifications_enabled,
         ...(data?.preferences as Record<string, any> || {})
       };
+      
+      this.setCachedData('user_preferences', result);
+      return result;
     } catch (error) {
       if (!this.isAuthError(error)) {
         console.error('Error in getUserPreferences:', error);
@@ -1607,6 +1751,8 @@ export class SupabaseDataService {
       if (!result) {
         throw new Error('Failed to save user preferences');
       }
+      
+      this.invalidateCache('user_preferences');
     } catch (error) {
       if (!this.isAuthError(error)) {
         console.error('Error in saveUserPreferences:', error);

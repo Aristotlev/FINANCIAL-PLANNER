@@ -16,7 +16,6 @@ import {
   Car,
   Camera
 } from "lucide-react";
-import { TbDiamond } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
@@ -556,7 +555,7 @@ function AddValuableItemModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Price</label>
             <input
               type="number"
-              value={formData.purchasePrice}
+              value={isNaN(formData.purchasePrice) ? '' : formData.purchasePrice}
               onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -568,7 +567,7 @@ function AddValuableItemModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Value</label>
             <input
               type="number"
-              value={formData.currentValue}
+              value={isNaN(formData.currentValue) ? '' : formData.currentValue}
               onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -641,7 +640,7 @@ function AddValuableItemModal({
               <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Insurance Value</label>
               <input
                 type="number"
-                value={formData.insuranceValue}
+                value={isNaN(formData.insuranceValue) ? '' : formData.insuranceValue}
                 onChange={(e) => setFormData({...formData, insuranceValue: parseFloat(e.target.value)})}
                 className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                 step="0.01"
@@ -765,7 +764,7 @@ function EditValuableItemModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Price</label>
             <input
               type="number"
-              value={formData.purchasePrice}
+              value={isNaN(formData.purchasePrice) ? '' : formData.purchasePrice}
               onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -777,7 +776,7 @@ function EditValuableItemModal({
             <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Value</label>
             <input
               type="number"
-              value={formData.currentValue}
+              value={isNaN(formData.currentValue) ? '' : formData.currentValue}
               onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
               className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
               step="0.01"
@@ -825,7 +824,7 @@ function EditValuableItemModal({
               <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Insurance Value</label>
               <input
                 type="number"
-                value={formData.insuranceValue}
+                value={isNaN(formData.insuranceValue) ? '' : formData.insuranceValue}
                 onChange={(e) => setFormData({...formData, insuranceValue: parseFloat(e.target.value)})}
                 className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
                 step="0.01"
@@ -1297,7 +1296,7 @@ export function ValuableItemsCard() {
         { label: topCategories[0]?.[0] || "Art & Items", value: `${mainCurrency.symbol}${category0Value.toLocaleString()}`, color: "#84cc16" },
         { label: topCategories[1]?.[0] || "Electronics", value: `${mainCurrency.symbol}${category1Value.toLocaleString()}`, color: "#a3e635" }
       ]}
-      icon={TbDiamond}
+      icon={Diamond}
       hoverContent={<ValuableItemsHoverContent />}
       modalContent={<ValuableItemsModalContent />}
       chartData={chartData}

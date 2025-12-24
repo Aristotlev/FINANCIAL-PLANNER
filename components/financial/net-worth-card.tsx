@@ -31,11 +31,13 @@ function NetWorthHoverContent() {
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('stockDataChanged', handleDataChange);
+    window.addEventListener('tradingDataChanged', handleDataChange);
 
     return () => {
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);
+      window.removeEventListener('tradingDataChanged', handleDataChange);
     };
   }, []);
   
@@ -105,11 +107,13 @@ function NetWorthModalContent() {
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('stockDataChanged', handleDataChange);
+    window.addEventListener('tradingDataChanged', handleDataChange);
 
     return () => {
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);
+      window.removeEventListener('tradingDataChanged', handleDataChange);
     };
   }, []);
 
@@ -1531,11 +1535,13 @@ export function NetWorthCard() {
     window.addEventListener('financialDataChanged', handleDataChange);
     window.addEventListener('cryptoDataChanged', handleDataChange);
     window.addEventListener('stockDataChanged', handleDataChange);
+    window.addEventListener('tradingDataChanged', handleDataChange);
 
     return () => {
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);
+      window.removeEventListener('tradingDataChanged', handleDataChange);
     };
   }, []);
   

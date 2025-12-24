@@ -99,8 +99,11 @@ export async function fetchData<T = any>(table: DataTable): Promise<T | null> {
 
     const result: ApiResponse<T> = await response.json();
     return result.data ?? null;
-  } catch (error) {
-    console.error(`Error fetching ${table}:`, error);
+  } catch (error: any) {
+    // Don't log network errors like "Failed to fetch" - these are common during dev/page transitions
+    if (error?.message !== 'Failed to fetch') {
+      console.error(`Error fetching ${table}:`, error);
+    }
     return null;
   }
 }
@@ -134,8 +137,20 @@ export async function saveData<T = any>(table: DataTable, data: T): Promise<T | 
         console.warn('Not authenticated - cannot save data');
         return null;
       }
+      
+      let errorMessage = 'Unknown error';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+      } catch (e) {
+        errorMessage = await response.text();
+      }
+      
+      console.error(`Error saving to ${table} (Status ${response.status}):`, errorMessage);
+      
       if (response.status === 403) {
         // CSRF token expired, clear cache and retry once
+        console.log('CSRF token expired, retrying...');
         clearCsrfToken();
         const newToken = await getCsrfToken();
         if (newToken) {
@@ -151,11 +166,11 @@ export async function saveData<T = any>(table: DataTable, data: T): Promise<T | 
           if (retryResponse.ok) {
             const result: ApiResponse<T> = await retryResponse.json();
             return result.data ?? null;
+          } else {
+             console.error(`Retry failed for ${table} (Status ${retryResponse.status})`);
           }
         }
       }
-      const error = await response.json();
-      console.error(`Error saving to ${table}:`, error.message);
       return null;
     }
 

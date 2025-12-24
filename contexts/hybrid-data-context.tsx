@@ -204,12 +204,20 @@ export function HybridDataProvider({ children, initialData }: HybridDataProvider
           lastUpdated: Date.now(),
           error: null,
         });
-      } catch (error) {
-        setPortfolio(prev => ({ 
-          ...prev, 
-          freshness: 'error',
-          error: error as Error,
-        }));
+      } catch (error: any) {
+        // Don't show error state for transient network errors - just keep stale data
+        if (error?.message === 'Failed to fetch') {
+          setPortfolio(prev => ({ 
+            ...prev, 
+            freshness: 'stale',
+          }));
+        } else {
+          setPortfolio(prev => ({ 
+            ...prev, 
+            freshness: 'error',
+            error: error as Error,
+          }));
+        }
       }
     };
 
@@ -241,12 +249,17 @@ export function HybridDataProvider({ children, initialData }: HybridDataProvider
           lastUpdated: Date.now(),
           error: null,
         });
-      } catch (error) {
-        setMarketPrices(prev => ({ 
-          ...prev, 
-          freshness: 'error',
-          error: error as Error,
-        }));
+      } catch (error: any) {
+        // Don't show error state for transient network errors
+        if (error?.message === 'Failed to fetch') {
+          setMarketPrices(prev => ({ ...prev, freshness: 'stale' }));
+        } else {
+          setMarketPrices(prev => ({ 
+            ...prev, 
+            freshness: 'error',
+            error: error as Error,
+          }));
+        }
       }
     };
 
@@ -263,12 +276,17 @@ export function HybridDataProvider({ children, initialData }: HybridDataProvider
           lastUpdated: Date.now(),
           error: null,
         });
-      } catch (error) {
-        setCurrencyRates(prev => ({ 
-          ...prev, 
-          freshness: 'error',
-          error: error as Error,
-        }));
+      } catch (error: any) {
+        // Don't show error state for transient network errors
+        if (error?.message === 'Failed to fetch') {
+          setCurrencyRates(prev => ({ ...prev, freshness: 'stale' }));
+        } else {
+          setCurrencyRates(prev => ({ 
+            ...prev, 
+            freshness: 'error',
+            error: error as Error,
+          }));
+        }
       }
     };
 
@@ -369,9 +387,14 @@ export function HybridDataProvider({ children, initialData }: HybridDataProvider
 
   // Listen for data change events from other parts of the app
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const handleDataChange = () => {
-      // Debounced revalidation on data changes
-      revalidate('portfolio');
+      // Debounced revalidation on data changes (500ms)
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        revalidate('portfolio');
+      }, 500);
     };
 
     window.addEventListener('financialDataChanged', handleDataChange);
@@ -379,6 +402,7 @@ export function HybridDataProvider({ children, initialData }: HybridDataProvider
     window.addEventListener('stockDataChanged', handleDataChange);
 
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('financialDataChanged', handleDataChange);
       window.removeEventListener('cryptoDataChanged', handleDataChange);
       window.removeEventListener('stockDataChanged', handleDataChange);

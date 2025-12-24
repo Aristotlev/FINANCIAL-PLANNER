@@ -21,9 +21,9 @@ import {
   Calendar,
   Mail,
   Search,
-  Loader2
+  Loader2,
+  CandlestickChart
 } from "lucide-react";
-import { TbChartCandle, TbChartLine } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { formatNumber } from "../../lib/utils";
 import { TRADING_DATABASE } from "../../lib/trading-database";
@@ -828,7 +828,7 @@ function ToolsModalContent() {
           <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
             <div className="flex overflow-x-auto scrollbar-hide w-full">
               {[
-                { id: 'chart', label: 'Chart', icon: TbChartCandle },
+                { id: 'chart', label: 'Chart', icon: CandlestickChart },
                 { id: 'stocks', label: 'Stocks', icon: TrendingUp },
                 { id: 'crypto', label: 'Crypto', icon: Coins },
                 { id: 'forex', label: 'Forex', icon: DollarSign },
@@ -905,7 +905,7 @@ function ToolsModalContent() {
             <div className="grid grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <TbChartCandle className="w-4 h-4 text-purple-600" />
+                  <CandlestickChart className="w-4 h-4 text-purple-600" />
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Technical Analysis</h4>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Advanced charting tools and indicators</p>
@@ -1087,7 +1087,7 @@ function ToolsModalContent() {
               </div>
               <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <TbChartLine className="w-4 h-4 text-purple-600" />
+                  <LineChart className="w-4 h-4 text-purple-600" />
                   <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Rate Changes</h4>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">24h percentage changes</p>

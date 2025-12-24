@@ -25,7 +25,6 @@ import {
   SiNvidia, 
   SiMeta
 } from "react-icons/si";
-import { TbBrandWindows, TbChartLine, TbBuildingBank, TbHeartPlus, TbCpu, TbShoppingCart, TbCreditCard } from "react-icons/tb";
 import {
   AppleIconTV,
   MicrosoftIconTV,
@@ -617,19 +616,23 @@ function StocksModalContent() {
   // Update holdings with real-time prices
   const updatedHoldings = stockHoldings.map(holding => {
     const currentPriceData = prices[holding.symbol];
-    if (currentPriceData) {
-      const currentPrice = currentPriceData.price;
-      const value = holding.shares * currentPrice;
+    // Use current price if available, otherwise fallback to entry point
+    const currentPrice = currentPriceData?.price || holding.entryPoint || 0;
+    const value = holding.shares * currentPrice;
+    
+    // Calculate change
+    let change = "0.00%";
+    if (holding.entryPoint > 0) {
       const changePercent = ((currentPrice - holding.entryPoint) / holding.entryPoint * 100);
-      
-      return {
-        ...holding,
-        value,
-        change: `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
-        currentPrice
-      };
+      change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
     }
-    return holding;
+    
+    return {
+      ...holding,
+      value,
+      change,
+      currentPrice
+    };
   });
 
   const addHolding = async (newHolding: Omit<StockHolding, 'id' | 'value' | 'change' | 'color'>) => {
@@ -1368,19 +1371,23 @@ function StocksCardWithPrices() {
   // Calculate portfolio values with real-time prices
   const portfolioData = stockHoldings.map(holding => {
     const currentPriceData = prices[holding.symbol];
-    if (currentPriceData) {
-      const currentPrice = currentPriceData.price;
-      const value = holding.shares * currentPrice;
+    // Use current price if available, otherwise fallback to entry point (cost basis)
+    const currentPrice = currentPriceData?.price || holding.entryPoint || 0;
+    const value = holding.shares * currentPrice;
+    
+    // Calculate change
+    let change = "0.00%";
+    if (holding.entryPoint > 0) {
       const changePercent = ((currentPrice - holding.entryPoint) / holding.entryPoint * 100);
-      
-      return {
-        ...holding,
-        value,
-        change: `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`,
-        currentPrice
-      };
+      change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
     }
-    return holding;
+    
+    return {
+      ...holding,
+      value,
+      change,
+      currentPrice
+    };
   });
 
   const totalValue = portfolioData.reduce((sum, holding) => sum + holding.value, 0);

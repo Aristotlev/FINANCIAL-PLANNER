@@ -19,6 +19,16 @@ export function usePortfolioValues() {
           SupabaseDataService.getCryptoHoldings([]),
           SupabaseDataService.getStockHoldings([])
         ]);
+        
+        // Debug logging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Portfolio] Loaded crypto holdings:', crypto.length, 'items');
+          console.log('[Portfolio] Loaded stock holdings:', stocks.length, 'items');
+          if (stocks.length > 0) {
+            console.log('[Portfolio] Stock sample:', stocks[0]);
+          }
+        }
+        
         setCryptoHoldings(crypto);
         setStockHoldings(stocks);
       } catch (error) {
@@ -78,6 +88,17 @@ export function usePortfolioValues() {
     }
     return sum + (holding.shares * (holding.entryPoint || holding.buyPrice || 0)); // fallback to entry price
   }, 0);
+
+  // Debug logging for stock calculation
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Portfolio] Stock calculation:', {
+      stockHoldingsCount: stockHoldings.length,
+      stockSymbols,
+      stockPricesKeys: Object.keys(stockPrices),
+      stockValue,
+      cryptoValue
+    });
+  }
 
   // Calculate gains/losses
   const cryptoCostBasis = cryptoHoldings.reduce((sum, holding) => 

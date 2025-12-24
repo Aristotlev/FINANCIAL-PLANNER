@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import '@xyflow/react/dist/style.css';
 import { BetterAuthProvider } from "../contexts/better-auth-context";
 import { ThemeProvider } from "../contexts/theme-context";
 import { APIConnectionProvider } from "../contexts/api-connection-context";
@@ -80,8 +81,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://www.googletagmanager.com" />
-        <link rel="preconnect" href="https://www.google-analytics.com" />
         {/* Runtime environment variables - loaded at runtime, not build time */}
         <script
           dangerouslySetInnerHTML={{

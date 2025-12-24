@@ -17,9 +17,9 @@ import {
   Calendar,
   Briefcase,
   RefreshCw,
-  Clock
+  Clock,
+  Coins
 } from "lucide-react";
-import { TbCoin } from "react-icons/tb";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
@@ -2079,7 +2079,7 @@ export function CashCard() {
         { label: "Checking", value: formatMain(checkingTotal), color: "#10b981" },
         { label: "Savings", value: formatMain(savingsTotal), color: "#34d399" }
       ]}
-      icon={TbCoin}
+      icon={Coins}
       hoverContent={<CashHoverContent />}
       modalContent={<CashModalContent />}
       chartData={chartData}

@@ -17,9 +17,9 @@ import {
   CheckCircle,
   Info,
   PieChart,
-  X
+  X,
+  HandCoins
 } from "lucide-react";
-import { GiReceiveMoney } from "react-icons/gi";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
@@ -1583,7 +1583,7 @@ export function TaxesCard() {
           color: "#3b82f6" 
         }
       ]}
-      icon={GiReceiveMoney}
+      icon={HandCoins}
       hoverContent={<TaxesHoverContent />}
       modalContent={<TaxesModalContent />}
       chartData={chartData}

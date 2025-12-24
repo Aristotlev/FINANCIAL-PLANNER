@@ -16,7 +16,6 @@ import {
   SiTether,
   SiBinance
 } from "react-icons/si";
-import { TbCoin, TbMountain, TbAtom, TbWorld, TbCurrencyDollar, TbDiamond, TbRocket, TbBrandFunimation, TbNetwork, TbCloud, TbCircle } from "react-icons/tb";
 import {
   BTCIconTV,
   ETHIconTV,
@@ -76,7 +75,7 @@ import { Wallet } from "lucide-react";
 
 // Crypto Icon Component - Binance style
 function CryptoIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
-  if (!symbol) return <TbCoin className={className} />;
+  if (!symbol) return <Coins className={className} />;
 
   switch (symbol.toUpperCase()) {
     case 'BTC':
