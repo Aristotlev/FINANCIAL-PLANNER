@@ -81,6 +81,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Google Ads */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-17821905669"
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-17821905669');
+          `}
+        </Script>
         {/* Runtime environment variables - loaded at runtime, not build time */}
         <script
           dangerouslySetInnerHTML={{
@@ -120,14 +133,6 @@ export default function RootLayout({
           `}
         </Script>
         <GoogleAnalytics gaId="G-6CJBH3X6XC" />
-        {/* Google Ads */}
-        <Script id="google-ads" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('config', 'AW-17821905669');
-          `}
-        </Script>
         <ExtensionErrorBoundary>
           <ReduxWarningsSuppressor />
           <ZoomHandler />
