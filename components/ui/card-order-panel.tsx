@@ -74,6 +74,10 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', cardId);
     
+    // Store reference to the dragged element to reset opacity later
+    const target = e.currentTarget as HTMLDivElement;
+    dragNodeRef.current = target;
+    
     // Add a slight delay to allow the drag image to be captured
     setTimeout(() => {
       if (dragNodeRef.current) {
@@ -87,16 +91,19 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
     setDragOverCard(null);
     if (dragNodeRef.current) {
       dragNodeRef.current.style.opacity = '1';
+      dragNodeRef.current = null;
     }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragEnter = (e: React.DragEvent, cardId: CardType) => {
     e.preventDefault();
+    e.stopPropagation();
     if (draggedCard && draggedCard !== cardId) {
       setDragOverCard(cardId);
     }
@@ -104,6 +111,7 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     // Only clear if we're leaving the card, not entering a child
     const relatedTarget = e.relatedTarget as HTMLElement;
     if (!e.currentTarget.contains(relatedTarget)) {
@@ -113,11 +121,22 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
 
   const handleDrop = (e: React.DragEvent, targetCardId: CardType) => {
     e.preventDefault();
-    if (draggedCard && draggedCard !== targetCardId) {
-      moveCard(draggedCard, targetCardId);
+    e.stopPropagation();
+    
+    const sourceCardId = e.dataTransfer.getData('text/plain') as CardType;
+    const cardToMove = sourceCardId || draggedCard;
+
+    if (cardToMove && cardToMove !== targetCardId) {
+      moveCard(cardToMove, targetCardId);
     }
+    
     setDraggedCard(null);
     setDragOverCard(null);
+    
+    if (dragNodeRef.current) {
+      dragNodeRef.current.style.opacity = '1';
+      dragNodeRef.current = null;
+    }
   };
 
   const handleReset = () => {
@@ -174,7 +193,6 @@ export function CardOrderPanel({ isOpen, onClose }: CardOrderPanelProps) {
             return (
               <div
                 key={cardId}
-                ref={isDragging ? dragNodeRef : null}
                 data-card-id={cardId}
                 draggable={!isTouchDevice}
                 onDragStart={(e) => handleDragStart(e, cardId)}
