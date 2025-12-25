@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { motion, useAnimation, PanInfo } from 'framer-motion';
 import { useHiddenCards, CardType } from '../../contexts/hidden-cards-context';
 import { useCardOrder } from '../../contexts/card-order-context';
 
@@ -11,95 +12,116 @@ interface DraggableCardWrapperProps {
 
 export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperProps) {
   const { moveCard } = useCardOrder();
-  const [isHovered, setIsHovered] = useState(false);
+  const controls = useAnimation();
+  // Removed local state to prevent re-renders during drag start/end
+  // This ensures the drag is handled entirely by the compositor/Framer Motion
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
+  const isMounted = useRef(false);
+  const rafRef = useRef<number | null>(null);
 
   // Detect touch device on mount
   useEffect(() => {
+    isMounted.current = true;
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  // Optimized: Only attach global mouseup listener when drag starts
-  // This replaces 20+ constant global listeners with 0 (until interaction)
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Don't enable drag on touch devices
-    if (isTouchDevice) return;
-    
-    // Set the current drag card ID
-    (window as any).__currentDragCard = cardId;
-
-    const handleMouseUp = () => {
-      // Clear after a short delay to allow drop detection
-      setTimeout(() => {
-        if ((window as any).__currentDragCard === cardId) {
-          (window as any).__currentDragCard = null;
-        }
-      }, 100);
-      
-      // Remove the listener immediately after use
-      document.removeEventListener('mouseup', handleMouseUp, true);
+    return () => {
+      isMounted.current = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
-
-    document.addEventListener('mouseup', handleMouseUp, true);
-  }, [cardId, isTouchDevice]);
-
-  const handleMouseUp = useCallback(() => {
-    const draggedCardId = (window as any).__currentDragCard;
-    if (draggedCardId && draggedCardId !== cardId) {
-      moveCard(draggedCardId, cardId);
-      (window as any).__currentDragCard = null;
-    }
-  }, [cardId, moveCard]);
-
-  // 3D Tilt Effect - GPU Accelerated
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (isTouchDevice || !wrapperRef.current) return;
-
-    const rect = wrapperRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    // Calculate rotation (max 10 degrees)
-    const rotateX = ((y - centerY) / centerY) * -5;
-    const rotateY = ((x - centerX) / centerX) * 5;
-
-    setRotation({ x: rotateX, y: rotateY });
-  }, [isTouchDevice]);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
-    setRotation({ x: 0, y: 0 });
   }, []);
+
+  const handleDragStart = useCallback(() => {
+    // Dispatch custom event to disable 3D effects in children and notify folder
+    window.dispatchEvent(new CustomEvent('cardDragStart', { detail: { cardId } }));
+  }, [cardId]);
+
+  const handleDrag = useCallback((event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    // Throttle event dispatch to prevent lag
+    if (rafRef.current) return;
+
+    rafRef.current = requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent('cardDragMove', { 
+        detail: { 
+          cardId,
+          x: info.point.x,
+          y: info.point.y
+        } 
+      }));
+      rafRef.current = null;
+    });
+  }, [cardId]);
+
+  const handleDragEnd = useCallback((event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (!isMounted.current) return;
+    
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    
+    // Check what we dropped on
+    // Use elementsFromPoint to look through the dragged element
+    const elements = document.elementsFromPoint(info.point.x, info.point.y);
+    
+    // 1. Check for Hidden Folder
+    // Robust check: Look for ANY element in the stack that belongs to the hidden folder
+    const isOverHiddenFolder = elements.some(el => 
+      el.closest('[data-hidden-folder-button]') || 
+      el.closest('[data-hidden-folder-dropdown]')
+    );
+
+    if (isOverHiddenFolder) {
+       window.dispatchEvent(new CustomEvent('hideCardRequest', { detail: { cardId } }));
+       // Do NOT animate controls here as the component is likely unmounting
+       window.dispatchEvent(new CustomEvent('cardDragEnd'));
+       return;
+    }
+
+    // 2. Check for other cards (Swap on Drop)
+    // Find the first element that is NOT part of the dragged card
+    const dropTarget = elements.find(el => !el.closest(`[data-card-id="${cardId}"]`));
+    const targetCardWrapper = dropTarget?.closest('[data-card-id]');
+    
+    if (targetCardWrapper) {
+       const targetId = targetCardWrapper.getAttribute('data-card-id');
+       if (targetId && targetId !== cardId) {
+          moveCard(cardId, targetId as CardType);
+       }
+    }
+
+    // Reset position (layout prop handles the actual move animation)
+    if (isMounted.current) {
+      controls.start({ x: 0, y: 0, scale: 1 });
+    }
+    window.dispatchEvent(new CustomEvent('cardDragEnd'));
+  }, [cardId, controls, moveCard]);
 
   return (
-    <div
+    <motion.div
       ref={wrapperRef}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
-      onMouseDownCapture={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      className={`transition-all duration-200 relative group ${isTouchDevice ? '' : 'cursor-grab hover:shadow-2xl active:scale-[0.98]'}`}
-      style={{
-        // Only disable touch-action on non-touch devices (for mouse drag)
-        // On touch devices, allow normal scrolling
+      layout
+      layoutId={cardId} // Helps Framer Motion track the element across renders
+      drag={!isTouchDevice}
+      dragConstraints={false} // Allow dragging anywhere without constraints
+      dragMomentum={false}
+      dragElastic={0} // Ensure 1:1 movement with cursor
+      onDragStart={handleDragStart}
+      onDrag={handleDrag}
+      onDragEnd={handleDragEnd}
+      animate={controls}
+      // Use whileDrag for visual states to avoid React re-renders
+      whileDrag={{ scale: 1, cursor: 'grabbing', zIndex: 100000 }}
+      whileHover={{ scale: 1.02, zIndex: 10 }}
+      className={`relative ${isTouchDevice ? '' : 'cursor-grab active:cursor-grabbing'}`}
+      style={{ 
+        zIndex: 1, // Base z-index
         touchAction: isTouchDevice ? 'auto' : 'none',
-        userSelect: 'none',
-        WebkitUserSelect: 'none',
-        zIndex: isHovered ? 50 : 1,
-        transform: isHovered && !isTouchDevice 
-          ? `perspective(1000px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg) scale(1.02)` 
-          : 'perspective(1000px) rotateX(0) rotateY(0) scale(1)',
-        transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.5s ease-out',
-        willChange: 'transform',
       }}
+      data-card-id={cardId}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }

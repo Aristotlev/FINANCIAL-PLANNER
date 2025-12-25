@@ -20,10 +20,8 @@ export const GPUOptimizedWrapper = ({
 }: GPUOptimizedWrapperProps) => {
   return (
     <div
-      className={cn("gpu-accelerated content-visibility-auto", className)}
-      style={{
-        containIntrinsicSize: `1px ${estimatedHeight}`,
-      }}
+      // Removed content-visibility-auto to prevent layout shifts during drag
+      className={cn("gpu-accelerated", className)}
       {...props}
     >
       {children}

@@ -15,11 +15,17 @@ export function HiddenCardsFolder() {
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dragEnterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Use refs to track state in event handlers (avoids stale closure issues)
   const isDraggingRef = useRef(false);
   const hiddenCardsRef = useRef<CardType[]>([]);
   const isOpenRef = useRef(false);
+  const isDragOverRef = useRef(false);
+  const isDropdownDragOverRef = useRef(false);
+  const currentDragCardRef = useRef<CardType | null>(null);
+  const buttonRectRef = useRef<DOMRect | null>(null);
+  const dropdownRectRef = useRef<DOMRect | null>(null);
   
   const { hiddenCards, getHiddenCardInfo, showCard, hideCard } = useHiddenCards();
 
@@ -44,10 +50,17 @@ export function HiddenCardsFolder() {
     const updatePosition = () => {
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
+        // Update cached rect for drag detection
+        buttonRectRef.current = rect;
+        
         setDropdownPosition({
           top: rect.bottom + 8,
           left: Math.max(rect.left, 16), // Ensure it doesn't go off-screen
         });
+      }
+      
+      if (dropdownRef.current) {
+        dropdownRectRef.current = dropdownRef.current.getBoundingClientRect();
       }
     };
 
@@ -66,6 +79,11 @@ export function HiddenCardsFolder() {
         window.removeEventListener('resize', onScrollOrResize);
         cancelAnimationFrame(rafId);
       };
+    } else {
+       // Even if closed, update button rect if we are dragging (handled in dragStart, but good to have fresh)
+       if (buttonRef.current) {
+          buttonRectRef.current = buttonRef.current.getBoundingClientRect();
+       }
     }
   }, [isOpen]);
 
@@ -73,63 +91,246 @@ export function HiddenCardsFolder() {
   useEffect(() => {
     const handleDragStart = (e: Event) => {
       const customEvent = e as CustomEvent;
+      // Check if it's a custom event or native drag event
       const cardId = customEvent.detail?.cardId || (window as any).__currentDragCard;
+      
       if (cardId) {
+        currentDragCardRef.current = cardId;
+      }
+      
+      // Cache rects on start to avoid reflows during drag
+      if (buttonRef.current) {
+        buttonRectRef.current = buttonRef.current.getBoundingClientRect();
+      }
+      if (dropdownRef.current) {
+        dropdownRectRef.current = dropdownRef.current.getBoundingClientRect();
+      }
+
+      // Also check if it's a native drag event with dataTransfer
+      if (!cardId && e instanceof DragEvent) {
+        // We can't access dataTransfer in dragstart for security, but we know a drag started
+        isDraggingRef.current = true;
+        setIsDraggingCard(true);
+        return;
+      }
+
+      if (cardId || e.type === 'cardDragStart') {
         isDraggingRef.current = true;
         setIsDraggingCard(true);
       }
     };
 
     const handleDragEnd = () => {
+      // Check if we should hide the card based on where it was dropped
+      if (currentDragCardRef.current && (isDragOverRef.current || isDropdownDragOverRef.current)) {
+         const cardId = currentDragCardRef.current;
+         if (!hiddenCardsRef.current.includes(cardId)) {
+             hideCard(cardId);
+             showNotification(cardId);
+         }
+      }
+
       isDraggingRef.current = false;
       setIsDraggingCard(false);
       setIsDragOver(false);
       setIsDropdownDragOver(false);
+      isDragOverRef.current = false;
+      isDropdownDragOverRef.current = false;
+      currentDragCardRef.current = null;
+      // Clear cached rects
+      buttonRectRef.current = null;
+      dropdownRectRef.current = null;
+
+      if (dragEnterTimeoutRef.current) {
+        clearTimeout(dragEnterTimeoutRef.current);
+        dragEnterTimeoutRef.current = null;
+      }
     };
 
-    const handleDragMove = (e: Event) => {
+    const handleCardDragMove = (e: Event) => {
       const customEvent = e as CustomEvent;
-      if (customEvent.detail?.isOverDropTarget) {
-        setIsDropdownDragOver(true);
-      } else {
-        setIsDropdownDragOver(false);
+      const { x, y } = customEvent.detail;
+      
+      // Check button intersection using cached rect
+      if (buttonRectRef.current) {
+        const rect = buttonRectRef.current;
+        const isOver = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+        
+        if (isOver) {
+           if (!isDragOverRef.current) {
+               isDragOverRef.current = true;
+               setIsDragOver(true);
+               // Auto open logic
+               if (!isOpenRef.current && !dragEnterTimeoutRef.current) {
+                  dragEnterTimeoutRef.current = setTimeout(() => setIsOpen(true), 500);
+               }
+           }
+        } else {
+           if (isDragOverRef.current) {
+             isDragOverRef.current = false;
+             setIsDragOver(false);
+             if (dragEnterTimeoutRef.current) {
+               clearTimeout(dragEnterTimeoutRef.current);
+               dragEnterTimeoutRef.current = null;
+             }
+           }
+        }
+      }
+      
+      // Check dropdown intersection if open using cached rect
+      // Note: If dropdown opens during drag, the useEffect[isOpen] will update the rect
+      if (isOpenRef.current) {
+         // Try to get cached rect, or fallback to current if not yet cached (e.g. just opened)
+         let rect = dropdownRectRef.current;
+         if (!rect && dropdownRef.current) {
+            rect = dropdownRef.current.getBoundingClientRect();
+            dropdownRectRef.current = rect;
+         }
+
+         if (rect) {
+            const isOver = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+            
+            if (isOver) {
+                if (!isDropdownDragOverRef.current) {
+                    isDropdownDragOverRef.current = true;
+                    setIsDropdownDragOver(true);
+                }
+            } else {
+                if (isDropdownDragOverRef.current) {
+                    isDropdownDragOverRef.current = false;
+                    setIsDropdownDragOver(false);
+                }
+            }
+         }
       }
     };
 
     const handleHideCardRequest = (e: Event) => {
       const customEvent = e as CustomEvent;
-      const cardId = customEvent.detail?.cardId;
+      const { cardId } = customEvent.detail;
       if (cardId && !hiddenCardsRef.current.includes(cardId)) {
         hideCard(cardId);
-        
-        const cardInfo = CARD_METADATA[cardId as CardType];
-        if (cardInfo) {
-          const notification = document.createElement('div');
-          notification.className = 'fixed top-24 right-6 z-[100000] bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg font-medium';
-          notification.textContent = cardInfo.icon + ' ' + cardInfo.name + ' hidden!';
-          document.body.appendChild(notification);
-          setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateX(100%)';
-            notification.style.transition = 'all 0.3s';
-            setTimeout(() => notification.remove(), 300);
-          }, 2000);
-        }
+        showNotification(cardId);
+        // Reset states
+        setIsDragOver(false);
+        setIsDropdownDragOver(false);
       }
     };
 
     window.addEventListener('cardDragStart', handleDragStart);
     window.addEventListener('cardDragEnd', handleDragEnd);
-    window.addEventListener('cardDragMove', handleDragMove);
+    window.addEventListener('cardDragMove', handleCardDragMove);
     window.addEventListener('hideCardRequest', handleHideCardRequest);
+    
+    // Also listen for native drag events on window to catch start/end
+    window.addEventListener('dragstart', handleDragStart);
+    window.addEventListener('dragend', handleDragEnd);
 
     return () => {
       window.removeEventListener('cardDragStart', handleDragStart);
       window.removeEventListener('cardDragEnd', handleDragEnd);
-      window.removeEventListener('cardDragMove', handleDragMove);
+      window.removeEventListener('cardDragMove', handleCardDragMove);
       window.removeEventListener('hideCardRequest', handleHideCardRequest);
+      window.removeEventListener('dragstart', handleDragStart);
+      window.removeEventListener('dragend', handleDragEnd);
     };
-  }, [hideCard]);
+  }, []);
+
+  // Handle drop on the folder button
+  const handleButtonDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (dragEnterTimeoutRef.current) {
+      clearTimeout(dragEnterTimeoutRef.current);
+      dragEnterTimeoutRef.current = null;
+    }
+
+    const cardId = e.dataTransfer.getData('text/plain') as CardType;
+    if (cardId && !hiddenCards.includes(cardId)) {
+      hideCard(cardId);
+      showNotification(cardId);
+    }
+  };
+
+  // Handle drop on the dropdown area
+  const handleDropdownDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropdownDragOver(false);
+    const cardId = e.dataTransfer.getData('text/plain') as CardType;
+    if (cardId && !hiddenCards.includes(cardId)) {
+      hideCard(cardId);
+      showNotification(cardId);
+    }
+  };
+
+  const handleDragEnterButton = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+    
+    // Auto-open folder if hovering for 500ms
+    if (!isOpen && !dragEnterTimeoutRef.current) {
+      dragEnterTimeoutRef.current = setTimeout(() => {
+        setIsOpen(true);
+      }, 500);
+    }
+  };
+
+  const handleDragOverButton = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!isDragOver) setIsDragOver(true);
+  };
+
+  const handleDragLeaveButton = (e: React.DragEvent) => {
+    // Prevent flickering when moving over children
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
+
+    setIsDragOver(false);
+    if (dragEnterTimeoutRef.current) {
+      clearTimeout(dragEnterTimeoutRef.current);
+      dragEnterTimeoutRef.current = null;
+    }
+  };
+
+  const handleDragEnterDropdown = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDropdownDragOver(true);
+  };
+
+  const handleDragOverDropdown = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!isDropdownDragOver) setIsDropdownDragOver(true);
+  };
+
+  const handleDragLeaveDropdown = (e: React.DragEvent) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    setIsDropdownDragOver(false);
+  };
+
+  const showNotification = (cardId: CardType) => {
+    const cardInfo = CARD_METADATA[cardId];
+    if (cardInfo) {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-24 right-6 z-[100000] bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg font-medium flex items-center gap-2';
+      notification.innerHTML = `<span>${cardInfo.icon}</span> <span>${cardInfo.name} hidden!</span>`;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s';
+        setTimeout(() => notification.remove(), 300);
+      }, 2000);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -194,6 +395,10 @@ export function HiddenCardsFolder() {
             ? "ring-2 ring-blue-400/50 ring-offset-1 ring-offset-gray-900 animate-pulse"
             : ""
         )}
+        onDragEnter={handleDragEnterButton}
+        onDragOver={handleDragOverButton}
+        onDragLeave={handleDragLeaveButton}
+        onDrop={handleButtonDrop}
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -207,20 +412,22 @@ export function HiddenCardsFolder() {
               : "text-gray-500 hover:text-gray-400 bg-gray-800/30"
           )}
         >
-          {isDragOver || isDraggingCard ? (
-            <EyeOff className={"w-5 h-5 " + (isDragOver ? "animate-pulse" : "")} />
-          ) : (
-            <Folder className="w-5 h-5" />
-          )}
-          <span className="text-sm font-medium">
-            {isDragOver ? "Drop to Hide" : isDraggingCard ? "Drop Here to Hide" : "Hidden Cards"}
-          </span>
-          {hasHiddenCards && !isDragOver && !isDraggingCard && (
-            <span className="px-1.5 py-0.5 text-xs font-semibold bg-blue-500/20 text-blue-400 rounded-full">
-              {hiddenCards.length}
+          <div className="pointer-events-none flex items-center gap-2">
+            {isDragOver || isDraggingCard ? (
+              <EyeOff className={"w-5 h-5 " + (isDragOver ? "animate-pulse" : "")} />
+            ) : (
+              <Folder className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">
+              {isDragOver ? "Drop to Hide" : isDraggingCard ? "Drop Here to Hide" : "Hidden Cards"}
             </span>
-          )}
-          <ChevronDown className={"w-4 h-4 transition-transform " + (isOpen ? "rotate-180" : "")} />
+            {hasHiddenCards && !isDragOver && !isDraggingCard && (
+              <span className="px-1.5 py-0.5 text-xs font-semibold bg-blue-500/20 text-blue-400 rounded-full">
+                {hiddenCards.length}
+              </span>
+            )}
+            <ChevronDown className={"w-4 h-4 transition-transform " + (isOpen ? "rotate-180" : "")} />
+          </div>
         </button>
       </div>
 
@@ -236,11 +443,15 @@ export function HiddenCardsFolder() {
               : "border-gray-200 dark:border-gray-700"
           )}
           style={{ 
-            zIndex: 2147483647, // Maximum possible z-index
+            zIndex: 50000, // High enough to be above dashboard, but allows dragged cards on top
             top: dropdownPosition.top,
             left: dropdownPosition.left,
             pointerEvents: 'all',
           }}
+          onDragEnter={handleDragEnterDropdown}
+          onDragOver={handleDragOverDropdown}
+          onDragLeave={handleDragLeaveDropdown}
+          onDrop={handleDropdownDrop}
         >
           <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">

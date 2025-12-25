@@ -26,13 +26,10 @@ export const authClient = createAuthClient({
   // Add fetch timeout to prevent hanging
   fetchOptions: {
     credentials: 'include', // Ensure cookies are sent
-    onError(context) {
-      console.error('Auth API error:', context);
-    },
     onRequest(context) {
       // Optional: Add request logging in development
       if (process.env.NODE_ENV === 'development') {
-        console.debug('Auth request:', context.url);
+        // console.debug('Auth request:', context.url);
       }
     },
   },
