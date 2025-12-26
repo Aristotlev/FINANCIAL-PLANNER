@@ -21,10 +21,14 @@ import {
   XCircle,
   CheckCircle,
   BarChart3,
+  Lock,
 } from "lucide-react";
 import { GeminiService } from "@/lib/gemini-service";
 import { TTSPreprocessor } from "@/lib/tts-preprocessor";
 import { smartVoiceService, selectVoiceService } from "@/lib/smart-voice-service";
+import { useSubscription, useAILimit } from "@/hooks/use-subscription";
+import { getEffectivePlanLimits } from "@/types/subscription";
+import { useRouter } from "next/navigation";
 
 interface Message {
   id: string;
@@ -80,12 +84,19 @@ function formatMarkdown(text: string): string {
 export function AIChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const { subscription, loading: isSubscriptionLoading } = useSubscription();
+  const { checkLimit, recordCall, callsRemaining, limitInfo } = useAILimit();
+  const router = useRouter();
+  
+  const planLimits = subscription ? getEffectivePlanLimits(subscription) : null;
+  const isAiAllowed = planLimits?.ai_assistant ?? false;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       role: "assistant",
       content:
-        "👋 Hi! I'm **Lisa**, your intelligent AI financial assistant powered by Google Gemini.\n\n**What I Can Do:**\n• 🧠 Understand natural language - talk to me normally\n• 💡 Provide smart insights and suggestions\n• ⚡ Execute actions automatically\n• 📊 Analyze your complete financial picture\n• 🎯 Answer complex finance questions\n• 📈 Fetch real-time market data & charts\n• 🔍 Analyze any asset with live prices\n• 📊 Compare assets side-by-side\n• 🌍 Track market sentiment & trends\n\n**🎤 Voice Controls:**\n• 🎙️ **Microphone button** - Click to dictate your message (speech-to-text)\n• 🔊 **Speaker button** - Toggle voice responses ON/OFF\n• **When OFF**: Text-only chat (no voice, no API calls)\n• **When ON**: Premium AI voice responses (ElevenLabs + Gemini)\n• � Say \"Hey Lisa\" to activate voice input\n\n**Try These:**\n• \"Analyze BTC\" - Detailed crypto insights\n• \"Compare AAPL vs MSFT\" - Asset comparison\n• \"How's the crypto market?\" - Market sentiment\n• \"Analyze my portfolio\" - Performance review\n\n**No rigid commands needed** - I understand context!",
+        "👋 Hi! I'm **Lisa**, your intelligent AI financial assistant powered by Google Gemini.\n\n**What I Can Do:**\n• 🧠 Understand natural language - talk to me normally\n• 💡 Provide smart insights and suggestions\n• ⚡ Execute actions automatically\n• 📊 Analyze your complete financial picture\n• 🎯 Answer complex finance questions\n• 📈 Fetch real-time market data & charts\n• 🔍 Analyze any asset with live prices\n• 📊 Compare assets side-by-side\n• 🌍 Track market sentiment & trends\n\n**🎤 Voice Controls:**\n• 🎙️ **Microphone button** - Click to dictate your message (speech-to-text)\n• 🔊 **Speaker button** - Toggle voice responses ON/OFF\n• **When OFF**: Text-only chat (no voice, no API calls)\n• **When ON**: Premium AI voice responses (ElevenLabs + Gemini)\n• 🗣️ Say \"Hey Lisa\" to activate voice input\n\n**Try These:**\n• \"Analyze BTC\" - Detailed crypto insights\n• \"Compare AAPL vs MSFT\" - Asset comparison\n• \"How's the crypto market?\" - Market sentiment\n• \"Analyze my portfolio\" - Performance review\n\n**No rigid commands needed** - I understand context!",
       timestamp: new Date(),
     },
   ]);
@@ -116,7 +127,7 @@ export function AIChatAssistant() {
   // Load financial context when chat opens
   // Also refresh data periodically (every 2 minutes)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isAiAllowed) {
       // Initial load
       geminiService.loadFinancialContext().catch(console.error);
       
@@ -131,7 +142,7 @@ export function AIChatAssistant() {
       // Cleanup interval on unmount
       return () => clearInterval(refreshInterval);
     }
-  }, [isOpen, geminiService]);
+  }, [isOpen, geminiService, isAiAllowed]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -990,6 +1001,19 @@ export function AIChatAssistant() {
       return;
     }
 
+    // Check AI usage limits
+    const canProceed = await checkLimit();
+    if (!canProceed) {
+      const limitMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `🚫 **Daily Limit Reached**\n\nYou've used all your AI messages for today. Upgrade your plan for more capacity!`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, limitMessage]);
+      return;
+    }
+
     const userInput = messageText;
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -1046,6 +1070,9 @@ export function AIChatAssistant() {
 
       // Process message with Gemini
       const aiResponse = await geminiService.processMessage(userInput);
+
+      // Record successful AI call
+      await recordCall();
 
       // Show text message immediately
       const assistantMessage: Message = {
@@ -1140,6 +1167,78 @@ export function AIChatAssistant() {
           <span className="font-medium">AI Assistant</span>
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
         </button>
+      </div>
+    );
+  }
+
+  // If AI is not allowed for this plan, show upgrade prompt
+  if (!isSubscriptionLoading && !isAiAllowed) {
+    return (
+      <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[500px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-gray-400" />
+            <div>
+              <h3 className="font-semibold flex items-center gap-2">
+                Lisa AI Assistant
+                <span className="inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                  <Lock className="w-3 h-3" />
+                  Premium
+                </span>
+              </h3>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            title="Close"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+
+        {/* Upgrade Content */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+          <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-6 relative">
+            <Sparkles className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+            <div className="absolute -top-2 -right-2 bg-amber-500 text-white p-1.5 rounded-full shadow-lg">
+              <Lock className="w-4 h-4" />
+            </div>
+          </div>
+          
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Unlock Lisa AI Assistant
+          </h3>
+          
+          <p className="text-gray-600 dark:text-gray-300 mb-8 text-sm leading-relaxed">
+            Upgrade to <span className="font-semibold text-purple-600 dark:text-purple-400">Trader</span> or higher to get instant financial insights, market analysis, and voice interaction.
+          </p>
+          
+          <div className="space-y-3 w-full">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                router.push('/pricing');
+              }}
+              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Upgrade to Unlock
+            </button>
+            
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors"
+            >
+              Maybe Later
+            </button>
+          </div>
+          
+          <p className="mt-6 text-xs text-gray-400 dark:text-gray-500">
+            Available in Trader, Investor & Whale plans
+          </p>
+        </div>
       </div>
     );
   }

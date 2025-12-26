@@ -19,9 +19,17 @@ import {
   Coins,
   Receipt
 } from 'lucide-react';
-import { LoginForm } from './login-form';
-import { SignupForm } from './signup-form';
-import { OmnifolioLogo } from '../ui/omnifolio-logo';
+import dynamic from 'next/dynamic';
+
+// Dynamically import components to avoid circular dependencies and reduce bundle size
+const OmnifolioLogo = dynamic(() => import('@/components/ui/omnifolio-logo').then(mod => mod.OmnifolioLogo), {
+  loading: () => <div className="w-10 h-10" />
+});
+
+const AuthModal = dynamic(() => import('./auth-modal').then(mod => mod.AuthModal), {
+  ssr: false,
+  loading: () => null
+});
 
 export function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -562,27 +570,11 @@ export function LandingPage() {
 
       {/* Auth Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => setShowAuthModal(false)} />
-
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-
-            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
-              {authMode === 'login' ? (
-                <LoginForm
-                  onClose={() => setShowAuthModal(false)}
-                  onSwitchToSignup={() => setAuthMode('signup')}
-                />
-              ) : (
-                <SignupForm
-                  onClose={() => setShowAuthModal(false)}
-                  onSwitchToLogin={() => setAuthMode('login')}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+        <AuthModal 
+          mode={authMode}
+          onClose={() => setShowAuthModal(false)}
+          onSwitchMode={(mode) => setAuthMode(mode)}
+        />
       )}
     </>
   );

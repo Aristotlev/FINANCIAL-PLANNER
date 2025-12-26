@@ -363,27 +363,51 @@ export class SubscriptionService {
         return { canProceed: true }; // Allow for non-authenticated users
       }
 
-      // Call Supabase function
-      const { data, error } = await (supabase.rpc as any)('can_add_entry', {
-        p_user_id: userId,
-        p_card_type: cardType,
-      });
+      // Try RPC first, but handle errors gracefully
+      let rpcResult: boolean | null = null;
+      try {
+        const { data, error } = await (supabase.rpc as any)('can_add_entry', {
+          p_user_id: userId,
+          p_card_type: cardType,
+        });
 
-      if (error) throw error;
-
-      if (!data) {
-        const subscription = await this.getCurrentSubscription();
-        const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
-
-        return {
-          canProceed: false,
-          reason: `You've reached your limit of ${limits.max_entries_per_card} entries for this card today.`,
-          upgradeRequired: true,
-          maxAllowed: typeof limits.max_entries_per_card === 'number' ? limits.max_entries_per_card : 999999,
-        };
+        if (!error && typeof data === 'boolean') {
+          rpcResult = data;
+        } else if (error) {
+          console.warn('RPC can_add_entry failed, falling back to manual check:', error.message);
+        }
+      } catch (e) {
+        console.warn('RPC call threw exception, falling back to manual check');
       }
 
-      return { canProceed: true };
+      // If RPC explicitly allowed it, we're good
+      if (rpcResult === true) {
+        return { canProceed: true };
+      }
+
+      // If RPC denied it (false) OR RPC failed (null), we need to fetch details
+      const subscription = await this.getCurrentSubscription();
+      const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
+      const maxEntries = typeof limits.max_entries_per_card === 'number' ? limits.max_entries_per_card : 999999;
+
+      // If RPC failed, we need to check usage manually
+      if (rpcResult === null) {
+        const usage = await this.getTodayUsage();
+        // Construct column name dynamically based on card type
+        const columnKey = `${cardType}_entries_count` as keyof UserUsage;
+        const currentCount = (usage && typeof usage[columnKey] === 'number') ? usage[columnKey] as number : 0;
+        
+        if (currentCount < maxEntries) {
+          return { canProceed: true };
+        }
+      }
+
+      return {
+        canProceed: false,
+        reason: `You've reached your limit of ${limits.max_entries_per_card} entries for this card today.`,
+        upgradeRequired: true,
+        maxAllowed: maxEntries,
+      };
     } catch (error) {
       console.error('Error checking entry limit:', error);
       return { canProceed: true }; // Fail open to avoid blocking users
@@ -400,12 +424,61 @@ export class SubscriptionService {
       const userId = await this.getUserId();
       if (!userId) return;
 
-      const { error } = await (supabase.rpc as any)('increment_entry_count', {
-        p_user_id: userId,
-        p_card_type: cardType,
-      });
+      // Try RPC first
+      let rpcSuccess = false;
+      try {
+        const { error } = await (supabase.rpc as any)('increment_entry_count', {
+          p_user_id: userId,
+          p_card_type: cardType,
+        });
 
-      if (error) throw error;
+        if (!error) {
+          rpcSuccess = true;
+        } else {
+          console.warn('RPC increment_entry_count failed, falling back to manual update:', error.message);
+        }
+      } catch (e) {
+        console.warn('RPC call threw exception, falling back to manual update');
+      }
+
+      if (rpcSuccess) return;
+
+      // Fallback: Manual update via API
+      const subscription = await this.getCurrentSubscription();
+      if (!subscription) return;
+
+      const usage = await this.getTodayUsage();
+      const columnKey = `${cardType}_entries_count`;
+
+      if (usage && usage.id !== 'default-usage') {
+        // Update existing usage
+        await this.apiPost('user_usage', {
+          [columnKey]: (usage[columnKey as keyof UserUsage] as number || 0) + 1
+        }, usage.id);
+      } else {
+        // Create new usage record
+        const today = new Date().toISOString().split('T')[0];
+        const payload: any = {
+          user_id: userId,
+          subscription_id: subscription.id,
+          date: today,
+          // Initialize all counts to 0
+          cash_entries_count: 0,
+          crypto_entries_count: 0,
+          stocks_entries_count: 0,
+          real_estate_entries_count: 0,
+          valuable_items_entries_count: 0,
+          savings_entries_count: 0,
+          expenses_entries_count: 0,
+          debt_entries_count: 0,
+          trading_accounts_entries_count: 0,
+          ai_calls_count: 0
+        };
+        // Set specific count to 1
+        payload[columnKey] = 1;
+
+        await this.apiPost('user_usage', payload);
+      }
     } catch (error) {
       console.error('Error incrementing entry count:', error);
     }
@@ -426,28 +499,51 @@ export class SubscriptionService {
         return { canProceed: true }; // Allow for non-authenticated users
       }
 
-      // Call Supabase function
-      const { data, error } = await (supabase.rpc as any)('can_make_ai_call', {
-        p_user_id: userId,
-      });
-
-      if (error) throw error;
-
-      if (!data) {
-        const subscription = await this.getCurrentSubscription();
-        const usage = await this.getTodayUsage();
-        const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
-
-        return {
-          canProceed: false,
-          reason: `You've reached your daily limit of ${limits.max_ai_calls_per_day} AI assistant calls.`,
-          upgradeRequired: true,
-          currentUsage: usage?.ai_calls_count || 0,
-          maxAllowed: typeof limits.max_ai_calls_per_day === 'number' ? limits.max_ai_calls_per_day : 999999,
-        };
+      // Try RPC first, but handle errors gracefully
+      let rpcResult: boolean | null = null;
+      try {
+        const { data, error } = await (supabase.rpc as any)('can_make_ai_call', {
+          p_user_id: userId,
+        });
+        
+        if (!error && typeof data === 'boolean') {
+          rpcResult = data;
+        } else if (error) {
+          console.warn('RPC can_make_ai_call failed, falling back to manual check:', error.message);
+        }
+      } catch (e) {
+        console.warn('RPC call threw exception, falling back to manual check');
       }
 
-      return { canProceed: true };
+      // If RPC explicitly allowed it, we're good
+      if (rpcResult === true) {
+        return { canProceed: true };
+      }
+
+      // If RPC denied it (false) OR RPC failed (null), we need to fetch details
+      // If RPC failed, we perform the check manually here
+      const subscription = await this.getCurrentSubscription();
+      const usage = await this.getTodayUsage();
+      const limits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
+      
+      const maxCalls = typeof limits.max_ai_calls_per_day === 'number' ? limits.max_ai_calls_per_day : 999999;
+      const currentUsage = usage?.ai_calls_count || 0;
+
+      // If RPC failed, we rely on this manual check
+      if (rpcResult === null) {
+        if (currentUsage < maxCalls) {
+          return { canProceed: true };
+        }
+      }
+
+      // If we are here, either RPC said no, or RPC failed AND manual check said no
+      return {
+        canProceed: false,
+        reason: `You've reached your daily limit of ${limits.max_ai_calls_per_day} AI assistant calls.`,
+        upgradeRequired: true,
+        currentUsage: currentUsage,
+        maxAllowed: maxCalls,
+      };
     } catch (error) {
       console.error('Error checking AI call limit:', error);
       return { canProceed: true }; // Fail open to avoid blocking users
@@ -464,11 +560,54 @@ export class SubscriptionService {
       const userId = await this.getUserId();
       if (!userId) return;
 
-      const { error } = await (supabase.rpc as any)('increment_ai_call_count', {
-        p_user_id: userId,
-      });
+      // Try RPC first
+      let rpcSuccess = false;
+      try {
+        const { error } = await (supabase.rpc as any)('increment_ai_call_count', {
+          p_user_id: userId,
+        });
 
-      if (error) throw error;
+        if (!error) {
+          rpcSuccess = true;
+        } else {
+          console.warn('RPC increment_ai_call_count failed, falling back to manual update:', error.message);
+        }
+      } catch (e) {
+        console.warn('RPC call threw exception, falling back to manual update');
+      }
+
+      if (rpcSuccess) return;
+
+      // Fallback: Manual update via API
+      const subscription = await this.getCurrentSubscription();
+      if (!subscription) return;
+
+      const usage = await this.getTodayUsage();
+      
+      if (usage && usage.id !== 'default-usage') {
+        // Update existing usage
+        await this.apiPost('user_usage', {
+          ai_calls_count: (usage.ai_calls_count || 0) + 1
+        }, usage.id);
+      } else {
+        // Create new usage record
+        const today = new Date().toISOString().split('T')[0];
+        await this.apiPost('user_usage', {
+          user_id: userId,
+          subscription_id: subscription.id,
+          date: today,
+          ai_calls_count: 1,
+          cash_entries_count: 0,
+          crypto_entries_count: 0,
+          stocks_entries_count: 0,
+          real_estate_entries_count: 0,
+          valuable_items_entries_count: 0,
+          savings_entries_count: 0,
+          expenses_entries_count: 0,
+          debt_entries_count: 0,
+          trading_accounts_entries_count: 0
+        });
+      }
     } catch (error) {
       console.error('Error incrementing AI call count:', error);
     }

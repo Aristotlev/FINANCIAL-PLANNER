@@ -5,7 +5,7 @@
  * Automatically manages subscriptions and cleanup
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { websocketMarketService } from '@/lib/websocket-market-service';
 
 interface RealtimePriceUpdate {
@@ -39,6 +39,11 @@ export function useRealtimePrice(
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Refs for throttling
+  const priceDataRef = useRef<RealtimePriceUpdate | null>(null);
+  const lastUpdateRef = useRef<number>(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (!enabled || !symbol) {
       return;
@@ -51,14 +56,35 @@ export function useRealtimePrice(
       unsubscribe = websocketMarketService.subscribe(
         symbol,
         (update) => {
-          setPriceData({
+          const newData = {
             price: update.price,
             change: update.change || 0,
             changePercent: update.changePercent || 0,
             timestamp: update.timestamp,
-          });
-          setIsConnected(true);
-          setError(null);
+          };
+          
+          priceDataRef.current = newData;
+          const now = Date.now();
+
+          // Throttle updates to max once every 200ms
+          if (now - lastUpdateRef.current >= 200) {
+            setPriceData(newData);
+            setIsConnected(true);
+            setError(null);
+            lastUpdateRef.current = now;
+          } else {
+            if (!timeoutRef.current) {
+              timeoutRef.current = setTimeout(() => {
+                if (priceDataRef.current) {
+                  setPriceData(priceDataRef.current);
+                  setIsConnected(true);
+                  setError(null);
+                  lastUpdateRef.current = Date.now();
+                }
+                timeoutRef.current = null;
+              }, 200 - (now - lastUpdateRef.current));
+            }
+          }
         },
         type
       );
@@ -75,6 +101,9 @@ export function useRealtimePrice(
 
       return () => {
         clearTimeout(statusCheck);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
         if (unsubscribe) {
           unsubscribe();
         }
@@ -107,6 +136,11 @@ export function useRealtimePrices(
   const [connectionStatus, setConnectionStatus] = useState<Map<string, boolean>>(new Map());
   const [errors, setErrors] = useState<Map<string, string>>(new Map());
 
+  // Refs for batching updates
+  const pricesRef = useRef<Map<string, RealtimePriceUpdate>>(new Map());
+  const dirtyRef = useRef<boolean>(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (!enabled || assets.length === 0) {
       return;
@@ -114,22 +148,27 @@ export function useRealtimePrices(
 
     const unsubscribers: Array<() => void> = [];
 
+    // Start update interval
+    intervalRef.current = setInterval(() => {
+      if (dirtyRef.current) {
+        setPricesMap(new Map(pricesRef.current));
+        dirtyRef.current = false;
+      }
+    }, 200);
+
     // Subscribe to all assets
     assets.forEach(({ symbol, type }) => {
       try {
         const unsubscribe = websocketMarketService.subscribe(
           symbol,
           (update) => {
-            setPricesMap((prev) => {
-              const next = new Map(prev);
-              next.set(symbol, {
-                price: update.price,
-                change: update.change || 0,
-                changePercent: update.changePercent || 0,
-                timestamp: update.timestamp,
-              });
-              return next;
+            pricesRef.current.set(symbol, {
+              price: update.price,
+              change: update.change || 0,
+              changePercent: update.changePercent || 0,
+              timestamp: update.timestamp,
             });
+            dirtyRef.current = true;
 
             setConnectionStatus((prev) => {
               const next = new Map(prev);
@@ -179,6 +218,9 @@ export function useRealtimePrices(
 
     return () => {
       clearTimeout(statusCheck);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
       unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
   }, [assets, enabled]);

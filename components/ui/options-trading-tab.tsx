@@ -16,7 +16,7 @@ import {
   Activity
 } from "lucide-react";
 import { calculateOptionsPosition, formatCurrency } from "../../lib/trading-calculator";
-import { priceService } from "../../lib/price-service";
+import { useAssetPrice, useAssetPrices } from "../../hooks/use-price";
 
 interface OptionsPosition {
   id: string;
@@ -75,80 +75,69 @@ export function OptionsTradingTab({
     'AMD', 'NFLX', 'DIS', 'BA', 'JPM', 'V', 'WMT', 'PFE', 'INTC', 'CSCO'
   ];
 
-  // Fetch live price for selected underlying symbol
+  // Live market data for selected underlying symbol
+  const { price: livePriceData, loading: livePriceLoading } = useAssetPrice(symbol);
+
   useEffect(() => {
-    const fetchLivePrice = async () => {
-      setPriceLoading(true);
-      try {
-        const price = await priceService.getPrice(symbol);
-        if (price) {
-          setCurrentUnderlyingPrice(price.price);
-          // Auto-fill underlying price if empty
-          if (!underlyingPrice) {
-            setUnderlyingPrice(price.price.toFixed(2));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching underlying price:', error);
-      } finally {
-        setPriceLoading(false);
+    setPriceLoading(livePriceLoading);
+    if (livePriceData) {
+      setCurrentUnderlyingPrice(livePriceData.price);
+      // Auto-fill underlying price if empty
+      if (!underlyingPrice) {
+        setUnderlyingPrice(livePriceData.price.toFixed(2));
       }
-    };
+    }
+  }, [livePriceData, livePriceLoading, underlyingPrice]);
 
-    fetchLivePrice();
-    const interval = setInterval(fetchLivePrice, 30000); // Update every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [symbol]);
+  // Get live prices for all open positions
+  const positionSymbols = positions.map(p => p.symbol);
+  const { prices: livePrices } = useAssetPrices(positionSymbols);
 
   // Update positions with live underlying prices
   useEffect(() => {
-    if (positions.length > 0) {
-      const updatePositionPrices = async () => {
-        const updatedPositions = await Promise.all(
-          positions.map(async (position) => {
-            try {
-              const price = await priceService.getPrice(position.symbol);
-              if (price) {
-                const newUnderlyingPrice = price.price;
-                let profitLoss: number;
+    if (positions.length > 0 && Object.keys(livePrices).length > 0) {
+      const updatedPositions = positions.map((position) => {
+        const priceData = livePrices[position.symbol];
+        if (priceData) {
+          const newUnderlyingPrice = priceData.price;
+          let profitLoss: number;
 
-                if (position.optionType === 'call') {
-                  // Call option P/L: intrinsic value - premium paid
-                  const intrinsicValue = Math.max(0, newUnderlyingPrice - position.strikePrice);
-                  profitLoss = (intrinsicValue - position.premium) * position.contracts * 100;
-                } else {
-                  // Put option P/L: intrinsic value - premium paid
-                  const intrinsicValue = Math.max(0, position.strikePrice - newUnderlyingPrice);
-                  profitLoss = (intrinsicValue - position.premium) * position.contracts * 100;
-                }
+          if (position.optionType === 'call') {
+            // Call option P/L: intrinsic value - premium paid
+            const intrinsicValue = Math.max(0, newUnderlyingPrice - position.strikePrice);
+            profitLoss = (intrinsicValue - position.premium) * position.contracts * 100;
+          } else {
+            // Put option P/L: intrinsic value - premium paid
+            const intrinsicValue = Math.max(0, position.strikePrice - newUnderlyingPrice);
+            profitLoss = (intrinsicValue - position.premium) * position.contracts * 100;
+          }
 
-                return {
-                  ...position,
-                  underlyingPrice: newUnderlyingPrice,
-                  profitLoss
-                };
-              }
-              return position;
-            } catch (error) {
-              return position;
-            }
-          })
-        );
+          // Only update if changed significantly
+          if (Math.abs(position.underlyingPrice - newUnderlyingPrice) > 0.01) {
+            return {
+              ...position,
+              underlyingPrice: newUnderlyingPrice,
+              profitLoss
+            };
+          }
+        }
+        return position;
+      });
+
+      const hasChanges = updatedPositions.some((p, i) => 
+        p.underlyingPrice !== positions[i].underlyingPrice
+      );
+
+      if (hasChanges) {
         setPositions(updatedPositions);
         
         // Update parent component with live prices
         if (onPositionsChange) {
           onPositionsChange(updatedPositions);
         }
-      };
-
-      updatePositionPrices();
-      const interval = setInterval(updatePositionPrices, 30000); // Update every 30 seconds
-
-      return () => clearInterval(interval);
+      }
     }
-  }, [positions.length]);
+  }, [livePrices, positions.length]);
 
   const handleCalculatePosition = () => {
     if (!strikePrice || !premium || !underlyingPrice) {

@@ -17,7 +17,7 @@ import {
   Activity
 } from "lucide-react";
 import { calculateForexPosition, formatCurrency, type AccountCurrency, calculatePipValue } from "../../lib/trading-calculator";
-import { priceService } from "../../lib/price-service";
+import { useAssetPrice, useAssetPrices } from "../../hooks/use-price";
 
 interface ForexPosition {
   id: string;
@@ -82,74 +82,63 @@ export function ForexTradingTab({
     'USD/SEK', 'USD/NOK', 'USD/TRY', 'USD/MXN', 'EUR/TRY', 'GBP/AUD'
   ];
 
-  // Fetch live price for selected pair
+  // Fetch live price for selected pair using WebSocket hook
+  const { price: livePriceData, loading: livePriceLoading } = useAssetPrice(pair);
+
   useEffect(() => {
-    const fetchLivePrice = async () => {
-      setPriceLoading(true);
-      try {
-        // Convert forex pair to symbol format (e.g., EUR/USD -> EURUSD)
-        const symbol = pair.replace('/', '');
-        const price = await priceService.getPrice(`FX:${symbol}`);
-        if (price) {
-          setCurrentPrice(price.price);
-        }
-      } catch (error) {
-        console.error('Error fetching forex price:', error);
-      } finally {
-        setPriceLoading(false);
-      }
-    };
+    setPriceLoading(livePriceLoading);
+    if (livePriceData) {
+      setCurrentPrice(livePriceData.price);
+    }
+  }, [livePriceData, livePriceLoading]);
 
-    fetchLivePrice();
-    const interval = setInterval(fetchLivePrice, 30000); // Update every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [pair]);
+  // Get live prices for all open positions
+  const positionSymbols = positions.map(p => p.pair);
+  const { prices: livePrices } = useAssetPrices(positionSymbols);
 
   // Update positions with live prices
   useEffect(() => {
-    if (positions.length > 0) {
-      const updatePositionPrices = async () => {
-        const updatedPositions = await Promise.all(
-          positions.map(async (position) => {
-            try {
-              const symbol = position.pair.replace('/', '');
-              const price = await priceService.getPrice(`FX:${symbol}`);
-              if (price) {
-                const priceDiff = price.price - position.entryPrice;
-                const pipDiff = position.pair.includes('JPY') 
-                  ? priceDiff / 0.01 
-                  : priceDiff / 0.0001;
-                const profitLossPips = position.direction === 'long' ? pipDiff : -pipDiff;
-                const profitLoss = profitLossPips * position.pipValue;
+    if (positions.length > 0 && Object.keys(livePrices).length > 0) {
+      const updatedPositions = positions.map((position) => {
+        const priceData = livePrices[position.pair];
+        
+        if (priceData) {
+          const currentPrice = priceData.price;
+          const priceDiff = currentPrice - position.entryPrice;
+          const pipDiff = position.pair.includes('JPY') 
+            ? priceDiff / 0.01 
+            : priceDiff / 0.0001;
+          const profitLossPips = position.direction === 'long' ? pipDiff : -pipDiff;
+          const profitLoss = profitLossPips * position.pipValue;
 
-                return {
-                  ...position,
-                  currentPrice: price.price,
-                  profitLoss,
-                  profitLossPips
-                };
-              }
-              return position;
-            } catch (error) {
-              return position;
-            }
-          })
-        );
+          // Only update if values changed significantly to avoid loops
+          if (Math.abs(position.currentPrice - currentPrice) > 0.00001) {
+            return {
+              ...position,
+              currentPrice,
+              profitLoss,
+              profitLossPips
+            };
+          }
+        }
+        return position;
+      });
+
+      // Check if any position actually changed
+      const hasChanges = updatedPositions.some((p, i) => 
+        p.currentPrice !== positions[i].currentPrice
+      );
+
+      if (hasChanges) {
         setPositions(updatedPositions);
         
         // Update parent component with live prices
         if (onPositionsChange) {
           onPositionsChange(updatedPositions);
         }
-      };
-
-      updatePositionPrices();
-      const interval = setInterval(updatePositionPrices, 30000); // Update every 30 seconds
-
-      return () => clearInterval(interval);
+      }
     }
-  }, [positions.length]);
+  }, [livePrices, positions.length]); // Removed positions from dependency to avoid infinite loop, but need length to trigger on add/remove
 
   const handleCalculatePosition = () => {
     if (!stopLossPips || !entryPrice) {

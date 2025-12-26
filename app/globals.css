@@ -190,33 +190,33 @@ canvas.fixed {
 /* Floating Particle Animations */
 @keyframes float-slow {
   0%, 100% {
-    transform: translateY(0px) translateX(0px);
+    transform: translate3d(0, 0, 0);
     opacity: 0.3;
   }
   50% {
-    transform: translateY(-20px) translateX(10px);
+    transform: translate3d(10px, -20px, 0);
     opacity: 0.6;
   }
 }
 
 @keyframes float-medium {
   0%, 100% {
-    transform: translateY(0px) translateX(0px);
+    transform: translate3d(0, 0, 0);
     opacity: 0.4;
   }
   50% {
-    transform: translateY(-15px) translateX(-8px);
+    transform: translate3d(-8px, -15px, 0);
     opacity: 0.7;
   }
 }
 
 @keyframes float-slower {
   0%, 100% {
-    transform: translateY(0px) translateX(0px) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
     opacity: 0.2;
   }
   50% {
-    transform: translateY(-25px) translateX(15px) scale(1.2);
+    transform: translate3d(15px, -25px, 0) scale(1.2);
     opacity: 0.5;
   }
 }
@@ -239,28 +239,28 @@ canvas.fixed {
 /* Hologram Effects */
 @keyframes scan-lines {
   0% {
-    transform: translateY(-100%);
+    transform: translate3d(0, -100%, 0);
   }
   100% {
-    transform: translateY(100%);
+    transform: translate3d(0, 100%, 0);
   }
 }
 
 @keyframes shimmer {
   0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    transform: translate3d(-100%, -100%, 0) rotate(45deg);
   }
   100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
+    transform: translate3d(100%, 100%, 0) rotate(45deg);
   }
 }
 
 @keyframes hologram-float {
   0%, 100% {
-    transform: perspective(2000px) translateY(0px) translateZ(0px) rotateX(0deg);
+    transform: perspective(2000px) translate3d(0, 0, 0) rotateX(0deg);
   }
   50% {
-    transform: perspective(2000px) translateY(-10px) translateZ(20px) rotateX(2deg);
+    transform: perspective(2000px) translate3d(0, -10px, 20px) rotateX(2deg);
   }
 }
 
@@ -562,7 +562,7 @@ svg.recharts-surface {
 
 .recharts-bar-rectangle:hover,
 .recharts-rectangle:hover {
-  transform: translateY(-8px) scale(1.02);
+  transform: translate3d(0, -8px, 0) scale(1.02);
   opacity: 1;
 }
 
@@ -1098,19 +1098,19 @@ canvas.fixed {
 @keyframes fadeInOut {
   0% {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translate3d(0, -10px, 0);
   }
   10% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
   90% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translate3d(0, -10px, 0);
   }
 }
 
@@ -1131,22 +1131,22 @@ canvas.fixed {
 @keyframes slideInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate3d(0, 20px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes slideInDown {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translate3d(0, -20px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -1224,14 +1224,14 @@ canvas.fixed {
 @keyframes tooltipBounce {
   0% {
     opacity: 0;
-    transform: scale(0.8) translateY(10px);
+    transform: scale(0.8) translate3d(0, 10px, 0);
   }
   50% {
-    transform: scale(1.08) translateY(-12px);
+    transform: scale(1.08) translate3d(0, -12px, 0);
   }
   100% {
     opacity: 1;
-    transform: scale(1.05) translateY(-10px);
+    transform: scale(1.05) translate3d(0, -10px, 0);
   }
 }
 
@@ -1239,11 +1239,11 @@ canvas.fixed {
 @keyframes slideInRight {
   0% {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translate3d(100%, 0, 0);
   }
   100% {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -1265,7 +1265,7 @@ canvas.fixed {
 /* CSS Beam Animation - Runs on GPU (Compositor Thread) */
 @keyframes beam-flow {
   0% {
-    transform: translateY(120vh);
+    transform: translate3d(0, 120vh, 0);
     opacity: 0;
   }
   10% {
@@ -1275,7 +1275,7 @@ canvas.fixed {
     opacity: 1;
   }
   100% {
-    transform: translateY(-20vh);
+    transform: translate3d(0, -20vh, 0);
     opacity: 0;
   }
 }

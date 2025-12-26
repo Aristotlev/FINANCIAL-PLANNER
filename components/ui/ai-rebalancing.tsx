@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, TrendingUp, TrendingDown, ArrowRight, AlertCircle, Sparkles, RefreshCw } from 'lucide-react';
 import { formatNumber } from '../../lib/utils';
+import { useFinancialWorker } from '../../hooks/use-financial-worker';
 
 export interface RebalancingSuggestion {
   asset: string;
@@ -30,10 +31,13 @@ export function AIRebalancing({ holdings, totalValue, assetType }: AIRebalancing
   const [suggestions, setSuggestions] = useState<RebalancingSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { calculate, isReady } = useFinancialWorker();
 
   useEffect(() => {
-    generateSuggestions();
-  }, [holdings, totalValue]);
+    if (isReady) {
+      generateSuggestions();
+    }
+  }, [holdings, totalValue, isReady]);
 
   const generateSuggestions = async () => {
     if (holdings.length === 0 || totalValue === 0) {
@@ -44,6 +48,34 @@ export function AIRebalancing({ holdings, totalValue, assetType }: AIRebalancing
     setLoading(true);
     
     try {
+      // Use worker for heavy calculation if available
+      if (isReady) {
+        // Define target allocation based on asset type
+        const targetAllocation: Record<string, number> = {};
+        
+        // Simple equal weight strategy for worker demo
+        if (holdings.length > 0) {
+          const equalWeight = 100 / holdings.length;
+          holdings.forEach(h => {
+            targetAllocation[h.symbol] = equalWeight;
+          });
+        }
+
+        const workerSuggestions = await calculate('rebalancing', {
+          assets: holdings.map(h => ({
+            ...h,
+            amount: h.shares || (h.value / (h.currentPrice || 1)),
+            currentPrice: h.currentPrice || (h.value / (h.shares || 1)),
+            category: h.symbol // Simple mapping
+          })),
+          targetAllocation
+        });
+
+        // Transform worker result to component format if needed
+        // For now, we'll stick with the existing logic but run it in the worker in a future update
+        // The worker returns raw suggestions, we need to enrich them with reasons/priorities
+      }
+
       // Calculate current allocations
       const allocations = holdings.map(h => ({
         asset: h.symbol,

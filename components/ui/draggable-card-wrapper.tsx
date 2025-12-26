@@ -37,16 +37,34 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
     window.dispatchEvent(new CustomEvent('cardDragStart', { detail: { cardId } }));
   }, [cardId]);
 
+  // Helper to get client coordinates from event
+  const getClientPoint = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    let clientX = info.point.x;
+    let clientY = info.point.y;
+
+    // Try to get coordinates from the event first to ensure we have viewport coordinates
+    if (event instanceof MouseEvent || (window.PointerEvent && event instanceof PointerEvent)) {
+      clientX = (event as MouseEvent).clientX;
+      clientY = (event as MouseEvent).clientY;
+    } else if (window.TouchEvent && event instanceof TouchEvent && (event as TouchEvent).changedTouches.length > 0) {
+      clientX = (event as TouchEvent).changedTouches[0].clientX;
+      clientY = (event as TouchEvent).changedTouches[0].clientY;
+    }
+    return { x: clientX, y: clientY };
+  };
+
   const handleDrag = useCallback((event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     // Throttle event dispatch to prevent lag
     if (rafRef.current) return;
+
+    const { x, y } = getClientPoint(event, info);
 
     rafRef.current = requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent('cardDragMove', { 
         detail: { 
           cardId,
-          x: info.point.x,
-          y: info.point.y
+          x,
+          y
         } 
       }));
       rafRef.current = null;
@@ -61,16 +79,39 @@ export function DraggableCardWrapper({ cardId, children }: DraggableCardWrapperP
       rafRef.current = null;
     }
     
+    const { x, y } = getClientPoint(event, info);
+    
     // Check what we dropped on
     // Use elementsFromPoint to look through the dragged element
-    const elements = document.elementsFromPoint(info.point.x, info.point.y);
+    const elements = document.elementsFromPoint(x, y);
     
     // 1. Check for Hidden Folder
     // Robust check: Look for ANY element in the stack that belongs to the hidden folder
-    const isOverHiddenFolder = elements.some(el => 
+    let isOverHiddenFolder = elements.some(el => 
       el.closest('[data-hidden-folder-button]') || 
       el.closest('[data-hidden-folder-dropdown]')
     );
+
+    // Fallback: Manual rect check if elementsFromPoint fails (e.g. due to pointer-events or z-index issues)
+    if (!isOverHiddenFolder) {
+      const button = document.querySelector('[data-hidden-folder-button]');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+          isOverHiddenFolder = true;
+        }
+      }
+      
+      if (!isOverHiddenFolder) {
+        const dropdown = document.querySelector('[data-hidden-folder-dropdown]');
+        if (dropdown) {
+          const rect = dropdown.getBoundingClientRect();
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            isOverHiddenFolder = true;
+          }
+        }
+      }
+    }
 
     if (isOverHiddenFolder) {
        window.dispatchEvent(new CustomEvent('hideCardRequest', { detail: { cardId } }));

@@ -72,6 +72,7 @@ import { CRYPTO_WALLETS, getDeFiWallets, getCeFiWallets, getWalletById } from ".
 import { PortfolioWalletPieChartV2 } from "../ui/portfolio-wallet-pie-chart-v2";
 import { CryptoAPYCalculator } from "../ui/crypto-apy-calculator";
 import { Wallet } from "lucide-react";
+import { lttb } from "../../lib/chart-utils";
 
 // Crypto Icon Component - Binance style
 function CryptoIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
@@ -1085,6 +1086,11 @@ function CryptoModalContent() {
 
   const totalReturn = totalValue > 0 ? (totalGainLoss / (totalValue - totalGainLoss)) * 100 : 0;
 
+  // Process crypto history with LTTB downsampling for performance
+  const processedCryptoHistory = useMemo(() => {
+    return lttb(cryptoHistory, 100, 'month', 'value');
+  }, []);
+
   // Calculate exact percentages for pie chart - memoized to prevent glitchy re-renders
   const pieChartData = useMemo(() => {
     if (updatedHoldings.length === 0 || totalValue === 0) {
@@ -1444,7 +1450,7 @@ function CryptoModalContent() {
                 <LazyRechartsWrapper height={256}>
                   {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={cryptoHistory}>
+                      <LineChart data={processedCryptoHistory}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />

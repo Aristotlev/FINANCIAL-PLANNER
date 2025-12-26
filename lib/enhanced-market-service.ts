@@ -57,6 +57,41 @@ export interface CryptoSymbol {
   };
 }
 
+const KNOWN_CRYPTO_MAP: { [key: string]: string } = {
+  'BTC': 'bitcoin',
+  'ETH': 'ethereum',
+  'USDT': 'tether',
+  'BNB': 'binancecoin',
+  'SOL': 'solana',
+  'USDC': 'usd-coin',
+  'XRP': 'ripple',
+  'ADA': 'cardano',
+  'DOGE': 'dogecoin',
+  'TRX': 'tron',
+  'LINK': 'chainlink',
+  'MATIC': 'matic-network',
+  'DOT': 'polkadot',
+  'AVAX': 'avalanche-2',
+  'ATOM': 'cosmos',
+  'UNI': 'uniswap',
+  'LTC': 'litecoin',
+  'NEAR': 'near',
+  'APT': 'aptos',
+  'ARB': 'arbitrum',
+  'OP': 'optimism',
+  'FIL': 'filecoin',
+  'SHIB': 'shiba-inu',
+  'BCH': 'bitcoin-cash',
+  'XLM': 'stellar',
+  'ALGO': 'algorand',
+  'VET': 'vechain',
+  'ICP': 'internet-computer',
+  'APE': 'apecoin',
+  'SAND': 'the-sandbox',
+  'MANA': 'decentraland',
+  'AXS': 'axie-infinity',
+};
+
 class EnhancedMarketService {
   private cryptoSymbolsCache: CryptoSymbol[] | null = null;
   private cryptoSymbolsCacheTime = 0;
@@ -230,42 +265,7 @@ class EnhancedMarketService {
           }
 
       // Map common symbols to CoinGecko IDs
-      const coinIdMap: { [key: string]: string } = {
-        'BTC': 'bitcoin',
-        'ETH': 'ethereum',
-        'USDT': 'tether',
-        'BNB': 'binancecoin',
-        'SOL': 'solana',
-        'USDC': 'usd-coin',
-        'XRP': 'ripple',
-        'ADA': 'cardano',
-        'DOGE': 'dogecoin',
-        'TRX': 'tron',
-        'LINK': 'chainlink',
-        'MATIC': 'matic-network',
-        'DOT': 'polkadot',
-        'AVAX': 'avalanche-2',
-        'ATOM': 'cosmos',
-        'UNI': 'uniswap',
-        'LTC': 'litecoin',
-        'NEAR': 'near',
-        'APT': 'aptos',
-        'ARB': 'arbitrum',
-        'OP': 'optimism',
-        'FIL': 'filecoin',
-        'SHIB': 'shiba-inu',
-        'BCH': 'bitcoin-cash',
-        'XLM': 'stellar',
-        'ALGO': 'algorand',
-        'VET': 'vechain',
-        'ICP': 'internet-computer',
-        'APE': 'apecoin',
-        'SAND': 'the-sandbox',
-        'MANA': 'decentraland',
-        'AXS': 'axie-infinity',
-      };
-
-      const coinId = coinIdMap[upperSymbol];
+      const coinId = KNOWN_CRYPTO_MAP[upperSymbol];
       if (!coinId) {
         console.warn(`Unknown crypto symbol: ${upperSymbol}`);
         return null;
@@ -522,9 +522,7 @@ class EnhancedMarketService {
     }
 
     // Auto-detect: try crypto first for common crypto symbols
-    const cryptoSymbols = ['BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'USDC', 'XRP', 'ADA', 'DOGE', 'TRX', 'LINK', 'MATIC', 'DOT', 'AVAX', 'ATOM'];
-    
-    if (cryptoSymbols.includes(upperSymbol)) {
+    if (KNOWN_CRYPTO_MAP[upperSymbol]) {
       const cryptoData = await this.fetchCryptoPrice(upperSymbol);
       if (cryptoData) return cryptoData;
     }

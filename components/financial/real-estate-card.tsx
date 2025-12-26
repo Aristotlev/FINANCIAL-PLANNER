@@ -19,7 +19,8 @@ import {
   Navigation,
   Map,
   Satellite,
-  ExternalLink
+  ExternalLink,
+  Lock
 } from "lucide-react";
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
@@ -27,6 +28,8 @@ import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
 import { ThemedStatBox, ConditionalThemedStatBox, ThemedContainer, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { formatNumber } from "../../lib/utils";
 import { useCurrency } from "../../contexts/currency-context";
+import { useSubscription } from "@/hooks/use-subscription";
+import { PLAN_CONFIG, getEffectivePlanLimits } from "@/types/subscription";
 
 interface RealEstateProperty {
   id: string;
@@ -1057,9 +1060,13 @@ function MapPickerModal({
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const { subscription } = useSubscription();
+  const planLimits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
+  const isMapAllowed = planLimits.paid_apis_allowed;
+
   // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (!searchInputRef.current || typeof google === 'undefined' || !google.maps?.places) {
+    if (!isMapAllowed || !searchInputRef.current || typeof google === 'undefined' || !google.maps?.places) {
       return;
     }
 
@@ -1086,7 +1093,56 @@ function MapPickerModal({
         google.maps.event.clearInstanceListeners(autocompleteInstance);
       }
     };
-  }, []);
+  }, [isMapAllowed]);
+
+  if (!isMapAllowed) {
+    return (
+      <div 
+        className="fixed inset-0 bg-black/70 flex items-center justify-center p-4" 
+        style={{ zIndex: 200000 }}
+        onClick={onClose}
+      >
+        <div 
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-8 text-center relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600 dark:text-white" />
+          </button>
+          
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+          </div>
+          
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            Premium Feature
+          </h3>
+          
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            Map integration and location picking is available on Trader plans and above. Upgrade to access Google Maps features.
+          </p>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+            >
+              Close
+            </button>
+            <a
+              href="/pricing"
+              className="flex-1 bg-gradient-to-r from-lime-500 to-green-500 hover:from-lime-600 hover:to-green-600 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-lime-500/25 flex items-center justify-center"
+            >
+              Upgrade Now
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Search location (fallback if autocomplete doesn't work)
   const searchLocation = async () => {

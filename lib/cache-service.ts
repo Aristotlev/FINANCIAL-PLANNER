@@ -224,10 +224,10 @@ class CacheService {
    * Cache key generators for consistency
    */
   keys = {
-    marketPrice: (symbol: string, type: 'crypto' | 'stock') => 
+    marketPrice: (symbol: string, type: 'crypto' | 'stock' | 'forex') => 
       `market:price:${type}:${symbol.toUpperCase()}`,
     
-    marketData: (symbol: string, type: 'crypto' | 'stock') => 
+    marketData: (symbol: string, type: 'crypto' | 'stock' | 'forex') => 
       `market:data:${type}:${symbol.toUpperCase()}`,
     
     cryptoList: () => 
@@ -236,7 +236,7 @@ class CacheService {
     stockProfile: (symbol: string) => 
       `market:stock:profile:${symbol.toUpperCase()}`,
     
-    historicalData: (symbol: string, type: 'crypto' | 'stock', period: string) => 
+    historicalData: (symbol: string, type: 'crypto' | 'stock' | 'forex', period: string) => 
       `market:historical:${type}:${symbol.toUpperCase()}:${period}`,
     
     portfolioData: (userId: string) => 
@@ -245,7 +245,7 @@ class CacheService {
     aiResponse: (messageHash: string) => 
       `ai:response:${messageHash}`,
     
-    batchPrices: (symbols: string[], type: 'crypto' | 'stock') =>
+    batchPrices: (symbols: string[], type: 'crypto' | 'stock' | 'forex') =>
       `market:batch:${type}:${symbols.sort().join(',')}`,
   };
 

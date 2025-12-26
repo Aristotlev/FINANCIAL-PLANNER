@@ -5,7 +5,6 @@ import { ExternalLink } from "lucide-react";
 import { AnimatedCard, CardBody, CardTitle, CardDescription, Visual3 } from "./animated-card";
 import { Modal } from "./modal";
 import { CardContainer, CardItem } from "./3d-card";
-import { DraggableCardBody } from "./draggable-card";
 
 interface HoverPreviewProps {
   title: string;
@@ -89,7 +88,7 @@ export function EnhancedFinancialCard({
 
   return (
     <>
-      <DraggableCardBody cardId={cardId}>
+      <div className="relative isolate">
         <CardContainer className="inter-var">
           <AnimatedCard className="w-full sm:w-[356px] min-w-[280px] sm:min-w-[356px] max-w-[356px] group relative" style={{ isolation: 'isolate', transformStyle: 'preserve-3d' }}>
             <CardItem 
@@ -206,7 +205,7 @@ export function EnhancedFinancialCard({
             </CardItem>
           </AnimatedCard>
         </CardContainer>
-      </DraggableCardBody>
+      </div>
       
       <Modal
         isOpen={isModalOpen}

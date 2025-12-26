@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { lttb } from '../../lib/chart-utils';
 
 // Chart loading placeholder component
 export function ChartLoadingPlaceholder({ 
@@ -77,6 +78,7 @@ interface SimpleLazyLineChartProps {
   showYAxis?: boolean;
   strokeWidth?: number;
   className?: string;
+  maxPoints?: number;
 }
 
 export function SimpleLazyLineChart({
@@ -91,12 +93,18 @@ export function SimpleLazyLineChart({
   showYAxis = true,
   strokeWidth = 2,
   className = '',
+  maxPoints = 300,
 }: SimpleLazyLineChartProps) {
+  const processedData = React.useMemo(() => {
+    if (!data || data.length <= maxPoints) return data;
+    return lttb(data, maxPoints, xAxisKey as any, dataKey as any);
+  }, [data, maxPoints, xAxisKey, dataKey]);
+
   return (
     <LazyRechartsWrapper height={height}>
       {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
         <ResponsiveContainer width="100%" height={height} className={className}>
-          <LineChart data={data}>
+          <LineChart data={processedData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.3} />}
             {showXAxis && <XAxis dataKey={xAxisKey} />}
             {showYAxis && <YAxis />}
@@ -219,6 +227,7 @@ interface SimpleLazyAreaChartProps {
   showYAxis?: boolean;
   strokeWidth?: number;
   className?: string;
+  maxPoints?: number;
 }
 
 export function SimpleLazyAreaChart({
@@ -234,12 +243,18 @@ export function SimpleLazyAreaChart({
   showYAxis = true,
   strokeWidth = 2,
   className = '',
+  maxPoints = 300,
 }: SimpleLazyAreaChartProps) {
+  const processedData = React.useMemo(() => {
+    if (!data || data.length <= maxPoints) return data;
+    return lttb(data, maxPoints, xAxisKey as any, dataKey as any);
+  }, [data, maxPoints, xAxisKey, dataKey]);
+
   return (
     <LazyRechartsWrapper height={height}>
       {({ AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
         <ResponsiveContainer width="100%" height={height} className={className}>
-          <AreaChart data={data}>
+          <AreaChart data={processedData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.3} />}
             {showXAxis && <XAxis dataKey={xAxisKey} />}
             {showYAxis && <YAxis />}

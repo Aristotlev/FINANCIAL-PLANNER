@@ -47,6 +47,7 @@ import { AIRebalancing } from "../ui/ai-rebalancing";
 import { SellPositionModal } from "../ui/sell-position-modal";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, LargeDualCurrency } from "../ui/dual-currency-display";
+import { lttb } from "../../lib/chart-utils";
 
 // Stock Icon Component - TradingView style
 function StockIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
@@ -575,65 +576,91 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
   );
 };
 
+interface StockTransaction {
+  id: string;
+  type: 'buy' | 'sell';
+  symbol: string;
+  name: string;
+  shares: number;
+  pricePerShare: number;
+  totalValue: number;
+  date: string;
+}
+
 function StocksModalContent() {
-  const [activeTab, setActiveTab] = useState<'holdings' | 'performance' | 'dividends' | 'analysis'>('holdings');
+  const [activeTab, setActiveTab] = useState<'holdings' | 'transactions' | 'performance' | 'dividends' | 'analysis'>('holdings');
   const { stockHoldings, setStockHoldings } = usePortfolioContext();
   const { formatMain } = useCurrencyConversion();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingHolding, setEditingHolding] = useState<StockHolding | null>(null);
-  const [colorPickerHolding, setColorPickerHolding] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [showSellModal, setShowSellModal] = useState(false);
   const [sellingHolding, setSellingHolding] = useState<StockHolding | null>(null);
-  const isInitialMount = useRef(true);
 
-  // Load data on component mount
+  // Helper to verify data consistency before dispatching events
+  const verifyDataConsistency = async (checkFn: (holdings: StockHolding[]) => boolean) => {
+    let retries = 0;
+    const maxRetries = 5;
+    const delay = 500;
+
+    const check = async () => {
+      const freshHoldings = await SupabaseDataService.getStockHoldings([]);
+      if (checkFn(freshHoldings)) {
+        setStockHoldings(freshHoldings);
+        window.dispatchEvent(new Event('stockDataChanged'));
+        window.dispatchEvent(new Event('financialDataChanged'));
+      } else if (retries < maxRetries) {
+        retries++;
+        setTimeout(check, delay);
+      } else {
+        // Fallback: dispatch anyway
+        window.dispatchEvent(new Event('stockDataChanged'));
+        window.dispatchEvent(new Event('financialDataChanged'));
+      }
+    };
+    
+    setTimeout(check, 200);
+  };
+
+  // Load data on component mount only
   useEffect(() => {
     const loadHoldings = async () => {
       const savedHoldings = await SupabaseDataService.getStockHoldings([]);
       setStockHoldings(savedHoldings);
     };
+    
     loadHoldings();
-    
-    // Listen for data changes from AI or other components
-    const handleDataChange = () => loadHoldings();
-    window.addEventListener('stockDataChanged', handleDataChange);
-    window.addEventListener('financialDataChanged', handleDataChange);
-    
-    return () => {
-      window.removeEventListener('stockDataChanged', handleDataChange);
-      window.removeEventListener('financialDataChanged', handleDataChange);
-    };
+    // We intentionally do NOT listen to stockDataChanged here
   }, [setStockHoldings]);
-
-  // Data is now saved immediately on each operation (add/update/delete)
-  // No need for a separate useEffect that watches all holdings changes
 
   // Get real-time prices for all holdings
   const symbols = stockHoldings.map(holding => holding.symbol);
   const { prices, loading } = useAssetPrices(symbols);
 
-  // Update holdings with real-time prices
-  const updatedHoldings = stockHoldings.map(holding => {
-    const currentPriceData = prices[holding.symbol];
-    // Use current price if available, otherwise fallback to entry point
-    const currentPrice = currentPriceData?.price || holding.entryPoint || 0;
-    const value = holding.shares * currentPrice;
-    
-    // Calculate change
-    let change = "0.00%";
-    if (holding.entryPoint > 0) {
-      const changePercent = ((currentPrice - holding.entryPoint) / holding.entryPoint * 100);
-      change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
-    }
-    
-    return {
-      ...holding,
-      value,
-      change,
-      currentPrice
-    };
-  });
+  // Update holdings with real-time prices - MEMOIZED
+  const updatedHoldings = useMemo(() => {
+    return stockHoldings.map(holding => {
+      const currentPriceData = prices[holding.symbol];
+      // Use current price if available, otherwise fallback to entry point
+      const currentPrice = currentPriceData?.price || holding.entryPoint || 0;
+      const value = holding.shares * currentPrice;
+      
+      // Calculate change
+      let change = "0.00%";
+      if (holding.entryPoint > 0) {
+        const changePercent = ((currentPrice - holding.entryPoint) / holding.entryPoint * 100);
+        change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+      }
+      
+      return {
+        ...holding,
+        value,
+        change,
+        currentPrice
+      };
+    });
+  }, [stockHoldings, prices]);
 
   const addHolding = async (newHolding: Omit<StockHolding, 'id' | 'value' | 'change' | 'color'>) => {
     const id = crypto.randomUUID();
@@ -651,17 +678,31 @@ function StocksModalContent() {
       color: DEFAULT_COLORS[stockHoldings.length % DEFAULT_COLORS.length]
     };
 
-    // Save to database first
+    // Update state optimistically
+    setStockHoldings([...stockHoldings, holding]);
+
+    // Save to database
     await SupabaseDataService.saveStockHolding(holding);
     
-    setStockHoldings([...stockHoldings, holding]);
-    
-    // Notify other components that stock data changed
-    window.dispatchEvent(new Event('stockDataChanged'));
+    // Verify consistency
+    verifyDataConsistency((holdings) => !!holdings.find(h => h.id === id));
+
+    // Record transaction
+    const transaction: StockTransaction = {
+      id: crypto.randomUUID(),
+      type: 'buy',
+      symbol: newHolding.symbol,
+      name: newHolding.name,
+      shares: newHolding.shares,
+      pricePerShare: newHolding.entryPoint,
+      totalValue: newHolding.shares * newHolding.entryPoint,
+      date: new Date().toISOString()
+    };
+    setTransactions([transaction, ...transactions]);
   };
 
   const updateHolding = async (id: string, updates: Partial<StockHolding>) => {
-    const updatedHoldings = stockHoldings.map((holding: StockHolding) => {
+    const updatedHoldingsList = stockHoldings.map((holding: StockHolding) => {
       if (holding.id === id) {
         const updatedHolding = { ...holding, ...updates };
         // Always recalculate value and change percentage when updating
@@ -675,23 +716,50 @@ function StocksModalContent() {
       return holding;
     });
     
-    // Save to database immediately
-    const updatedHolding = updatedHoldings.find(h => h.id === id);
+    // Update state optimistically
+    setStockHoldings(updatedHoldingsList);
+
+    // Save to database
+    const updatedHolding = updatedHoldingsList.find(h => h.id === id);
     if (updatedHolding) {
       await SupabaseDataService.saveStockHolding(updatedHolding);
+      
+      // Verify consistency
+      verifyDataConsistency((holdings) => {
+        const h = holdings.find(item => item.id === id);
+        return !!(h && Math.abs(h.shares - updatedHolding.shares) < 0.000001);
+      });
     }
-    
-    setStockHoldings(updatedHoldings);
-    // Notify other components
-    window.dispatchEvent(new Event('stockDataChanged'));
   };
 
   const deleteHolding = async (id: string) => {
+    const holding = stockHoldings.find((h: StockHolding) => h.id === id);
+    if (holding) {
+       // Record sell transaction
+       const currentPriceData = prices[holding.symbol];
+       const currentPrice = currentPriceData?.price || holding.entryPoint;
+       const transaction: StockTransaction = {
+         id: crypto.randomUUID(),
+         type: 'sell',
+         symbol: holding.symbol,
+         name: holding.name,
+         shares: holding.shares,
+         pricePerShare: currentPrice,
+         totalValue: holding.shares * currentPrice,
+         date: new Date().toISOString()
+       };
+       setTransactions([transaction, ...transactions]);
+    }
+
+    // Update state optimistically
+    const updatedHoldingsList = stockHoldings.filter((holding: StockHolding) => holding.id !== id);
+    setStockHoldings(updatedHoldingsList);
+
+    // Delete from database
     await SupabaseDataService.deleteStockHolding(id);
-    const updatedHoldings = stockHoldings.filter((holding: StockHolding) => holding.id !== id);
-    setStockHoldings(updatedHoldings);
-    // Notify other components that stock data changed
-    window.dispatchEvent(new Event('stockDataChanged'));
+    
+    // Verify consistency
+    verifyDataConsistency((holdings) => !holdings.find(h => h.id === id));
   };
 
   const sellHolding = async (holdingId: string, sellShares: number, destination: any) => {
@@ -705,6 +773,7 @@ function StocksModalContent() {
     if (sellShares >= holding.shares) {
       // Selling entire position
       await SupabaseDataService.deleteStockHolding(holdingId);
+      verifyDataConsistency((holdings) => !holdings.find(h => h.id === holdingId));
     } else {
       // Selling partial position
       const updatedHolding = {
@@ -712,6 +781,10 @@ function StocksModalContent() {
         shares: holding.shares - sellShares
       };
       await SupabaseDataService.saveStockHolding(updatedHolding);
+      verifyDataConsistency((holdings) => {
+        const h = holdings.find(item => item.id === holdingId);
+        return !!(h && Math.abs(h.shares - updatedHolding.shares) < 0.000001);
+      });
     }
 
     // Handle destination (stocks only go to bank or savings, no stablecoin option)
@@ -739,21 +812,37 @@ function StocksModalContent() {
       }
     }
 
-    // Refresh data
-    const savedHoldings = await SupabaseDataService.getStockHoldings([]);
-    setStockHoldings(savedHoldings);
-    
-    // Notify other components
-    window.dispatchEvent(new Event('stockDataChanged'));
-    window.dispatchEvent(new Event('financialDataChanged'));
+    // Record transaction
+    const transaction: StockTransaction = {
+      id: crypto.randomUUID(),
+      type: 'sell',
+      symbol: holding.symbol,
+      name: holding.name,
+      shares: sellShares,
+      pricePerShare: currentPrice,
+      totalValue: proceeds,
+      date: new Date().toISOString()
+    };
+    setTransactions([transaction, ...transactions]);
   };
 
-  const totalValue = updatedHoldings.reduce((sum, holding) => sum + holding.value, 0);
-  const totalGainLoss = updatedHoldings.reduce((sum, holding) => {
-    const costBasis = holding.shares * holding.entryPoint;
-    return sum + (holding.value - costBasis);
-  }, 0);
+  const totalValue = useMemo(() => 
+    updatedHoldings.reduce((sum, holding) => sum + holding.value, 0)
+  , [updatedHoldings]);
+
+  const totalGainLoss = useMemo(() => 
+    updatedHoldings.reduce((sum, holding) => {
+      const costBasis = holding.shares * holding.entryPoint;
+      return sum + (holding.value - costBasis);
+    }, 0)
+  , [updatedHoldings]);
+
   const totalReturn = totalValue > 0 ? (totalGainLoss / (totalValue - totalGainLoss)) * 100 : 0;
+
+  // Process stock history with LTTB downsampling for performance
+  const processedStockHistory = useMemo(() => {
+    return lttb(stockHistory, 100, 'month', 'value');
+  }, []);
 
   // Calculate individual stock allocation for pie chart - memoized to prevent glitchy re-renders
   const stockAllocation = useMemo(() => {
@@ -774,7 +863,7 @@ function StocksModalContent() {
       }));
     
     return allocation;
-  }, [updatedHoldings, totalValue, prices]);
+  }, [updatedHoldings, totalValue]);
 
   return (
     <div className="p-6">
@@ -785,6 +874,7 @@ function StocksModalContent() {
             <div className="flex overflow-x-auto scrollbar-hide w-full">
               {[
                 { id: 'holdings', label: 'Holdings', icon: PieChartIcon },
+                { id: 'transactions', label: 'Transactions', icon: TrendingUp },
                 { id: 'performance', label: 'Performance', icon: TrendingUp },
                 { id: 'dividends', label: 'Dividends', icon: DollarSign },
                 { id: 'analysis', label: 'Analysis', icon: Target }
@@ -1022,6 +1112,66 @@ function StocksModalContent() {
           </div>
         )}
 
+        {activeTab === 'transactions' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Transaction History</h3>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+
+            {transactions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <TrendingUp className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No transactions yet</p>
+                <p className="text-sm">Add stock holdings to see your transaction history</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {transactions.map((tx) => {
+                  const date = new Date(tx.date);
+                  const formattedDate = date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  });
+
+                  return (
+                    <div key={tx.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all">
+                      <div className="flex items-center gap-3">
+                        <div className={`px-2 py-1 rounded text-xs font-semibold ${tx.type === 'buy' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+                          }`}>
+                          {tx.type.toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white">
+                            {tx.shares} {tx.symbol}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            {tx.name} • {formattedDate}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-500">
+                            @ ${tx.pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-semibold ${tx.type === 'buy' ? 'text-gray-900 dark:text-white' : 'text-green-600 dark:text-green-400'
+                          }`}>
+                          ${tx.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'performance' && (
           <div className="space-y-6">
             <div>
@@ -1030,7 +1180,7 @@ function StocksModalContent() {
                 <LazyRechartsWrapper height={256}>
                   {({ LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={stockHistory}>
+                      <LineChart data={processedStockHistory}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
@@ -1248,14 +1398,14 @@ function StocksHoverContent() {
     };
     loadHoldings();
     
-    // Listen for data changes
+    // Listen for data changes with debounce
     const handleDataChange = () => {
       if (debounceTimeout) {
         clearTimeout(debounceTimeout);
       }
       debounceTimeout = setTimeout(() => {
         loadHoldings();
-      }, 2000);
+      }, 500);
     };
     window.addEventListener('stockDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
@@ -1286,17 +1436,13 @@ function StocksHoverContent() {
   const totalGainLoss = portfolioData.reduce((sum, h) => sum + h.gainLoss, 0);
   const totalCost = portfolioData.reduce((sum, h) => sum + h.costBasis, 0);
   const totalGainLossPercent = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
-  // Estimate annual dividends based on typical yields by sector
-  const estimatedDividends = stockHoldings.reduce((sum, h) => {
-    const price = prices[h.symbol]?.price || 0;
-    const value = h.shares * price;
-    // Tech stocks typically yield 0-1%, other sectors 2-4%
-    const estimatedYield = h.sector === 'Technology' ? 0.005 : 0.03;
-    return sum + (value * estimatedYield);
-  }, 0);
   
   // Show top 2 holdings by value
   const topHoldings = [...portfolioData].sort((a, b) => b.currentValue - a.currentValue).slice(0, 2);
+  const dayChange = portfolioData.reduce((sum, h) => {
+    const priceData = prices[h.symbol];
+    return sum + (priceData?.change24h || 0);
+  }, 0) / (portfolioData.length || 1);
 
   return (
     <div className="space-y-1">
@@ -1316,8 +1462,10 @@ function StocksHoverContent() {
           </span>
         </div>
         <div className="flex justify-between text-xs">
-          <span>Est. Annual Dividends</span>
-          <span className="font-semibold text-purple-600 dark:text-purple-400">${formatNumber(estimatedDividends)}</span>
+          <span>24h Change</span>
+          <span className={`font-semibold ${dayChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+            {dayChange >= 0 ? '+' : ''}{dayChange.toFixed(1)}%
+          </span>
         </div>
       </div>
     </div>
@@ -1341,14 +1489,14 @@ function StocksCardWithPrices() {
     };
     loadHoldings();
     
-    // Listen for data changes and reload
+    // Listen for data changes and reload with debounce
     const handleDataChange = () => {
       if (debounceTimeout) {
         clearTimeout(debounceTimeout);
       }
       debounceTimeout = setTimeout(() => {
         loadHoldings();
-      }, 2000);
+      }, 500);
     };
     window.addEventListener('stockDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);

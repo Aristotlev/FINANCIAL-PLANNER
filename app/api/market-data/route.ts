@@ -9,14 +9,15 @@ import { NextRequest, NextResponse } from 'next/server';
 // In-memory cache
 const cache = new Map<string, { data: any; timestamp: number }>();
 const pendingRequests = new Map<string, Promise<any>>();
-const CACHE_DURATION = 600000; // 10 minutes
+const DEFAULT_CACHE_DURATION = 60000; // 1 minute default
+const LIVE_CACHE_DURATION = 1000; // 1 second for live data
 const STALE_CACHE_DURATION = 3600000; // 1 hour
 
-function getCachedData(key: string, allowStale: boolean = false) {
+function getCachedData(key: string, duration: number, allowStale: boolean = false) {
   const cached = cache.get(key);
   if (!cached) return null;
   
-  if (Date.now() - cached.timestamp < CACHE_DURATION) {
+  if (Date.now() - cached.timestamp < duration) {
     return cached.data;
   }
   
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
   const symbol = searchParams.get('symbol');
   const type = searchParams.get('type') || 'stock';
   const source = searchParams.get('source'); // Optional: specify data source
+  const isLive = searchParams.get('live') === 'true';
 
   if (!symbol) {
     return NextResponse.json(
@@ -46,15 +48,16 @@ export async function GET(request: NextRequest) {
 
   const upperSymbol = symbol.toUpperCase();
   const cacheKey = `market:${upperSymbol}:${type}:${source || 'auto'}`;
+  const cacheDuration = isLive ? LIVE_CACHE_DURATION : DEFAULT_CACHE_DURATION;
 
   try {
     // Check cache first
-    const cachedData = getCachedData(cacheKey);
+    const cachedData = getCachedData(cacheKey, cacheDuration);
     if (cachedData) {
-      console.log(`✅ Returning cached market data for ${upperSymbol}`);
+      console.log(`✅ Returning cached market data for ${upperSymbol} (TTL: ${cacheDuration}ms)`);
       return NextResponse.json(cachedData, {
         headers: {
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600',
+          'Cache-Control': `public, s-maxage=${Math.ceil(cacheDuration/1000)}, stale-while-revalidate=60`,
           'X-Cache': 'HIT',
         },
       });
@@ -68,7 +71,7 @@ export async function GET(request: NextRequest) {
         const result = await pendingRequest;
         return NextResponse.json(result, {
           headers: {
-            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600',
+            'Cache-Control': `public, s-maxage=${Math.ceil(cacheDuration/1000)}, stale-while-revalidate=60`,
             'X-Cache': 'DEDUPLICATED',
           },
         });
@@ -97,6 +100,10 @@ export async function GET(request: NextRequest) {
       if (type === 'crypto') {
         const cmcData = await fetchFromCoinMarketCap(upperSymbol);
         if (cmcData) return cmcData;
+
+        // Try Binance (FREE API - high limits)
+        const binanceData = await fetchFromBinance(upperSymbol);
+        if (binanceData) return binanceData;
         
         // Fallback to CoinGecko (FREE API with rate limits)
         const cryptoData = await fetchFromCoinGecko(symbol);
@@ -121,12 +128,12 @@ export async function GET(request: NextRequest) {
 
     if (!data) {
       // Try stale cache as last resort
-      const staleData = getCachedData(cacheKey, true);
+      const staleData = getCachedData(cacheKey, cacheDuration, true);
       if (staleData) {
         console.log(`📦 Returning stale data for ${upperSymbol}`);
         return NextResponse.json(staleData, {
           headers: {
-            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600',
+            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=60',
             'X-Cache': 'STALE',
           },
         });
@@ -143,7 +150,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600',
+        'Cache-Control': `public, s-maxage=${Math.ceil(cacheDuration/1000)}, stale-while-revalidate=60`,
         'X-Cache': 'MISS',
       },
     });
@@ -154,7 +161,7 @@ export async function GET(request: NextRequest) {
     pendingRequests.delete(cacheKey);
     
     // Try to return stale cached data
-    const staleData = getCachedData(cacheKey, true);
+    const staleData = getCachedData(cacheKey, cacheDuration, true);
     if (staleData) {
       console.log(`📦 Returning stale data for ${upperSymbol} after error`);
       return NextResponse.json(staleData, {
@@ -342,6 +349,42 @@ async function fetchFromFinnhub(symbol: string) {
     };
   } catch (error) {
     console.warn(`Finnhub failed for ${symbol}:`, error);
+    return null;
+  }
+}
+
+async function fetchFromBinance(symbol: string) {
+  try {
+    // Skip USDT as it is the base currency
+    if (symbol === 'USDT') return null;
+
+    let pair = `${symbol}USDT`;
+    if (symbol === 'USDC') pair = 'USDCUSDT';
+
+    const response = await fetch(
+      `https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`,
+      { cache: 'no-store' }
+    );
+
+    if (!response.ok) throw new Error(`Binance API error: ${response.status}`);
+
+    const data = await response.json();
+
+    return {
+      symbol: symbol,
+      name: symbol,
+      currentPrice: parseFloat(data.lastPrice),
+      change24h: parseFloat(data.priceChange),
+      changePercent24h: parseFloat(data.priceChangePercent),
+      type: 'crypto',
+      lastUpdated: Date.now(),
+      high24h: parseFloat(data.highPrice),
+      low24h: parseFloat(data.lowPrice),
+      volume: parseFloat(data.volume),
+      dataSource: 'Binance',
+    };
+  } catch (error) {
+    // console.warn(`Binance failed for ${symbol}:`, error);
     return null;
   }
 }

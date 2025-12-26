@@ -33,7 +33,8 @@
     'Cannot redefine property',
     'extension context invalidated',
     'message port closed',
-    'Receiving end does not exist'
+    'Receiving end does not exist',
+    'Finnhub WebSocket error'
   ];
   
   // Check if error is from an extension

@@ -17,10 +17,13 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Mic, MicOff, Loader2, Volume2, Sparkles, Activity } from 'lucide-react';
+import { Mic, MicOff, Loader2, Volume2, Sparkles, Activity, Lock } from 'lucide-react';
 import { AgentStateMachine, AgentState } from '@/lib/agent/state';
 import { VoiceActivityDetector, VADState } from '@/lib/audio/vad';
 import { AudioPlayer } from '@/lib/audio/player';
+import { useSubscription } from '@/hooks/use-subscription';
+import { getEffectivePlanLimits } from '@/types/subscription';
+import { useRouter } from 'next/navigation';
 
 export default function LisaPage() {
   // State
@@ -40,6 +43,12 @@ export default function LisaPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const accumulatedAudioRef = useRef<Int16Array[]>([]);
+  
+  const { subscription, loading: isSubscriptionLoading } = useSubscription();
+  const router = useRouter();
+  
+  const planLimits = subscription ? getEffectivePlanLimits(subscription) : null;
+  const isAiAllowed = planLimits?.ai_assistant ?? false;
 
   /**
    * Clean markdown formatting from text for voice output
@@ -444,6 +453,49 @@ export default function LisaPage() {
         return <Sparkles className="w-8 h-8" />;
     }
   };
+
+  // If AI is not allowed for this plan, show upgrade prompt
+  if (!isSubscriptionLoading && !isAiAllowed) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 text-center">
+          <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+            <Sparkles className="w-10 h-10 text-purple-300" />
+            <div className="absolute -top-2 -right-2 bg-amber-500 text-white p-1.5 rounded-full shadow-lg">
+              <Lock className="w-4 h-4" />
+            </div>
+          </div>
+          
+          <h1 className="text-3xl font-bold text-white mb-2">Lisa AI Assistant</h1>
+          <div className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-sm font-medium mb-6 border border-amber-500/30">
+            <Lock className="w-3 h-3" />
+            Premium Feature
+          </div>
+          
+          <p className="text-white/80 mb-8 leading-relaxed">
+            Upgrade to <span className="font-semibold text-purple-300">Trader</span> or higher to unlock the full power of Lisa AI Assistant with voice interaction and real-time financial insights.
+          </p>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/pricing')}
+              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Upgrade to Unlock
+            </button>
+            
+            <button
+              onClick={() => router.push('/')}
+              className="w-full py-3 px-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900 flex items-center justify-center p-4">

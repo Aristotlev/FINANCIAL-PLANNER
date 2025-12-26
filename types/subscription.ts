@@ -17,6 +17,7 @@ export interface PlanLimits {
   custom_categories: boolean;
   imports_exports: boolean;
   ai_assistant: boolean;
+  paid_apis_allowed: boolean;
   price_monthly_usd: number;
   created_at?: string;
   updated_at?: string;
@@ -131,9 +132,10 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     max_ai_calls_per_day: 0,           // No AI access
     advanced_analytics: false,          // Basic analytics only (Portfolio Value & Allocation)
     priority_support: false,
-    custom_categories: false,
+    custom_categories: true,
     imports_exports: false,             // Manual Entry Only - NO imports/exports
     ai_assistant: false,                // No AI Assistant
+    paid_apis_allowed: false,           // No paid APIs (Google Maps, etc.)
     price_monthly_usd: 0.00,
   },
   TRADER: {
@@ -145,6 +147,7 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     custom_categories: true,
     imports_exports: true,               // Unlimited Imports & Exports
     ai_assistant: true,                  // AI Assistant enabled (10 msgs/day)
+    paid_apis_allowed: true,             // Paid APIs allowed
     price_monthly_usd: 9.99,
   },
   INVESTOR: {
@@ -156,6 +159,7 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     custom_categories: true,
     imports_exports: true,
     ai_assistant: true,
+    paid_apis_allowed: true,
     price_monthly_usd: 19.99,
   },
   WHALE: {
@@ -167,6 +171,7 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     custom_categories: true,
     imports_exports: true,
     ai_assistant: true,
+    paid_apis_allowed: true,
     price_monthly_usd: 49.99,
   },
 };
@@ -185,30 +190,36 @@ export interface PlanFeature {
  */
 export const PLAN_FEATURES: Record<SubscriptionPlan, PlanFeature[]> = {
   STARTER: [
-    { name: 'Unlimited Assets & Inputs', included: true, tooltip: 'Track as many assets as you want across all categories' },
-    { name: 'Multi-Currency Support (30)', included: true, tooltip: 'Live exchange rates for 30 global currencies' },
-    { name: '100+ Major Banks Database', included: true, tooltip: 'Connect with major banks worldwide' },
-    { name: 'Basic Analytics', included: true, tooltip: 'Portfolio Value & Allocation charts' },
-    { name: 'No Imports (Manual Entry Only)', included: false, tooltip: 'You must manually enter all your data' },
-    { name: 'No AI Assistant', included: false, tooltip: 'Upgrade to get AI-powered insights' },
-    { name: 'No AI Recommendations', included: false },
+    { name: 'Multi Asset Tracking', included: true, tooltip: 'Track cash, crypto, stocks, and more' },
+    { name: 'Real Time Updates', included: true, tooltip: 'Live market data' },
+    { name: 'Dual Currency Display', included: true, tooltip: 'Original and converted values' },
+    { name: 'Multi Currency Bank Accounts', included: true },
+    { name: 'Automatic Conversions', included: true },
+    { name: '150+ Supported Countries', included: true },
+    { name: 'Trading Accounts', included: true, tooltip: 'Manage multiple brokerage and crypto accounts' },
+    { name: 'Interactive Charts', included: true, tooltip: 'Basic visualization' },
+    { name: 'Advanced Tax Calculator (41+ Countries)', included: true },
+    { name: 'Custom Income Sources', included: true },
+    { name: 'Tax Optimization', included: true },
+    { name: 'Google Maps Integration', included: false, tooltip: 'Paid API feature' },
+    { name: 'Lisa AI Assistant', included: false },
   ],
   TRADER: [
     { name: 'Everything in Starter', included: true },
-    { name: 'Unlimited Imports & Exports', included: true, tooltip: 'CSV, PDF, Broker Sync' },
-    { name: 'All Analytics (PnL, Diversity)', included: true, tooltip: 'Advanced charts and scores' },
-    { name: 'AI Assistant (10 msgs/day)', included: true, tooltip: 'Quick daily check-ins' },
+    { name: 'Google Maps Integration', included: true },
+    { name: 'Interactive Charts (Advanced)', included: true },
+    { name: 'Lisa AI Assistant (10 msgs/day)', included: true },
   ],
   INVESTOR: [
     { name: 'Everything in Trader', included: true },
-    { name: 'AI Assistant (50 msgs/day)', included: true, tooltip: 'Deep portfolio conversations' },
-    { name: 'Priority Support', included: true, tooltip: 'Faster email response times' },
+    { name: 'Lisa AI Assistant (50 msgs/day)', included: true },
+    { name: 'Priority Support', included: true },
   ],
   WHALE: [
     { name: 'Everything in Investor', included: true },
-    { name: 'Unlimited AI Messages', included: true, tooltip: 'No limits on AI conversations' },
-    { name: 'VIP Priority Support', included: true, tooltip: 'Skip the support line' },
-    { name: 'Beta Access', included: true, tooltip: 'Try new features before anyone else' },
+    { name: 'Lisa AI Assistant (Unlimited + Voice)', included: true, tooltip: 'Gemini Powered with voice interaction' },
+    { name: 'VIP Priority Support', included: true },
+    { name: 'Beta Access', included: true },
   ],
 };
 

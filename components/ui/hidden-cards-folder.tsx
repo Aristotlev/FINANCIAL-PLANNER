@@ -151,9 +151,9 @@ export function HiddenCardsFolder() {
       const customEvent = e as CustomEvent;
       const { x, y } = customEvent.detail;
       
-      // Check button intersection using cached rect
-      if (buttonRectRef.current) {
-        const rect = buttonRectRef.current;
+      // Check button intersection - Always get fresh rect to handle scrolling/resizing during drag
+      if (buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
         const isOver = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
         
         if (isOver) {
@@ -177,15 +177,9 @@ export function HiddenCardsFolder() {
         }
       }
       
-      // Check dropdown intersection if open using cached rect
-      // Note: If dropdown opens during drag, the useEffect[isOpen] will update the rect
-      if (isOpenRef.current) {
-         // Try to get cached rect, or fallback to current if not yet cached (e.g. just opened)
-         let rect = dropdownRectRef.current;
-         if (!rect && dropdownRef.current) {
-            rect = dropdownRef.current.getBoundingClientRect();
-            dropdownRectRef.current = rect;
-         }
+      // Check dropdown intersection if open
+      if (isOpenRef.current && dropdownRef.current) {
+         const rect = dropdownRef.current.getBoundingClientRect();
 
          if (rect) {
             const isOver = x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
