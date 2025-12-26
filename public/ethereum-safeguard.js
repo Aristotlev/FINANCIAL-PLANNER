@@ -34,7 +34,8 @@
     'extension context invalidated',
     'message port closed',
     'Receiving end does not exist',
-    'Finnhub WebSocket error'
+    'Finnhub WebSocket error',
+    'TypeError: a.supabase.from(...).select(...).eq is not a function'
   ];
   
   // Check if error is from an extension
