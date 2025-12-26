@@ -15,7 +15,9 @@ import { fetchData, saveData, deleteData } from '../api/data-client';
  * the new RLS policies that require service_role access.
  */
 export class SupabaseDataService {
-  private static isConfigured = isSupabaseConfigured();
+  // Remove static isConfigured to prevent race conditions with runtime env injection
+  // private static isConfigured = isSupabaseConfigured();
+  
   private static cachedUserId: string | null = null;
   private static lastUserIdCheck: number = 0;
   private static readonly USER_ID_CACHE_TTL = 30000; // 30 seconds
@@ -51,7 +53,8 @@ export class SupabaseDataService {
     fetchFn: () => Promise<T>,
     fallbackFn: () => T
   ): Promise<T> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically to handle runtime env injection
+    if (!isSupabaseConfigured()) {
       return fallbackFn();
     }
 
@@ -91,7 +94,8 @@ export class SupabaseDataService {
 
   // Helper to get current user ID from Better Auth (NOT Supabase Auth)
   private static async getUserId(): Promise<string | null> {
-    if (!this.isConfigured) return null;
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) return null;
     
     // Use cached user ID if still valid
     const now = Date.now();
@@ -162,7 +166,8 @@ export class SupabaseDataService {
   }
 
   static async saveCashAccount(account: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadCashAccounts([]);
       const existing = accounts.findIndex(a => a.id === account.id);
       if (existing >= 0) {
@@ -222,7 +227,8 @@ export class SupabaseDataService {
   }
 
   static async deleteCashAccount(accountId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadCashAccounts([]);
       const filtered = accounts.filter(a => a.id !== accountId);
       DataService.saveCashAccounts(filtered);
@@ -275,7 +281,8 @@ export class SupabaseDataService {
   }
 
   static async saveIncomeSource(income: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const stored = localStorage.getItem('incomeSources');
       const sources = stored ? JSON.parse(stored) : [];
       const existing = sources.findIndex((s: any) => s.id === income.id);
@@ -339,7 +346,8 @@ export class SupabaseDataService {
   }
 
   static async deleteIncomeSource(incomeId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const stored = localStorage.getItem('incomeSources');
       const sources = stored ? JSON.parse(stored) : [];
       const filtered = sources.filter((s: any) => s.id !== incomeId);
@@ -391,7 +399,8 @@ export class SupabaseDataService {
   }
 
   static async saveCryptoHolding(holding: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const holdings = DataService.loadCryptoHoldings([]);
       const existing = holdings.findIndex(h => h.id === holding.id);
       if (existing >= 0) {
@@ -470,7 +479,8 @@ export class SupabaseDataService {
   }
 
   static async deleteCryptoHolding(holdingId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const holdings = DataService.loadCryptoHoldings([]);
       const filtered = holdings.filter(h => h.id !== holdingId);
       DataService.saveCryptoHoldings(filtered);
@@ -518,7 +528,8 @@ export class SupabaseDataService {
   }
 
   static async saveStockHolding(holding: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const holdings = DataService.loadStockHoldings([]);
       const existing = holdings.findIndex(h => h.id === holding.id);
       if (existing >= 0) {
@@ -578,7 +589,8 @@ export class SupabaseDataService {
   }
 
   static async deleteStockHolding(holdingId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const holdings = DataService.loadStockHoldings([]);
       const filtered = holdings.filter(h => h.id !== holdingId);
       DataService.saveStockHoldings(filtered);
@@ -638,7 +650,8 @@ export class SupabaseDataService {
   }
 
   static async saveTradingAccount(account: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadTradingAccounts([]);
       const existing = accounts.findIndex(a => a.id === account.id);
       if (existing >= 0) {
@@ -703,7 +716,8 @@ export class SupabaseDataService {
   }
 
   static async deleteTradingAccount(accountId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadTradingAccounts([]);
       const filtered = accounts.filter(a => a.id !== accountId);
       DataService.saveTradingAccounts(filtered);
@@ -755,7 +769,8 @@ export class SupabaseDataService {
   }
 
   static async saveRealEstate(property: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const properties = DataService.loadRealEstate([]);
       const existing = properties.findIndex(p => p.id === property.id);
       if (existing >= 0) {
@@ -820,7 +835,8 @@ export class SupabaseDataService {
   }
 
   static async deleteRealEstate(propertyId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const properties = DataService.loadRealEstate([]);
       const filtered = properties.filter(p => p.id !== propertyId);
       DataService.saveRealEstate(filtered);
@@ -870,7 +886,8 @@ export class SupabaseDataService {
   }
 
   static async saveSavingsAccount(account: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadSavingsAccounts([]);
       const existing = accounts.findIndex(a => a.id === account.id);
       if (existing >= 0) {
@@ -931,7 +948,8 @@ export class SupabaseDataService {
   }
 
   static async deleteSavingsAccount(accountId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadSavingsAccounts([]);
       const filtered = accounts.filter(a => a.id !== accountId);
       DataService.saveSavingsAccounts(filtered);
@@ -979,7 +997,8 @@ export class SupabaseDataService {
   }
 
   static async saveExpenseCategory(category: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const categories = DataService.loadExpenseCategories([]);
       const existing = categories.findIndex(c => c.id === category.id);
       if (existing >= 0) {
@@ -1039,7 +1058,8 @@ export class SupabaseDataService {
   }
 
   static async deleteExpenseCategory(categoryId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const categories = DataService.loadExpenseCategories([]);
       const filtered = categories.filter(c => c.id !== categoryId);
       DataService.saveExpenseCategories(filtered);
@@ -1082,7 +1102,8 @@ export class SupabaseDataService {
   }
 
   static async saveSubscription(subscription: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const subscriptions = DataService.loadSubscriptions([]);
       const existing = subscriptions.findIndex((s: any) => s.id === subscription.id);
       if (existing >= 0) {
@@ -1140,7 +1161,8 @@ export class SupabaseDataService {
   }
 
   static async deleteSubscription(subscriptionId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const subscriptions = DataService.loadSubscriptions([]);
       const filtered = subscriptions.filter((s: any) => s.id !== subscriptionId);
       DataService.saveSubscriptions(filtered);
@@ -1188,7 +1210,8 @@ export class SupabaseDataService {
   }
 
   static async saveDebtAccount(account: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadDebtAccounts?.([]) || [];
       const existing = accounts.findIndex((a: any) => a.id === account.id);
       if (existing >= 0) {
@@ -1247,7 +1270,8 @@ export class SupabaseDataService {
   }
 
   static async deleteDebtAccount(accountId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const accounts = DataService.loadDebtAccounts?.([]) || [];
       const filtered = accounts.filter((a: any) => a.id !== accountId);
       DataService.saveDebtAccounts?.(filtered);
@@ -1295,7 +1319,8 @@ export class SupabaseDataService {
   }
 
   static async saveValuableItem(item: any): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const items = DataService.loadValuableItems([]);
       const existing = items.findIndex(i => i.id === item.id);
       if (existing >= 0) {
@@ -1357,7 +1382,8 @@ export class SupabaseDataService {
   }
 
   static async deleteValuableItem(itemId: string): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       const items = DataService.loadValuableItems([]);
       const filtered = items.filter(i => i.id !== itemId);
       DataService.saveValuableItems(filtered);
@@ -1392,7 +1418,8 @@ export class SupabaseDataService {
    * Call this once after user logs in for the first time
    */
   static async migrateFromLocalStorage(): Promise<void> {
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       console.warn('Supabase not configured, cannot migrate data');
       return;
     }
@@ -1472,7 +1499,8 @@ export class SupabaseDataService {
     // Always clear localStorage first
     DataService.clearAllData();
     
-    if (!this.isConfigured) {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
       console.log('Supabase not configured, only cleared localStorage');
       return;
     }
@@ -1675,7 +1703,8 @@ export class SupabaseDataService {
     currency?: string;
     [key: string]: any;
   } | null> {
-    if (!this.isConfigured) return null;
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) return null;
 
     // Try cache first
     const cached = this.getCachedData<any>('user_preferences');
@@ -1718,7 +1747,8 @@ export class SupabaseDataService {
     currency?: string;
     [key: string]: any;
   }): Promise<void> {
-    if (!this.isConfigured) return;
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) return;
 
     try {
       const userId = await this.getUserId();
@@ -1750,7 +1780,8 @@ export class SupabaseDataService {
   }
 
   static async updateCardOrder(cardOrder: string[]): Promise<void> {
-    if (!this.isConfigured) return;
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) return;
 
     try {
       const userId = await this.getUserId();
@@ -1772,7 +1803,8 @@ export class SupabaseDataService {
   }
 
   static async updateHiddenCards(hiddenCards: string[]): Promise<void> {
-    if (!this.isConfigured) return;
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) return;
 
     try {
       const userId = await this.getUserId();
