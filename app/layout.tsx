@@ -84,20 +84,25 @@ export default function RootLayout({
       <head>
         {/* Trusted Types Polyfill - Must be loaded first to prevent policy errors */}
         <script src="/trusted-types.js" />
-        {/* Suppress harmless TradingView 403 errors */}
+        {/* Suppress harmless TradingView 403 errors and telemetry blocks */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 const originalConsoleError = console.error;
                 const originalConsoleLog = console.log;
+                const originalConsoleWarn = console.warn;
                 
                 const shouldSuppress = (args) => {
-                  const msg = args[0];
-                  return msg && typeof msg === 'string' && (
+                  const msg = String(args[0] || '');
+                  return (
                     msg.includes('support-portal-problems') || 
                     msg.includes('tradingview-widget.com') ||
-                    msg.includes('Status 403')
+                    msg.includes('tradingview.com') ||
+                    msg.includes('telemetry.tradingview') ||
+                    msg.includes('Status 403') ||
+                    msg.includes('ERR_BLOCKED_BY_CLIENT') ||
+                    msg.includes('Failed to fetch') && msg.includes('telemetry')
                   );
                 };
 
@@ -109,6 +114,11 @@ export default function RootLayout({
                 console.log = function(...args) {
                   if (shouldSuppress(args)) return;
                   originalConsoleLog.apply(console, args);
+                };
+
+                console.warn = function(...args) {
+                  if (shouldSuppress(args)) return;
+                  originalConsoleWarn.apply(console, args);
                 };
               })();
             `,
