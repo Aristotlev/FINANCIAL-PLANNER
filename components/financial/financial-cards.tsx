@@ -10,7 +10,7 @@ export { CashCard } from "./cash-card";
 export { SavingsCard } from "./savings-card";
 export { ExpensesCard } from "./expenses-card";
 export { ValuableItemsCard } from "./valuable-items-card";
-export { TradingAccountCard, TradingToolsCard } from "./trading-account-card";
+export { TradingAccountCard } from "./trading-account-card";
 export { NetWorthCard } from "./net-worth-card";
 export { ToolsCard } from "./tools-card";
 export { NewsCard } from "./news-card";

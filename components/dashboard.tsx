@@ -9,7 +9,6 @@ import {
   ExpensesCard, 
   ValuableItemsCard, 
   TradingAccountCard,
-  TradingToolsCard,
   NetWorthCard,
   RealEstateCard,
   ToolsCard,
