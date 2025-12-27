@@ -1130,44 +1130,34 @@ export const INTERNATIONAL_BANKS: BankInfo[] = [
 
   // Turkey
   {
-    id: 'isbank',
-    name: 'İş Bankası',
+    id: 'ziraat-bank',
+    name: 'Ziraat Bankası',
     country: 'Turkey',
     continent: 'Europe',
-    color: '#003d7a',
-    website: 'isbank.com.tr',
+    color: '#e30613',
+    website: 'ziraatbank.com.tr',
     type: 'retail',
-    products: ['Current Account', 'Savings', 'Credit Cards', 'Mortgages', 'Business Banking']
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Agricultural Banking', 'Mortgages']
   },
   {
-    id: 'garanti-bbva',
-    name: 'Garanti BBVA',
+    id: 'vakifbank',
+    name: 'VakıfBank',
     country: 'Turkey',
     continent: 'Europe',
-    color: '#00a651',
-    website: 'garantibbva.com.tr',
+    color: '#ffcc00',
+    website: 'vakifbank.com.tr',
     type: 'retail',
-    products: ['Current Account', 'Savings', 'Credit Cards', 'Digital Banking', 'Investment']
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Mortgages', 'Investment']
   },
   {
-    id: 'yapi-kredi',
-    name: 'Yapı Kredi',
+    id: 'halkbank',
+    name: 'Halkbank',
     country: 'Turkey',
     continent: 'Europe',
-    color: '#0066cc',
-    website: 'yapikredi.com.tr',
+    color: '#0099cc',
+    website: 'halkbank.com.tr',
     type: 'retail',
-    products: ['Current Account', 'Savings', 'Credit Cards', 'Mortgages', 'Business Banking']
-  },
-  {
-    id: 'akbank',
-    name: 'Akbank',
-    country: 'Turkey',
-    continent: 'Europe',
-    color: '#cc0000',
-    website: 'akbank.com',
-    type: 'retail',
-    products: ['Current Account', 'Savings', 'Credit Cards', 'Digital Banking', 'Investment']
+    products: ['Current Account', 'Savings', 'Credit Cards', 'SME Banking', 'Mortgages']
   },
 
   // Japan
@@ -1338,6 +1328,416 @@ export const INTERNATIONAL_BANKS: BankInfo[] = [
     website: 'bb.com.br',
     type: 'retail',
     products: ['Savings', 'Credit Cards', 'Agricultural Banking', 'Corporate Banking', 'Government Banking']
+  },
+
+  // United Arab Emirates
+  {
+    id: 'fab',
+    name: 'First Abu Dhabi Bank (FAB)',
+    country: 'United Arab Emirates',
+    continent: 'Asia',
+    color: '#005eb8',
+    website: 'bankfab.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Loans', 'Investment']
+  },
+  {
+    id: 'emirates-nbd',
+    name: 'Emirates NBD',
+    country: 'United Arab Emirates',
+    continent: 'Asia',
+    color: '#003399',
+    website: 'emiratesnbd.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Loans', 'Priority Banking']
+  },
+  {
+    id: 'adcb',
+    name: 'Abu Dhabi Commercial Bank (ADCB)',
+    country: 'United Arab Emirates',
+    continent: 'Asia',
+    color: '#c62026',
+    website: 'adcb.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Mortgages', 'Wealth Management']
+  },
+  {
+    id: 'dib',
+    name: 'Dubai Islamic Bank',
+    country: 'United Arab Emirates',
+    continent: 'Asia',
+    color: '#006c35',
+    website: 'dib.ae',
+    type: 'retail',
+    products: ['Islamic Banking', 'Savings', 'Credit Cards', 'Auto Finance', 'Home Finance']
+  },
+  {
+    id: 'mashreq',
+    name: 'Mashreq Bank',
+    country: 'United Arab Emirates',
+    continent: 'Asia',
+    color: '#ff5e00',
+    website: 'mashreqbank.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Digital Banking', 'Investment']
+  },
+
+  // Saudi Arabia
+  {
+    id: 'al-rajhi',
+    name: 'Al Rajhi Bank',
+    country: 'Saudi Arabia',
+    continent: 'Asia',
+    color: '#004d99',
+    website: 'alrajhibank.com.sa',
+    type: 'retail',
+    products: ['Islamic Banking', 'Current Account', 'Credit Cards', 'Finance', 'Investment']
+  },
+  {
+    id: 'snb',
+    name: 'Saudi National Bank (SNB)',
+    country: 'Saudi Arabia',
+    continent: 'Asia',
+    color: '#006c35',
+    website: 'alahli.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Finance', 'Investment']
+  },
+  {
+    id: 'riyad-bank',
+    name: 'Riyad Bank',
+    country: 'Saudi Arabia',
+    continent: 'Asia',
+    color: '#005596',
+    website: 'riyadbank.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Finance', 'Corporate Banking']
+  },
+  {
+    id: 'sab',
+    name: 'Saudi Awwal Bank (SAB)',
+    country: 'Saudi Arabia',
+    continent: 'Asia',
+    color: '#d71920',
+    website: 'sab.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Home Finance', 'Private Banking']
+  },
+
+  // Kuwait
+  {
+    id: 'nbk',
+    name: 'National Bank of Kuwait (NBK)',
+    country: 'Kuwait',
+    continent: 'Asia',
+    color: '#005eb8',
+    website: 'nbk.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Loans', 'Investment']
+  },
+  {
+    id: 'kfh',
+    name: 'Kuwait Finance House (KFH)',
+    country: 'Kuwait',
+    continent: 'Asia',
+    color: '#006f44',
+    website: 'kfh.com',
+    type: 'retail',
+    products: ['Islamic Banking', 'Savings', 'Credit Cards', 'Auto Finance', 'Real Estate']
+  },
+  {
+    id: 'gulf-bank',
+    name: 'Gulf Bank',
+    country: 'Kuwait',
+    continent: 'Asia',
+    color: '#c62026',
+    website: 'e-gulfbank.com',
+    type: 'retail',
+    products: ['Current Account', 'Savings', 'Credit Cards', 'Loans', 'Priority Banking']
+  },
+
+  // Thailand
+  {
+    id: 'bangkok-bank',
+    name: 'Bangkok Bank',
+    country: 'Thailand',
+    continent: 'Asia',
+    color: '#1e4597',
+    website: 'bangkokbank.com',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'Investment', 'Business Banking']
+  },
+  {
+    id: 'kasikornbank',
+    name: 'Kasikornbank (KBank)',
+    country: 'Thailand',
+    continent: 'Asia',
+    color: '#138f2d',
+    website: 'kasikornbank.com',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'Investment', 'Digital Banking']
+  },
+  {
+    id: 'scb',
+    name: 'Siam Commercial Bank (SCB)',
+    country: 'Thailand',
+    continent: 'Asia',
+    color: '#4e2583',
+    website: 'scb.co.th',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'Investment', 'Wealth Management']
+  },
+  {
+    id: 'krungthai',
+    name: 'Krungthai Bank',
+    country: 'Thailand',
+    continent: 'Asia',
+    color: '#00a5e5',
+    website: 'krungthai.com',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'Government Services', 'Investment']
+  },
+
+  // Vietnam
+  {
+    id: 'vietcombank',
+    name: 'Vietcombank',
+    country: 'Vietnam',
+    continent: 'Asia',
+    color: '#005a3c',
+    website: 'vietcombank.com.vn',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'Digital Banking', 'International']
+  },
+  {
+    id: 'vietinbank',
+    name: 'VietinBank',
+    country: 'Vietnam',
+    continent: 'Asia',
+    color: '#005a9e',
+    website: 'vietinbank.vn',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'SME Banking', 'Trade Finance']
+  },
+  {
+    id: 'bidv',
+    name: 'BIDV',
+    country: 'Vietnam',
+    continent: 'Asia',
+    color: '#203e90',
+    website: 'bidv.com.vn',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'Insurance', 'Investment']
+  },
+  {
+    id: 'techcombank',
+    name: 'Techcombank',
+    country: 'Vietnam',
+    continent: 'Asia',
+    color: '#e31937',
+    website: 'techcombank.com.vn',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Loans', 'Priority Banking', 'Business Banking']
+  },
+
+  // Philippines
+  {
+    id: 'bdo',
+    name: 'BDO Unibank',
+    country: 'Philippines',
+    continent: 'Asia',
+    color: '#003399',
+    website: 'bdo.com.ph',
+    type: 'retail',
+    products: ['Savings', 'Checking', 'Credit Cards', 'Loans', 'Remittance']
+  },
+  {
+    id: 'bpi',
+    name: 'Bank of the Philippine Islands (BPI)',
+    country: 'Philippines',
+    continent: 'Asia',
+    color: '#b2003d',
+    website: 'bpi.com.ph',
+    type: 'retail',
+    products: ['Savings', 'Checking', 'Credit Cards', 'Loans', 'Asset Management']
+  },
+  {
+    id: 'metrobank',
+    name: 'Metrobank',
+    country: 'Philippines',
+    continent: 'Asia',
+    color: '#003399',
+    website: 'metrobank.com.ph',
+    type: 'retail',
+    products: ['Savings', 'Checking', 'Credit Cards', 'Loans', 'Investment']
+  },
+  {
+    id: 'landbank',
+    name: 'Landbank',
+    country: 'Philippines',
+    continent: 'Asia',
+    color: '#006633',
+    website: 'landbank.com',
+    type: 'retail',
+    products: ['Savings', 'Loans', 'Government Banking', 'Agrarian Services', 'Digital Banking']
+  },
+
+  // Malaysia
+  {
+    id: 'maybank',
+    name: 'Maybank',
+    country: 'Malaysia',
+    continent: 'Asia',
+    color: '#ffc425',
+    website: 'maybank2u.com.my',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Islamic Banking']
+  },
+  {
+    id: 'cimb',
+    name: 'CIMB Bank',
+    country: 'Malaysia',
+    continent: 'Asia',
+    color: '#ed1c24',
+    website: 'cimb.com.my',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Wealth Management']
+  },
+  {
+    id: 'public-bank',
+    name: 'Public Bank',
+    country: 'Malaysia',
+    continent: 'Asia',
+    color: '#d31145',
+    website: 'pbebank.com',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Investment']
+  },
+  {
+    id: 'rhb',
+    name: 'RHB Bank',
+    country: 'Malaysia',
+    continent: 'Asia',
+    color: '#0067b1',
+    website: 'rhbgroup.com',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Insurance']
+  },
+
+  // Indonesia
+  {
+    id: 'bank-mandiri',
+    name: 'Bank Mandiri',
+    country: 'Indonesia',
+    continent: 'Asia',
+    color: '#003d79',
+    website: 'bankmandiri.co.id',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Micro Banking']
+  },
+  {
+    id: 'bri',
+    name: 'Bank Rakyat Indonesia (BRI)',
+    country: 'Indonesia',
+    continent: 'Asia',
+    color: '#00529c',
+    website: 'bri.co.id',
+    type: 'retail',
+    products: ['Savings', 'Loans', 'Microfinance', 'Credit Cards', 'Digital Banking']
+  },
+  {
+    id: 'bca',
+    name: 'Bank Central Asia (BCA)',
+    country: 'Indonesia',
+    continent: 'Asia',
+    color: '#00529c',
+    website: 'bca.co.id',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Digital Banking']
+  },
+  {
+    id: 'bni',
+    name: 'Bank Negara Indonesia (BNI)',
+    country: 'Indonesia',
+    continent: 'Asia',
+    color: '#f15a22',
+    website: 'bni.co.id',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'International']
+  },
+
+  // Russia
+  {
+    id: 'sberbank',
+    name: 'Sberbank',
+    country: 'Russia',
+    continent: 'Europe',
+    color: '#21a038',
+    website: 'sberbank.ru',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Ecosystem Services']
+  },
+  {
+    id: 'vtb',
+    name: 'VTB Bank',
+    country: 'Russia',
+    continent: 'Europe',
+    color: '#002882',
+    website: 'vtb.ru',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Investment']
+  },
+  {
+    id: 'alfa-bank',
+    name: 'Alfa-Bank',
+    country: 'Russia',
+    continent: 'Europe',
+    color: '#ef3124',
+    website: 'alfabank.ru',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Business Banking']
+  },
+  {
+    id: 'tinkoff',
+    name: 'Tinkoff Bank',
+    country: 'Russia',
+    continent: 'Europe',
+    color: '#ffdd2d',
+    website: 'tinkoff.ru',
+    type: 'digital',
+    products: ['Digital Banking', 'Investment', 'Credit Cards', 'Business Banking', 'Insurance']
+  },
+  {
+    id: 'gazprombank',
+    name: 'Gazprombank',
+    country: 'Russia',
+    continent: 'Europe',
+    color: '#004899',
+    website: 'gazprombank.ru',
+    type: 'retail',
+    products: ['Savings', 'Current Account', 'Credit Cards', 'Loans', 'Corporate Banking']
+  },
+
+  // Additional China Banks
+  {
+    id: 'agbank-china',
+    name: 'Agricultural Bank of China',
+    country: 'China',
+    continent: 'Asia',
+    color: '#00917a',
+    website: 'abchina.com',
+    type: 'retail',
+    products: ['Savings', 'Corporate Banking', 'Rural Banking', 'Credit Cards', 'Investment']
+  },
+  {
+    id: 'cmb',
+    name: 'China Merchants Bank',
+    country: 'China',
+    continent: 'Asia',
+    color: '#c8102e',
+    website: 'cmbchina.com',
+    type: 'retail',
+    products: ['Savings', 'Credit Cards', 'Wealth Management', 'Corporate Banking', 'Private Banking']
   },
 
   // Digital Banks / Fintech

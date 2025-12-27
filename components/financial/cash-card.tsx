@@ -32,10 +32,20 @@ import { DualCurrencyDisplay, CompactDualCurrency } from "../ui/dual-currency-di
 // Bank Logo Component
 function BankLogo({ bank }: { bank: BankInfo }) {
   const [imgError, setImgError] = useState(false);
-  // Skip Google (attempt 0) for Capital One as it consistently returns 404
-  const [fallbackAttempt, setFallbackAttempt] = useState(
-    bank.website.includes('capitalone.com') ? 1 : 0
-  );
+  
+  // Determine best starting strategy based on known issues to avoid 404s/blocks
+  const getInitialAttempt = () => {
+    // Capital One: Google 404s, Clearbit often blocked. Start with DuckDuckGo (2)
+    if (bank.website.includes('capitalone.com')) return 2;
+    
+    // Emirates NBD: Google 404s. Start with Clearbit (1)
+    if (bank.website.includes('emiratesnbd.com')) return 1;
+    
+    // Default: Start with Google (0)
+    return 0;
+  };
+
+  const [fallbackAttempt, setFallbackAttempt] = useState(getInitialAttempt);
   
   // Use Google's favicon service as primary (free, no API key required)
   // Falls back to Clearbit, then DuckDuckGo, then colored icon
@@ -266,7 +276,7 @@ function AddCashAccountModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[15000]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto relative" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[500px] max-h-[90vh] overflow-y-auto relative" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Cash Account</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-900 dark:text-white">

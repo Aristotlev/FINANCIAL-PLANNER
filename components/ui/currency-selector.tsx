@@ -1,8 +1,24 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { DollarSign, ChevronDown, Search, RefreshCw, Check } from 'lucide-react';
+import { ChevronDown, Search, RefreshCw, Check } from 'lucide-react';
 import { useCurrency, SUPPORTED_CURRENCIES, Currency } from '../../contexts/currency-context';
+
+const CurrencyFlag = ({ countryCode, className = "w-5 h-3.5" }: { countryCode?: string, className?: string }) => {
+  if (!countryCode) return null;
+  
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${countryCode}.png`}
+      srcSet={`https://flagcdn.com/w80/${countryCode}.png 2x`}
+      width="20"
+      height="14"
+      alt={`${countryCode} flag`}
+      className={`object-cover rounded-sm ${className}`}
+      loading="lazy"
+    />
+  );
+};
 
 export function CurrencySelector() {
   const { mainCurrency, setMainCurrency, lastUpdated, refreshRates, isLoading } = useCurrency();
@@ -61,10 +77,14 @@ export function CurrencySelector() {
         className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors group"
         title="Select Main Currency"
       >
-        <DollarSign className="w-4 h-4" />
-        <span className="text-sm font-medium">
-          {mainCurrency.flag} {mainCurrency.code}
-        </span>
+        <div className="flex items-center gap-2">
+          {mainCurrency.countryCode ? (
+            <CurrencyFlag countryCode={mainCurrency.countryCode} />
+          ) : (
+            <span className="text-lg leading-none">{mainCurrency.flag}</span>
+          )}
+          <span className="text-sm font-medium">{mainCurrency.code}</span>
+        </div>
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
@@ -130,7 +150,13 @@ export function CurrencySelector() {
                             : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
-                        <span className="text-2xl">{currency.flag}</span>
+                        <div className="flex-shrink-0 w-6 flex justify-center">
+                          {currency.countryCode ? (
+                            <CurrencyFlag countryCode={currency.countryCode} className="w-6 h-4" />
+                          ) : (
+                            <span className="text-2xl leading-none">{currency.flag}</span>
+                          )}
+                        </div>
                         <div className="flex-1 text-left">
                           <div className="text-sm font-semibold">{currency.code}</div>
                           <div className={`text-xs ${

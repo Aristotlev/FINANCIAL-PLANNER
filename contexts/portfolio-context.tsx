@@ -17,6 +17,7 @@ export interface CryptoHolding {
   walletType?: string;
   walletName?: string;
   walletAddress?: string;
+  iconUrl?: string;
 }
 
 export interface StockHolding {

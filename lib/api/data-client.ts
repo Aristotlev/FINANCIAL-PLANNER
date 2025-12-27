@@ -199,8 +199,11 @@ export async function saveData<T = any>(table: DataTable, data: T): Promise<T | 
     }
     
     throw lastError;
-  } catch (error) {
-    console.error(`Error saving to ${table}:`, error);
+  } catch (error: any) {
+    // Don't log network errors like "Failed to fetch" - these are common during dev/page transitions
+    if (error?.message !== 'Failed to fetch') {
+      console.error(`Error saving to ${table}:`, error);
+    }
     return null;
   }
 }
@@ -265,8 +268,11 @@ export async function deleteData(table: DataTable, id: string): Promise<boolean>
     }
     
     return false;
-  } catch (error) {
-    console.error(`Error deleting from ${table}:`, error);
+  } catch (error: any) {
+    // Don't log network errors like "Failed to fetch"
+    if (error?.message !== 'Failed to fetch') {
+      console.error(`Error deleting from ${table}:`, error);
+    }
     return false;
   }
 }

@@ -392,6 +392,7 @@ export class SupabaseDataService {
           walletType: holding.wallet_type,
           walletName: holding.wallet_name,
           walletAddress: holding.wallet_address,
+          iconUrl: holding.icon_url,
         }));
       },
       () => DataService.loadCryptoHoldings(defaultHoldings)
@@ -441,6 +442,7 @@ export class SupabaseDataService {
         wallet_type: holding.walletType || 'other',
         wallet_name: holding.walletName || null,
         wallet_address: holding.walletAddress || null,
+        icon_url: holding.iconUrl || null,
       };
       
       // Use secure API endpoint
@@ -1768,7 +1770,9 @@ export class SupabaseDataService {
       });
 
       if (!result) {
-        throw new Error('Failed to save user preferences');
+        // Don't throw error, just log warning to avoid unhandled rejections in UI
+        console.warn('Failed to save user preferences (API returned null)');
+        return;
       }
       
       this.invalidateCache('user_preferences');

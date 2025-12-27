@@ -63,7 +63,7 @@ import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
 import { ThemedStatBox, ConditionalThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { useAssetPrices } from "../../hooks/use-price";
 import { formatNumber } from "../../lib/utils";
-import { usePortfolioContext } from "../../contexts/portfolio-context";
+import { usePortfolioContext, CryptoHolding } from "../../contexts/portfolio-context";
 import { AIRebalancing } from "../ui/ai-rebalancing";
 import { SellPositionModal } from "../ui/sell-position-modal";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
@@ -73,9 +73,12 @@ import { PortfolioWalletPieChartV2 } from "../ui/portfolio-wallet-pie-chart-v2";
 import { CryptoAPYCalculator } from "../ui/crypto-apy-calculator";
 import { Wallet } from "lucide-react";
 import { lttb } from "../../lib/chart-utils";
+import { getBrandColor } from "../../lib/brand-colors";
 
 // Crypto Icon Component - Binance style
-function CryptoIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
+function CryptoIcon({ symbol, className = "w-5 h-5", iconUrl }: { symbol: string; className?: string; iconUrl?: string }) {
+  const [imageError, setImageError] = useState(false);
+
   if (!symbol) return <Coins className={className} />;
 
   switch (symbol.toUpperCase()) {
@@ -160,28 +163,28 @@ function CryptoIcon({ symbol, className = "w-5 h-5" }: { symbol: string; classNa
     case 'PEPE':
       return <PEPEIcon className={className} />;
     default:
+      if (!imageError) {
+        return (
+          <img 
+            src={iconUrl || `https://assets.coincap.io/assets/icons/${symbol.toLowerCase()}@2x.png`}
+            alt={symbol}
+            className={`${className} rounded-full`}
+            onError={() => setImageError(true)}
+          />
+        );
+      }
       return <ChartIcon className={className} color="#F59E0B" />;
   }
 }
 
-interface CryptoHolding {
-  id: string;
-  name: string;
-  symbol: string;
-  amount: number;
-  value: number;
-  color: string;
-  change: string;
-  entryPoint: number;
-  walletType?: string;
-  walletName?: string;
-  walletAddress?: string;
-}
+
 
 interface SearchResult {
   name: string;
   symbol: string;
   currentPrice: number;
+  icon?: string;
+  id?: string;
 }
 
 const initialCryptoHoldings: CryptoHolding[] = [
@@ -333,6 +336,8 @@ function AddPositionModal({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState<SearchResult | null>(null);
+  const [allCryptos, setAllCryptos] = useState<SearchResult[]>(popularCryptos);
+  const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState('');
   const [entryPoint, setEntryPoint] = useState('');
   const [color, setColor] = useState('#f59e0b');
@@ -340,7 +345,39 @@ function AddPositionModal({
   const [walletName, setWalletName] = useState('');
   const [showWalletOptions, setShowWalletOptions] = useState(false);
 
-  const filteredCryptos = popularCryptos.filter(crypto =>
+  useEffect(() => {
+    if (isOpen && allCryptos.length <= popularCryptos.length) {
+      const fetchCryptos = async () => {
+        setIsLoading(true);
+        try {
+          // Fetch top 500 coins in two batches
+          const [page1, page2] = await Promise.all([
+            fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false').then(res => res.json()),
+            fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=2&sparkline=false').then(res => res.json())
+          ]);
+
+          if (Array.isArray(page1) && Array.isArray(page2)) {
+            const combined = [...page1, ...page2].map((coin: any) => ({
+              id: coin.id,
+              name: coin.name,
+              symbol: coin.symbol.toUpperCase(),
+              currentPrice: coin.current_price,
+              icon: coin.image
+            }));
+            
+            setAllCryptos(combined);
+          }
+        } catch (error) {
+          console.error('Failed to fetch cryptos:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchCryptos();
+    }
+  }, [isOpen]);
+
+  const filteredCryptos = allCryptos.filter(crypto =>
     crypto.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     crypto.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -354,7 +391,8 @@ function AddPositionModal({
         entryPoint: parseFloat(entryPoint),
         color: color,
         walletType: walletType,
-        walletName: walletName || undefined
+        walletName: walletName || undefined,
+        iconUrl: selectedCrypto.icon
       });
       onClose();
       setSearchTerm('');
@@ -372,7 +410,7 @@ function AddPositionModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000001] overflow-y-auto" onClick={onClose}>
       <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8 sm:py-4">
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-[384px]" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Crypto Position</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-900 dark:text-white">
@@ -398,17 +436,18 @@ function AddPositionModal({
         {/* Search Results */}
         {searchTerm && (
           <div className="mb-4 max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-            {filteredCryptos.map((crypto) => (
+            {filteredCryptos.map((crypto, index) => (
               <button
-                key={crypto.symbol}
+                key={`${crypto.id || crypto.symbol}-${index}`}
                 onClick={() => {
                   setSelectedCrypto(crypto);
                   setSearchTerm('');
                   setEntryPoint(crypto.currentPrice.toString());
+                  setColor(getBrandColor(crypto.symbol, 'crypto'));
                 }}
                 className="w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
               >
-                <CryptoIcon symbol={crypto.symbol} />
+                <CryptoIcon symbol={crypto.symbol} iconUrl={crypto.icon} />
                 <div>
                   <div className="font-semibold text-gray-900 dark:text-white">{crypto.name}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -424,7 +463,7 @@ function AddPositionModal({
         {selectedCrypto && (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-3">
-              <CryptoIcon symbol={selectedCrypto.symbol} />
+              <CryptoIcon symbol={selectedCrypto.symbol} iconUrl={selectedCrypto.icon} />
               <div>
                 <div className="font-semibold text-gray-900 dark:text-white">{selectedCrypto.name} ({selectedCrypto.symbol})</div>
               </div>
@@ -641,7 +680,7 @@ function EditPositionModal({
         {/* Crypto Info */}
         <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <div className="flex items-center gap-3">
-            <CryptoIcon symbol={holding.symbol} />
+            <CryptoIcon symbol={holding.symbol} iconUrl={holding.iconUrl} />
             <div>
               <div className="font-semibold text-gray-900 dark:text-white">{holding.name} ({holding.symbol})</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -848,6 +887,58 @@ function CryptoModalContent() {
   const { prices, loading } = useAssetPrices(symbols);
 
   const addHolding = async (newHolding: Omit<CryptoHolding, 'id' | 'value' | 'change'>) => {
+    // Check if we already have a position in this symbol (merge regardless of wallet)
+    const existingHolding = cryptoHoldings.find(h => h.symbol === newHolding.symbol);
+    
+    if (existingHolding) {
+      // Merge positions: calculate weighted average entry point
+      const totalAmount = existingHolding.amount + newHolding.amount;
+      const totalCostBasis = (existingHolding.amount * existingHolding.entryPoint) + (newHolding.amount * newHolding.entryPoint);
+      const avgEntryPoint = totalCostBasis / totalAmount;
+      
+      // Get current price for value calculation
+      const currentPriceData = prices[newHolding.symbol];
+      const currentPrice = currentPriceData?.price || avgEntryPoint;
+      const value = totalAmount * currentPrice;
+      const changePercent = ((currentPrice - avgEntryPoint) / avgEntryPoint * 100);
+      const change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+      
+      const mergedHolding: CryptoHolding = {
+        ...existingHolding,
+        amount: totalAmount,
+        entryPoint: avgEntryPoint,
+        value,
+        change,
+        // Keep the existing wallet info (or update if the new one has wallet info)
+        walletType: newHolding.walletType || existingHolding.walletType,
+        walletName: newHolding.walletName || existingHolding.walletName,
+        iconUrl: newHolding.iconUrl || existingHolding.iconUrl
+      };
+      
+      // Update state optimistically
+      setCryptoHoldings(cryptoHoldings.map(h => h.id === existingHolding.id ? mergedHolding : h));
+      
+      // Save to database
+      await SupabaseDataService.saveCryptoHolding(mergedHolding);
+      
+      // Record transaction
+      const transaction: CryptoTransaction = {
+        id: crypto.randomUUID(),
+        type: 'buy',
+        symbol: newHolding.symbol,
+        name: newHolding.name,
+        amount: newHolding.amount,
+        pricePerUnit: newHolding.entryPoint,
+        totalValue: newHolding.amount * newHolding.entryPoint,
+        date: new Date().toISOString()
+      };
+      
+      const updatedTransactions = [transaction, ...transactions];
+      setTransactions(updatedTransactions);
+      return;
+    }
+    
+    // No existing position with same symbol and wallet - create new holding
     // Generate a proper UUID for Supabase compatibility
     const id = crypto.randomUUID();
     const currentPriceData = prices[newHolding.symbol];
@@ -1070,6 +1161,17 @@ function CryptoModalContent() {
           change
         };
       }
+      
+      // Fallback: if no current price, use entry point for value calculation
+      // This ensures we don't show $0.00 for assets where price fetch failed
+      if (holding.value === undefined) {
+         return {
+             ...holding,
+             value: holding.amount * holding.entryPoint,
+             change: '0.00%'
+         };
+      }
+
       return holding;
     });
   }, [cryptoHoldings, prices]);
@@ -1264,7 +1366,7 @@ function CryptoModalContent() {
                   {[...updatedHoldings].sort((a, b) => b.value - a.value).map((holding, index) => (
                     <div key={holding.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <CryptoIcon symbol={holding.symbol} />
+                        <CryptoIcon symbol={holding.symbol} iconUrl={holding.iconUrl} />
                         <div>
                           <div className="font-semibold text-gray-900 dark:text-white">{holding.name}</div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -1623,6 +1725,7 @@ function CryptoHoverContent() {
   const portfolioData = cryptoHoldings.map(holding => {
     const currentPriceData = prices[holding.symbol];
     // Fallback to entry price or calculated price from stored value if real-time price is missing
+   
     const currentPrice = currentPriceData?.price || (holding.value && holding.amount ? holding.value / holding.amount : holding.entryPoint) || 0;
     const currentValue = holding.amount * currentPrice;
     const entryPoint = holding.entryPoint || 0; // Safeguard against undefined
@@ -1657,7 +1760,7 @@ function CryptoHoverContent() {
       {topHoldings.map((holding) => (
         <div key={holding.id} className="flex justify-between text-xs">
           <span className="flex items-center gap-1">
-            <CryptoIcon symbol={holding.symbol} className="w-3 h-3" /> {holding.name} ({formatCryptoAmount(holding.amount)} {holding.symbol})
+            <CryptoIcon symbol={holding.symbol} iconUrl={holding.iconUrl} className="w-3 h-3" /> {holding.name} ({formatCryptoAmount(holding.amount)} {holding.symbol})
           </span>
           <span className="font-semibold" style={{ color: holding.color }}>${formatNumber(holding.currentValue)}</span>
         </div>
@@ -1739,6 +1842,17 @@ function CryptoCardWithPrices() {
         currentPrice
       };
     }
+    
+    // Fallback if price is missing
+    if (holding.value === undefined) {
+        return {
+            ...holding,
+            value: holding.amount * holding.entryPoint,
+            change: '0.00%',
+            currentPrice: holding.entryPoint
+        };
+    }
+
     return holding;
   });
 

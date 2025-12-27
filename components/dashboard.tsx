@@ -16,9 +16,8 @@ import {
   TaxesCard
 } from "./financial/financial-cards";
 import { useBetterAuth } from '../contexts/better-auth-context';
-import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, LayoutGrid, Lock } from "lucide-react";
+import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, Lock } from "lucide-react";
 import { AIChatAssistant } from './ui/ai-chat';
-import { ThemeToggle } from './ui/theme-toggle';
 import { CurrencySelector } from './ui/currency-selector';
 import { BackgroundBeams } from './ui/background-beams';
 import { APIConnectionManager } from './ui/api-connection-manager';
@@ -433,23 +432,11 @@ export function Dashboard() {
                 )}
               </div>
               
-              <ThemeToggle />
-              
               {/* Currency Selector */}
               <CurrencySelector />
               
               {/* Hidden Cards Folder */}
               <HiddenCardsFolder />
-
-              {/* Arrange Cards Button */}
-              <button 
-                onClick={() => setShowCardOrderPanel(true)}
-                className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors relative group min-h-touch"
-                title="Arrange Cards"
-              >
-                <LayoutGrid className="w-4 h-4" />
-                <span className="text-sm hidden lg:inline">Arrange</span>
-              </button>
 
               {/* Reset Card Positions Button */}
               <button 

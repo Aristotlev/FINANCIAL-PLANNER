@@ -330,16 +330,9 @@ function parseRSSFeed(xmlText: string, sourceName: string, category: string, sou
 
 // In-memory cache for news feeds
 const newsCache = new Map<string, { data: NewsItem[], timestamp: number }>();
-const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes - optimized for fresh content
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
-// Multiple CORS proxies for better reliability
-const CORS_PROXIES = [
-  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-];
-
-// Fetch RSS feed with timeout and caching - tries multiple CORS proxies
+// Fetch RSS feed with timeout and caching
 async function fetchRSSFeed(url: string, sourceName: string, category: string, priority: number = 2, forceRefresh = false): Promise<NewsItem[]> {
   try {
     // Check cache first (unless force refresh)
@@ -351,55 +344,49 @@ async function fetchRSSFeed(url: string, sourceName: string, category: string, p
       }
     }
 
-    // Try each CORS proxy until one works
-    for (const getProxyUrl of CORS_PROXIES) {
-      try {
-        const proxyUrl = getProxyUrl(url);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-        
-        const response = await fetch(proxyUrl, {
-          headers: {
-            'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml',
-            'User-Agent': 'Mozilla/5.0 (compatible; NewsAggregator/1.0)',
-          },
-          signal: controller.signal,
-          next: { revalidate: 300 } // Cache for 5 minutes
-        });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 second timeout per feed
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*'
+        },
+        signal: controller.signal,
+        next: { revalidate: 300 } // Cache for 5 minutes
+      });
 
-        clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          continue; // Try next proxy
-        }
-
-        const xmlText = await response.text();
-        
-        // Validate that we got XML content
-        if (!xmlText || !xmlText.trim().startsWith('<?xml') && !xmlText.includes('<rss') && !xmlText.includes('<feed')) {
-          continue; // Try next proxy
-        }
-        
-        const items = parseRSSFeed(xmlText, sourceName, category, priority);
-        
-        if (items.length > 0) {
-          // Cache the results
-          newsCache.set(cacheKey, { data: items, timestamp: Date.now() });
-          return items;
-        }
-      } catch (proxyError) {
-        // Continue to next proxy
-        continue;
+      if (!response.ok) {
+        console.warn(`Failed to fetch ${sourceName}: ${response.status}`);
+        return [];
       }
+
+      const xmlText = await response.text();
+      
+      // Validate that we got XML content
+      if (!xmlText || (!xmlText.trim().startsWith('<?xml') && !xmlText.includes('<rss') && !xmlText.includes('<feed'))) {
+        return [];
+      }
+      
+      const items = parseRSSFeed(xmlText, sourceName, category, priority);
+      
+      if (items.length > 0) {
+        // Cache the results
+        newsCache.set(cacheKey, { data: items, timestamp: Date.now() });
+        return items;
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
     
-    // All proxies failed
-    console.error(`All CORS proxies failed for ${sourceName}`);
     return [];
   } catch (error) {
     if ((error as Error).name === 'AbortError') {
-      console.error(`Timeout fetching RSS feed from ${sourceName}`);
+      // console.warn(`Timeout fetching RSS feed from ${sourceName}`);
     } else {
       console.error(`Error fetching RSS feed from ${sourceName}:`, error);
     }

@@ -74,7 +74,37 @@ function connect(key, symbol, type) {
   try {
     // Crypto: Binance WebSocket
     if (type === 'crypto') {
-      if (symbol === 'USDT') return;
+      // Special handling for USDT (Base currency)
+      if (symbol === 'USDT') {
+        const update = {
+          symbol: 'USDT',
+          price: 1.00,
+          change: 0,
+          changePercent: 0,
+          timestamp: Date.now(),
+          volume: 0
+        };
+        
+        // Send immediate update
+        processAndNotify(key, symbol, update);
+        
+        // Set a dummy interval to mark as connected and keep timestamp fresh
+        if (!pollingIntervals.has(key)) {
+            const interval = setInterval(() => {
+                const freshUpdate = {
+                  symbol: 'USDT',
+                  price: 1.00,
+                  change: 0,
+                  changePercent: 0,
+                  timestamp: Date.now(),
+                  volume: 0
+                };
+                processAndNotify(key, symbol, freshUpdate);
+            }, 60000);
+            pollingIntervals.set(key, interval);
+        }
+        return;
+      }
 
       let binanceSymbol = `${symbol.toLowerCase()}usdt`;
       if (symbol === 'USDC') binanceSymbol = 'usdcusdt';

@@ -44,41 +44,30 @@ interface Holding {
 const personalizedNewsCache = new Map<string, { data: NewsItem[], timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
-// Multiple CORS proxies for better reliability
-const CORS_PROXIES = [
-  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-];
-
-// Fetch with multiple proxy fallback
-async function fetchWithProxyFallback(url: string, timeout: number = 5000): Promise<Response | null> {
-  for (const getProxyUrl of CORS_PROXIES) {
-    try {
-      const proxyUrl = getProxyUrl(url);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
-      const response = await fetch(proxyUrl, {
-        signal: controller.signal,
-        cache: 'no-store',
-        headers: {
-          'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml',
-          'User-Agent': 'Mozilla/5.0 (compatible; NewsAggregator/1.0)',
-        }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        return response;
-      }
-    } catch (error) {
-      // Try next proxy
-      continue;
+// Fetch with timeout and user agent
+async function fetchDirect(url: string, timeout: number = 4000): Promise<Response | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*',
+      },
+      next: { revalidate: 300 } // Next.js cache for 5 minutes
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      return response;
     }
+    return null;
+  } catch (error) {
+    return null;
   }
-  return null;
 }
 
 // Google News RSS search - provides targeted news for specific search terms
@@ -96,7 +85,7 @@ async function fetchGoogleNewsForSymbol(
     const encodedQuery = encodeURIComponent(searchQuery);
     const googleNewsUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=en-US&gl=US&ceid=US:en`;
     
-    const response = await fetchWithProxyFallback(googleNewsUrl, 8000);
+    const response = await fetchDirect(googleNewsUrl, 5000);
     
     if (!response) {
       return [];
@@ -292,10 +281,10 @@ function parseRSSFeed(xmlText: string, sourceName: string, category: string): Ne
 // Fetch RSS feed with timeout and proxy fallback
 async function fetchRSSFeed(url: string, sourceName: string, category: string): Promise<NewsItem[]> {
   try {
-    const response = await fetchWithProxyFallback(url, 8000);
+    const response = await fetchDirect(url, 5000);
     
     if (!response) {
-      console.error(`All proxies failed for ${sourceName}`);
+      console.error(`Fetch failed for ${sourceName}`);
       return [];
     }
 

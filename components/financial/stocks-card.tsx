@@ -48,6 +48,7 @@ import { SellPositionModal } from "../ui/sell-position-modal";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, LargeDualCurrency } from "../ui/dual-currency-display";
 import { lttb } from "../../lib/chart-utils";
+import { getBrandColor } from "../../lib/brand-colors";
 
 // Stock Icon Component - TradingView style
 function StockIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
@@ -105,6 +106,36 @@ function StockIcon({ symbol, className = "w-5 h-5" }: { symbol: string; classNam
       return <ETFIcon symbol="PEP" className={className} color="#0065A3" />;
     case 'KO':
       return <ETFIcon symbol="KO" className={className} color="#F40009" />;
+    case 'PG':
+      return <ETFIcon symbol="PG" className={className} color="#003DA5" />;
+    case 'XOM':
+      return <ETFIcon symbol="XOM" className={className} color="#FF0000" />;
+    case 'UNH':
+      return <ETFIcon symbol="UNH" className={className} color="#002677" />;
+    case 'HD':
+      return <ETFIcon symbol="HD" className={className} color="#F96302" />;
+    case 'CVX':
+      return <ETFIcon symbol="CVX" className={className} color="#005596" />;
+    case 'ABBV':
+      return <ETFIcon symbol="ABBV" className={className} color="#000000" />;
+    case 'MRK':
+      return <ETFIcon symbol="MRK" className={className} color="#00857C" />;
+    case 'COST':
+      return <ETFIcon symbol="COST" className={className} color="#E31837" />;
+    case 'AVGO':
+      return <ETFIcon symbol="AVGO" className={className} color="#CC092F" />;
+    case 'LLY':
+      return <ETFIcon symbol="LLY" className={className} color="#F05123" />;
+    case 'NKE':
+      return <ETFIcon symbol="NKE" className={className} color="#000000" />;
+    case 'T':
+      return <ETFIcon symbol="T" className={className} color="#00A8E0" />;
+    case 'VZ':
+      return <ETFIcon symbol="VZ" className={className} color="#CD040B" />;
+    case 'PFE':
+      return <ETFIcon symbol="PFE" className={className} color="#0000FF" />;
+    case 'CMCSA':
+      return <ETFIcon symbol="CMCSA" className={className} color="#FBA800" />;
     // Chinese Stocks
     case 'NIO':
       return <ETFIcon symbol="NIO" className={className} color="#00C3FF" />;
@@ -156,8 +187,9 @@ interface StockHolding {
 interface SearchResult {
   name: string;
   symbol: string;
-  currentPrice: number;
+  currentPrice?: number;
   sector: string;
+  exchange?: string;
 }
 
 const initialStockHoldings: StockHolding[] = [
@@ -219,6 +251,35 @@ const popularStocks: SearchResult[] = [
   { name: 'Berkshire Hathaway', symbol: 'BRK.B', currentPrice: 350, sector: 'Financial' },
   { name: 'Vanguard S&P 500', symbol: 'VOO', currentPrice: 384, sector: 'ETF' },
   { name: 'Johnson & Johnson', symbol: 'JNJ', currentPrice: 160, sector: 'Healthcare' },
+  { name: 'JPMorgan Chase', symbol: 'JPM', currentPrice: 145, sector: 'Financial' },
+  { name: 'Visa Inc.', symbol: 'V', currentPrice: 245, sector: 'Financial' },
+  { name: 'Walmart Inc.', symbol: 'WMT', currentPrice: 160, sector: 'Consumer Staples' },
+  { name: 'Procter & Gamble', symbol: 'PG', currentPrice: 150, sector: 'Consumer Staples' },
+  { name: 'Mastercard Inc.', symbol: 'MA', currentPrice: 400, sector: 'Financial' },
+  { name: 'Exxon Mobil', symbol: 'XOM', currentPrice: 105, sector: 'Energy' },
+  { name: 'UnitedHealth Group', symbol: 'UNH', currentPrice: 480, sector: 'Healthcare' },
+  { name: 'Home Depot', symbol: 'HD', currentPrice: 330, sector: 'Consumer Discretionary' },
+  { name: 'Chevron Corp.', symbol: 'CVX', currentPrice: 150, sector: 'Energy' },
+  { name: 'AbbVie Inc.', symbol: 'ABBV', currentPrice: 150, sector: 'Healthcare' },
+  { name: 'Coca-Cola Co.', symbol: 'KO', currentPrice: 60, sector: 'Consumer Staples' },
+  { name: 'PepsiCo Inc.', symbol: 'PEP', currentPrice: 170, sector: 'Consumer Staples' },
+  { name: 'Merck & Co.', symbol: 'MRK', currentPrice: 105, sector: 'Healthcare' },
+  { name: 'Costco Wholesale', symbol: 'COST', currentPrice: 550, sector: 'Consumer Staples' },
+  { name: 'Broadcom Inc.', symbol: 'AVGO', currentPrice: 850, sector: 'Technology' },
+  { name: 'Eli Lilly', symbol: 'LLY', currentPrice: 550, sector: 'Healthcare' },
+  { name: 'Adobe Inc.', symbol: 'ADBE', currentPrice: 520, sector: 'Technology' },
+  { name: 'Salesforce Inc.', symbol: 'CRM', currentPrice: 210, sector: 'Technology' },
+  { name: 'AMD', symbol: 'AMD', currentPrice: 105, sector: 'Technology' },
+  { name: 'Netflix Inc.', symbol: 'NFLX', currentPrice: 440, sector: 'Communication Services' },
+  { name: 'Walt Disney', symbol: 'DIS', currentPrice: 85, sector: 'Communication Services' },
+  { name: 'Nike Inc.', symbol: 'NKE', currentPrice: 100, sector: 'Consumer Discretionary' },
+  { name: 'Intel Corp.', symbol: 'INTC', currentPrice: 35, sector: 'Technology' },
+  { name: 'AT&T Inc.', symbol: 'T', currentPrice: 15, sector: 'Communication Services' },
+  { name: 'Verizon', symbol: 'VZ', currentPrice: 33, sector: 'Communication Services' },
+  { name: 'Pfizer Inc.', symbol: 'PFE', currentPrice: 33, sector: 'Healthcare' },
+  { name: 'Cisco Systems', symbol: 'CSCO', currentPrice: 53, sector: 'Technology' },
+  { name: 'Comcast Corp.', symbol: 'CMCSA', currentPrice: 44, sector: 'Communication Services' },
+  { name: 'Oracle Corp.', symbol: 'ORCL', currentPrice: 110, sector: 'Technology' },
   // Chinese Stocks (ADRs)
   { name: 'NIO Inc.', symbol: 'NIO', currentPrice: 5.20, sector: 'Electric Vehicles' },
   { name: 'XPeng Inc.', symbol: 'XPEV', currentPrice: 9.85, sector: 'Electric Vehicles' },
@@ -267,15 +328,80 @@ function AddPositionModal({
   onAdd: (holding: Omit<StockHolding, 'id' | 'value' | 'change' | 'color'>) => void;
 }) {
   const [searchTerm, setSearchTerm] = useState('');
+  // Initialize with popular stocks
+  const [searchResults, setSearchResults] = useState<SearchResult[]>(popularStocks);
+  const [isSearching, setIsSearching] = useState(false);
   const [selectedStock, setSelectedStock] = useState<SearchResult | null>(null);
   const [shares, setShares] = useState('');
   const [entryPoint, setEntryPoint] = useState('');
   const [color, setColor] = useState('#8b5cf6');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredStocks = popularStocks.filter(stock => 
-    stock.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    stock.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Debounce search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchTerm.length >= 2) {
+        setIsSearching(true);
+        try {
+          const response = await fetch(`/api/yahoo-finance/search?q=${encodeURIComponent(searchTerm)}`);
+          
+          if (!response.ok) {
+             throw new Error('Search failed');
+          }
+
+          const data = await response.json();
+          
+          if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+            const results: SearchResult[] = data.results
+              .map((quote: any) => ({
+                name: quote.name,
+                symbol: quote.symbol,
+                sector: quote.sector,
+                exchange: quote.exchange,
+                currentPrice: undefined // Search doesn't return price
+              }));
+            setSearchResults(results);
+          } else {
+            // Fallback to local filtering if API returns nothing
+             const localResults = popularStocks.filter(stock => 
+              stock.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              stock.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setSearchResults(localResults);
+          }
+        } catch (error) {
+          console.error('Error searching stocks:', error);
+          // Fallback to local filtering on error
+          const localResults = popularStocks.filter(stock => 
+            stock.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            stock.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+          setSearchResults(localResults);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        // Reset to popular stocks when search is empty
+        setSearchResults(popularStocks);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
 
   const handleAdd = () => {
     if (selectedStock && shares && entryPoint) {
@@ -292,6 +418,7 @@ function AddPositionModal({
       setShares('');
       setEntryPoint('');
       setColor('#8b5cf6');
+      setSearchResults([]);
     }
   };
 
@@ -308,57 +435,90 @@ function AddPositionModal({
           </button>
         </div>
 
-        {/* Search */}
-        <div className="mb-4">
+        {/* Search Section */}
+        <div className="mb-4 relative" ref={dropdownRef}>
           <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Search Stock</label>
           <div className="relative">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-300" />
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-              placeholder="Search stock..."
+              placeholder="Search by symbol or name..."
             />
+            {isSearching && (
+              <div className="absolute right-3 top-2.5">
+                <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Search Results */}
-        {searchTerm && (
-          <div className="mb-4 max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-            {filteredStocks.map((stock) => (
-              <button
-                key={stock.symbol}
-                onClick={() => {
-                  setSelectedStock(stock);
-                  setSearchTerm('');
-                  setEntryPoint(stock.currentPrice.toString());
-                }}
-                className="w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
-              >
-                <StockIcon symbol={stock.symbol} />
-                <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">{stock.name}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {stock.symbol} • {stock.sector}
+          {/* Search Results Dropdown */}
+          {showDropdown && !selectedStock && (
+            <div className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+              {!searchTerm && <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">Popular Stocks</div>}
+              {searchResults.map((stock) => (
+                <button
+                  key={stock.symbol}
+                  onClick={() => {
+                    setSelectedStock(stock);
+                    setSearchTerm('');
+                    setShowDropdown(false);
+                    // If it's a popular stock with a price, use it
+                    if (stock.currentPrice) {
+                      setEntryPoint(stock.currentPrice.toString());
+                    }
+                    setColor(getBrandColor(stock.symbol, 'stock'));
+                  }}
+                  className="w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
+                >
+                  <div className="flex-shrink-0 w-8 flex justify-center">
+                     <StockIcon symbol={stock.symbol} />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-gray-900 dark:text-white truncate">{stock.symbol}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                      {stock.name}
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">
+                    {stock.currentPrice ? `$${stock.currentPrice}` : stock.exchange}
+                  </div>
+                </button>
+              ))}
+              {searchResults.length === 0 && (
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                  No stocks found
                 </div>
-              </button>
-            ))}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Selected Stock */}
         {selectedStock && (
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="flex items-center gap-3">
-              <StockIcon symbol={selectedStock.symbol} />
-              <div>
-                <div className="font-semibold text-gray-900 dark:text-white">{selectedStock.name} ({selectedStock.symbol})</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {selectedStock.sector}
+          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-900/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <StockIcon symbol={selectedStock.symbol} />
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-900 dark:text-white truncate">{selectedStock.name}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedStock.symbol} • {selectedStock.exchange}
+                  </div>
                 </div>
               </div>
+              <button 
+                onClick={() => setSelectedStock(null)}
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
             </div>
           </div>
         )}
@@ -664,6 +824,52 @@ function StocksModalContent() {
   }, [stockHoldings, prices]);
 
   const addHolding = async (newHolding: Omit<StockHolding, 'id' | 'value' | 'change' | 'color'>) => {
+    // Check if we already have a position in this symbol
+    const existingHolding = stockHoldings.find(h => h.symbol === newHolding.symbol);
+    
+    if (existingHolding) {
+      // Merge positions: calculate weighted average entry point
+      const totalShares = existingHolding.shares + newHolding.shares;
+      const totalCostBasis = (existingHolding.shares * existingHolding.entryPoint) + (newHolding.shares * newHolding.entryPoint);
+      const avgEntryPoint = totalCostBasis / totalShares;
+      
+      // Get current price for value calculation
+      const currentPriceData = prices[newHolding.symbol];
+      const currentPrice = currentPriceData?.price || popularStocks.find(s => s.symbol === newHolding.symbol)?.currentPrice || avgEntryPoint;
+      const value = totalShares * currentPrice;
+      const changePercent = ((currentPrice - avgEntryPoint) / avgEntryPoint * 100);
+      const change = `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+      
+      const mergedHolding: StockHolding = {
+        ...existingHolding,
+        shares: totalShares,
+        entryPoint: avgEntryPoint,
+        value,
+        change
+      };
+      
+      // Update state optimistically
+      setStockHoldings(stockHoldings.map(h => h.id === existingHolding.id ? mergedHolding : h));
+      
+      // Save to database
+      await SupabaseDataService.saveStockHolding(mergedHolding);
+      
+      // Record transaction
+      const transaction: StockTransaction = {
+        id: crypto.randomUUID(),
+        type: 'buy',
+        symbol: newHolding.symbol,
+        name: newHolding.name,
+        shares: newHolding.shares,
+        pricePerShare: newHolding.entryPoint,
+        totalValue: newHolding.shares * newHolding.entryPoint,
+        date: new Date().toISOString()
+      };
+      setTransactions([transaction, ...transactions]);
+      return;
+    }
+    
+    // No existing position - create new holding
     const id = crypto.randomUUID();
     const currentPriceData = prices[newHolding.symbol];
     const currentPrice = currentPriceData?.price || popularStocks.find(s => s.symbol === newHolding.symbol)?.currentPrice || newHolding.entryPoint;

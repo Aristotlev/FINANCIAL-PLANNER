@@ -41,6 +41,20 @@ function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): (...
   };
 }
 
+// Helper to merge saved order with current default order (handling new/removed cards)
+function mergeCardOrders(savedOrder: any[], defaultOrder: CardType[]): CardType[] {
+  if (!Array.isArray(savedOrder)) return defaultOrder;
+  
+  // 1. Keep only cards that still exist in defaultOrder
+  const validSavedOrder = savedOrder.filter(card => defaultOrder.includes(card));
+  
+  // 2. Find new cards that are in defaultOrder but not in savedOrder
+  const newCards = defaultOrder.filter(card => !validSavedOrder.includes(card));
+  
+  // 3. Combine them
+  return [...validSavedOrder, ...newCards];
+}
+
 export function CardOrderProvider({ children }: { children: ReactNode }) {
   const [cardOrder, setCardOrder] = useState<CardType[]>(DEFAULT_CARD_ORDER);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -69,12 +83,12 @@ export function CardOrderProvider({ children }: { children: ReactNode }) {
         // First, load from localStorage for immediate display
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length === DEFAULT_CARD_ORDER.length) {
-            const hasAllCards = DEFAULT_CARD_ORDER.every(card => parsed.includes(card));
-            if (hasAllCards) {
-              setCardOrder(parsed);
-            }
+          try {
+            const parsed = JSON.parse(stored);
+            const mergedOrder = mergeCardOrders(parsed, DEFAULT_CARD_ORDER);
+            setCardOrder(mergedOrder);
+          } catch (e) {
+            console.error('Error parsing stored card order:', e);
           }
         }
 
@@ -82,13 +96,13 @@ export function CardOrderProvider({ children }: { children: ReactNode }) {
         try {
           const { SupabaseDataService } = await import('../lib/supabase/supabase-data-service');
           const prefs = await SupabaseDataService.getUserPreferences();
-          if (prefs?.cardOrder && Array.isArray(prefs.cardOrder) && prefs.cardOrder.length === DEFAULT_CARD_ORDER.length) {
-            const hasAllCards = DEFAULT_CARD_ORDER.every(card => prefs.cardOrder!.includes(card as string));
-            if (hasAllCards) {
-              setCardOrder(prefs.cardOrder as CardType[]);
-              // Update localStorage with Supabase data
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs.cardOrder));
-            }
+          
+          if (prefs?.cardOrder && Array.isArray(prefs.cardOrder)) {
+            const mergedOrder = mergeCardOrders(prefs.cardOrder, DEFAULT_CARD_ORDER);
+            setCardOrder(mergedOrder);
+            
+            // Update localStorage with Supabase data
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedOrder));
           }
         } catch {
           // Supabase not available or user not logged in, localStorage only

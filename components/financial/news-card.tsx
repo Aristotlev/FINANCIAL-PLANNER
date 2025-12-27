@@ -367,7 +367,8 @@ function NewsModalContent() {
         return aMinutes - bMinutes;
       });
       
-      updateTabNews(category, uniqueNews);
+      // Limit to 20 items for better performance
+      updateTabNews(category, uniqueNews.slice(0, 20));
       loadedTabsRef.current.add(category);
       lastRefreshRef.current[category] = Date.now();
     } catch (err) {
@@ -620,11 +621,11 @@ function NewsModalContent() {
             <>
             {news.map((item, index) => (
               <a
-                key={index}
+                key={`${item.link}-${index}`}
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-white dark:bg-gray-800 p-5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-300 cursor-pointer group no-underline"
+                className="block bg-white dark:bg-gray-800 p-5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 transition-colors duration-200 cursor-pointer group no-underline"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -650,7 +651,7 @@ function NewsModalContent() {
                       </div>
                     </div>
                     
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-200">
                       {item.title}
                     </h3>
                     
@@ -659,7 +660,7 @@ function NewsModalContent() {
                     </p>
                   </div>
                   
-                  <div className="flex-shrink-0 p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
+                  <div className="flex-shrink-0 p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition-colors duration-200">
                     <ArrowUpRight className="w-4 h-4" />
                   </div>
                 </div>
@@ -685,16 +686,19 @@ function NewsModalContent() {
             themeColor={CARD_THEME_COLORS.news}
             value="Multi-Source"
             label="Aggregated from top sources"
+            className="py-2 px-4"
           />
           <ThemedStatBox
             themeColor={CARD_THEME_COLORS.news}
             value="Real-time RSS"
             label="Live feed updates"
+            className="py-2 px-4"
           />
           <ThemedStatBox
             themeColor={CARD_THEME_COLORS.news}
             value="Global Coverage"
             label="Worldwide market news"
+            className="py-2 px-4"
           />
         </div>
       </div>
