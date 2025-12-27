@@ -84,6 +84,36 @@ export default function RootLayout({
       <head>
         {/* Trusted Types Polyfill - Must be loaded first to prevent policy errors */}
         <script src="/trusted-types.js" />
+        {/* Suppress harmless TradingView 403 errors */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const originalConsoleError = console.error;
+                const originalConsoleLog = console.log;
+                
+                const shouldSuppress = (args) => {
+                  const msg = args[0];
+                  return msg && typeof msg === 'string' && (
+                    msg.includes('support-portal-problems') || 
+                    msg.includes('tradingview-widget.com') ||
+                    msg.includes('Status 403')
+                  );
+                };
+
+                console.error = function(...args) {
+                  if (shouldSuppress(args)) return;
+                  originalConsoleError.apply(console, args);
+                };
+
+                console.log = function(...args) {
+                  if (shouldSuppress(args)) return;
+                  originalConsoleLog.apply(console, args);
+                };
+              })();
+            `,
+          }}
+        />
         {/* Google Ads */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-17821905669"
@@ -114,11 +144,6 @@ export default function RootLayout({
         <Script
           src="/ethereum-safeguard.js"
           strategy="beforeInteractive"
-        />
-        {/* Anti-inspect protection - prevents casual code inspection */}
-        <Script
-          src="/anti-inspect.js"
-          strategy="afterInteractive"
         />
       </head>
       <body className="antialiased">
