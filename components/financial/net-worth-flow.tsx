@@ -60,7 +60,7 @@ function CustomNode({ data }: { data: any }) {
   
   return (
     <div 
-      className="px-4 py-3 rounded-xl border-2 shadow-lg transition-all duration-300 hover:scale-105"
+      className="px-4 py-3 rounded-xl border-2 shadow-lg transition-all duration-300"
       style={{
         minWidth: nodeWidth,
         minHeight: nodeHeight,

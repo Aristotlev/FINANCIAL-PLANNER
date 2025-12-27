@@ -268,7 +268,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                     onClick={() => setActiveTab('plans')}
                     className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200 dark:border-blue-700 hover:shadow-md transition-all group"
                   >
-                    <div className="p-2 bg-blue-500 rounded-lg text-white group-hover:scale-110 transition-transform">
+                    <div className="p-2 bg-blue-500 rounded-lg text-white  transition-transform">
                       <Star className="w-5 h-5" />
                     </div>
                     <div className="text-left">
@@ -282,7 +282,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                     onClick={() => setActiveTab('payment-methods')}
                     className="flex items-center gap-3 p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-700 hover:shadow-md transition-all group"
                   >
-                    <div className="p-2 bg-green-500 rounded-lg text-white group-hover:scale-110 transition-transform">
+                    <div className="p-2 bg-green-500 rounded-lg text-white  transition-transform">
                       <CreditCard className="w-5 h-5" />
                     </div>
                     <div className="text-left">
@@ -296,7 +296,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                     onClick={() => setActiveTab('history')}
                     className="flex items-center gap-3 p-4 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200 dark:border-yellow-700 hover:shadow-md transition-all group"
                   >
-                    <div className="p-2 bg-yellow-500 rounded-lg text-white group-hover:scale-110 transition-transform">
+                    <div className="p-2 bg-yellow-500 rounded-lg text-white  transition-transform">
                       <Receipt className="w-5 h-5" />
                     </div>
                     <div className="text-left">
@@ -310,7 +310,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                     onClick={() => setActiveTab('settings')}
                     className="flex items-center gap-3 p-4 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/50 dark:to-slate-800/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all group"
                   >
-                    <div className="p-2 bg-gray-500 rounded-lg text-white group-hover:scale-110 transition-transform">
+                    <div className="p-2 bg-gray-500 rounded-lg text-white  transition-transform">
                       <Settings className="w-5 h-5" />
                     </div>
                     <div className="text-left">
@@ -344,7 +344,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                 </h3>
                 <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
                   <div className="text-center group">
-                    <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg  transition-transform duration-300">
                       <Lock className="w-8 h-8 text-white" />
                     </div>
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2">Secure Payments</h4>
@@ -352,7 +352,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                   </div>
                   
                   <div className="text-center group">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg  transition-transform duration-300">
                       <Shield className="w-8 h-8 text-white" />
                     </div>
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2">30-Day Guarantee</h4>
@@ -360,7 +360,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                   </div>
                   
                   <div className="text-center group">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg  transition-transform duration-300">
                       <CreditCard className="w-8 h-8 text-white" />
                     </div>
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2">Cancel Anytime</h4>
@@ -381,7 +381,7 @@ const mockPaymentMethods: PaymentMethod[] = [
                 </div>
                 <button
                   onClick={() => setShowAddPayment(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all hover:scale-105"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transition-all "
                 >
                   <Plus className="w-5 h-5" />
                   Add New
@@ -748,7 +748,7 @@ const mockPaymentMethods: PaymentMethod[] = [
               <p className="text-base sm:text-lg mb-6 opacity-95 max-w-xl mx-auto">
                 Our support team is here to help with any billing questions
               </p>
-              <button className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-xl font-bold hover:bg-gray-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105">
+              <button className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-xl font-bold hover:bg-gray-50 transition-all duration-300 shadow-xl hover:shadow-2xl ">
                 Contact Support
                 <ChevronRight className="w-5 h-5" />
               </button>

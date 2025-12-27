@@ -987,7 +987,7 @@ function TaxesModalContent() {
               setEditingProfile(null);
               setShowAddModal(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             Add Profile

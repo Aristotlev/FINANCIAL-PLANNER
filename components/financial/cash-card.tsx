@@ -32,17 +32,23 @@ import { DualCurrencyDisplay, CompactDualCurrency } from "../ui/dual-currency-di
 // Bank Logo Component
 function BankLogo({ bank }: { bank: BankInfo }) {
   const [imgError, setImgError] = useState(false);
-  const [fallbackAttempt, setFallbackAttempt] = useState(0);
+  // Skip Google (attempt 0) for Capital One as it consistently returns 404
+  const [fallbackAttempt, setFallbackAttempt] = useState(
+    bank.website.includes('capitalone.com') ? 1 : 0
+  );
   
   // Use Google's favicon service as primary (free, no API key required)
-  // Falls back to DuckDuckGo's icon service, then to colored icon
+  // Falls back to Clearbit, then DuckDuckGo, then colored icon
   const getLogoUrl = () => {
     switch (fallbackAttempt) {
       case 0:
         // Primary: Google's high-quality favicon service (128px)
         return `https://www.google.com/s2/favicons?domain=${bank.website}&sz=128`;
       case 1:
-        // Fallback 1: DuckDuckGo icon service
+        // Fallback 1: Clearbit Logo API (often better for company logos)
+        return `https://logo.clearbit.com/${bank.website}`;
+      case 2:
+        // Fallback 2: DuckDuckGo icon service
         return `https://icons.duckduckgo.com/ip3/${bank.website}.ico`;
       default:
         return null;
@@ -73,7 +79,7 @@ function BankLogo({ bank }: { bank: BankInfo }) {
         alt={bank.name}
         className="w-full h-full object-contain p-1"
         onError={() => {
-          if (fallbackAttempt < 1) {
+          if (fallbackAttempt < 2) {
             setFallbackAttempt(fallbackAttempt + 1);
           } else {
             setImgError(true);
@@ -110,7 +116,7 @@ interface IncomeSource {
 
 const initialCashAccounts: CashAccount[] = [
   {
-    id: "1",
+    id: "550e8400-e29b-41d4-a716-446655440001",
     name: "Main Checking",
     bank: "Chase Bank",
     balance: 8250,
@@ -120,7 +126,7 @@ const initialCashAccounts: CashAccount[] = [
     currency: "USD"
   },
   {
-    id: "2", 
+    id: "550e8400-e29b-41d4-a716-446655440002", 
     name: "High-Yield Savings",
     bank: "Marcus by Goldman Sachs",
     balance: 4200.75,
@@ -130,7 +136,7 @@ const initialCashAccounts: CashAccount[] = [
     currency: "USD"
   },
   {
-    id: "3",
+    id: "550e8400-e29b-41d4-a716-446655440003",
     name: "Emergency Fund",
     bank: "Ally Bank", 
     balance: 12000,
@@ -140,7 +146,7 @@ const initialCashAccounts: CashAccount[] = [
     currency: "USD"
   },
   {
-    id: "4",
+    id: "550e8400-e29b-41d4-a716-446655440004",
     name: "Investment Buffer",
     bank: "Charles Schwab",
     balance: 3200,
@@ -1060,15 +1066,6 @@ function CashModalContent() {
   // Data is now saved immediately on each operation (add/update/delete)
   // No need for a separate useEffect that watches all accounts changes
 
-  const resetToDefaults = async () => {
-    if (confirm('Are you sure you want to reset to default accounts? This will remove all your custom accounts.')) {
-      setAccounts(initialCashAccounts);
-      for (const account of initialCashAccounts) {
-        await SupabaseDataService.saveCashAccount(account);
-      }
-    }
-  };
-
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
   const checkingTotal = accounts.filter(a => a.type === 'Checking').reduce((sum, a) => sum + a.balance, 0);
   const savingsTotal = accounts.filter(a => a.type === 'Savings').reduce((sum, a) => sum + a.balance, 0);
@@ -1192,16 +1189,8 @@ function CashModalContent() {
             {activeTab === 'accounts' && (
               <>
                 <button
-                  onClick={resetToDefaults}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  title="Reset to default accounts"
-                >
-                  <span className="hidden sm:inline">Reset</span>
-                  <span className="sm:hidden">↺</span>
-                </button>
-                <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Account</span>
@@ -1212,7 +1201,7 @@ function CashModalContent() {
             {activeTab === 'income' && (
               <button
                 onClick={() => setShowAddIncomeModal(true)}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Income Source</span>

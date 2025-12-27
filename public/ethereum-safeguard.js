@@ -20,6 +20,7 @@
   // Patterns to identify extension-related errors
   const extensionErrorPatterns = [
     'EIP-6963',
+    'Invalid EIP-6963',
     'ethereum',
     'web3',
     'metamask',
@@ -35,7 +36,14 @@
     'message port closed',
     'Receiving end does not exist',
     'Finnhub WebSocket error',
-    'TypeError: a.supabase.from(...).select(...).eq is not a function'
+    'TypeError: a.supabase.from(...).select(...).eq is not a function',
+    'TronWeb',
+    'TronLink',
+    'ERR_BLOCKED_BY_CLIENT',
+    'AccountsDomainCookiesCheckConnectionHttp',
+    'TrustedScript',
+    'The action has been blocked',
+    'cspreport'
   ];
   
   // Check if error is from an extension
@@ -71,7 +79,7 @@
   
   // Catch uncaught errors from extensions
   window.addEventListener('error', function(event) {
-    const errorString = (event.message || '') + ' ' + (event.filename || '');
+    const errorString = (event.message || '') + ' ' + (event.filename || '') + ' ' + (event.error && event.error.stack ? event.error.stack : '');
     
     if (extensionErrorPatterns.some(pattern => 
       errorString.toLowerCase().includes(pattern.toLowerCase())

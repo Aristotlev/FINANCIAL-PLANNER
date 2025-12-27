@@ -82,28 +82,44 @@ export function clearCsrfToken(): void {
  */
 export async function fetchData<T = any>(table: DataTable): Promise<T | null> {
   try {
-    const response = await fetch(`/api/data?table=${table}`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+    // Construct full URL
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${baseUrl}/api/data?table=${table}`;
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        // User not authenticated - return null silently
-        return null;
+    // Retry logic
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            // User not authenticated - return null silently
+            return null;
+          }
+          const error = await response.json();
+          console.error(`Error fetching ${table}:`, error.message);
+          return null;
+        }
+
+        const result: ApiResponse<T> = await response.json();
+        return result.data ?? null;
+      } catch (error: any) {
+        // Don't log network errors like "Failed to fetch" - these are common during dev/page transitions
+        if (error?.message !== 'Failed to fetch') {
+          console.error(`Error fetching ${table}:`, error);
+        }
+        
+        // Retry on network error
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+        }
       }
-      const error = await response.json();
-      console.error(`Error fetching ${table}:`, error.message);
-      return null;
     }
-
-    const result: ApiResponse<T> = await response.json();
-    return result.data ?? null;
+    return null;
   } catch (error: any) {
-    // Don't log network errors like "Failed to fetch" - these are common during dev/page transitions
-    if (error?.message !== 'Failed to fetch') {
-      console.error(`Error fetching ${table}:`, error);
-    }
     return null;
   }
 }
@@ -125,57 +141,64 @@ export async function saveData<T = any>(table: DataTable, data: T): Promise<T | 
       headers['X-CSRF-Token'] = token;
     }
 
-    const response = await fetch(`/api/data?table=${table}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers,
-      body: JSON.stringify(data),
-    });
+    // Construct full URL to avoid relative path issues in some environments
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${baseUrl}/api/data?table=${table}`;
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        console.warn('Not authenticated - cannot save data');
-        return null;
-      }
-      
-      let errorMessage = 'Unknown error';
+    // Retry logic for robustness
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
-      } catch (e) {
-        errorMessage = await response.text();
-      }
-      
-      console.error(`Error saving to ${table} (Status ${response.status}):`, errorMessage);
-      
-      if (response.status === 403) {
-        // CSRF token expired, clear cache and retry once
-        console.log('CSRF token expired, retrying...');
-        clearCsrfToken();
-        const newToken = await getCsrfToken();
-        if (newToken) {
-          const retryResponse = await fetch(`/api/data?table=${table}`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': newToken,
-            },
-            body: JSON.stringify(data),
-          });
-          if (retryResponse.ok) {
-            const result: ApiResponse<T> = await retryResponse.json();
-            return result.data ?? null;
-          } else {
-             console.error(`Retry failed for ${table} (Status ${retryResponse.status})`);
+        const response = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.warn('Not authenticated - cannot save data');
+            return null;
           }
+          
+          // Handle CSRF token expiration
+          if (response.status === 403 && attempt === 0) {
+            console.log('CSRF token expired, refreshing...');
+            clearCsrfToken();
+            const newToken = await getCsrfToken();
+            if (newToken) {
+              headers['X-CSRF-Token'] = newToken;
+              // Retry immediately with new token
+              continue;
+            }
+          }
+
+          let errorMessage = 'Unknown error';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+          } catch (e) {
+            errorMessage = await response.text();
+          }
+          
+          throw new Error(`API error (${response.status}): ${errorMessage}`);
+        }
+
+        const result: ApiResponse<T> = await response.json();
+        return result.data ?? null;
+      } catch (error) {
+        console.warn(`[DataClient] Attempt ${attempt + 1} failed for ${table}:`, error);
+        lastError = error;
+        
+        // If it's a network error (Failed to fetch), wait and retry
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
         }
       }
-      return null;
     }
-
-    const result: ApiResponse<T> = await response.json();
-    return result.data ?? null;
+    
+    throw lastError;
   } catch (error) {
     console.error(`Error saving to ${table}:`, error);
     return null;
@@ -197,40 +220,51 @@ export async function deleteData(table: DataTable, id: string): Promise<boolean>
       headers['X-CSRF-Token'] = token;
     }
 
-    const response = await fetch(`/api/data?table=${table}&id=${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-      headers,
-    });
+    // Construct full URL
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = `${baseUrl}/api/data?table=${table}&id=${id}`;
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        console.warn('Not authenticated - cannot delete data');
-        return false;
-      }
-      if (response.status === 403) {
-        // CSRF token expired, clear cache and retry once
-        clearCsrfToken();
-        const newToken = await getCsrfToken();
-        if (newToken) {
-          const retryResponse = await fetch(`/api/data?table=${table}&id=${id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: {
-              'X-CSRF-Token': newToken,
-            },
-          });
-          if (retryResponse.ok) {
-            return true;
+    // Retry logic
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers,
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.warn('Not authenticated - cannot delete data');
+            return false;
           }
+          
+          // Handle CSRF token expiration
+          if (response.status === 403 && attempt === 0) {
+            clearCsrfToken();
+            const newToken = await getCsrfToken();
+            if (newToken) {
+              headers['X-CSRF-Token'] = newToken;
+              continue;
+            }
+          }
+          
+          const error = await response.json();
+          console.error(`Error deleting from ${table}:`, error.message);
+          return false;
+        }
+
+        return true;
+      } catch (error) {
+        console.warn(`[DataClient] Attempt ${attempt + 1} failed for delete ${table}:`, error);
+        
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
         }
       }
-      const error = await response.json();
-      console.error(`Error deleting from ${table}:`, error.message);
-      return false;
     }
-
-    return true;
+    
+    return false;
   } catch (error) {
     console.error(`Error deleting from ${table}:`, error);
     return false;

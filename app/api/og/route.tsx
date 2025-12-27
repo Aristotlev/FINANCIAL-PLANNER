@@ -1,9 +1,22 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
+import { readFile } from 'fs/promises'
+import { join } from 'path'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
+  // Read the logo image file
+  const logoPath = join(process.cwd(), 'public', 'images', 'logo.png')
+  let logoBase64 = ''
+  
+  try {
+    const logoBuffer = await readFile(logoPath)
+    logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`
+  } catch (error) {
+    console.warn('Logo file not found for OG image')
+  }
+
   return new ImageResponse(
     (
       <div
@@ -50,29 +63,40 @@ export async function GET(request: NextRequest) {
               marginBottom: 40,
             }}
           >
-            {/* Logo Icon */}
-            <svg
-              width="120"
-              height="120"
-              viewBox="0 0 100 100"
-              style={{ marginRight: 24 }}
-            >
-              <defs>
-                <linearGradient id="ogGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#06b6d4" />
-                  <stop offset="50%" stopColor="#8b5cf6" />
-                  <stop offset="100%" stopColor="#3b82f6" />
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="48" fill="url(#ogGradient)" />
-              <path d="M 50 50 L 10 50 A 40 40 0 0 1 50 10 Z" fill="#06b6d4" opacity="0.8" />
-              <rect x="25" y="55" width="10" height="25" rx="2" fill="#4ade80" />
-              <rect x="40" y="40" width="10" height="40" rx="2" fill="#22d3ee" />
-              <rect x="55" y="25" width="10" height="55" rx="2" fill="#a78bfa" />
-              <rect x="70" y="15" width="12" height="65" rx="2" fill="#7c3aed" />
-              <path d="M 20 60 L 32 72 L 48 50" fill="none" stroke="white" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M 15 75 Q 50 70 85 30" fill="none" stroke="#22d3ee" strokeWidth="5" strokeLinecap="round" />
-            </svg>
+            {logoBase64 ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoBase64}
+                alt="OmniFolio Logo"
+                width="150"
+                height="150"
+                style={{ marginRight: 24, objectFit: 'contain' }}
+              />
+            ) : (
+              /* Fallback SVG if logo is missing */
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 100 100"
+                style={{ marginRight: 24 }}
+              >
+                <defs>
+                  <linearGradient id="ogGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#06b6d4" />
+                    <stop offset="50%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#3b82f6" />
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="48" fill="url(#ogGradient)" />
+                <path d="M 50 50 L 10 50 A 40 40 0 0 1 50 10 Z" fill="#06b6d4" opacity="0.8" />
+                <rect x="25" y="55" width="10" height="25" rx="2" fill="#4ade80" />
+                <rect x="40" y="40" width="10" height="40" rx="2" fill="#22d3ee" />
+                <rect x="55" y="25" width="10" height="55" rx="2" fill="#a78bfa" />
+                <rect x="70" y="15" width="12" height="65" rx="2" fill="#7c3aed" />
+                <path d="M 20 60 L 32 72 L 48 50" fill="none" stroke="white" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M 15 75 Q 50 70 85 30" fill="none" stroke="#22d3ee" strokeWidth="5" strokeLinecap="round" />
+              </svg>
+            )}
 
             {/* Logo Text */}
             <div

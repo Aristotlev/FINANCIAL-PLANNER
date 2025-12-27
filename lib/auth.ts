@@ -20,11 +20,11 @@ const pool = new Pool({
 // The Pool connection above handles SSL verification for the database connection only
 
 // Fix for local development: Ensure production URLs in .env.local don't interfere
+// Only override if we are strictly in development and the URL is pointing to production
 if (process.env.NODE_ENV !== "production") {
-  // These might be set in .env.local pointing to production, which confuses better-auth
-  // We want to force localhost for development
-  if (process.env.BETTER_AUTH_URL && process.env.BETTER_AUTH_URL !== "http://localhost:3000") {
-    console.log("⚠️ Overriding BETTER_AUTH_URL for development (was " + process.env.BETTER_AUTH_URL + ")");
+  const currentUrl = process.env.BETTER_AUTH_URL;
+  if (currentUrl && (currentUrl.includes("omnifolio.app") || currentUrl.includes("run.app"))) {
+    console.log("⚠️ Overriding BETTER_AUTH_URL for development (was " + currentUrl + ")");
     process.env.BETTER_AUTH_URL = "http://localhost:3000";
   }
 }
@@ -36,8 +36,14 @@ const getAuthBaseURL = () => {
     // Always use canonical www URL in production
     return "https://www.omnifolio.app";
   }
-  // FORCE localhost:3000 in development to avoid redirecting to production
-  return "http://localhost:3000";
+  
+  // In development, ignore production URLs in env vars to prevent 404s
+  const envUrl = process.env.BETTER_AUTH_URL;
+  if (envUrl && (envUrl.includes("omnifolio.app") || envUrl.includes("run.app"))) {
+    return "http://localhost:3000";
+  }
+
+  return envUrl || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 };
 
 // Debug logging for OAuth credentials
@@ -102,6 +108,7 @@ export const auth = betterAuth({
     "https://financial-planner-629380503119.europe-west1.run.app",
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
   ],
 
   advanced: {

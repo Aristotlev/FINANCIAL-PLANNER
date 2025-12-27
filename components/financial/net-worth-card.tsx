@@ -741,7 +741,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2 -mx-2 py-2 -my-2">
-        <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-6 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+        <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-6 rounded-lg transition-all duration-300 cursor-pointer">
           <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-2">
             Current Net Worth
           </h3>
@@ -750,7 +750,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30 cursor-pointer">
+        <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 rounded-lg transition-all duration-300 cursor-pointer">
           <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
             Monthly Change
           </h3>
@@ -762,7 +762,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-lg transition-all duration-300 cursor-pointer">
           <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
             YTD Growth
           </h3>
@@ -911,7 +911,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
                     <XAxis dataKey="category" />
                     <YAxis />
                     <Tooltip cursor={false} formatter={(value: any) => [`$${formatNumber(Number(value))}`, 'Amount']} />
-                    <Bar dataKey="value" isAnimationActive={true} animationDuration={300}>
+                    <Bar dataKey="value" isAnimationActive={false}>
                       {breakdown.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
@@ -938,7 +938,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
               const debtColor = debtToAssetRatio < 10 ? 'green' : debtToAssetRatio < 30 ? 'blue' : debtToAssetRatio < 50 ? 'yellow' : 'red';
               
               return (
-                <div className="p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30 cursor-pointer">
+                <div className="p-3 rounded-lg transition-all duration-300 cursor-pointer">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-900 dark:text-white">Debt-to-Asset Ratio</span>
                     <span className={`text-${debtColor}-600 dark:text-${debtColor}-400 font-semibold`}>
@@ -959,7 +959,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
               const savingsScore = Math.min(100, savingsRate * 5);
               
               return (
-                <div className="p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
+                <div className="p-3 rounded-lg transition-all duration-300 cursor-pointer">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-900 dark:text-white">Savings Rate</span>
                     <span className="text-blue-600 dark:text-blue-400 font-semibold">
@@ -981,7 +981,7 @@ function NetWorthOverview({ breakdown, history, financialData, portfolio }: { br
               const liquidityRating = liquidityScore >= 80 ? 'Very Good' : liquidityScore >= 60 ? 'Good' : liquidityScore >= 40 ? 'Fair' : 'Low';
               
               return (
-                <div className="p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+                <div className="p-3 rounded-lg transition-all duration-300 cursor-pointer">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-900 dark:text-white">Liquidity Score</span>
                     <span className="text-purple-600 dark:text-purple-400 font-semibold">
@@ -1132,7 +1132,7 @@ function NetWorthBreakdown({ assets, pieChartData, portfolio }: { assets: any[];
           <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Detailed Breakdown</h4>
           <div className="space-y-3 px-2 -mx-2 max-h-[300px] overflow-y-auto md:max-h-none md:overflow-visible">
             {assets.map((asset, index) => (
-              <div key={index} className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg border transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer" style={{boxShadow: `0 0 0 0 ${asset.color}`}}>
+              <div key={index} className="flex justify-between items-center p-3 bg-white dark:bg-gray-800 rounded-lg border transition-all duration-300 cursor-pointer" style={{boxShadow: `0 0 0 0 ${asset.color}`}}>
                 <div className="flex items-center gap-3">
                   <div 
                     className="w-4 h-4 rounded-full flex-shrink-0"
@@ -1393,28 +1393,28 @@ function NetWorthTrends({ data, financialData, portfolio }: { data: any[]; finan
 
       {/* Statistics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 dark:from-purple-500/20 dark:to-purple-600/20 p-4 rounded-lg border border-purple-500/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 dark:from-purple-500/20 dark:to-purple-600/20 p-4 rounded-lg border border-purple-500/20 transition-all duration-300 cursor-pointer">
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             ${formatNumber(comprehensiveData[comprehensiveData.length - 1].netWorth)}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Current Net Worth</div>
         </div>
         
-        <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 dark:from-green-500/20 dark:to-green-600/20 p-4 rounded-lg border border-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-green-500/50 dark:hover:shadow-green-500/30 cursor-pointer">
+        <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 dark:from-green-500/20 dark:to-green-600/20 p-4 rounded-lg border border-green-500/20 transition-all duration-300 cursor-pointer">
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             +${formatNumber(comprehensiveData[comprehensiveData.length - 1].netWorth - comprehensiveData[0].netWorth)}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">YTD Growth</div>
         </div>
         
-        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 p-4 rounded-lg border border-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 cursor-pointer">
+        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 p-4 rounded-lg border border-blue-500/20 transition-all duration-300 cursor-pointer">
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             +{(((comprehensiveData[comprehensiveData.length - 1].netWorth - comprehensiveData[0].netWorth) / comprehensiveData[0].netWorth) * 100).toFixed(2)}%
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">YTD Percentage</div>
         </div>
         
-        <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 dark:from-orange-500/20 dark:to-orange-600/20 p-4 rounded-lg border border-orange-500/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-orange-500/50 dark:hover:shadow-orange-500/30 cursor-pointer">
+        <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 dark:from-orange-500/20 dark:to-orange-600/20 p-4 rounded-lg border border-orange-500/20 transition-all duration-300 cursor-pointer">
           <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
             ${formatNumber((comprehensiveData[comprehensiveData.length - 1].netWorth - comprehensiveData[0].netWorth) / 9)}
           </div>
@@ -1433,7 +1433,7 @@ function NetWorthTrends({ data, financialData, portfolio }: { data: any[]; finan
           return (
             <div 
               key={category.key}
-              className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+              className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 cursor-pointer"
               style={{
                 boxShadow: `0 0 0 1px ${category.color}20`
               }}
@@ -1472,7 +1472,7 @@ function NetWorthGoals({ goals }: { goals: any[] }) {
           const remaining = goal.target - goal.current;
           
           return (
-            <div key={index} className="relative bg-white dark:bg-gray-800 p-6 rounded-lg border transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 dark:hover:shadow-purple-500/30 hover:scale-[1.01] hover:z-10 cursor-pointer">
+            <div key={index} className="relative bg-white dark:bg-gray-800 p-6 rounded-lg border transition-all duration-300 cursor-pointer">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h4 className="font-semibold text-lg text-gray-900 dark:text-white">{goal.name}</h4>

@@ -48,7 +48,7 @@ interface Account {
 
 const initialSavingsGoals: SavingsGoal[] = [
   { 
-    id: '1',
+    id: '550e8400-e29b-41d4-a716-446655440005',
     name: 'Emergency Fund', 
     target: 30000, 
     current: 25000, 
@@ -58,7 +58,7 @@ const initialSavingsGoals: SavingsGoal[] = [
     apy: 4.25
   },
   { 
-    id: '2',
+    id: '550e8400-e29b-41d4-a716-446655440006',
     name: 'Vacation Fund', 
     target: 10000, 
     current: 8500, 
@@ -68,7 +68,7 @@ const initialSavingsGoals: SavingsGoal[] = [
     apy: 4.05
   },
   { 
-    id: '3',
+    id: '550e8400-e29b-41d4-a716-446655440007',
     name: 'Home Down Payment', 
     target: 50000, 
     current: 11780, 
@@ -80,9 +80,9 @@ const initialSavingsGoals: SavingsGoal[] = [
 ];
 
 const initialAccounts: Account[] = [
-  { id: '1', name: 'Marcus High-Yield', bank: 'Marcus by Goldman Sachs', balance: 25000, apy: 4.25, type: 'High-Yield Savings' },
-  { id: '2', name: 'Ally Online Savings', bank: 'Ally Bank', balance: 15280, apy: 4.05, type: 'Online Savings' },
-  { id: '3', name: 'Emergency CD', bank: 'Capital One', balance: 5000, apy: 4.50, type: 'Certificate of Deposit' }
+  { id: '550e8400-e29b-41d4-a716-446655440008', name: 'Marcus High-Yield', bank: 'Marcus by Goldman Sachs', balance: 25000, apy: 4.25, type: 'High-Yield Savings' },
+  { id: '550e8400-e29b-41d4-a716-446655440009', name: 'Ally Online Savings', bank: 'Ally Bank', balance: 15280, apy: 4.05, type: 'Online Savings' },
+  { id: '550e8400-e29b-41d4-a716-446655440010', name: 'Emergency CD', bank: 'Capital One', balance: 5000, apy: 4.50, type: 'Certificate of Deposit' }
 ];
 
 const priorityColors = {
@@ -1020,7 +1020,7 @@ function SavingsModalContent() {
           {activeTab === 'goals' && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex-shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Goal</span>

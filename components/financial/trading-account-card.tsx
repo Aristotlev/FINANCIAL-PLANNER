@@ -585,6 +585,15 @@ function TradingInstrumentSearchModal({
   const [filteredInstruments, setFilteredInstruments] = useState<TradingInstrument[]>(TRADING_DATABASE);
 
   useEffect(() => {
+    // Check for duplicates in filteredInstruments
+    const symbols = filteredInstruments.map(i => i.symbol);
+    const uniqueSymbols = new Set(symbols);
+    if (symbols.length !== uniqueSymbols.size) {
+      console.error('Duplicate symbols found in filteredInstruments:', symbols.filter((s, i) => symbols.indexOf(s) !== i));
+    }
+  }, [filteredInstruments]);
+
+  useEffect(() => {
     let results = TRADING_DATABASE;
 
     // Apply search query filter
@@ -685,11 +694,11 @@ function TradingInstrumentSearchModal({
         {/* Results */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredInstruments.map((instrument) => {
+            {filteredInstruments.map((instrument, index) => {
               const instrumentColor = getInstrumentColor(instrument);
 
               return (
-                <InstrumentTooltip key={instrument.symbol} instrument={instrument}>
+                <InstrumentTooltip key={`${instrument.symbol}-${index}`} instrument={instrument}>
                   <div
                     onClick={() => {
                       onSelectInstrument(instrument);
@@ -1763,7 +1772,7 @@ function TradingAccountModalContent() {
     <div className="p-6">
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
           <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
             <div className="flex overflow-x-auto scrollbar-hide w-full">
               {[
@@ -1788,6 +1797,17 @@ function TradingAccountModalContent() {
               ))}
             </div>
           </div>
+
+          {activeTab === 'positions' && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Position</span>
+              <span className="sm:hidden">Add</span>
+            </button>
+          )}
         </div>
 
         {/* Positions Tab */}
@@ -1796,7 +1816,7 @@ function TradingAccountModalContent() {
             {/* Trading Account Balances - Three Separate Accounts */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Forex Account Balance */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800 transition-all hover:scale-[1.02] hover:shadow-lg">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800 transition-all">
                 <div className="flex items-center gap-2 mb-3">
                   <DollarSign className="w-5 h-5 text-blue-600" />
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -1817,7 +1837,7 @@ function TradingAccountModalContent() {
               </div>
 
               {/* Crypto Account Balance */}
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-5 rounded-xl border-2 border-purple-200 dark:border-purple-800 transition-all hover:scale-[1.02] hover:shadow-lg">
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-5 rounded-xl border-2 border-purple-200 dark:border-purple-800 transition-all">
                 <div className="flex items-center gap-2 mb-3">
                   <CoinsIcon className="w-5 h-5 text-purple-600" />
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -1838,7 +1858,7 @@ function TradingAccountModalContent() {
               </div>
 
               {/* Options Account Balance */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border-2 border-green-200 dark:border-green-800 transition-all hover:scale-[1.02] hover:shadow-lg">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border-2 border-green-200 dark:border-green-800 transition-all">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUpIcon className="w-5 h-5 text-green-600" />
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -1915,7 +1935,7 @@ function TradingAccountModalContent() {
                   {/* Forex Account Summary */}
                   <div 
                     onClick={() => setTradingSubTab('forex')}
-                    className="group relative bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 dark:from-blue-950/50 dark:via-blue-900/40 dark:to-indigo-900/40 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-500 shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 dark:hover:shadow-blue-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:-translate-y-1"
+                    className="group relative bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 dark:from-blue-950/50 dark:via-blue-900/40 dark:to-indigo-900/40 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-500 shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     {/* 3D Background Effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-600/10 dark:from-blue-400/5 dark:to-indigo-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -1923,20 +1943,19 @@ function TradingAccountModalContent() {
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-3 bg-blue-500 dark:bg-blue-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          <div className="p-3 bg-blue-500 dark:bg-blue-600 rounded-xl shadow-lg  transition-transform duration-300">
                             <DollarSign className="w-7 h-7 text-white" />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Forex Trading</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Currency Pairs</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 ml-2">
+                              {forexPositions.length} positions
+                            </p>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                           <span className="text-xs px-3 py-1 bg-blue-600 dark:bg-blue-700 text-white rounded-full font-bold shadow-md">
                             ACTIVE
-                          </span>
-                          <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                            {forexPositions.length} positions
                           </span>
                         </div>
                       </div>
@@ -1981,7 +2000,7 @@ function TradingAccountModalContent() {
                   {/* Crypto Account Summary */}
                   <div 
                     onClick={() => setTradingSubTab('crypto-futures')}
-                    className="group relative bg-gradient-to-br from-purple-50 via-purple-100 to-pink-100 dark:from-purple-950/50 dark:via-purple-900/40 dark:to-pink-900/40 p-6 rounded-2xl border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 shadow-lg hover:shadow-2xl hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:-translate-y-1"
+                    className="group relative bg-gradient-to-br from-purple-50 via-purple-100 to-pink-100 dark:from-purple-950/50 dark:via-purple-900/40 dark:to-pink-900/40 p-6 rounded-2xl border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     {/* 3D Background Effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-pink-600/10 dark:from-purple-400/5 dark:to-pink-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -1989,20 +2008,19 @@ function TradingAccountModalContent() {
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-3 bg-purple-500 dark:bg-purple-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          <div className="p-3 bg-purple-500 dark:bg-purple-600 rounded-xl shadow-lg  transition-transform duration-300">
                             <CoinsIcon className="w-7 h-7 text-white" />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Crypto Futures</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Digital Assets</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 ml-2">
+                              {cryptoPositions.length} positions
+                            </p>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                           <span className="text-xs px-3 py-1 bg-purple-600 dark:bg-purple-700 text-white rounded-full font-bold shadow-md">
                             ACTIVE
-                          </span>
-                          <span className="text-xs text-purple-600 dark:text-purple-400 font-semibold">
-                            {cryptoPositions.length} positions
                           </span>
                         </div>
                       </div>
@@ -2047,7 +2065,7 @@ function TradingAccountModalContent() {
                   {/* Options Account Summary */}
                   <div 
                     onClick={() => setTradingSubTab('options')}
-                    className="group relative bg-gradient-to-br from-green-50 via-green-100 to-emerald-100 dark:from-green-950/50 dark:via-green-900/40 dark:to-emerald-900/40 p-6 rounded-2xl border-2 border-green-200 dark:border-green-700 hover:border-green-400 dark:hover:border-green-500 shadow-lg hover:shadow-2xl hover:shadow-green-500/50 dark:hover:shadow-green-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:-translate-y-1"
+                    className="group relative bg-gradient-to-br from-green-50 via-green-100 to-emerald-100 dark:from-green-950/50 dark:via-green-900/40 dark:to-emerald-900/40 p-6 rounded-2xl border-2 border-green-200 dark:border-green-700 hover:border-green-400 dark:hover:border-green-500 shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     {/* 3D Background Effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-600/10 dark:from-green-400/5 dark:to-emerald-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -2055,20 +2073,19 @@ function TradingAccountModalContent() {
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-3 bg-green-500 dark:bg-green-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          <div className="p-3 bg-green-500 dark:bg-green-600 rounded-xl shadow-lg  transition-transform duration-300">
                             <TrendingUpIcon className="w-7 h-7 text-white" />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Options Trading</h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Calls & Puts</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 ml-2">
+                              {optionsPositions.length} positions
+                            </p>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
                           <span className="text-xs px-3 py-1 bg-green-600 dark:bg-green-700 text-white rounded-full font-bold shadow-md">
                             ACTIVE
-                          </span>
-                          <span className="text-xs text-green-600 dark:text-green-400 font-semibold">
-                            {optionsPositions.length} positions
                           </span>
                         </div>
                       </div>
@@ -2137,7 +2154,7 @@ function TradingAccountModalContent() {
                 </div>
 
             <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-              {positions.sort((a, b) => (Math.abs(b.shares) * b.currentPrice) - (Math.abs(a.shares) * a.currentPrice)).map((position) => {
+              {positions.sort((a, b) => (Math.abs(b.shares) * b.currentPrice) - (Math.abs(a.shares) * a.currentPrice)).map((position, index) => {
                 const pnl = position.positionType === 'long' 
                   ? (position.currentPrice - position.avgPrice) * position.shares
                   : (position.avgPrice - position.currentPrice) * Math.abs(position.shares);
@@ -2146,7 +2163,7 @@ function TradingAccountModalContent() {
                 const instrument = getInstrumentBySymbol(position.symbol);
 
                 return (
-                  <div key={position.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-cyan-300 dark:hover:border-cyan-600 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/30 dark:hover:shadow-cyan-400/40 cursor-pointer">
+                  <div key={`${position.id}-${index}`} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-cyan-300 dark:hover:border-cyan-600 transition-all duration-300 cursor-pointer">
                     <div className="flex items-center gap-3 flex-1">
                       <TradingIcon symbol={position.symbol} className="w-10 h-10" />
                       <div className="flex-1">
@@ -2386,7 +2403,7 @@ function TradingAccountModalContent() {
       <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Position Details</h3>
         <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-          {positions.map((position) => {
+          {positions.map((position, index) => {
             const pnl = position.positionType === 'long' 
               ? (position.currentPrice - position.avgPrice) * position.shares
               : (position.avgPrice - position.currentPrice) * Math.abs(position.shares);
@@ -2394,7 +2411,7 @@ function TradingAccountModalContent() {
             const marketValue = Math.abs(position.shares) * position.currentPrice;
 
             return (
-              <div key={position.id} className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div key={`${position.id}-${index}`} className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <TradingIcon symbol={position.symbol} className="w-5 h-5" />
@@ -2485,8 +2502,10 @@ export function TradingAccountCard() {
     };
     loadPositions();
     
-    // Listen for data changes and reload
-    const handleDataChange = () => loadPositions();
+    // Listen for data changes
+    const handleDataChange = () => {
+      loadPositions();
+    };
     window.addEventListener('tradingDataChanged', handleDataChange);
     window.addEventListener('financialDataChanged', handleDataChange);
     
@@ -2516,7 +2535,9 @@ export function TradingAccountCard() {
     loadBalances();
     
     // Listen for balance changes
-    const handleBalanceChange = () => loadBalances();
+    const handleBalanceChange = () => {
+      loadBalances();
+    };
     window.addEventListener('storage', handleBalanceChange);
     window.addEventListener('tradingDataChanged', handleBalanceChange);
     
@@ -3065,7 +3086,7 @@ function TradingToolsModalContent() {
             <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 pb-2">
               <button
                 onClick={() => setTradingSubTab('forex')}
-                className={`px-6 py-3 rounded-lg transition-all text-sm font-semibold ${
+                className={`px-6 py-3 rounded-lg transition-all text-sm font-semibold whitespace-nowrap ${
                   tradingSubTab === 'forex'
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/50'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -3076,7 +3097,7 @@ function TradingToolsModalContent() {
               </button>
               <button
                 onClick={() => setTradingSubTab('crypto-futures')}
-                className={`px-6 py-3 rounded-lg transition-all text-sm font-semibold ${
+                className={`px-6 py-3 rounded-lg transition-all text-sm font-semibold whitespace-nowrap ${
                   tradingSubTab === 'crypto-futures'
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -3087,7 +3108,7 @@ function TradingToolsModalContent() {
               </button>
               <button
                 onClick={() => setTradingSubTab('options')}
-                className={`px-6 py-3 rounded-lg transition-all text-sm font-semibold ${
+                className={`px-6 py-3 rounded-lg transition-all text-sm font-semibold whitespace-nowrap ${
                   tradingSubTab === 'options'
                     ? 'bg-green-600 text-white shadow-lg shadow-green-500/50'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -3350,38 +3371,5 @@ function TradingToolsModalContent() {
         )}
       </div>
     </div>
-  );
-}
-
-export function TradingToolsCard() {
-  const chartData = [
-    { value: 100, change: "+5.2%" },
-    { value: 105, change: "+3.8%" },
-    { value: 98, change: "-2.1%" },
-    { value: 110, change: "+4.5%" },
-    { value: 115, change: "+6.2%" },
-  ];
-
-  return (
-    <EnhancedFinancialCard
-      title="Trading Tools"
-      description="Professional trading charts & live market data"
-      amount="3 Widgets"
-      change="Active"
-      changeType="positive"
-      mainColor="#0284c7"
-      secondaryColor="#0ea5e9"
-      gridColor="#0284c715"
-      stats={[
-        { label: "Chart", value: "Advanced", color: "#0284c7" },
-        { label: "Overview", value: "Multi-Symbol", color: "#0ea5e9" },
-        { label: "Markets", value: "Global", color: "#38bdf8" }
-      ]}
-      icon={BarChart3}
-      hoverContent={<TradingToolsHoverContent />}
-      modalContent={<TradingToolsModalContent />}
-      chartData={chartData}
-      maxWidth="max-w-7xl"
-    />
   );
 }

@@ -228,7 +228,7 @@ export default function SubscriptionDashboard() {
               ))}
             </div>
             
-            <button className="w-full bg-white text-purple-600 font-bold py-5 px-8 rounded-2xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-lg">
+            <button className="w-full bg-white text-purple-600 font-bold py-5 px-8 rounded-2xl hover:shadow-2xl transition-all duration-300  text-lg">
               Upgrade Now - {formatPrice(PLAN_CONFIG.INVESTOR.price_monthly_usd)}/month
             </button>
           </div>

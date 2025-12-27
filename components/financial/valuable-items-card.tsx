@@ -67,7 +67,7 @@ async function fetchItemMarketPrice(itemName: string, category: string) {
 
 const initialValuableItems: ValuableItem[] = [
   {
-    id: "1",
+    id: "550e8400-e29b-41d4-a716-446655440024",
     name: "Rolex Submariner",
     category: "Jewelry & Watches",
     purchasePrice: 8500,
@@ -80,7 +80,7 @@ const initialValuableItems: ValuableItem[] = [
     color: "#f59e0b"
   },
   {
-    id: "2", 
+    id: "550e8400-e29b-41d4-a716-446655440025", 
     name: "Original Basquiat Print",
     category: "Art & Collectibles",
     purchasePrice: 25000,
@@ -93,7 +93,7 @@ const initialValuableItems: ValuableItem[] = [
     color: "#8b5cf6"
   },
   {
-    id: "3",
+    id: "550e8400-e29b-41d4-a716-446655440026",
     name: "MacBook Pro M2 Max",
     category: "Electronics",
     purchasePrice: 3200,
@@ -106,7 +106,7 @@ const initialValuableItems: ValuableItem[] = [
     color: "#06b6d4"
   },
   {
-    id: "4",
+    id: "550e8400-e29b-41d4-a716-446655440027",
     name: "Vintage Porsche Parts Collection",
     category: "Collectibles",
     purchasePrice: 15000,
@@ -1008,7 +1008,7 @@ function ValuableItemsModalContent() {
           {activeTab === 'items' && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-lime-500 text-white rounded-lg hover:bg-lime-600 transition-colors flex-shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Item</span>
@@ -1144,7 +1144,7 @@ function ValuableItemsModalContent() {
                   return acc;
                 }, {} as Record<string, number>)
               ).map(([category, value]) => (
-                <div key={category} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-lime-500/50 dark:hover:shadow-lime-500/30 cursor-pointer">
+                <div key={category} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 cursor-pointer">
                   <div className="flex items-center gap-2 mb-2">
                     {getCategoryIcon(category)}
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{category}</h3>
@@ -1164,7 +1164,7 @@ function ValuableItemsModalContent() {
           <div className="space-y-4">
             <div className="space-y-3">
               {items.filter(item => item.insured).map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-yellow-500/50 dark:hover:shadow-yellow-500/30 cursor-pointer">
+                <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg transition-all duration-300 cursor-pointer">
                   <div className="flex items-center gap-3">
                     {getCategoryIcon(item.category)}
                     <div>
@@ -1185,7 +1185,7 @@ function ValuableItemsModalContent() {
                 <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Uninsured Items</h3>
                 <div className="space-y-2">
                   {items.filter(item => !item.insured).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/50 dark:hover:shadow-red-500/30 cursor-pointer">
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg transition-all duration-300 cursor-pointer">
                       <div className="flex items-center gap-2">
                         {getCategoryIcon(item.category)}
                         <span className="text-sm text-gray-900 dark:text-white">{item.name}</span>

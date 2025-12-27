@@ -133,20 +133,20 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
         style={{ touchAction: 'pan-y' }}
       >
         <div 
-          className={`relative w-full ${maxWidth} bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-2xl transition-all modal-content`}
+          className={`relative w-full ${maxWidth} rounded-2xl bg-zinc-900/80 backdrop-blur-sm border border-white/[0.08] text-white/95 shadow-xl shadow-black/40 transition-all modal-content dark`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10 rounded-t-xl sm:rounded-t-2xl">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white pr-2">
+          <div className="flex items-center justify-between p-3 sm:p-6 border-b border-white/[0.08] sticky top-0 bg-zinc-900/80 backdrop-blur-sm z-10 rounded-t-2xl">
+            <h2 className="text-lg sm:text-2xl font-bold text-white/95 pr-2">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors min-h-touch min-w-touch flex-shrink-0"
+              className="p-2 hover:bg-white/10 rounded-full transition-colors min-h-touch min-w-touch flex-shrink-0"
               aria-label="Close modal"
             >
-              <X className="w-5 h-5 text-gray-600 dark:text-white dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+              <X className="w-5 h-5 text-white/70 hover:text-white" />
             </button>
           </div>
           

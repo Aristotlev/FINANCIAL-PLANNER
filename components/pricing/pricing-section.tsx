@@ -473,21 +473,21 @@ export default function PricingSection({ showHeader = true }: PricingSectionProp
             <h3 className="text-xl font-bold text-white mb-6 text-center">Why Choose OmniFolio?</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center group">
-                <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
+                <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg  transition-transform">
                   <Lock className="w-7 h-7 text-white" />
                 </div>
                 <h4 className="font-semibold text-white mb-1">Secure Payments</h4>
                 <p className="text-gray-500 text-sm">Bank-level encryption with Stripe</p>
               </div>
               <div className="text-center group">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg  transition-transform">
                   <Shield className="w-7 h-7 text-white" />
                 </div>
                 <h4 className="font-semibold text-white mb-1">30-Day Guarantee</h4>
                 <p className="text-gray-500 text-sm">Full refund, no questions asked</p>
               </div>
               <div className="text-center group">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg  transition-transform">
                   <CreditCard className="w-7 h-7 text-white" />
                 </div>
                 <h4 className="font-semibold text-white mb-1">Cancel Anytime</h4>

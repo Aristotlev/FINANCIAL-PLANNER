@@ -2182,62 +2182,6 @@ export const TRADING_DATABASE: TradingInstrument[] = [
     country: 'China'
   },
 
-  // Additional Commodities Available to European Traders
-  {
-    symbol: 'SI',
-    name: 'Silver Futures',
-    type: 'commodity',
-    category: 'Precious Metals',
-    volume: '$25B daily',
-    currency: 'USD',
-    currentPrice: 23.45,
-    description: 'Precious metal futures contract for silver, used for industrial applications and as a store of value.',
-    country: 'Global'
-  },
-  {
-    symbol: 'PL',
-    name: 'Platinum Futures',
-    type: 'commodity',
-    category: 'Precious Metals',
-    volume: '$5B daily',
-    currency: 'USD',
-    currentPrice: 965.80,
-    description: 'Precious metal futures contract for platinum, used in automotive catalysts and jewelry.',
-    country: 'Global'
-  },
-  {
-    symbol: 'HG',
-    name: 'Copper Futures',
-    type: 'commodity',
-    category: 'Industrial Metals',
-    volume: '$40B daily',
-    currency: 'USD',
-    currentPrice: 3.85,
-    description: 'Industrial metal futures contract for copper, essential for construction and electrical applications.',
-    country: 'Global'
-  },
-  {
-    symbol: 'ZC',
-    name: 'Corn Futures',
-    type: 'commodity',
-    category: 'Agricultural',
-    volume: '$15B daily',
-    currency: 'USD',
-    currentPrice: 4.25,
-    description: 'Agricultural commodity futures contract for corn, one of the most important food staples globally.',
-    country: 'Global'
-  },
-  {
-    symbol: 'ZS',
-    name: 'Soybean Futures',
-    type: 'commodity',
-    category: 'Agricultural',
-    volume: '$20B daily',
-    currency: 'USD',
-    currentPrice: 12.85,
-    description: 'Agricultural commodity futures contract for soybeans, important for food production and animal feed.',
-    country: 'Global'
-  }
 ];
 
 // Utility functions

@@ -1,0 +1,2 @@
+user_subscriptions.user_id type: { column_name: 'user_id', data_type: 'text' }
+user_usage.user_id type: { column_name: 'user_id', data_type: 'text' }

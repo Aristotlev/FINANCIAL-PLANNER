@@ -147,7 +147,7 @@ export default function UpgradeModal({
             </button>
             <button
               onClick={handleUpgrade}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all hover:scale-105"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all "
             >
               Upgrade Now
             </button>

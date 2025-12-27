@@ -111,8 +111,7 @@ function connect(key, symbol, type) {
 
     // Stocks/Forex: Polling
     // console.log(`⚠️ Worker: Polling for ${symbol}`);
-    useFallbackPolling(key, symbol, type, 1500); // Poll every 1.5s
-    startSimulation(key, symbol); // Start micro-movements for live feel
+    useFallbackPolling(key, symbol, type, 5000); // Poll every 5s
 
   } catch (error) {
     console.error(`Worker: Connection failed for ${key}`, error);
@@ -133,37 +132,6 @@ function handleBinanceMessage(key, symbol, data) {
     };
     processAndNotify(key, symbol, update);
   }
-}
-
-// Simulation intervals for "live" feel on stocks
-const simulationIntervals = new Map();
-
-function startSimulation(key, symbol) {
-  if (simulationIntervals.has(key)) return;
-
-  const interval = setInterval(() => {
-    const cached = priceCache.get(key);
-    if (!cached) return;
-
-    // Add tiny random noise (+/- 0.05%) to simulate live market activity
-    const noise = (Math.random() - 0.5) * 0.001; 
-    const simulatedPrice = cached.price * (1 + noise);
-    
-    const update = {
-      ...cached,
-      price: simulatedPrice,
-      timestamp: Date.now()
-    };
-
-    // Don't update cache with simulated price to avoid drift
-    // Just notify main thread
-    self.postMessage({
-      type: 'PRICE_UPDATE',
-      payload: update
-    });
-  }, 300); // Update every 300ms
-
-  simulationIntervals.set(key, interval);
 }
 
 function useFallbackPolling(key, symbol, type, intervalMs = 2000) {
@@ -247,12 +215,6 @@ function disconnect(key) {
     clearInterval(interval);
     pollingIntervals.delete(key);
   }
-
-  const simInterval = simulationIntervals.get(key);
-  if (simInterval) {
-    clearInterval(simInterval);
-    simulationIntervals.delete(key);
-  }
   
   subscribers.delete(key);
 }
@@ -264,10 +226,6 @@ function disconnectAll() {
   for (const key of pollingIntervals.keys()) {
     disconnect(key);
   }
-  for (const key of simulationIntervals.keys()) {
-    clearInterval(simulationIntervals.get(key));
-  }
-  simulationIntervals.clear();
   priceCache.clear();
   subscribers.clear();
   reconnectAttempts.clear();

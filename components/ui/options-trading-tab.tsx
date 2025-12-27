@@ -291,9 +291,9 @@ export function OptionsTradingTab({
       {/* Add Position Button */}
       <button
         onClick={() => setShowAddPosition(!showAddPosition)}
-        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333]"
       >
-        <Plus className="w-5 h-5" />
+        <Plus className="w-4 h-4" />
         Add Options Position
       </button>
 

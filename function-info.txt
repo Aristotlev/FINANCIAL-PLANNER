@@ -1,0 +1,7 @@
+Functions found: [
+  {
+    proname: 'can_make_ai_call',
+    proargnames: [ 'p_user_id' ],
+    proargtypes: '[0:0]={text}'
+  }
+]

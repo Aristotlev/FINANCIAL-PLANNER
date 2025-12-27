@@ -296,116 +296,133 @@ function AddExpenseCategoryModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000001]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 max-h-[90vh] overflow-visible" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[800px] max-h-[90vh] overflow-visible" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Add Expense Category</h3>
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[calc(90vh-8rem)] overflow-y-auto pr-2">\n          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Category Name</label>
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="text"
-                value={searchTerm || formData.name}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setFormData({...formData, name: e.target.value});
-                  setShowDropdown(true);
-                }}
-                onFocus={() => setShowDropdown(true)}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                placeholder="Search or enter category name..."
-                required
-              />
-              {showDropdown && filteredCategories.length > 0 && (
-                  <div 
-                    ref={dropdownRef}
-                    className="absolute z-[10000] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto"
-                    style={{ boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)' }}
-                  >
-                    {filteredCategories.map((category, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => selectCategory(category)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Category Name</label>
+                <div className="relative">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={searchTerm || formData.name}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setFormData({...formData, name: e.target.value});
+                      setShowDropdown(true);
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    placeholder="Search or enter category name..."
+                    required
+                  />
+                  {showDropdown && filteredCategories.length > 0 && (
+                      <div 
+                        ref={dropdownRef}
+                        className="absolute z-[10000] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto"
+                        style={{ boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)' }}
                       >
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-8 h-8 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: `${category.color}20` }}
+                        {filteredCategories.map((category, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => selectCategory(category)}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                           >
-                            <div style={{ color: category.color }}>
-                              {getCategoryIcon(category.icon, "w-4 h-4")}
+                            <div className="flex items-center gap-3">
+                              <div 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                style={{ backgroundColor: `${category.color}20` }}
+                              >
+                                <div style={{ color: category.color }}>
+                                  {getCategoryIcon(category.icon, "w-4 h-4")}
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900 dark:text-white">{category.name}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">{category.description}</div>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900 dark:text-white">{category.name}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{category.description}</div>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                          </button>
+                        ))}
+                      </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Icon</label>
+                  <select
+                    value={formData.icon}
+                    onChange={(e) => setFormData({...formData, icon: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  >
+                    <option value="home">Home</option>
+                    <option value="shopping">Shopping Cart</option>
+                    <option value="car">Car</option>
+                    <option value="credit-card">Credit Card</option>
+                    <option value="zap">Lightning</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Color</label>
+                  <div className="flex items-center h-[42px]">
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData({...formData, color: e.target.value})}
+                      className="w-full h-full p-1 border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-pointer"
+                    />
                   </div>
-              )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Amount</label>
+                  <input
+                    type="number"
+                    value={isNaN(formData.amount) ? '' : formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Budget</label>
+                  <input
+                    type="number"
+                    value={isNaN(formData.budget) ? '' : formData.budget}
+                    onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  rows={4}
+                  placeholder="Brief description of this expense category"
+                />
+              </div>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Amount</label>
-            <input
-              type="number"
-              value={isNaN(formData.amount) ? '' : formData.amount}
-              onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              step="0.01"
-              min="0"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Budget</label>
-            <input
-              type="number"
-              value={isNaN(formData.budget) ? '' : formData.budget}
-              onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              step="0.01"
-              min="0"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Icon</label>
-            <select
-              value={formData.icon}
-              onChange={(e) => setFormData({...formData, icon: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-            >
-              <option value="home">Home</option>
-              <option value="shopping">Shopping Cart</option>
-              <option value="car">Car</option>
-              <option value="credit-card">Credit Card</option>
-              <option value="zap">Lightning</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Color</label>
-            <input
-              type="color"
-              value={formData.color}
-              onChange={(e) => setFormData({...formData, color: e.target.value})}
-              className="w-full p-2 border rounded h-10"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              rows={2}
-              placeholder="Brief description of this expense category"
-            />
-          </div>
-          <div className="flex gap-2 pt-4">
+
+          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
               className="flex-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -463,77 +480,93 @@ function EditExpenseCategoryModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000001]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[800px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Edit Expense Category</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Category Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Category Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Icon</label>
+                  <select
+                    value={formData.icon}
+                    onChange={(e) => setFormData({...formData, icon: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  >
+                    <option value="home">Home</option>
+                    <option value="shopping">Shopping Cart</option>
+                    <option value="car">Car</option>
+                    <option value="credit-card">Credit Card</option>
+                    <option value="zap">Lightning</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Color</label>
+                  <div className="flex items-center h-[42px]">
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData({...formData, color: e.target.value})}
+                      className="w-full h-full p-1 border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Amount</label>
+                  <input
+                    type="number"
+                    value={isNaN(formData.amount) ? '' : formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Budget</label>
+                  <input
+                    type="number"
+                    value={isNaN(formData.budget) ? '' : formData.budget}
+                    onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  rows={4}
+                  placeholder="Brief description of this expense category"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Amount</label>
-            <input
-              type="number"
-              value={isNaN(formData.amount) ? '' : formData.amount}
-              onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              step="0.01"
-              min="0"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Budget</label>
-            <input
-              type="number"
-              value={isNaN(formData.budget) ? '' : formData.budget}
-              onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              step="0.01"
-              min="0"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Icon</label>
-            <select
-              value={formData.icon}
-              onChange={(e) => setFormData({...formData, icon: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-            >
-              <option value="home">Home</option>
-              <option value="shopping">Shopping Cart</option>
-              <option value="car">Car</option>
-              <option value="credit-card">Credit Card</option>
-              <option value="zap">Lightning</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Color</label>
-            <input
-              type="color"
-              value={formData.color}
-              onChange={(e) => setFormData({...formData, color: e.target.value})}
-              className="w-full p-2 border rounded h-10"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              rows={2}
-              placeholder="Brief description of this expense category"
-            />
-          </div>
-          <div className="flex gap-2 pt-4">
+
+          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
               className="flex-1 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -841,7 +874,7 @@ function ExpensesModalContent() {
           {activeTab !== 'subscriptions' && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex-shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add {activeTab === 'expenses' ? 'Category' : 'Debt'}</span>

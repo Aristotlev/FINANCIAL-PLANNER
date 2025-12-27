@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { cn } from "../../lib/utils";
 
 interface ThemedStatBoxProps {
   /** The main theme color (hex format, e.g., "#6366f1") */
@@ -52,24 +53,12 @@ export function ThemedStatBox({
       } as React.CSSProperties
     : {};
 
-  const shadowStyle = rgb
-    ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`
-    : themeColor;
-
   return (
     <div
-      className={`p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer ${className}`}
+      className={cn("p-4 rounded-lg transition-all duration-300 cursor-pointer", className)}
       style={{
         ...bgStyle,
         boxShadow: "none",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `0 10px 15px -3px ${shadowStyle}, 0 4px 6px -4px ${shadowStyle}`;
-        e.currentTarget.style.transform = "scale(1.02)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "none";
-        e.currentTarget.style.transform = "scale(1)";
       }}
     >
       <div
@@ -120,24 +109,12 @@ export function ConditionalThemedStatBox({
       } as React.CSSProperties
     : {};
 
-  const shadowStyle = rgb
-    ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`
-    : themeColor;
-
   return (
     <div
-      className={`p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] cursor-pointer ${className}`}
+      className={cn("p-4 rounded-lg transition-all duration-300 cursor-pointer", className)}
       style={{
         ...bgStyle,
         boxShadow: "none",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `0 10px 15px -3px ${shadowStyle}, 0 4px 6px -4px ${shadowStyle}`;
-        e.currentTarget.style.transform = "scale(1.02)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "none";
-        e.currentTarget.style.transform = "scale(1)";
       }}
     >
       <div
@@ -194,24 +171,12 @@ export function ThemedContainer({
       } as React.CSSProperties
     : {};
 
-  const shadowStyle = rgb
-    ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`
-    : themeColor;
-
   return (
     <div
-      className={`p-4 rounded-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer ${className}`}
+      className={cn("p-4 rounded-xl transition-all duration-300 cursor-pointer", className)}
       style={{
         ...bgStyle,
         boxShadow: "none",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `0 10px 15px -3px ${shadowStyle}, 0 4px 6px -4px ${shadowStyle}`;
-        e.currentTarget.style.transform = "scale(1.02)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "none";
-        e.currentTarget.style.transform = "scale(1)";
       }}
     >
       {children}

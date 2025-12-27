@@ -43,40 +43,31 @@ export function middleware(request: NextRequest) {
   // More permissive CSP in development
   const isDev = process.env.NODE_ENV === 'development';
   
-  const cspDirectives = [
-    "default-src 'self'",
-    // Note: 'unsafe-eval' and 'unsafe-inline' required for:
-    // - TradingView widgets
-    // - Google Maps API
-    // - Next.js development mode
-    // - Dynamic imports and blob workers
-    isDev 
-      ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com https://accounts.google.com https://*.googletagmanager.com https://*.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com"
-      : "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com https://accounts.google.com https://*.googletagmanager.com https://*.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com",
-    "style-src 'self' 'unsafe-inline' https://s3.tradingview.com https://www.tradingview.com https://fonts.googleapis.com https://maps.googleapis.com https://accounts.google.com https://maps.google.com",
-    "img-src 'self' data: blob: https: https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://*.gstatic.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://www.google.com https://icons.duckduckgo.com https://img.logo.dev https://*.google-analytics.com https://*.g.doubleclick.net https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com",
-    "font-src 'self' data: https://fonts.gstatic.com https://maps.gstatic.com",
-    isDev
-      ? "connect-src 'self' https: http: ws: wss:"
-      : "connect-src 'self' https://omnifolio.app https://www.omnifolio.app https://api.exchangerate-api.com https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co https://accounts.google.com https://*.google-analytics.com https://www.google-analytics.com https://*.g.doubleclick.net https://stats.g.doubleclick.net https://analytics.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com wss://stream.binance.com:9443 wss://ws-api.binance.com:443",
-    "media-src 'self' blob: data: https://api.elevenlabs.io https://replicate.delivery",
-    "worker-src 'self' blob:",
-    "child-src 'self' blob:",
-    "frame-src 'self' https://www.tradingview.com https://s.tradingview.com https://s3.tradingview.com https://www.tradingview-widget.com https://accounts.google.com https://maps.googleapis.com https://*.googleapis.com https://maps.google.com",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ];
-
-  // Only set frame-ancestors in production
+  // In development, we don't set CSP to avoid conflicts with extensions and debugging tools
+  // The browser will default to permissive mode
   if (!isDev) {
-    cspDirectives.push("frame-ancestors 'none'");
-  }
+    const cspDirectives = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com https://accounts.google.com https://*.googletagmanager.com https://*.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com",
+      "style-src 'self' 'unsafe-inline' https://s3.tradingview.com https://www.tradingview.com https://fonts.googleapis.com https://maps.googleapis.com https://accounts.google.com https://maps.google.com",
+      "img-src 'self' data: blob: https: https://maps.googleapis.com https://maps.gstatic.com https://*.googleapis.com https://*.gstatic.com https://lh3.googleusercontent.com https://*.googleusercontent.com https://www.google.com https://icons.duckduckgo.com https://img.logo.dev https://*.google-analytics.com https://*.g.doubleclick.net https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com",
+      "font-src 'self' data: https://fonts.gstatic.com https://maps.gstatic.com",
+      "connect-src 'self' https://omnifolio.app https://www.omnifolio.app https://api.exchangerate-api.com https://api.elevenlabs.io https://api.replicate.com https://*.supabase.co https://generativelanguage.googleapis.com https://maps.googleapis.com https://*.googleapis.com https://api.coingecko.com https://finnhub.io https://query1.finance.yahoo.com https://query2.finance.yahoo.com https://*.tradingview.com wss://*.supabase.co https://accounts.google.com https://*.google-analytics.com https://www.google-analytics.com https://*.g.doubleclick.net https://stats.g.doubleclick.net https://analytics.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com wss://stream.binance.com:9443 wss://ws-api.binance.com:443",
+      "media-src 'self' blob: data: https://api.elevenlabs.io https://replicate.delivery",
+      "worker-src 'self' blob:",
+      "child-src 'self' blob:",
+      "frame-src 'self' https://www.tradingview.com https://s.tradingview.com https://s3.tradingview.com https://www.tradingview-widget.com https://accounts.google.com https://maps.googleapis.com https://*.googleapis.com https://maps.google.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ];
 
-  response.headers.set(
-    'Content-Security-Policy',
-    cspDirectives.join('; ')
-  );
+    response.headers.set(
+      'Content-Security-Policy',
+      cspDirectives.join('; ')
+    );
+  }
 
   // Additional security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');

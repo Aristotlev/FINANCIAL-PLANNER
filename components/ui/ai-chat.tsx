@@ -1147,7 +1147,7 @@ export function AIChatAssistant() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-[1000000] p-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 group"
+        className="fixed bottom-6 right-6 z-[1000000] p-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all group"
         title="Open AI Assistant"
       >
         <Sparkles className="w-6 h-6 animate-pulse" />

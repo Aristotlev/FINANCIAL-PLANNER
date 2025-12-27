@@ -585,6 +585,7 @@ interface StockTransaction {
   pricePerShare: number;
   totalValue: number;
   date: string;
+  originalPrice?: number; // For sell transactions: the price it was bought at
 }
 
 function StocksModalContent() {
@@ -746,7 +747,8 @@ function StocksModalContent() {
          shares: holding.shares,
          pricePerShare: currentPrice,
          totalValue: holding.shares * currentPrice,
-         date: new Date().toISOString()
+         date: new Date().toISOString(),
+         originalPrice: holding.entryPoint
        };
        setTransactions([transaction, ...transactions]);
     }
@@ -821,7 +823,8 @@ function StocksModalContent() {
       shares: sellShares,
       pricePerShare: currentPrice,
       totalValue: proceeds,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      originalPrice: holding.entryPoint
     };
     setTransactions([transaction, ...transactions]);
   };
@@ -899,7 +902,7 @@ function StocksModalContent() {
           {activeTab === 'holdings' && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 flex-shrink-0"
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Add Position</span>
@@ -1139,6 +1142,14 @@ function StocksModalContent() {
                     minute: '2-digit'
                   });
 
+                  // Calculate profit/loss for sell transactions
+                  let profitLoss = 0;
+                  let profitLossPercent = 0;
+                  if (tx.type === 'sell' && tx.originalPrice && tx.originalPrice > 0) {
+                    profitLoss = (tx.pricePerShare - tx.originalPrice) * tx.shares;
+                    profitLossPercent = ((tx.pricePerShare - tx.originalPrice) / tx.originalPrice) * 100;
+                  }
+
                   return (
                     <div key={tx.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all">
                       <div className="flex items-center gap-3">
@@ -1148,13 +1159,20 @@ function StocksModalContent() {
                         </div>
                         <div>
                           <div className="font-semibold text-gray-900 dark:text-white">
-                            {tx.shares} {tx.symbol}
+                            {Number(tx.shares).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 8 })} {tx.symbol}
                           </div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">
                             {tx.name} • {formattedDate}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-500">
-                            @ ${tx.pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {tx.type === 'sell' && tx.originalPrice ? (
+                              <span>
+                                Bought: ${tx.originalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • 
+                                Sold: ${tx.pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            ) : (
+                              <span>@ ${tx.pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1163,6 +1181,11 @@ function StocksModalContent() {
                           }`}>
                           ${tx.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
+                        {tx.type === 'sell' && (
+                          <div className={`text-xs font-medium ${profitLoss >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {profitLoss >= 0 ? '+' : ''}{profitLossPercent.toFixed(2)}% ({profitLoss >= 0 ? '+' : ''}${Math.abs(profitLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

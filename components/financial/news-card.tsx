@@ -475,7 +475,7 @@ function NewsModalContent() {
           <button
             onClick={refreshNews}
             disabled={isTabLoading}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+            className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-4 h-4 ${isTabLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
@@ -522,7 +522,7 @@ function NewsModalContent() {
                   return uniqueHoldings.map((holding) => (
                     <span
                       key={holding.id}
-                      className="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105"
+                      className="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200"
                       style={{ 
                         backgroundColor: `${holding.color}20`,
                         borderColor: `${holding.color}60`,
@@ -564,7 +564,7 @@ function NewsModalContent() {
                   href={source.url.includes('rss') || source.url.includes('feed') ? source.url.split('/').slice(0, 3).join('/') : source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1 bg-white dark:bg-gray-900 rounded-full text-xs font-medium border border-gray-200 dark:border-gray-700 hover:scale-105 hover:shadow-md transition-all duration-200 cursor-pointer no-underline"
+                  className="px-3 py-1 bg-white dark:bg-gray-900 rounded-full text-xs font-medium border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 cursor-pointer no-underline"
                   style={{ color: source.color }}
                 >
                   {source.name}
@@ -580,21 +580,25 @@ function NewsModalContent() {
             themeColor={CARD_THEME_COLORS.news}
             value={Math.max(news.length, 8)}
             label={activeTab === 'mynews' ? 'Your Articles' : 'Latest Articles'}
+            className="p-2"
           />
           <ThemedStatBox
             themeColor={CARD_THEME_COLORS.news}
             value={activeTab === 'mynews' ? (cryptoHoldings?.length || 0) + (stockHoldings?.length || 0) : NEWS_SOURCES[activeTab as keyof typeof NEWS_SOURCES]?.length || 0}
             label={activeTab === 'mynews' ? 'Holdings' : 'News Sources'}
+            className="p-2"
           />
           <ThemedStatBox
             themeColor={CARD_THEME_COLORS.news}
             value={activeTab === 'mynews' ? 'Smart' : 'Live'}
             label={activeTab === 'mynews' ? 'AI Filtered' : 'Real-time Updates'}
+            className="p-2"
           />
           <ThemedStatBox
             themeColor={CARD_THEME_COLORS.news}
             value={activeTab === 'mynews' ? 'Auto' : '24/7'}
             label={activeTab === 'mynews' ? 'Updated' : 'Coverage'}
+            className="p-2"
           />
         </div>
 
@@ -620,7 +624,7 @@ function NewsModalContent() {
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-white dark:bg-gray-800 p-5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-300 hover:scale-[1.01] hover:shadow-lg hover:shadow-orange-500/20 cursor-pointer group no-underline"
+                className="block bg-white dark:bg-gray-800 p-5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-300 cursor-pointer group no-underline"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -655,7 +659,7 @@ function NewsModalContent() {
                     </p>
                   </div>
                   
-                  <div className="flex-shrink-0 p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors group-hover:scale-110">
+                  <div className="flex-shrink-0 p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
                     <ArrowUpRight className="w-4 h-4" />
                   </div>
                 </div>

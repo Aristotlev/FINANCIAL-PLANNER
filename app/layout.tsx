@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import '@xyflow/react/dist/style.css';
 import { BetterAuthProvider } from "../contexts/better-auth-context";
@@ -21,20 +21,21 @@ import Script from "next/script";
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-export const metadata: Metadata = {
-  title: "OmniFolio - All-in-One Financial Management",
-  description: "OmniFolio: Your comprehensive financial dashboard for tracking cash, savings, crypto, stocks, real estate, and expenses. Take control of your financial future.",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: 'cover'
-  },
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#000000' }
   ],
+};
+
+export const metadata: Metadata = {
+  title: "OmniFolio - All-in-One Financial Management",
+  description: "OmniFolio: Your comprehensive financial dashboard for tracking cash, savings, crypto, stocks, real estate, and expenses. Take control of your financial future.",
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -81,6 +82,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Trusted Types Polyfill - Must be loaded first to prevent policy errors */}
+        <script src="/trusted-types.js" />
         {/* Google Ads */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-17821905669"

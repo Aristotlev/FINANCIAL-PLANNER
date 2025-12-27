@@ -65,7 +65,7 @@ interface RealEstateProperty {
 
 const initialRealEstateProperties: RealEstateProperty[] = [
   {
-    id: "1",
+    id: "550e8400-e29b-41d4-a716-446655440021",
     address: "123 Oak Street",
     propertyType: "Primary Residence",
     purchasePrice: 450000,
@@ -92,7 +92,7 @@ const initialRealEstateProperties: RealEstateProperty[] = [
     yearBuilt: 1995
   },
   {
-    id: "2", 
+    id: "550e8400-e29b-41d4-a716-446655440022", 
     address: "456 Pine Avenue",
     propertyType: "Rental Property",
     purchasePrice: 280000,
@@ -119,7 +119,7 @@ const initialRealEstateProperties: RealEstateProperty[] = [
     yearBuilt: 1985
   },
   {
-    id: "3",
+    id: "550e8400-e29b-41d4-a716-446655440023",
     address: "789 Maple Drive",
     propertyType: "Investment Property",
     purchasePrice: 195000,
@@ -373,266 +373,282 @@ function AddRealEstatePropertyModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000001]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[800px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Add Real Estate Property</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative" style={{ zIndex: 10 }}>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Address</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => {
-                    setFormData({...formData, address: e.target.value});
-                    setShowSuggestions(true);
-                  }}
-                  onFocus={() => addressSuggestions.length > 0 && setShowSuggestions(true)}
-                  onBlur={() => {
-                    // Delay hiding to allow click events on suggestions
-                    setTimeout(() => setShowSuggestions(false), 200);
-                  }}
-                  className="w-full p-3 border-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:border-lime-500 dark:focus:border-lime-400 focus:ring-2 focus:ring-lime-500/20 transition-all"
-                  placeholder="Start typing an address..."
-                  required
-                />
-                {searchingAddress && (
-                  <div className="absolute right-3 top-3.5">
-                    <div className="animate-spin h-5 w-5 border-2 border-lime-500 border-t-transparent rounded-full"></div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="relative" style={{ zIndex: 10 }}>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Address</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => {
+                        setFormData({...formData, address: e.target.value});
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => addressSuggestions.length > 0 && setShowSuggestions(true)}
+                      onBlur={() => {
+                        // Delay hiding to allow click events on suggestions
+                        setTimeout(() => setShowSuggestions(false), 200);
+                      }}
+                      className="w-full p-3 border-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:border-lime-500 dark:focus:border-lime-400 focus:ring-2 focus:ring-lime-500/20 transition-all"
+                      placeholder="Start typing an address..."
+                      required
+                    />
+                    {searchingAddress && (
+                      <div className="absolute right-3 top-3.5">
+                        <div className="animate-spin h-5 w-5 border-2 border-lime-500 border-t-transparent rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowMapPicker(true)}
+                    className="p-3 bg-lime-500 hover:bg-lime-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center min-w-[44px]"
+                    title="Pick location on map"
+                  >
+                    <Map className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Address Suggestions Dropdown */}
+                {showSuggestions && addressSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border-2 border-lime-300 dark:border-lime-600 rounded-xl shadow-2xl max-h-96 overflow-y-auto" style={{ zIndex: 1000003 }}>
+                    <div className="p-2">
+                      {addressSuggestions.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectAddress(suggestion);
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-3 rounded-lg hover:bg-lime-50 dark:hover:bg-gray-700/50 transition-all group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 p-1.5 rounded-full bg-lime-100 dark:bg-lime-900/30 group-hover:bg-lime-200 dark:group-hover:bg-lime-800/50 transition-colors">
+                              <MapPin className="w-4 h-4 text-lime-600 dark:text-lime-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                {suggestion.display_name.split(',').slice(0, 2).join(',')}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                                {suggestion.display_name.split(',').slice(2).join(',')}
+                              </div>
+                              {suggestion.type && (
+                                <div className="text-xs text-lime-600 dark:text-lime-400 mt-1 font-medium">
+                                  {suggestion.type.charAt(0).toUpperCase() + suggestion.type.slice(1)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => setShowMapPicker(true)}
-                className="p-3 bg-lime-500 hover:bg-lime-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center min-w-[44px]"
-                title="Pick location on map"
-              >
-                <Map className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* Address Suggestions Dropdown */}
-            {showSuggestions && addressSuggestions.length > 0 && (
-              <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border-2 border-lime-300 dark:border-lime-600 rounded-xl shadow-2xl max-h-96 overflow-y-auto" style={{ zIndex: 1000003 }}>
-                <div className="p-2">
-                  {addressSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        selectAddress(suggestion);
-                        setShowSuggestions(false);
-                      }}
-                      className="w-full text-left px-4 py-3 rounded-lg hover:bg-lime-50 dark:hover:bg-gray-700/50 transition-all group"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1.5 rounded-full bg-lime-100 dark:bg-lime-900/30 group-hover:bg-lime-200 dark:group-hover:bg-lime-800/50 transition-colors">
-                          <MapPin className="w-4 h-4 text-lime-600 dark:text-lime-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {suggestion.display_name.split(',').slice(0, 2).join(',')}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-                            {suggestion.display_name.split(',').slice(2).join(',')}
-                          </div>
-                          {suggestion.type && (
-                            <div className="text-xs text-lime-600 dark:text-lime-400 mt-1 font-medium">
-                              {suggestion.type.charAt(0).toUpperCase() + suggestion.type.slice(1)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">City</label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    placeholder="Austin"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">State</label>
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({...formData, state: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    placeholder="TX"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Zip Code</label>
+                  <input
+                    type="text"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    placeholder="78751"
+                    required
+                  />
                 </div>
               </div>
-            )}
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Type</label>
+                <select
+                  value={formData.propertyType}
+                  onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                >
+                  <option value="Primary Residence">Primary Residence</option>
+                  <option value="Rental Property">Rental Property</option>
+                  <option value="Investment Property">Investment Property</option>
+                  <option value="Vacation Home">Vacation Home</option>
+                  <option value="Commercial Property">Commercial Property</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Price</label>
+                  <input
+                    type="number"
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Value</label>
+                  <input
+                    type="number"
+                    value={formData.currentValue}
+                    onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Down Payment</label>
+                  <input
+                    type="number"
+                    value={formData.downPayment}
+                    onChange={(e) => setFormData({...formData, downPayment: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Loan Amount</label>
+                  <input
+                    type="number"
+                    value={formData.loanAmount}
+                    onChange={(e) => setFormData({...formData, loanAmount: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Payment</label>
+                  <input
+                    type="number"
+                    value={formData.monthlyPayment}
+                    onChange={(e) => setFormData({...formData, monthlyPayment: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    value={formData.interestRate}
+                    onChange={(e) => setFormData({...formData, interestRate: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Tax</label>
+                  <input
+                    type="number"
+                    value={formData.propertyTax}
+                    onChange={(e) => setFormData({...formData, propertyTax: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Insurance</label>
+                  <input
+                    type="number"
+                    value={formData.insurance}
+                    onChange={(e) => setFormData({...formData, insurance: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Maintenance</label>
+                  <input
+                    type="number"
+                    value={formData.maintenance}
+                    onChange={(e) => setFormData({...formData, maintenance: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Rental Income</label>
+                <input
+                  type="number"
+                  value={formData.rentalIncome}
+                  onChange={(e) => setFormData({...formData, rentalIncome: parseFloat(e.target.value)})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  min="0"
+                  placeholder="Leave 0 if not rental"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Date</label>
+                <input
+                  type="date"
+                  value={formData.purchaseDate}
+                  onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  rows={3}
+                  placeholder="Additional property details"
+                />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">City</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({...formData, city: e.target.value})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                placeholder="Austin"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">State</label>
-              <input
-                type="text"
-                value={formData.state}
-                onChange={(e) => setFormData({...formData, state: e.target.value})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                placeholder="TX"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Zip Code</label>
-              <input
-                type="text"
-                value={formData.zipCode}
-                onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                placeholder="78751"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Type</label>
-            <select
-              value={formData.propertyType}
-              onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-            >
-              <option value="Primary Residence">Primary Residence</option>
-              <option value="Rental Property">Rental Property</option>
-              <option value="Investment Property">Investment Property</option>
-              <option value="Vacation Home">Vacation Home</option>
-              <option value="Commercial Property">Commercial Property</option>
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Price</label>
-              <input
-                type="number"
-                value={formData.purchasePrice}
-                onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Value</label>
-              <input
-                type="number"
-                value={formData.currentValue}
-                onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-                required
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Down Payment</label>
-              <input
-                type="number"
-                value={formData.downPayment}
-                onChange={(e) => setFormData({...formData, downPayment: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Loan Amount</label>
-              <input
-                type="number"
-                value={formData.loanAmount}
-                onChange={(e) => setFormData({...formData, loanAmount: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Payment</label>
-              <input
-                type="number"
-                value={formData.monthlyPayment}
-                onChange={(e) => setFormData({...formData, monthlyPayment: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Interest Rate (%)</label>
-              <input
-                type="number"
-                value={formData.interestRate}
-                onChange={(e) => setFormData({...formData, interestRate: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                step="0.01"
-                min="0"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Tax</label>
-              <input
-                type="number"
-                value={formData.propertyTax}
-                onChange={(e) => setFormData({...formData, propertyTax: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Insurance</label>
-              <input
-                type="number"
-                value={formData.insurance}
-                onChange={(e) => setFormData({...formData, insurance: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Maintenance</label>
-              <input
-                type="number"
-                value={formData.maintenance}
-                onChange={(e) => setFormData({...formData, maintenance: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Rental Income</label>
-            <input
-              type="number"
-              value={formData.rentalIncome}
-              onChange={(e) => setFormData({...formData, rentalIncome: parseFloat(e.target.value)})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              min="0"
-              placeholder="Leave 0 if not rental"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Date</label>
-            <input
-              type="date"
-              value={formData.purchaseDate}
-              onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              rows={2}
-              placeholder="Additional property details"
-            />
-          </div>
-          <div className="flex gap-2 pt-4">
+
+          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
               className="flex-1 bg-lime-500 text-white px-4 py-2 rounded hover:bg-lime-600"
@@ -1324,196 +1340,204 @@ function EditRealEstatePropertyModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100000001]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[800px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Edit Real Estate Property</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Address</label>
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) => setFormData({...formData, address: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Address</label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">City</label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">State</label>
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({...formData, state: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Zip Code</label>
+                  <input
+                    type="text"
+                    value={formData.zipCode}
+                    onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Type</label>
+                <select
+                  value={formData.propertyType}
+                  onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                >
+                  <option value="Primary Residence">Primary Residence</option>
+                  <option value="Rental Property">Rental Property</option>
+                  <option value="Investment Property">Investment Property</option>
+                  <option value="Vacation Home">Vacation Home</option>
+                  <option value="Commercial Property">Commercial Property</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Price</label>
+                  <input
+                    type="number"
+                    value={formData.purchasePrice}
+                    onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Value</label>
+                  <input
+                    type="number"
+                    value={formData.currentValue}
+                    onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Down Payment</label>
+                  <input
+                    type="number"
+                    value={formData.downPayment}
+                    onChange={(e) => setFormData({...formData, downPayment: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Loan Amount</label>
+                  <input
+                    type="number"
+                    value={formData.loanAmount}
+                    onChange={(e) => setFormData({...formData, loanAmount: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Payment</label>
+                  <input
+                    type="number"
+                    value={formData.monthlyPayment}
+                    onChange={(e) => setFormData({...formData, monthlyPayment: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    value={formData.interestRate}
+                    onChange={(e) => setFormData({...formData, interestRate: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Tax</label>
+                  <input
+                    type="number"
+                    value={formData.propertyTax}
+                    onChange={(e) => setFormData({...formData, propertyTax: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Insurance</label>
+                  <input
+                    type="number"
+                    value={formData.insurance}
+                    onChange={(e) => setFormData({...formData, insurance: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Maintenance</label>
+                  <input
+                    type="number"
+                    value={formData.maintenance}
+                    onChange={(e) => setFormData({...formData, maintenance: parseFloat(e.target.value)})}
+                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    min="0"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Rental Income</label>
+                <input
+                  type="number"
+                  value={formData.rentalIncome}
+                  onChange={(e) => setFormData({...formData, rentalIncome: parseFloat(e.target.value)})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Date</label>
+                <input
+                  type="date"
+                  value={formData.purchaseDate}
+                  onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  rows={3}
+                />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">City</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({...formData, city: e.target.value})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">State</label>
-              <input
-                type="text"
-                value={formData.state}
-                onChange={(e) => setFormData({...formData, state: e.target.value})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Zip Code</label>
-              <input
-                type="text"
-                value={formData.zipCode}
-                onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Type</label>
-            <select
-              value={formData.propertyType}
-              onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-            >
-              <option value="Primary Residence">Primary Residence</option>
-              <option value="Rental Property">Rental Property</option>
-              <option value="Investment Property">Investment Property</option>
-              <option value="Vacation Home">Vacation Home</option>
-              <option value="Commercial Property">Commercial Property</option>
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Price</label>
-              <input
-                type="number"
-                value={formData.purchasePrice}
-                onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Value</label>
-              <input
-                type="number"
-                value={formData.currentValue}
-                onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-                required
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Down Payment</label>
-              <input
-                type="number"
-                value={formData.downPayment}
-                onChange={(e) => setFormData({...formData, downPayment: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Loan Amount</label>
-              <input
-                type="number"
-                value={formData.loanAmount}
-                onChange={(e) => setFormData({...formData, loanAmount: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Payment</label>
-              <input
-                type="number"
-                value={formData.monthlyPayment}
-                onChange={(e) => setFormData({...formData, monthlyPayment: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Interest Rate (%)</label>
-              <input
-                type="number"
-                value={formData.interestRate}
-                onChange={(e) => setFormData({...formData, interestRate: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                step="0.01"
-                min="0"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Tax</label>
-              <input
-                type="number"
-                value={formData.propertyTax}
-                onChange={(e) => setFormData({...formData, propertyTax: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Insurance</label>
-              <input
-                type="number"
-                value={formData.insurance}
-                onChange={(e) => setFormData({...formData, insurance: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Maintenance</label>
-              <input
-                type="number"
-                value={formData.maintenance}
-                onChange={(e) => setFormData({...formData, maintenance: parseFloat(e.target.value)})}
-                className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                min="0"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Rental Income</label>
-            <input
-              type="number"
-              value={formData.rentalIncome}
-              onChange={(e) => setFormData({...formData, rentalIncome: parseFloat(e.target.value)})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              min="0"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Date</label>
-            <input
-              type="date"
-              value={formData.purchaseDate}
-              onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Notes</label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-              rows={2}
-            />
-          </div>
-          <div className="flex gap-2 pt-4">
+
+          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
               className="flex-1 bg-lime-500 text-white px-4 py-2 rounded hover:bg-lime-600"
@@ -1615,7 +1639,7 @@ function RealEstateModalContent() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-lime-500 text-white px-5 py-2.5 rounded-lg hover:bg-lime-600 transition-colors shadow-sm hover:shadow-md"
+          className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
           Add Property

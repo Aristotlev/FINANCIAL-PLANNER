@@ -51,21 +51,21 @@ interface Trade {
 
 // Mock Data for History
 const MOCK_TRADES: Trade[] = [
-  { id: '1', date: '2024-03-15', symbol: 'AAPL', type: 'buy', amount: 10, price: 175.50, total: 1755.00, status: 'completed' },
-  { id: '2', date: '2024-02-28', symbol: 'BTC', type: 'buy', amount: 0.05, price: 62000.00, total: 3100.00, status: 'completed' },
-  { id: '3', date: '2023-11-10', symbol: 'TSLA', type: 'sell', amount: 5, price: 210.00, total: 1050.00, status: 'completed' },
-  { id: '4', date: '2023-08-05', symbol: 'ETH', type: 'buy', amount: 1.5, price: 1800.00, total: 2700.00, status: 'completed' },
-  { id: '5', date: '2022-12-15', symbol: 'NVDA', type: 'buy', amount: 20, price: 145.00, total: 2900.00, status: 'completed' },
-  { id: '6', date: '2022-06-20', symbol: 'AMD', type: 'sell', amount: 50, price: 85.00, total: 4250.00, status: 'completed' },
-  { id: '7', date: '2021-11-01', symbol: 'SOL', type: 'buy', amount: 100, price: 200.00, total: 20000.00, status: 'completed' },
-  { id: '8', date: '2021-05-15', symbol: 'DOGE', type: 'sell', amount: 10000, price: 0.50, total: 5000.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440011', date: '2024-03-15', symbol: 'AAPL', type: 'buy', amount: 10, price: 175.50, total: 1755.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440012', date: '2024-02-28', symbol: 'BTC', type: 'buy', amount: 0.05, price: 62000.00, total: 3100.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440013', date: '2023-11-10', symbol: 'TSLA', type: 'sell', amount: 5, price: 210.00, total: 1050.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440014', date: '2023-08-05', symbol: 'ETH', type: 'buy', amount: 1.5, price: 1800.00, total: 2700.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440015', date: '2022-12-15', symbol: 'NVDA', type: 'buy', amount: 20, price: 145.00, total: 2900.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440016', date: '2022-06-20', symbol: 'AMD', type: 'sell', amount: 50, price: 85.00, total: 4250.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440017', date: '2021-11-01', symbol: 'SOL', type: 'buy', amount: 100, price: 200.00, total: 20000.00, status: 'completed' },
+  { id: '550e8400-e29b-41d4-a716-446655440018', date: '2021-05-15', symbol: 'DOGE', type: 'sell', amount: 10000, price: 0.50, total: 5000.00, status: 'completed' },
 ];
 
 // Alerts Tab Component
 function AlertsTab() {
   const [alerts, setAlerts] = useState<Alert[]>([
-    { id: '1', symbol: 'AAPL', targetPrice: 180.00, currentPrice: 175.43, condition: 'above', active: true },
-    { id: '2', symbol: 'BTC', targetPrice: 60000.00, currentPrice: 64230.00, condition: 'below', active: true },
+    { id: '550e8400-e29b-41d4-a716-446655440019', symbol: 'AAPL', targetPrice: 180.00, currentPrice: 175.43, condition: 'above', active: true },
+    { id: '550e8400-e29b-41d4-a716-446655440020', symbol: 'BTC', targetPrice: 60000.00, currentPrice: 64230.00, condition: 'below', active: true },
   ]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [targetPrice, setTargetPrice] = useState('');
@@ -156,9 +156,9 @@ function AlertsTab() {
             </div>
             {searchQuery && (
               <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {filteredAssets.map(asset => (
+                {filteredAssets.map((asset, index) => (
                   <button
-                    key={asset.symbol}
+                    key={`${asset.symbol}-${index}`}
                     onClick={() => {
                       setSelectedSymbol(asset.symbol);
                       setSearchQuery(`${asset.symbol} - ${asset.name}`);
@@ -854,7 +854,7 @@ function ToolsModalContent() {
           {/* Fullscreen Toggle Button */}
           <button
             onClick={toggleFullscreen}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex-shrink-0"
+            className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
           >
             {isFullscreen ? (
@@ -874,15 +874,15 @@ function ToolsModalContent() {
         {/* Chart Tab */}
         <div className={`space-y-4 ${activeTab === 'chart' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Real-time Data</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">50+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Indicators</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Global</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Markets</div>
               </div>
@@ -930,15 +930,15 @@ function ToolsModalContent() {
         {/* Stocks Tab */}
         <div className={`space-y-4 ${activeTab === 'stocks' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">500+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">US Stocks</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Market Data</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Multi</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Screener</div>
               </div>
@@ -986,15 +986,15 @@ function ToolsModalContent() {
         {/* Crypto Tab */}
         <div className={`space-y-4 ${activeTab === 'crypto' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">24/7</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Trading</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">1000+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Cryptocurrencies</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Market Cap</div>
               </div>
@@ -1042,15 +1042,15 @@ function ToolsModalContent() {
         {/* Forex Tab */}
         <div className={`space-y-4 ${activeTab === 'forex' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">8</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Major Currencies</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Exchange Rates</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-purple-500/30 cursor-pointer">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
                 <div className="text-2xl font-bold text-purple-600">Multi</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Currency Pairs</div>
               </div>
