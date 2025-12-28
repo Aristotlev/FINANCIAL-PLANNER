@@ -14,6 +14,7 @@ import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
 import { ExtensionErrorBoundary } from "../components/ui/extension-error-boundary";
 import { ConsentBanner } from "../components/ui/consent-banner";
+import { Preloader } from "../components/ui/preloader";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from "next/script";
 
@@ -157,6 +158,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        <Preloader />
         {/* Google Analytics - Default Consent */}
         <Script id="ga-consent" strategy="beforeInteractive">
           {`
