@@ -26,6 +26,14 @@ if (typeof window !== 'undefined') {
 let supabaseAdminInstance: SupabaseClient<Database> | null = null;
 
 /**
+ * Helper to get environment variables at runtime without build-time inlining
+ */
+function getRuntimeEnv(key: string): string {
+  const env = process.env;
+  return (env[key] as string) || '';
+}
+
+/**
  * Get the Supabase admin client (service role)
  * This bypasses RLS - use with caution!
  */
@@ -34,10 +42,14 @@ export function getSupabaseAdmin(): SupabaseClient<Database> {
     return supabaseAdminInstance;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = getRuntimeEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseServiceKey = getRuntimeEnv('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('[SUPABASE SERVER] Missing credentials:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+    });
     throw new Error(
       'Missing Supabase credentials. Ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.'
     );
@@ -57,7 +69,19 @@ export function getSupabaseAdmin(): SupabaseClient<Database> {
  * Check if the Supabase admin client can be created
  */
 export function isSupabaseAdminConfigured(): boolean {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const url = getRuntimeEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const key = getRuntimeEnv('SUPABASE_SERVICE_ROLE_KEY');
+  
+  const configured = !!(url && key);
+  
+  if (!configured && process.env.NODE_ENV === 'production') {
+    console.warn('[SUPABASE SERVER] Configuration check failed:', {
+      hasUrl: !!url,
+      hasServiceKey: !!key,
+    });
+  }
+  
+  return configured;
 }
 
 /**

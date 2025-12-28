@@ -1,21 +1,35 @@
 import { NextResponse } from 'next/server';
 
+/**
+ * Helper to get environment variables at runtime without build-time inlining
+ */
+function getRuntimeEnv(key: string): string {
+  const env = process.env;
+  return (env[key] as string) || '';
+}
+
 export async function GET() {
   // Check for critical environment variables
   const envStatus = {
-    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_APP_URL: !!process.env.NEXT_PUBLIC_APP_URL,
+    // Build-time values (might be inlined)
+    buildTime: {
+      NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    },
+    // Runtime values (actual values in the container)
+    runtime: {
+      NEXT_PUBLIC_SUPABASE_URL: !!getRuntimeEnv('NEXT_PUBLIC_SUPABASE_URL'),
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: !!getRuntimeEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+      SUPABASE_SERVICE_ROLE_KEY: !!getRuntimeEnv('SUPABASE_SERVICE_ROLE_KEY'),
+      BETTER_AUTH_SECRET: !!getRuntimeEnv('BETTER_AUTH_SECRET'),
+    },
     NODE_ENV: process.env.NODE_ENV,
-    VERCEL: !!process.env.VERCEL,
-    // Check if they are empty strings
-    NEXT_PUBLIC_SUPABASE_URL_LENGTH: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY_LENGTH: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
+    timestamp: new Date().toISOString(),
   };
 
   return NextResponse.json({
     status: 'ok',
-    timestamp: new Date().toISOString(),
     env: envStatus,
   });
 }
