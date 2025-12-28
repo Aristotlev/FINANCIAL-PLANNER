@@ -502,8 +502,9 @@ export class SubscriptionService {
       // Try RPC first, but handle errors gracefully
       let rpcResult: boolean | null = null;
       try {
+        // Explicitly cast userId to string to match the TEXT parameter in the SQL function
         const { data, error } = await (supabase.rpc as any)('can_make_ai_call', {
-          p_user_id: userId,
+          p_user_id: String(userId),
         });
         
         if (!error && typeof data === 'boolean') {

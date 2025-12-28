@@ -45,6 +45,7 @@ export function Preloader() {
             src="/images/logo.png"
             alt="OmniFolio"
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-contain relative z-10 drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]"
             priority
           />

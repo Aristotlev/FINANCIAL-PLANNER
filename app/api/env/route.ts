@@ -12,6 +12,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    console.log('[ENV API] Request received');
+    
     // Create JavaScript that sets window.__ENV__
     const envScript = `
 (function() {
@@ -26,16 +28,19 @@ export async function GET() {
   };
   
   // Log in development
-  if (window.location.hostname === 'localhost') {
-    console.log('[ENV API] Environment variables loaded:', {
-      hasSupabaseUrl: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL,
-      hasSupabaseKey: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      hasMapsKey: !!window.__ENV__.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-      appUrl: window.__ENV__.NEXT_PUBLIC_APP_URL,
-    });
-  }
+  console.log('[ENV API] Environment variables loaded:', {
+    hasSupabaseUrl: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL,
+    hasSupabaseKey: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    hasMapsKey: !!window.__ENV__.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    appUrl: window.__ENV__.NEXT_PUBLIC_APP_URL,
+  });
 })();
 `;
+
+    // Check if critical variables are missing on the server
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('[ENV API] CRITICAL: Supabase environment variables are missing on the server!');
+    }
 
     // Return as JavaScript with proper MIME type
     return new NextResponse(envScript, {

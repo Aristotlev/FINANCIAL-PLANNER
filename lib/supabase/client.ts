@@ -19,12 +19,14 @@ declare global {
 
 // Helper to get Supabase credentials at runtime
 const getSupabaseCredentials = () => {
-    // In browser, prioritize window.__ENV__ (runtime config)
-    if (typeof window !== 'undefined') {
-      const windowEnv = window.__ENV__;
-      
-      const url = windowEnv?.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key = windowEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;    // Only return if both values are actually present and non-empty
+  // In browser, prioritize window.__ENV__ (runtime config)
+  if (typeof window !== 'undefined') {
+    const windowEnv = window.__ENV__;
+    
+    const url = windowEnv?.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = windowEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    // Only return if both values are actually present and non-empty
     if (url && key && url !== '' && key !== '') {
       return { url, key };
     }
@@ -226,6 +228,7 @@ const ensureEnvVars = async () => {
   if (!envFetchPromise) {
     envFetchPromise = (async () => {
       try {
+        console.log('[SUPABASE] Fetching fallback env vars...');
         const res = await fetch('/api/env', {
           cache: 'no-store',
           headers: {
@@ -239,12 +242,18 @@ const ensureEnvVars = async () => {
           scriptEl.textContent = script;
           document.body.appendChild(scriptEl);
           // Give it a moment to execute
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, 100));
+          console.log('[SUPABASE] Fallback env vars script executed');
         } else {
           console.error('[SUPABASE] Failed to fetch fallback env vars:', res.status, res.statusText);
         }
       } catch (e) {
         console.error('[SUPABASE] Failed to fetch fallback env vars:', e);
+      } finally {
+        // If still not configured, clear promise to allow retry
+        if (!isSupabaseConfigured()) {
+          envFetchPromise = null;
+        }
       }
     })();
   }
@@ -272,9 +281,9 @@ export const waitForSupabase = async (): Promise<boolean> => {
   // Polling as backup
   return new Promise((resolve) => {
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max
+    const maxAttempts = 100; // 10 seconds max (increased from 5s)
     
-    const checkInterval = setInterval(() => {
+    const checkInterval = setInterval(async () => {
       attempts++;
       
       if (isSupabaseConfigured()) {
@@ -286,7 +295,14 @@ export const waitForSupabase = async (): Promise<boolean> => {
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
         console.warn('[SUPABASE] Timeout waiting for credentials');
+        console.warn('[SUPABASE] Debug info:', { 
+            windowEnv: typeof window !== 'undefined' ? window.__ENV__ : 'undefined',
+            processEnvUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'present' : 'missing'
+        });
         resolve(false);
+      } else if (attempts % 20 === 0) {
+        // Retry fetching every 2 seconds if still failing
+        await ensureEnvVars();
       }
     }, 100);
   });
