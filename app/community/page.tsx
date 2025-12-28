@@ -151,10 +151,10 @@ export default function CommunityPage() {
     if (data) {
       setUserProfile(data);
       setEditForm({
-        name: data.name || '',
-        bio: data.bio || '',
-        location: data.location || '',
-        website: data.website || ''
+        name: (data as any).name || '',
+        bio: (data as any).bio || '',
+        location: (data as any).location || '',
+        website: (data as any).website || ''
       });
     }
   }, [user]);

@@ -372,8 +372,8 @@ export async function updateProfile(data: { name?: string; bio?: string; locatio
     if (data.location !== undefined) updates.location = data.location;
     if (data.website !== undefined) updates.website = data.website;
 
-    const { error } = await supabase
-      .from('users' as any)
+    const { error } = await (supabase
+      .from('users' as any) as any)
       .update(updates)
       .eq('id', userId);
 
