@@ -92,32 +92,47 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         {/* Runtime environment variables - MUST be FIRST to ensure availability before any code runs */}
-        {/* Primary: inline script with build-time values (works for local dev and when build vars are set) */}
-        {/* Fallback: fetch from /api/env for runtime values (works in Cloud Run when env vars are set at runtime) */}
+        {/* Uses synchronous XHR to block until env vars are loaded - critical for production */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Initial values from build time (may be empty in production if not set during build)
+                // Try to get build-time values first (works in dev, may be empty in prod)
+                var buildTimeUrl = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')};
+                var buildTimeKey = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')};
+                var buildTimeMapsKey = ${JSON.stringify(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')};
+                var buildTimeAppUrl = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_URL || '')};
+                
+                // Initialize with build-time values
                 window.__ENV__ = {
-                  NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
-                  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
-                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
-                  NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_APP_URL || '')},
+                  NEXT_PUBLIC_SUPABASE_URL: buildTimeUrl,
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY: buildTimeKey,
+                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: buildTimeMapsKey,
+                  NEXT_PUBLIC_APP_URL: buildTimeAppUrl,
                 };
                 
-                // If Supabase URL is missing, fetch from API (runtime values)
-                if (!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL) {
-                  fetch('/api/env', { cache: 'no-store' })
-                    .then(function(res) { return res.text(); })
-                    .then(function(script) {
-                      // Execute the script to update window.__ENV__
-                      var el = document.createElement('script');
-                      el.textContent = script;
-                      document.head.appendChild(el);
-                    })
-                    .catch(function(e) { console.error('[ENV] Failed to fetch runtime env:', e); });
+                // If Supabase URL is missing, fetch from API synchronously (production scenario)
+                if (!buildTimeUrl) {
+                  try {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', '/api/env', false); // false = synchronous
+                    xhr.send(null);
+                    if (xhr.status === 200) {
+                      // Execute the returned script
+                      eval(xhr.responseText);
+                      console.log('[ENV] Loaded from API:', { 
+                        hasUrl: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL,
+                        hasKey: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+                      });
+                    } else {
+                      console.error('[ENV] Failed to fetch env vars:', xhr.status);
+                    }
+                  } catch (e) {
+                    console.error('[ENV] Error fetching env vars:', e);
+                  }
                 }
+                
+                window.__ENV_LOADED__ = true;
               })();
             `,
           }}

@@ -7,29 +7,48 @@
  * 
  * Security: Only NEXT_PUBLIC_ variables should be exposed here
  * 
- * IMPORTANT: We use dynamic property access (process.env[varName]) instead of
- * static access (process.env.NEXT_PUBLIC_*) because Next.js inlines NEXT_PUBLIC_*
- * variables at build time. Dynamic access ensures we read runtime values.
+ * IMPORTANT: We use indirect access through a helper function to prevent
+ * Next.js from inlining NEXT_PUBLIC_* variables at build time.
  */
 
 import { NextResponse } from 'next/server';
 
-// Helper to get env var at runtime (bypasses Next.js compile-time inlining)
-const getEnvVar = (name: string): string => {
-  // Use dynamic property access to prevent Next.js from inlining at build time
-  const value = (process.env as Record<string, string | undefined>)[name];
-  return value || '';
-};
+// Use a separate function that's not analyzed at build time
+// The indirection through 'envObj' prevents static analysis
+function getEnvValue(key: string): string {
+  const envObj = process.env;
+  return (envObj[key] as string) || '';
+}
+
+// List of allowed public env var names (prevents arbitrary access)
+const PUBLIC_ENV_VARS = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY', 
+  'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY',
+  'NEXT_PUBLIC_APP_URL',
+] as const;
 
 export async function GET() {
   try {
-    // Read environment variables at runtime using dynamic access
-    const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL');
-    const supabaseAnonKey = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-    const googleMapsKey = getEnvVar('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY');
-    const appUrl = getEnvVar('NEXT_PUBLIC_APP_URL') || 'https://www.omnifolio.app';
+    // Build env object dynamically at runtime
+    const envValues: Record<string, string> = {};
     
-    console.log('[ENV API] Request received, Supabase URL present:', !!supabaseUrl);
+    for (const varName of PUBLIC_ENV_VARS) {
+      envValues[varName] = getEnvValue(varName);
+    }
+    
+    // Set default for app URL
+    if (!envValues.NEXT_PUBLIC_APP_URL) {
+      envValues.NEXT_PUBLIC_APP_URL = 'https://www.omnifolio.app';
+    }
+    
+    // Always log in production to help debug
+    console.log('[ENV API] Runtime env check:', {
+      hasSupabaseUrl: !!envValues.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!envValues.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      supabaseUrlPrefix: envValues.NEXT_PUBLIC_SUPABASE_URL ? envValues.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30) : 'MISSING',
+      nodeEnv: process.env.NODE_ENV,
+    });
     
     // Create JavaScript that sets window.__ENV__
     const envScript = `
@@ -37,14 +56,9 @@ export async function GET() {
   'use strict';
   
   // Set environment variables on window object
-  window.__ENV__ = {
-    NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(supabaseUrl)},
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(supabaseAnonKey)},
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(googleMapsKey)},
-    NEXT_PUBLIC_APP_URL: ${JSON.stringify(appUrl)},
-  };
+  window.__ENV__ = ${JSON.stringify(envValues)};
   
-  // Log in development
+  // Log for debugging
   console.log('[ENV API] Environment variables loaded:', {
     hasSupabaseUrl: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL,
     hasSupabaseKey: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -55,9 +69,10 @@ export async function GET() {
 `;
 
     // Check if critical variables are missing on the server
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!envValues.NEXT_PUBLIC_SUPABASE_URL || !envValues.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       console.warn('[ENV API] CRITICAL: Supabase environment variables are missing on the server!');
-      console.warn('[ENV API] Available env keys:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
+      console.warn('[ENV API] Checking process.env directly...');
+      console.warn('[ENV API] NEXT_PUBLIC keys found:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
     }
 
     // Return as JavaScript with proper MIME type

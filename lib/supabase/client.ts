@@ -19,21 +19,31 @@ declare global {
 
 // Helper to get Supabase credentials at runtime
 const getSupabaseCredentials = () => {
-  // In browser, prioritize window.__ENV__ (runtime config)
+  // In browser, use window.__ENV__ which is set by the inline script in layout.tsx
   if (typeof window !== 'undefined') {
     const windowEnv = window.__ENV__;
     
-    const url = windowEnv?.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = windowEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // window.__ENV__ should be set synchronously by the inline script
+    const url = windowEnv?.NEXT_PUBLIC_SUPABASE_URL || '';
+    const key = windowEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     
     // Only return if both values are actually present and non-empty
-    if (url && key && url !== '' && key !== '') {
+    if (url && key) {
       return { url, key };
     }
+    
+    // Fallback: check process.env (useful during SSR/hydration)
+    const processUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const processKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    
+    if (processUrl && processKey) {
+      return { url: processUrl, key: processKey };
+    }
+    
     return { url: undefined, key: undefined };
   }
   
-  // On server, get from process.env (should be set via Cloud Run env vars)
+  // On server, get from process.env
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
