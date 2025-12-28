@@ -155,7 +155,13 @@ const getSupabaseInstance = () => {
         if (!retryUrl || !retryKey) {
           console.log('[SUPABASE] Credentials missing after initial check. Trying fallback fetch...');
           try {
-            const res = await fetch('/api/env');
+            const res = await fetch('/api/env', {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            });
             if (res.ok) {
               const script = await res.text();
               // Execute script by adding it to the document
@@ -174,6 +180,10 @@ const getSupabaseInstance = () => {
               console.log('[SUPABASE] Fallback fetch result:', { hasUrl: !!retryUrl, hasKey: !!retryKey });
             } else {
               console.error('[SUPABASE] Fallback fetch failed:', res.status, res.statusText);
+              try {
+                const text = await res.text();
+                console.error('[SUPABASE] Error body:', text.substring(0, 200));
+              } catch (e) {}
             }
           } catch (e) {
             console.error('[SUPABASE] Failed to fetch fallback env vars:', e);
@@ -216,7 +226,13 @@ const ensureEnvVars = async () => {
   if (!envFetchPromise) {
     envFetchPromise = (async () => {
       try {
-        const res = await fetch('/api/env');
+        const res = await fetch('/api/env', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
         if (res.ok) {
           const script = await res.text();
           const scriptEl = document.createElement('script');
@@ -224,6 +240,8 @@ const ensureEnvVars = async () => {
           document.body.appendChild(scriptEl);
           // Give it a moment to execute
           await new Promise(resolve => setTimeout(resolve, 50));
+        } else {
+          console.error('[SUPABASE] Failed to fetch fallback env vars:', res.status, res.statusText);
         }
       } catch (e) {
         console.error('[SUPABASE] Failed to fetch fallback env vars:', e);

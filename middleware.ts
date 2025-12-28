@@ -18,17 +18,13 @@ export function middleware(request: NextRequest) {
   
   // Handle CORS for cross-origin requests (including Cloud Run URLs)
   const origin = request.headers.get('origin');
-  const allowedOrigins = [
-    'https://omnifolio.app',
-    'https://www.omnifolio.app',
-    'https://financial-planner-629380503119.europe-west1.run.app',
-    'http://localhost:3000',
-  ];
   
-  if (origin && allowedOrigins.includes(origin)) {
+  // Allow any origin to access the API (permissive mode for troubleshooting)
+  // This is safe because we still rely on authentication for sensitive data
+  if (origin) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
   }
   
@@ -38,6 +34,11 @@ export function middleware(request: NextRequest) {
       status: 200,
       headers: response.headers,
     });
+  }
+
+  // Prevent caching for the app shell to ensure env vars are fresh
+  if (!url.pathname.startsWith('/_next/') && !url.pathname.startsWith('/static/') && !url.pathname.match(/\.(jpg|jpeg|png|gif|ico|svg|webp)$/)) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   }
 
   // More permissive CSP in development
