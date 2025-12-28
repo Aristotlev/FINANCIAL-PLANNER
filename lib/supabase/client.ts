@@ -238,6 +238,13 @@ const ensureEnvVars = async () => {
         });
         if (res.ok) {
           const script = await res.text();
+          // Check if script contains actual values
+          if (script.includes('NEXT_PUBLIC_SUPABASE_URL') && !script.includes("NEXT_PUBLIC_SUPABASE_URL: ''")) {
+             console.log('[SUPABASE] Fallback script contains Supabase URL');
+          } else {
+             console.warn('[SUPABASE] Fallback script might be missing Supabase URL');
+          }
+
           const scriptEl = document.createElement('script');
           scriptEl.textContent = script;
           document.body.appendChild(scriptEl);
@@ -281,7 +288,7 @@ export const waitForSupabase = async (): Promise<boolean> => {
   // Polling as backup
   return new Promise((resolve) => {
     let attempts = 0;
-    const maxAttempts = 100; // 10 seconds max (increased from 5s)
+    const maxAttempts = 100; // 10 seconds max
     
     const checkInterval = setInterval(async () => {
       attempts++;
@@ -295,8 +302,12 @@ export const waitForSupabase = async (): Promise<boolean> => {
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
         console.warn('[SUPABASE] Timeout waiting for credentials');
+        
+        const windowEnv = typeof window !== 'undefined' ? window.__ENV__ : undefined;
         console.warn('[SUPABASE] Debug info:', { 
-            windowEnv: typeof window !== 'undefined' ? window.__ENV__ : 'undefined',
+            windowEnvKeys: windowEnv ? Object.keys(windowEnv) : 'undefined',
+            hasUrl: windowEnv?.NEXT_PUBLIC_SUPABASE_URL ? 'yes' : 'no',
+            hasKey: windowEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'yes' : 'no',
             processEnvUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'present' : 'missing'
         });
         resolve(false);

@@ -147,7 +147,7 @@ export default function RootLayout({
           `}
         </Script>
         {/* Runtime environment variables - fetched from API to ensure runtime values */}
-        <script src="/api/env" />
+        <Script src="/api/env" strategy="beforeInteractive" />
         {/* Ethereum safeguard - prevents wallet extension conflicts */}
         <Script
           src="/ethereum-safeguard.js"
