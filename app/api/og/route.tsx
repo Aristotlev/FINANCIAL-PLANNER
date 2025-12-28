@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
                   color: change.includes('+') ? '#4ade80' : '#f87171',
                   fontSize: '16px',
                   fontWeight: '500',
-                  width: 'fit-content',
+                  alignSelf: 'flex-start',
                   marginTop: '8px'
                 }}
               >
