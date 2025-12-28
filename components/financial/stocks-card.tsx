@@ -1701,9 +1701,12 @@ function StocksHoverContent() {
   );
 }
 
-function StocksCardWithPrices() {
+import { SharePortfolioModal } from "./share-portfolio-modal";
+
+function StocksCardWithPrices({ userName }: { userName?: string }) {
   const [stockHoldings, setStockHoldings] = useState<StockHolding[]>([]);
   const { convertToMain, formatMain, mainCurrency } = useCurrencyConversion();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Load data on component mount and when currency changes
   useEffect(() => {
@@ -1790,6 +1793,17 @@ function StocksCardWithPrices() {
       change: holding.change
     }));
 
+  // Prepare data for share modal
+  const topHoldingsForShare = portfolioData
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 2)
+    .map(h => ({
+      name: h.name,
+      symbol: h.symbol,
+      value: convertToMain(h.value, 'USD'),
+      color: h.color
+    }));
+
   // Currency conversion - show in user's selected currency
   const convertedValue = convertToMain(totalValue, 'USD');
   // Show value immediately if we have any prices or if loading takes too long (fallback to entry points)
@@ -1797,37 +1811,52 @@ function StocksCardWithPrices() {
   const originalAmount = (loading && Object.keys(prices).length === 0) || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
 
   return (
-    <EnhancedFinancialCard
-      title="Stock Portfolio"
-      description="Equity investments and dividend income"
-      amount={displayAmount}
-      change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
-      changeType={changeTypeCalc}
-      mainColor="#6366f1"
-      secondaryColor="#818cf8"
-      gridColor="#6366f115"
-      stats={[
-        { 
-          label: "AAPL", 
-          value: loading || !aaplHolding ? "Loading..." : formatMain(convertToMain(aaplHolding.value, 'USD')), 
-          color: "#8b5cf6" 
-        },
-        { 
-          label: "VOO", 
-          value: loading || !vooHolding ? "Loading..." : formatMain(convertToMain(vooHolding.value, 'USD')), 
-          color: "#a78bfa" 
-        }
-      ]}
-      icon={Building2}
-      hoverContent={<StocksHoverContent />}
-      modalContent={<StocksModalContent />}
-      chartData={chartData}
-      convertedAmount={originalAmount}
-      sourceCurrency={mainCurrency.code}
-    />
+    <>
+      <EnhancedFinancialCard
+        title="Stock Portfolio"
+        description="Equity investments and dividend income"
+        amount={displayAmount}
+        change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
+        changeType={changeTypeCalc}
+        mainColor="#6366f1"
+        secondaryColor="#818cf8"
+        gridColor="#6366f115"
+        stats={[
+          { 
+            label: "AAPL", 
+            value: loading || !aaplHolding ? "Loading..." : formatMain(convertToMain(aaplHolding.value, 'USD')), 
+            color: "#8b5cf6" 
+          },
+          { 
+            label: "VOO", 
+            value: loading || !vooHolding ? "Loading..." : formatMain(convertToMain(vooHolding.value, 'USD')), 
+            color: "#a78bfa" 
+          }
+        ]}
+        icon={Building2}
+        hoverContent={<StocksHoverContent />}
+        modalContent={<StocksModalContent />}
+        chartData={chartData}
+        convertedAmount={originalAmount}
+        sourceCurrency={mainCurrency.code}
+        onShare={() => setIsShareModalOpen(true)}
+      />
+
+      <SharePortfolioModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title="Stock Portfolio"
+        totalValue={convertedValue}
+        currencySymbol={mainCurrency.symbol}
+        userName={userName || "User"}
+        changePercent={changeDisplay}
+        topHoldings={topHoldingsForShare}
+        themeColor="#8b5cf6"
+      />
+    </>
   );
 }
 
-export function StocksCard() {
-  return <StocksCardWithPrices />;
+export function StocksCard({ userName }: { userName?: string }) {
+  return <StocksCardWithPrices userName={userName} />;
 }

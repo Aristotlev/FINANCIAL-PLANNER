@@ -359,11 +359,11 @@ export function Dashboard() {
       case 'savings':
         return <SavingsCard />;
       case 'crypto':
-        return <CryptoCard />;
+        return <CryptoCard userName={user?.name || user?.email?.split('@')[0]} />;
       case 'stocks':
-        return <StocksCard />;
+        return <StocksCard userName={user?.name || user?.email?.split('@')[0]} />;
       case 'networth':
-        return <NetWorthCard />;
+        return <NetWorthCard userName={user?.name || user?.email?.split('@')[0]} />;
       case 'tools':
         return <ToolsCard />;
       case 'news':
@@ -409,7 +409,7 @@ export function Dashboard() {
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed top-2 sm:top-6 right-2 sm:right-6 left-2 sm:left-auto z-[10000] flex items-center justify-between sm:justify-end space-x-2 sm:space-x-4 flex-wrap sm:flex-nowrap gap-2 sm:gap-0">
+      <div className="fixed top-2 sm:top-6 left-1/2 -translate-x-1/2 z-[10000] flex items-center justify-center space-x-2 sm:space-x-4 flex-wrap sm:flex-nowrap gap-2 sm:gap-0">
               {/* Zoom Indicator - Shows during zoom, fades out when idle */}
               <div 
                 className={`hidden sm:flex items-center gap-2 px-3 py-2 bg-gray-800/80 dark:bg-gray-900/80 backdrop-blur-md rounded-lg border border-gray-700 shadow-lg transition-all duration-300 ${

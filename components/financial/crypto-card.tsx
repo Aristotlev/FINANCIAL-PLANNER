@@ -1077,19 +1077,22 @@ function CryptoModalContent() {
     // Handle destination
     if (destination.type === 'stablecoin') {
       // Find or create stablecoin holding
+      // Try to find a stablecoin holding in the same wallet first
       const stablecoinHolding = cryptoHoldings.find((h: CryptoHolding) =>
-        h.symbol === destination.symbol
+        h.symbol === destination.symbol && 
+        h.walletType === holding.walletType && 
+        h.walletName === holding.walletName
       );
 
       if (stablecoinHolding) {
-        // Add to existing stablecoin
+        // Add to existing stablecoin in same wallet
         const updatedStablecoin = {
           ...stablecoinHolding,
           amount: stablecoinHolding.amount + proceeds
         };
         await SupabaseDataService.saveCryptoHolding(updatedStablecoin);
       } else {
-        // Create new stablecoin holding
+        // Create new stablecoin holding in the same wallet
         const newStablecoin: CryptoHolding = {
           id: crypto.randomUUID(),
           symbol: destination.symbol,
@@ -1100,7 +1103,12 @@ function CryptoModalContent() {
           entryPoint: 1.0,
           value: proceeds,
           change: '+0.00%',
-          color: '#10b981'
+          color: '#10b981',
+          // Add wallet info from the sold holding
+          walletType: holding.walletType,
+          walletName: holding.walletName,
+          // Use generic icon if not available
+          iconUrl: `https://assets.coincap.io/assets/icons/${destination.symbol.toLowerCase()}@2x.png`
         };
         await SupabaseDataService.saveCryptoHolding(newStablecoin);
       }
@@ -1783,9 +1791,12 @@ function CryptoHoverContent() {
   );
 }
 
-function CryptoCardWithPrices() {
+import { SharePortfolioModal } from "./share-portfolio-modal";
+
+function CryptoCardWithPrices({ userName }: { userName?: string }) {
   const [cryptoHoldings, setCryptoHoldings] = useState<CryptoHolding[]>([]);
   const { convertToMain, formatMain, mainCurrency } = useCurrencyConversion();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Load data on component mount and when currency changes
   useEffect(() => {
@@ -1880,6 +1891,17 @@ function CryptoCardWithPrices() {
       change: holding.change
     }));
 
+  // Prepare data for share modal
+  const topHoldingsForShare = portfolioData
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 2)
+    .map(h => ({
+      name: h.name,
+      symbol: h.symbol,
+      value: convertToMain(h.value, 'USD'),
+      color: h.color
+    }));
+
   // Currency conversion - show in user's selected currency
   const convertedValue = convertToMain(totalValue, 'USD');
   // Show value immediately if we have any prices or if loading takes too long (fallback to entry points)
@@ -1888,37 +1910,52 @@ function CryptoCardWithPrices() {
   const originalAmount = (loading && Object.keys(prices).length === 0) || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
 
   return (
-    <EnhancedFinancialCard
-      title="Crypto Portfolio"
-      description="Digital assets and cryptocurrency holdings"
-      amount={displayAmount}
-      change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
-      changeType={changeTypeCalc}
-      mainColor="#f59e0b"
-      secondaryColor="#fbbf24"
-      gridColor="#f59e0b15"
-      stats={[
-        {
-          label: "BTC",
-          value: loading || !btcHolding ? "Loading..." : formatMain(convertToMain(btcHolding.value, 'USD')),
-          color: "#f59e0b"
-        },
-        {
-          label: "ETH",
-          value: loading || !ethHolding ? "Loading..." : formatMain(convertToMain(ethHolding.value, 'USD')),
-          color: "#fbbf24"
-        }
-      ]}
-      icon={Coins}
-      hoverContent={<CryptoHoverContent />}
-      modalContent={<CryptoModalContent />}
-      chartData={chartData}
-      convertedAmount={originalAmount}
-      sourceCurrency={mainCurrency.code}
-    />
+    <>
+      <EnhancedFinancialCard
+        title="Crypto Portfolio"
+        description="Digital assets and cryptocurrency holdings"
+        amount={displayAmount}
+        change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
+        changeType={changeTypeCalc}
+        mainColor="#f59e0b"
+        secondaryColor="#fbbf24"
+        gridColor="#f59e0b15"
+        stats={[
+          {
+            label: "BTC",
+            value: loading || !btcHolding ? "Loading..." : formatMain(convertToMain(btcHolding.value, 'USD')),
+            color: "#f59e0b"
+          },
+          {
+            label: "ETH",
+            value: loading || !ethHolding ? "Loading..." : formatMain(convertToMain(ethHolding.value, 'USD')),
+            color: "#fbbf24"
+          }
+        ]}
+        icon={Coins}
+        hoverContent={<CryptoHoverContent />}
+        modalContent={<CryptoModalContent />}
+        chartData={chartData}
+        convertedAmount={originalAmount}
+        sourceCurrency={mainCurrency.code}
+        onShare={() => setIsShareModalOpen(true)}
+      />
+
+      <SharePortfolioModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        title="Crypto Portfolio"
+        totalValue={convertedValue}
+        currencySymbol={mainCurrency.symbol}
+        userName={userName || "User"}
+        changePercent={changeDisplay}
+        topHoldings={topHoldingsForShare}
+        themeColor="#f59e0b"
+      />
+    </>
   );
 }
 
-export function CryptoCard() {
-  return <CryptoCardWithPrices />;
+export function CryptoCard({ userName }: { userName?: string }) {
+  return <CryptoCardWithPrices userName={userName} />;
 }

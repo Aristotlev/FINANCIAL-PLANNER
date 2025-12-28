@@ -10,6 +10,7 @@ import { NetWorthFlow } from "./net-worth-flow";
 import { useFinancialData } from "../../contexts/financial-data-context";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { useCurrency } from "../../contexts/currency-context";
+import { ShareNetWorthModal } from "./share-net-worth-modal";
 
 function NetWorthHoverContent() {
   const portfolio = usePortfolioValues();
@@ -1515,10 +1516,11 @@ function NetWorthGoals({ goals }: { goals: any[] }) {
   );
 }
 
-export function NetWorthCard() {
+export function NetWorthCard({ userName }: { userName?: string }) {
   const portfolio = usePortfolioValues();
   const financialData = useFinancialData();
   const [realEstateProperties, setRealEstateProperties] = useState<any[]>([]);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   
   useEffect(() => {
     const loadRealEstate = async () => {
@@ -1610,33 +1612,47 @@ export function NetWorthCard() {
   const displayAmount = `${mainCurrency.symbol}${formatNumber(netWorthConverted)}`;
 
   return (
-    <EnhancedFinancialCard
-      title="Net Worth"
-      description="Total assets minus liabilities"
-      amount={displayAmount}
-      convertedAmount={mainCurrency.code !== 'USD' ? `$${formatNumber(netWorthUSD)}` : undefined}
-      sourceCurrency={mainCurrency.code !== 'USD' ? 'USD' : undefined}
-      change={changePercent}
-      changeType={changeType}
-      mainColor="#d946ef"
-      secondaryColor="#e879f9"
-      gridColor="#d946ef15"
-      stats={[
-        { 
-          label: "Assets", 
-          value: `${mainCurrency.symbol}${formatNumber(totalAssetsConverted)}`, 
-          color: "#7c3aed" 
-        },
-        { 
-          label: "Liabilities", 
-          value: `${mainCurrency.symbol}${formatNumber(totalLiabilitiesConverted)}`, 
-          color: "#ef4444" 
-        }
-      ]}
-      icon={TrendingUp}
-      hoverContent={<NetWorthHoverContent />}
-      modalContent={<NetWorthModalContent />}
-      chartData={chartData}
-    />
+    <>
+      <EnhancedFinancialCard
+        title="Net Worth"
+        description="Total assets minus liabilities"
+        amount={displayAmount}
+        convertedAmount={mainCurrency.code !== 'USD' ? `$${formatNumber(netWorthUSD)}` : undefined}
+        sourceCurrency={mainCurrency.code !== 'USD' ? 'USD' : undefined}
+        change={changePercent}
+        changeType={changeType}
+        mainColor="#d946ef"
+        secondaryColor="#e879f9"
+        gridColor="#d946ef15"
+        stats={[
+          { 
+            label: "Assets", 
+            value: `${mainCurrency.symbol}${formatNumber(totalAssetsConverted)}`, 
+            color: "#7c3aed" 
+          },
+          { 
+            label: "Liabilities", 
+            value: `${mainCurrency.symbol}${formatNumber(totalLiabilitiesConverted)}`, 
+            color: "#ef4444" 
+          }
+        ]}
+        icon={TrendingUp}
+        hoverContent={<NetWorthHoverContent />}
+        modalContent={<NetWorthModalContent />}
+        chartData={chartData}
+        onShare={() => setIsShareModalOpen(true)}
+      />
+      
+      <ShareNetWorthModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        netWorth={netWorthConverted}
+        currencySymbol={mainCurrency.symbol}
+        userName={userName || "User"}
+        assets={totalAssetsConverted}
+        liabilities={totalLiabilitiesConverted}
+        changePercent={changePercent}
+      />
+    </>
   );
 }

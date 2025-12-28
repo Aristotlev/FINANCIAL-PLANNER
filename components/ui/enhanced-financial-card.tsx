@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Share2 } from "lucide-react";
 import { AnimatedCard, CardBody, CardTitle, CardDescription, Visual3 } from "./animated-card";
 import { Modal } from "./modal";
 import { CardContainer, CardItem } from "./3d-card";
@@ -57,6 +57,7 @@ interface EnhancedFinancialCardProps {
   convertedAmount?: string; // Converted amount in selected currency
   sourceCurrency?: string; // Source currency code (e.g., 'USD')
   cardId?: string; // Card ID for hidden folder feature
+  onShare?: () => void;
 }
 
 export function EnhancedFinancialCard({
@@ -76,7 +77,8 @@ export function EnhancedFinancialCard({
   maxWidth = "max-w-6xl",
   convertedAmount,
   sourceCurrency,
-  cardId
+  cardId,
+  onShare
 }: EnhancedFinancialCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -148,18 +150,21 @@ export function EnhancedFinancialCard({
                       <CardTitle>{title}</CardTitle>
                     </CardItem>
                   </div>
-                  <CardItem 
-                    translateZ={120} 
-                    className="flex items-center gap-2"
-                    style={{
-                      filter: "drop-shadow(0 12px 25px rgba(0, 0, 0, 0.18))",
-                      transformStyle: "preserve-3d",
-                    }}
-                  >
-                    <div className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
-                      {change}
-                    </div>
-                  </CardItem>
+                  
+                  <div className="flex items-center gap-2">
+                    <CardItem 
+                      translateZ={120} 
+                      className="flex items-center gap-2"
+                      style={{
+                        filter: "drop-shadow(0 12px 25px rgba(0, 0, 0, 0.18))",
+                        transformStyle: "preserve-3d",
+                      }}
+                    >
+                      <div className={`text-sm font-medium ${changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
+                        {change}
+                      </div>
+                    </CardItem>
+                  </div>
                 </div>
 
                 <CardItem 
@@ -183,24 +188,40 @@ export function EnhancedFinancialCard({
                   <span className="truncate">{amount}</span>
                 </CardItem>
                 
-                <CardItem 
-                  translateZ={80} 
-                  className="flex gap-1 sm:gap-2 mt-2 flex-wrap overflow-hidden"
-                  style={{
-                    filter: "drop-shadow(0 6px 12px rgba(0, 0, 0, 0.1))",
-                    transformStyle: "preserve-3d",
-                  }}
-                >
-                  {stats.map((stat, index) => (
-                    <div key={index} className="flex items-center gap-1 text-xs shrink-0">
-                      <div 
-                        className="w-2 h-2 rounded-full shrink-0" 
-                        style={{ backgroundColor: stat.color }}
-                      />
-                      <span className="text-neutral-600 dark:text-neutral-400 truncate text-xs-mobile sm:text-xs">{stat.label}: {stat.value}</span>
-                    </div>
-                  ))}
-                </CardItem>
+                <div className="flex justify-between items-end mt-2">
+                  <CardItem 
+                    translateZ={80} 
+                    className="flex gap-1 sm:gap-2 flex-wrap overflow-hidden flex-1"
+                    style={{
+                      filter: "drop-shadow(0 6px 12px rgba(0, 0, 0, 0.1))",
+                      transformStyle: "preserve-3d",
+                    }}
+                  >
+                    {stats.map((stat, index) => (
+                      <div key={index} className="flex items-center gap-1 text-xs shrink-0">
+                        <div 
+                          className="w-2 h-2 rounded-full shrink-0" 
+                          style={{ backgroundColor: stat.color }}
+                        />
+                        <span className="text-neutral-600 dark:text-neutral-400 truncate text-xs-mobile sm:text-xs">{stat.label}: {stat.value}</span>
+                      </div>
+                    ))}
+                  </CardItem>
+
+                  {onShare && (
+                    <CardItem
+                      translateZ={125}
+                      as="button"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        onShare();
+                      }}
+                      className="pointer-events-auto p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white ml-2 shrink-0"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </CardItem>
+                  )}
+                </div>
               </CardBody>
             </CardItem>
           </AnimatedCard>

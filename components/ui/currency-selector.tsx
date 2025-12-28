@@ -14,7 +14,7 @@ const CurrencyFlag = ({ countryCode, className = "w-5 h-3.5" }: { countryCode?: 
       width="20"
       height="14"
       alt={`${countryCode} flag`}
-      className={`object-cover rounded-sm ${className}`}
+      className={`object-cover rounded-sm flex-shrink-0 ${className}`}
       loading="lazy"
     />
   );
@@ -77,7 +77,7 @@ export function CurrencySelector() {
         className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors group"
         title="Select Main Currency"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {mainCurrency.countryCode ? (
             <CurrencyFlag countryCode={mainCurrency.countryCode} />
           ) : (

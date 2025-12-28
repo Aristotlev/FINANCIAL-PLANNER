@@ -601,33 +601,8 @@ export default function TermsOfServicePage() {
             </motion.div>
           ))}
 
-          {/* Contact Section - Redesigned */}
-          <motion.section
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-br from-purple-500/5 via-cyan-500/5 to-blue-500/5 border border-white/10 rounded-[2.5rem] p-10 md:p-16 text-center relative overflow-hidden group"
-          >
-            <div className="relative z-10">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-[2rem] mb-8 shadow-[0_0_50px_rgba(168,85,247,0.3)] group-hover:scale-110 transition-transform duration-500">
-                <Mail className="w-10 h-10 text-white" />
-              </div>
-              <h2 className="text-4xl font-bold text-white mb-6">Legal Support</h2>
-              <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto leading-relaxed">
-                If you have any questions about these Terms of Service or our legal practices,
-                our team is here to provide clarity.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <a
-                  href="mailto:legal@omnifolio.app"
-                  className="group/btn relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-2xl font-bold overflow-hidden transition-all hover:scale-105 active:scale-95"
-                >
-                  <Mail className="w-5 h-5" />
-                  legal@omnifolio.app
-                </a>
-              </div>
-            </div>
-          </motion.section>
+          {/* Contact Section - Redesigned - REMOVED */}
+
 
           {/* Related Links - Redesigned */}
           <section className="pt-8">
