@@ -19,13 +19,12 @@ declare global {
 
 // Helper to get Supabase credentials at runtime
 const getSupabaseCredentials = () => {
-  // In browser, prioritize window.__ENV__ (runtime config)
-  if (typeof window !== 'undefined') {
-    const windowEnv = window.__ENV__;
-    const url = windowEnv?.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = windowEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    // Only return if both values are actually present and non-empty
+    // In browser, prioritize window.__ENV__ (runtime config)
+    if (typeof window !== 'undefined') {
+      const windowEnv = window.__ENV__;
+      
+      const url = windowEnv?.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = windowEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;    // Only return if both values are actually present and non-empty
     if (url && key && url !== '' && key !== '') {
       return { url, key };
     }
@@ -154,6 +153,7 @@ const getSupabaseInstance = () => {
         
         // If still not found, try fetching from API as a fallback
         if (!retryUrl || !retryKey) {
+          console.log('[SUPABASE] Credentials missing after initial check. Trying fallback fetch...');
           try {
             const res = await fetch('/api/env');
             if (res.ok) {
@@ -171,6 +171,9 @@ const getSupabaseInstance = () => {
               const creds = getSupabaseCredentials();
               retryUrl = creds.url;
               retryKey = creds.key;
+              console.log('[SUPABASE] Fallback fetch result:', { hasUrl: !!retryUrl, hasKey: !!retryKey });
+            } else {
+              console.error('[SUPABASE] Fallback fetch failed:', res.status, res.statusText);
             }
           } catch (e) {
             console.error('[SUPABASE] Failed to fetch fallback env vars:', e);
@@ -179,6 +182,10 @@ const getSupabaseInstance = () => {
 
         if (!retryUrl || !retryKey) {
           console.warn('[SUPABASE] Credentials not found. Using localStorage fallback.');
+          console.warn('[SUPABASE] Debug info:', { 
+            windowEnv: typeof window !== 'undefined' ? window.__ENV__ : 'undefined',
+            processEnvUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'present' : 'missing'
+          });
         } else {
           // Credentials are now available, reset instance to force re-initialization
           supabaseInstance = null;

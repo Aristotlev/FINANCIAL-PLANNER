@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase, isSupabaseConfigured } from './client';
+import { supabase, isSupabaseConfigured, waitForSupabase } from './client';
 import { DataService } from '../data-service';
 import { authClient } from '../auth-client';
 import { fetchData, saveData, deleteData } from '../api/data-client';
@@ -53,8 +53,13 @@ export class SupabaseDataService {
     fetchFn: () => Promise<T>,
     fallbackFn: () => T
   ): Promise<T> {
+    // Wait for Supabase to be configured (max 5 seconds)
+    // This ensures we don't fall back to localStorage prematurely if env vars are loading
+    await waitForSupabase();
+
     // Check configuration dynamically to handle runtime env injection
     if (!isSupabaseConfigured()) {
+      console.warn(`Supabase not configured for ${key}, using fallback`);
       return fallbackFn();
     }
 

@@ -80,6 +80,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Debug env vars
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Layout Server Side Env Check:');
+    console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Found' : 'Missing');
+    console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Found' : 'Missing');
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -142,12 +149,17 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.__ENV__ = {
-                NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_URL'] || process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
-                NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
-                NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'] || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
-                NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_APP_URL'] || process.env.NEXT_PUBLIC_APP_URL || '')} || window.location.origin,
-              };
+              try {
+                window.__ENV__ = {
+                  NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_URL'] || process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
+                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'] || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
+                  NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_APP_URL'] || process.env.NEXT_PUBLIC_APP_URL || '')} || window.location.origin,
+                };
+                console.log('[ENV] Environment variables loaded:', Object.keys(window.__ENV__));
+              } catch (e) {
+                console.error('[ENV] Failed to load environment variables:', e);
+              }
             `,
           }}
         />
