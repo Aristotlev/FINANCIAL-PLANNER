@@ -207,21 +207,52 @@ export const supabase = new Proxy({} as SupabaseClient<Database>, {
   }
 });
 
+// Helper to ensure env vars are loaded
+let envFetchPromise: Promise<void> | null = null;
+
+const ensureEnvVars = async () => {
+  if (isSupabaseConfigured()) return;
+  
+  if (!envFetchPromise) {
+    envFetchPromise = (async () => {
+      try {
+        const res = await fetch('/api/env');
+        if (res.ok) {
+          const script = await res.text();
+          const scriptEl = document.createElement('script');
+          scriptEl.textContent = script;
+          document.body.appendChild(scriptEl);
+          // Give it a moment to execute
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      } catch (e) {
+        console.error('[SUPABASE] Failed to fetch fallback env vars:', e);
+      }
+    })();
+  }
+  
+  await envFetchPromise;
+};
+
 // Export helper to wait for Supabase to be ready
-export const waitForSupabase = (): Promise<boolean> => {
+export const waitForSupabase = async (): Promise<boolean> => {
+  if (isSupabaseConfigured()) return true;
+  
+  // If we're not in a browser, resolve immediately (server-side)
+  if (typeof window === 'undefined') return false;
+
+  // Try to fetch env vars if missing
+  await ensureEnvVars();
+  
+  if (isSupabaseConfigured()) {
+    // Reset instance to force re-initialization with new credentials
+    supabaseInstance = null;
+    initializationAttempted = false;
+    return true;
+  }
+
+  // Polling as backup
   return new Promise((resolve) => {
-    if (isSupabaseConfigured()) {
-      resolve(true);
-      return;
-    }
-    
-    // If we're not in a browser, resolve immediately (server-side)
-    if (typeof window === 'undefined') {
-      resolve(false);
-      return;
-    }
-    
-    // Wait for window.__ENV__ to be populated
     let attempts = 0;
     const maxAttempts = 50; // 5 seconds max
     
