@@ -60,6 +60,27 @@ const createDummyClient = (): any => {
     // Silently return error - don't log warnings as env might be loading
     return Promise.resolve({ data: null, error: new Error('Supabase not configured') });
   };
+
+  // Create a chainable builder that mimics PostgrestBuilder
+  const createChainableBuilder = () => {
+    const builder: any = {
+      then: (resolve: any) => resolve({ data: [], error: null }),
+    };
+
+    const methods = [
+      'select', 'insert', 'update', 'delete', 'upsert', 
+      'eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'like', 'ilike', 'is', 'in', 
+      'contains', 'containedBy', 'rangeGt', 'rangeGte', 'rangeLt', 'rangeLte', 
+      'rangeAdjacent', 'overlaps', 'textSearch', 'match', 'not', 'or', 'filter', 
+      'order', 'limit', 'single', 'maybeSingle', 'csv', 'abortSignal'
+    ];
+
+    methods.forEach(method => {
+      builder[method] = () => builder;
+    });
+
+    return builder;
+  };
   
   return new Proxy({}, {
     get: (target, prop) => {
@@ -70,17 +91,17 @@ const createDummyClient = (): any => {
           updateUser: notConfiguredError,
           signIn: notConfiguredError,
           signOut: notConfiguredError,
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+          getSession: () => Promise.resolve({ data: { session: null }, error: null }),
         };
       }
       // Return mock function for table operations
       if (prop === 'from') {
-        return () => ({
-          select: () => ({ data: [], error: null }),
-          insert: notConfiguredError,
-          update: notConfiguredError,
-          delete: notConfiguredError,
-          upsert: notConfiguredError,
-        });
+        return () => createChainableBuilder();
+      }
+      // For rpc calls
+      if (prop === 'rpc') {
+        return () => Promise.resolve({ data: null, error: null });
       }
       return notConfiguredError;
     }
