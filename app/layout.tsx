@@ -143,10 +143,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               window.__ENV__ = {
-                NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
-                NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
-                NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
-                NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_APP_URL || '')} || window.location.origin,
+                NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_URL'] || process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
+                NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
+                NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'] || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
+                NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_APP_URL'] || process.env.NEXT_PUBLIC_APP_URL || '')} || window.location.origin,
               };
             `,
           }}

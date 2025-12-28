@@ -149,14 +149,41 @@ const getSupabaseInstance = () => {
     // If we're in the browser and haven't logged the warning yet, do it now
     if (typeof window !== 'undefined' && !initializationAttempted) {
       // Wait a bit to see if env script loads
-      setTimeout(() => {
-        const { url: retryUrl, key: retryKey } = getSupabaseCredentials();
+      setTimeout(async () => {
+        let { url: retryUrl, key: retryKey } = getSupabaseCredentials();
+        
+        // If still not found, try fetching from API as a fallback
+        if (!retryUrl || !retryKey) {
+          try {
+            const res = await fetch('/api/env');
+            if (res.ok) {
+              const script = await res.text();
+              // Execute script by adding it to the document
+              // This is safer than eval() and works with CSP if 'unsafe-inline' is allowed
+              const scriptEl = document.createElement('script');
+              scriptEl.textContent = script;
+              document.body.appendChild(scriptEl);
+              
+              // Give it a moment to execute
+              await new Promise(resolve => setTimeout(resolve, 50));
+              
+              // Check again
+              const creds = getSupabaseCredentials();
+              retryUrl = creds.url;
+              retryKey = creds.key;
+            }
+          } catch (e) {
+            console.error('[SUPABASE] Failed to fetch fallback env vars:', e);
+          }
+        }
+
         if (!retryUrl || !retryKey) {
           console.warn('[SUPABASE] Credentials not found. Using localStorage fallback.');
         } else {
           // Credentials are now available, reset instance to force re-initialization
           supabaseInstance = null;
           initializationAttempted = false;
+          console.log('[SUPABASE] Credentials loaded via fallback.');
         }
       }, 100);
     }
