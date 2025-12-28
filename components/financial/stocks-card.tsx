@@ -1792,15 +1792,16 @@ function StocksCardWithPrices() {
 
   // Currency conversion - show in user's selected currency
   const convertedValue = convertToMain(totalValue, 'USD');
-  const displayAmount = loading ? "Loading..." : formatMain(convertedValue);
-  const originalAmount = loading || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
+  // Show value immediately if we have any prices or if loading takes too long (fallback to entry points)
+  const displayAmount = (loading && Object.keys(prices).length === 0) ? "Loading..." : formatMain(convertedValue);
+  const originalAmount = (loading && Object.keys(prices).length === 0) || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
 
   return (
     <EnhancedFinancialCard
       title="Stock Portfolio"
       description="Equity investments and dividend income"
       amount={displayAmount}
-      change={loading ? "..." : changeDisplay}
+      change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
       changeType={changeTypeCalc}
       mainColor="#6366f1"
       secondaryColor="#818cf8"

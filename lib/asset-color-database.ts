@@ -41,6 +41,12 @@ export const CRYPTO_COLORS: AssetColor[] = [
   { symbol: 'OP', name: 'Optimism', color: '#FF0420', type: 'crypto', gradient: 'from-[#FF0420] to-[#FF4040]' },
   { symbol: 'FIL', name: 'Filecoin', color: '#0090FF', type: 'crypto', gradient: 'from-[#0090FF] to-[#42A5F5]' },
   { symbol: 'SHIB', name: 'Shiba Inu', color: '#FFA409', type: 'crypto', gradient: 'from-[#FFA409] to-[#FFB84D]' },
+  { symbol: 'PEPE', name: 'Pepe', color: '#4C9540', type: 'crypto', gradient: 'from-[#4C9540] to-[#65B857]' },
+  { symbol: 'WIF', name: 'dogwifhat', color: '#A38358', type: 'crypto', gradient: 'from-[#A38358] to-[#C4A476]' },
+  { symbol: 'BONK', name: 'Bonk', color: '#E86F1D', type: 'crypto', gradient: 'from-[#E86F1D] to-[#FF8C3D]' },
+  { symbol: 'FLOKI', name: 'Floki', color: '#E6B300', type: 'crypto', gradient: 'from-[#E6B300] to-[#FFD633]' },
+  { symbol: 'SUI', name: 'Sui', color: '#4DA2FF', type: 'crypto', gradient: 'from-[#4DA2FF] to-[#70B5FF]' },
+  { symbol: 'SEI', name: 'Sei', color: '#A62826', type: 'crypto', gradient: 'from-[#A62826] to-[#C93A38]' },
 ];
 
 /**
@@ -59,6 +65,11 @@ export const STOCK_COLORS: AssetColor[] = [
   { symbol: 'NVDA', name: 'NVIDIA', color: '#76B900', type: 'stock', gradient: 'from-[#76B900] to-[#8FD629]' },
   { symbol: 'NFLX', name: 'Netflix', color: '#E50914', type: 'stock', gradient: 'from-[#E50914] to-[#FF1A1A]' },
   { symbol: 'ADBE', name: 'Adobe', color: '#ED2224', type: 'stock', gradient: 'from-[#ED2224] to-[#FF3336]' },
+  { symbol: 'PLTR', name: 'Palantir', color: '#101113', type: 'stock', gradient: 'from-[#101113] to-[#2D3138]' },
+  { symbol: 'SMCI', name: 'Super Micro Computer', color: '#006633', type: 'stock', gradient: 'from-[#006633] to-[#008F47]' },
+  { symbol: 'MSTR', name: 'MicroStrategy', color: '#D9232E', type: 'stock', gradient: 'from-[#D9232E] to-[#F03A45]' },
+  { symbol: 'COIN', name: 'Coinbase', color: '#0052FF', type: 'stock', gradient: 'from-[#0052FF] to-[#3375FF]' },
+  { symbol: 'HOOD', name: 'Robinhood', color: '#00C805', type: 'stock', gradient: 'from-[#00C805] to-[#24E029]' },
   
   // Financial Services
   { symbol: 'JPM', name: 'JPMorgan Chase', color: '#0066B2', type: 'stock', gradient: 'from-[#0066B2] to-[#0077CC]' },

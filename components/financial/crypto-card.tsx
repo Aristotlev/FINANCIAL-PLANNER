@@ -1882,15 +1882,17 @@ function CryptoCardWithPrices() {
 
   // Currency conversion - show in user's selected currency
   const convertedValue = convertToMain(totalValue, 'USD');
-  const displayAmount = loading ? "Loading..." : formatMain(convertedValue);
-  const originalAmount = loading || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
+  // Show value immediately if we have any prices or if loading takes too long (fallback to entry points)
+  // Only show "Loading..." if we are loading AND have no prices yet
+  const displayAmount = (loading && Object.keys(prices).length === 0) ? "Loading..." : formatMain(convertedValue);
+  const originalAmount = (loading && Object.keys(prices).length === 0) || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
 
   return (
     <EnhancedFinancialCard
       title="Crypto Portfolio"
       description="Digital assets and cryptocurrency holdings"
       amount={displayAmount}
-      change={loading ? "..." : changeDisplay}
+      change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
       changeType={changeTypeCalc}
       mainColor="#f59e0b"
       secondaryColor="#fbbf24"

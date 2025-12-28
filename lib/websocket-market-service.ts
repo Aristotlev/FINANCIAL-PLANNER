@@ -58,6 +58,34 @@ class WebSocketMarketService {
     }
     this.subscribers.get(key)!.add(callback);
 
+    // Check cache and notify immediately if available
+    const cacheKey = cacheService.keys.marketPrice(upperSymbol, type);
+    const cachedData = cacheService.get<{
+      symbol: string;
+      currentPrice: number;
+      change24h: number;
+      changePercent24h: number;
+    }>(cacheKey);
+
+    if (cachedData) {
+      // Execute callback immediately with cached data
+      // Use setTimeout to ensure it runs after the subscription is returned (if needed)
+      // or run synchronously. Synchronous is better for initial render if possible,
+      // but might cause issues if the component isn't mounted yet? 
+      // Actually, in useEffect, it's fine.
+      try {
+        callback({
+          symbol: cachedData.symbol,
+          price: cachedData.currentPrice,
+          change: cachedData.change24h,
+          changePercent: cachedData.changePercent24h,
+          timestamp: Date.now(),
+        });
+      } catch (e) {
+        console.error('Error in cached price callback:', e);
+      }
+    }
+
     // Notify worker
     if (this.worker) {
       this.worker.postMessage({

@@ -32,6 +32,43 @@ function setCachedData(key: string, data: any) {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
+async function fetchFromGateIO(symbol: string) {
+  try {
+    // Skip USDT
+    if (symbol === 'USDT') return null;
+
+    const pair = `${symbol}_USDT`;
+    const response = await fetch(
+      `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${pair}`,
+      { cache: 'no-store' }
+    );
+
+    if (!response.ok) throw new Error(`Gate.io API error: ${response.status}`);
+
+    const data = await response.json();
+    const ticker = data[0];
+
+    if (!ticker) throw new Error('No Gate.io data');
+
+    return {
+      symbol: symbol,
+      name: symbol,
+      currentPrice: parseFloat(ticker.last),
+      change24h: parseFloat(ticker.last) * (parseFloat(ticker.change_percentage) / 100),
+      changePercent24h: parseFloat(ticker.change_percentage),
+      type: 'crypto',
+      lastUpdated: Date.now(),
+      high24h: parseFloat(ticker.high_24h),
+      low24h: parseFloat(ticker.low_24h),
+      volume: parseFloat(ticker.base_volume),
+      dataSource: 'Gate.io',
+    };
+  } catch (error) {
+    // console.warn(`Gate.io failed for ${symbol}:`, error);
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const symbol = searchParams.get('symbol');
@@ -100,12 +137,18 @@ export async function GET(request: NextRequest) {
       if (type === 'crypto') {
         const cmcData = await fetchFromCoinMarketCap(upperSymbol);
         if (cmcData) return cmcData;
+      }
 
-        // Try Binance (FREE API - high limits)
-        const binanceData = await fetchFromBinance(upperSymbol);
-        if (binanceData) return binanceData;
+      // Try Binance (FREE API - high limits) - Primary source for crypto, fallback for stocks
+      const binanceData = await fetchFromBinance(upperSymbol);
+      if (binanceData) return binanceData;
+
+      // Try Gate.io (FREE API) - Secondary source for crypto
+      const gateData = await fetchFromGateIO(upperSymbol);
+      if (gateData) return gateData;
         
-        // Fallback to CoinGecko (FREE API with rate limits)
+      // Fallback to CoinGecko (FREE API with rate limits)
+      if (type === 'crypto') {
         const cryptoData = await fetchFromCoinGecko(symbol);
         if (cryptoData) return cryptoData;
       }
@@ -388,6 +431,8 @@ async function fetchFromBinance(symbol: string) {
     return null;
   }
 }
+
+
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';

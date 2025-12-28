@@ -62,13 +62,45 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results });
 
   } catch (error) {
-    console.error('Yahoo Finance Search API error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to search stocks',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    console.warn('Yahoo Finance Search API error, trying Finnhub fallback:', error);
+    
+    try {
+      const searchParams = request.nextUrl.searchParams;
+      const query = searchParams.get('q') || '';
+      
+      // Fallback to Finnhub
+      const apiKey = process.env.FINNHUB_API_KEY || 'd3nbll9r01qo7510cpf0d3nbll9r01qo7510cpfg';
+      const response = await fetch(
+        `https://finnhub.io/api/v1/search?q=${encodeURIComponent(query)}&token=${apiKey}`,
+        { cache: 'no-store' }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Finnhub returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      const results = (data.result || [])
+        .filter((item: any) => !item.symbol.includes('.')) // Filter out some non-US symbols if needed, or keep them
+        .map((item: any) => ({
+          symbol: item.symbol,
+          name: item.description,
+          exchange: 'Unknown', // Finnhub doesn't always provide exchange in search
+          sector: 'Unknown',
+          industry: 'Unknown',
+          quoteType: 'EQUITY'
+        }));
+
+      return NextResponse.json({ results });
+    } catch (finnhubError) {
+      console.error('Finnhub Search API error:', finnhubError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to search stocks',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        },
+        { status: 500 }
+      );
+    }
   }
 }

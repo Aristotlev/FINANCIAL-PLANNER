@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { websocketMarketService, type PriceUpdate } from '../lib/websocket-market-service';
+import { cacheService } from '../lib/cache-service';
 
 // Helper to determine asset type
 const isCrypto = (symbol: string) => {
@@ -96,11 +97,52 @@ export function useAssetPrice(symbol: string, overrideType?: 'crypto' | 'stock' 
 }
 
 export function useAssetPrices(symbols: string[]) {
-  const [prices, setPrices] = useState<{ [symbol: string]: AssetPrice }>({});
-  const [loading, setLoading] = useState(true);
+  // Initialize with cached data if available
+  const [prices, setPrices] = useState<{ [symbol: string]: AssetPrice }>(() => {
+    if (typeof window === 'undefined') return {};
+    
+    const initial: { [symbol: string]: AssetPrice } = {};
+    symbols.forEach(symbol => {
+      const type = getAssetType(symbol);
+      const actualSymbol = cleanSymbol(symbol);
+      const cacheKey = cacheService.keys.marketPrice(actualSymbol, type);
+      const cached = cacheService.get<{
+        symbol: string;
+        currentPrice: number;
+        change24h: number;
+        changePercent24h: number;
+      }>(cacheKey);
+      
+      if (cached) {
+        initial[symbol] = {
+          symbol: cached.symbol,
+          price: cached.currentPrice,
+          change24h: cached.change24h,
+          changePercent24h: cached.changePercent24h,
+          lastUpdated: Date.now()
+        };
+      }
+    });
+    return initial;
+  });
+
+  // Check if we have all prices to determine initial loading state
+  const [loading, setLoading] = useState(() => {
+    if (!symbols || symbols.length === 0) return false;
+    if (typeof window === 'undefined') return true;
+    
+    // Check if all symbols are in cache
+    const hasAll = symbols.every(s => {
+       const type = getAssetType(s);
+       const actualSymbol = cleanSymbol(s);
+       return cacheService.has(cacheService.keys.marketPrice(actualSymbol, type));
+    });
+    return !hasAll;
+  });
+
   const [error, setError] = useState<string | null>(null);
   
-  const pricesRef = useRef<{ [symbol: string]: AssetPrice }>({});
+  const pricesRef = useRef<{ [symbol: string]: AssetPrice }>(prices);
   const dirtyRef = useRef<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -113,9 +155,24 @@ export function useAssetPrices(symbols: string[]) {
 
     const unsubscribers: (() => void)[] = [];
     const loadedSymbols = new Set<string>();
+    
+    // Initialize loadedSymbols with what we already have in pricesRef
+    // This handles the case where we already have data from cache or previous fetches
     const uniqueSymbols = [...new Set(symbols)]; // Work with unique symbols
     
-    setLoading(true);
+    uniqueSymbols.forEach(s => {
+      if (pricesRef.current[s]) {
+        loadedSymbols.add(s);
+      }
+    });
+    
+    // Only set loading to true if we don't have all symbols
+    if (loadedSymbols.size < uniqueSymbols.length) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
+    
     setError(null);
     
     // Start the update interval
@@ -133,7 +190,7 @@ export function useAssetPrices(symbols: string[]) {
         setLoading(false);
         setPrices({ ...pricesRef.current });
       }
-    }, 5000); // 5 second safety timeout
+    }, 2000); // 2 second safety timeout (reduced from 5s)
 
     uniqueSymbols.forEach(symbol => {
       const type = getAssetType(symbol);
