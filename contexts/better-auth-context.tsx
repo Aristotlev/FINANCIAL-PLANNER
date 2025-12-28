@@ -9,6 +9,7 @@ interface User {
   email: string;
   name: string;
   avatarUrl?: string;
+  bio?: string;
 }
 
 interface AuthContextType {
@@ -16,7 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  loginWithGoogle: (callbackURL?: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -75,8 +76,9 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
         setUser({
           id: sessionData.user.id,
           email: sessionData.user.email,
-          name: sessionData.user.name || sessionData.user.email.split('@')[0],
+          name: sessionData.user.name || 'User',
           avatarUrl: avatarUrl,
+          bio: (sessionData.user as any).bio,
         });
       } else {
         console.log('❌ No valid session data:', response);
@@ -105,15 +107,24 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
 
       await checkSession();
     } catch (error: any) {
-      console.error('Login error:', error);
+      // Only log if it's not a credential error to reduce noise
+      const isCredentialError = 
+        error.message?.toLowerCase().includes('invalid') || 
+        error.message?.toLowerCase().includes('password') ||
+        error.message?.toLowerCase().includes('credential');
+        
+      if (!isCredentialError) {
+        console.error('Login error:', error);
+      }
       throw error;
     }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (callbackURL?: string) => {
     try {
       await authClient.signIn.social({
         provider: 'google',
+        callbackURL: callbackURL || '/dashboard',
       });
     } catch (error: any) {
       console.error('Google login error:', error);
@@ -135,19 +146,46 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
 
       await checkSession();
     } catch (error: any) {
-      console.error('Registration error:', error);
+      // Only log if it's not a "user exists" error
+      const isUserExistsError = 
+        error.message?.toLowerCase().includes('exists') || 
+        error.message?.toLowerCase().includes('already in use');
+        
+      if (!isUserExistsError) {
+        console.error('Registration error:', error);
+      }
       throw error;
     }
   };
 
   const logout = async () => {
     try {
+      console.log('🚪 Initiating logout...');
       await authClient.signOut();
+      console.log('✅ authClient.signOut() completed');
+    } catch (error) {
+      console.error('⚠️ Logout error with authClient:', error);
+      
+      // Fallback: try direct fetch to ensure server session is cleared
+      try {
+        console.log('🔄 Attempting fallback logout via fetch...');
+        await fetch('/api/auth/sign-out', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.log('✅ Fallback logout completed');
+      } catch (e) {
+        console.error('❌ Fallback logout failed:', e);
+      }
+    } finally {
+      // Always clear local state regardless of server response
+      console.log('🧹 Clearing local user state');
       setUser(null);
       // Clear cached user ID in data service
       SupabaseDataService.clearUserCache();
-    } catch (error) {
-      console.error('Logout error:', error);
+      
+      // Optional: Redirect to home or login page
+      // window.location.href = '/';
     }
   };
 

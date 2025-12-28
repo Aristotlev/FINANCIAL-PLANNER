@@ -5,24 +5,26 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import { Settings, CreditCard, User, Bell, Shield, Palette, Database } from 'lucide-react';
-import PricingSection from '@/components/pricing/pricing-section';
-import SubscriptionDashboard from '@/components/pricing/subscription-dashboard';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Settings, User } from 'lucide-react';
+import AccountSettingsForm from '@/components/settings/account-settings-form';
 
-type SettingsTab = 'account' | 'subscription' | 'pricing' | 'notifications' | 'security' | 'appearance' | 'data';
+type SettingsTab = 'account';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('pricing');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('account');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'account') {
+      setActiveTab('account');
+    }
+  }, [searchParams]);
 
   const tabs: Array<{ id: SettingsTab; label: string; icon: React.ReactNode }> = [
     { id: 'account', label: 'Account', icon: <User className="w-5 h-5" /> },
-    { id: 'subscription', label: 'Subscription', icon: <CreditCard className="w-5 h-5" /> },
-    { id: 'pricing', label: 'Pricing Plans', icon: <CreditCard className="w-5 h-5" /> },
-    { id: 'notifications', label: 'Notifications', icon: <Bell className="w-5 h-5" /> },
-    { id: 'security', label: 'Security', icon: <Shield className="w-5 h-5" /> },
-    { id: 'appearance', label: 'Appearance', icon: <Palette className="w-5 h-5" /> },
-    { id: 'data', label: 'Data & Privacy', icon: <Database className="w-5 h-5" /> },
   ];
 
   return (
@@ -53,7 +55,7 @@ export default function SettingsPage() {
                     flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm
                     transition-all duration-200 whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'border-primary text-primary bg-primary/5'
+                      ? 'border-primary text-white bg-primary'
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
                     }
                   `}
@@ -73,84 +75,8 @@ export default function SettingsPage() {
                 <p className="text-gray-600 dark:text-gray-400">
                   Manage your account information and profile.
                 </p>
-                {/* Add account settings here */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Account settings coming soon...
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'subscription' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Subscription</h2>
-                <SubscriptionDashboard />
-              </div>
-            )}
-
-            {activeTab === 'pricing' && (
-              <div>
-                <PricingSection />
-              </div>
-            )}
-
-            {activeTab === 'notifications' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notification Preferences</h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Customize how and when you receive notifications.
-                </p>
-                {/* Add notification settings here */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Notification settings coming soon...
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'security' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Security Settings</h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Manage your password, 2FA, and security preferences.
-                </p>
-                {/* Add security settings here */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Security settings coming soon...
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'appearance' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Appearance</h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Customize the look and feel of your app.
-                </p>
-                {/* Add appearance settings here */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Appearance settings coming soon...
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'data' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Data & Privacy</h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Manage your data, privacy settings, and export options.
-                </p>
-                {/* Add data & privacy settings here */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Data & privacy settings coming soon...
-                  </p>
+                <div className="max-w-2xl">
+                  <AccountSettingsForm />
                 </div>
               </div>
             )}

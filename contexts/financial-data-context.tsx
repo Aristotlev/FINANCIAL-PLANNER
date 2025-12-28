@@ -76,9 +76,9 @@ export function FinancialDataProvider({ children }: { children: ReactNode }) {
       let cryptoFuturesBalance = 0;
       let optionsBalance = 0;
       if (typeof window !== 'undefined') {
-        forexBalance = parseFloat(localStorage.getItem('forexAccountBalance') || '0');
-        cryptoFuturesBalance = parseFloat(localStorage.getItem('cryptoAccountBalance') || '0');
-        optionsBalance = parseFloat(localStorage.getItem('optionsAccountBalance') || '0');
+        forexBalance = parseFloat(localStorage.getItem('forexAccountBalance_v2') || '0');
+        cryptoFuturesBalance = parseFloat(localStorage.getItem('cryptoAccountBalance_v2') || '0');
+        optionsBalance = parseFloat(localStorage.getItem('optionsAccountBalance_v2') || '0');
       }
       
       const totalTrading = positionsValue + forexBalance + cryptoFuturesBalance + optionsBalance;

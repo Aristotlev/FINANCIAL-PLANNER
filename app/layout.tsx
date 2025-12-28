@@ -35,6 +35,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.omnifolio.app'),
   title: "OmniFolio - All-in-One Financial Management",
   description: "OmniFolio: Your comprehensive financial dashboard for tracking cash, savings, crypto, stocks, real estate, and expenses. Take control of your financial future.",
   appleWebApp: {
@@ -88,7 +89,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         {/* Trusted Types Polyfill - Must be loaded first to prevent policy errors */}
         <script src="/trusted-types.js" />
@@ -145,24 +146,8 @@ export default function RootLayout({
             gtag('config', 'AW-17821905669');
           `}
         </Script>
-        {/* Runtime environment variables - loaded at runtime, not build time */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                window.__ENV__ = {
-                  NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_URL'] || process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
-                  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
-                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'] || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
-                  NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_APP_URL'] || process.env.NEXT_PUBLIC_APP_URL || '')} || window.location.origin,
-                };
-                console.log('[ENV] Environment variables loaded:', Object.keys(window.__ENV__));
-              } catch (e) {
-                console.error('[ENV] Failed to load environment variables:', e);
-              }
-            `,
-          }}
-        />
+        {/* Runtime environment variables - fetched from API to ensure runtime values */}
+        <script src="/api/env" />
         {/* Ethereum safeguard - prevents wallet extension conflicts */}
         <Script
           src="/ethereum-safeguard.js"

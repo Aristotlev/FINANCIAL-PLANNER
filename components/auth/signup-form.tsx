@@ -88,9 +88,14 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
   return (
     <div className="px-6 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Create Your Account
-        </h3>
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Connect Your Accounts
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Create an account to access your dashboard
+          </p>
+        </div>
         <button
           onClick={onClose}
           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"

@@ -20,11 +20,14 @@ DECLARE
 BEGIN
     -- Get user's subscription tier
     SELECT 
-        COALESCE(tier, 'free') INTO v_subscription_tier
+        COALESCE(plan, 'free') INTO v_subscription_tier
     FROM user_subscriptions
     WHERE user_id = p_user_id
-    AND status = 'active'
-    AND (current_period_end > NOW() OR current_period_end IS NULL)
+    AND (
+        (status = 'ACTIVE' AND (subscription_end_date > NOW() OR subscription_end_date IS NULL))
+        OR
+        (status = 'TRIAL' AND (trial_end_date > NOW() OR trial_end_date IS NULL))
+    )
     LIMIT 1;
 
     -- Default to free if no subscription found
@@ -44,22 +47,26 @@ BEGIN
 
     -- Fallback defaults if plan_limits lookup failed
     IF v_limit IS NULL THEN
-        IF v_subscription_tier = 'whale' THEN
+        IF v_subscription_tier = 'WHALE' THEN
             v_limit := 1000;
-        ELSIF v_subscription_tier = 'investor' THEN
+        ELSIF v_subscription_tier = 'INVESTOR' THEN
             v_limit := 100;
-        ELSIF v_subscription_tier = 'trader' THEN
+        ELSIF v_subscription_tier = 'TRADER' THEN
             v_limit := 50;
         ELSE
-            v_limit := 10; -- Free limit
+            v_limit := 10; -- Free limit (STARTER or FREE_TRIAL)
         END IF;
     END IF;
 
-    -- Count usage in the last 24 hours
-    SELECT COUNT(*) INTO v_usage_count
-    FROM ai_chat_logs
+    -- Get usage count for today from user_usage table
+    SELECT COALESCE(ai_calls_count, 0) INTO v_usage_count
+    FROM user_usage
     WHERE user_id = p_user_id
-    AND created_at > NOW() - INTERVAL '24 hours';
+    AND date = CURRENT_DATE;
+
+    IF v_usage_count IS NULL THEN
+        v_usage_count := 0;
+    END IF;
 
     RETURN v_usage_count < v_limit;
 END;

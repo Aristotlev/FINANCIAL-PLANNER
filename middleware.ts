@@ -87,7 +87,7 @@ export function middleware(request: NextRequest) {
   // Permissions Policy
   response.headers.set(
     'Permissions-Policy',
-    'microphone=(self), camera=(), geolocation=(self), interest-cohort=()'
+    'microphone=(self), camera=(), geolocation=(self)'
   );
 
   return response;

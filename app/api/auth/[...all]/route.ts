@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
 
   // Skip protection for certain paths
-  const skipPaths = ['/sign-out', '/session', '/get-session'];
+  // sign-out, session, and social sign-in initiation don't need bot detection
+  const skipPaths = ['/sign-out', '/session', '/get-session', '/sign-in/social'];
   if (skipPaths.some(p => pathname.includes(p))) {
     return originalPOST(request);
   }

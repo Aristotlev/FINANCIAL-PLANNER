@@ -16,11 +16,12 @@ import {
   TaxesCard
 } from "./financial/financial-cards";
 import { useBetterAuth } from '../contexts/better-auth-context';
-import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, Lock } from "lucide-react";
+import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Users, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, Lock, X } from "lucide-react";
+import Link from 'next/link';
+import AccountSettingsForm from './settings/account-settings-form';
 import { AIChatAssistant } from './ui/ai-chat';
 import { CurrencySelector } from './ui/currency-selector';
 import { BackgroundBeams } from './ui/background-beams';
-import { APIConnectionManager } from './ui/api-connection-manager';
 import { DataService } from '../lib/data-service';
 import { HiddenCardsFolder } from './ui/hidden-cards-folder';
 import { DraggableCardWrapper } from './ui/draggable-card-wrapper';
@@ -60,7 +61,6 @@ export function Dashboard() {
   const [showApiKeysMenu, setShowApiKeysMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [openApiCategory, setOpenApiCategory] = useState<string | null>(null);
-  const [showConnectionManager, setShowConnectionManager] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1.0);
@@ -68,6 +68,7 @@ export function Dashboard() {
   const [showZoomHint, setShowZoomHint] = useState(false);
   const [showCardOrderPanel, setShowCardOrderPanel] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showAccountSettingsModal, setShowAccountSettingsModal] = useState(false);
 
   // Memoized currency update trigger - debounced to prevent cascading renders
   const currencyUpdateTriggerRef = React.useRef(0);
@@ -359,11 +360,11 @@ export function Dashboard() {
       case 'savings':
         return <SavingsCard />;
       case 'crypto':
-        return <CryptoCard userName={user?.name || user?.email?.split('@')[0]} />;
+        return <CryptoCard userName={user?.name || 'User'} />;
       case 'stocks':
-        return <StocksCard userName={user?.name || user?.email?.split('@')[0]} />;
+        return <StocksCard userName={user?.name || 'User'} />;
       case 'networth':
-        return <NetWorthCard userName={user?.name || user?.email?.split('@')[0]} />;
+        return <NetWorthCard userName={user?.name || 'User'} />;
       case 'tools':
         return <ToolsCard />;
       case 'news':
@@ -453,6 +454,16 @@ export function Dashboard() {
                 </span>
               </button>
               
+              {/* Community Page Link */}
+              <Link 
+                href="/community"
+                className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors min-h-touch"
+                title="Community"
+              >
+                <Users className="w-4 h-4" />
+                <span className="text-sm hidden lg:inline">Community</span>
+              </Link>
+
               {/* Data Management Dropdown */}
               <div className="relative hidden md:block">
                 <button 
@@ -568,6 +579,17 @@ export function Dashboard() {
                     />
                     <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[10002]">
                       <div className="p-2">
+                        <button
+                          onClick={() => {
+                            setShowSettingsMenu(false);
+                            setShowAccountSettingsModal(true);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                        >
+                          <User className="w-4 h-4 text-blue-500" />
+                          <span>Account Settings</span>
+                        </button>
+
                         <a
                           href="/billing"
                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
@@ -614,7 +636,7 @@ export function Dashboard() {
                 />
               </div>
               <span className="text-sm font-medium text-gray-200 dark:text-gray-300 hidden md:inline truncate max-w-[150px] lg:max-w-[200px]">
-                {user?.email}
+                {user?.name || 'User'}
               </span>
               
               <button
@@ -674,11 +696,26 @@ export function Dashboard() {
         </Suspense>
       )}
 
-      {/* API Connection Manager */}
-      <APIConnectionManager 
-        isOpen={showConnectionManager}
-        onClose={() => setShowConnectionManager(false)}
-      />
+      {/* Account Settings Modal */}
+      {showAccountSettingsModal && (
+        <div className="fixed inset-0 z-[10005] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowAccountSettingsModal(false)}>
+          <div className="relative w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setShowAccountSettingsModal(false)}
+              className="absolute -top-10 right-0 p-2 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="mb-4">
+              <h2 className="text-2xl font-bold text-white">Account Settings</h2>
+              <p className="text-gray-300">Manage your account information and profile.</p>
+            </div>
+
+            <AccountSettingsForm />
+          </div>
+        </div>
+      )}
 
       {/* Card Order Panel */}
       <CardOrderPanel 

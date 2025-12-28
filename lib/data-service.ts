@@ -13,7 +13,7 @@ export class DataService {
     DEBT_ACCOUNTS: 'moneyHub_debtAccounts',
     SUBSCRIPTIONS: 'moneyHub_subscriptions',
     VALUABLE_ITEMS: 'moneyHub_valuableItems',
-    TRADING_ACCOUNTS: 'moneyHub_tradingAccounts',
+    TRADING_ACCOUNTS: 'moneyHub_tradingAccounts_v2',
     REAL_ESTATE: 'moneyHub_realEstate',
     USER_PREFERENCES: 'moneyHub_userPreferences'
   };

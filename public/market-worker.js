@@ -170,7 +170,7 @@ function useFallbackPolling(key, symbol, type, intervalMs = 2000) {
     clearInterval(pollingIntervals.get(key));
   }
 
-  const interval = setInterval(async () => {
+  const poll = async () => {
     try {
       // We need to fetch from the API. 
       // Since we are in a worker, we can use fetch.
@@ -193,7 +193,12 @@ function useFallbackPolling(key, symbol, type, intervalMs = 2000) {
     } catch (error) {
       // console.error(`Worker: Polling error for ${key}`, error);
     }
-  }, intervalMs);
+  };
+
+  // Initial fetch immediately
+  poll();
+
+  const interval = setInterval(poll, intervalMs);
 
   pollingIntervals.set(key, interval);
 }
@@ -201,7 +206,9 @@ function useFallbackPolling(key, symbol, type, intervalMs = 2000) {
 function processAndNotify(key, symbol, update) {
   const cached = priceCache.get(key);
   
-  if (cached) {
+  // Only calculate change if it's not provided (e.g. from WebSocket trade stream)
+  // For API polling, update.change is already the 24h change
+  if (cached && update.change === 0 && update.changePercent === 0) {
     // Calculate change based on the REAL cached price (not simulated)
     update.change = update.price - cached.price;
     // Avoid division by zero

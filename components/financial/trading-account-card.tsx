@@ -502,72 +502,7 @@ interface TradingPosition {
   riskRewardRatio?: number;
 }
 
-const initialTradingPositions: TradingPosition[] = [
-  {
-    id: "1",
-    symbol: "TSLA",
-    shares: 15,
-    avgPrice: 245.50,
-    currentPrice: 252.30,
-    entryDate: "2024-09-15",
-    positionType: "long",
-    stopLoss: 220.00,
-    takeProfit: 280.00,
-    notes: "Electric vehicle growth play",
-    color: "#dc2626"
-  },
-  {
-    id: "2", 
-    symbol: "SPX",
-    shares: 2,
-    avgPrice: 4315.20,
-    currentPrice: 4327.50,
-    entryDate: "2024-09-10",
-    positionType: "long",
-    stopLoss: 4250.00,
-    notes: "S&P 500 index futures",
-    color: "#8b5cf6"
-  },
-  {
-    id: "3",
-    symbol: "EUR/USD",
-    shares: 100000,
-    avgPrice: 1.0825,
-    currentPrice: 1.0845,
-    entryDate: "2024-09-20",
-    positionType: "long",
-    stopLoss: 1.0780,
-    takeProfit: 1.0920,
-    notes: "Euro strength play",
-    color: "#0ea5e9"
-  },
-  {
-    id: "4",
-    symbol: "XAU/USD",
-    shares: 5,
-    avgPrice: 1965.50,
-    currentPrice: 1978.45,
-    entryDate: "2024-09-22",
-    positionType: "long",
-    stopLoss: 1920.00,
-    takeProfit: 2050.00,
-    notes: "Gold hedge against inflation",
-    color: "#f59e0b"
-  },
-  {
-    id: "5",
-    symbol: "WTI",
-    shares: -3,
-    avgPrice: 91.20,
-    currentPrice: 89.23,
-    entryDate: "2024-09-25",
-    positionType: "short",
-    stopLoss: 95.00,
-    takeProfit: 82.00,
-    notes: "Oil bearish on recession fears",
-    color: "#059669"
-  }
-];
+const initialTradingPositions: TradingPosition[] = [];
 
 // Trading Instrument Search Modal Component
 function TradingInstrumentSearchModal({
@@ -891,9 +826,9 @@ function TradingAccountHoverContent() {
     
     const loadBalances = () => {
       if (typeof window !== 'undefined') {
-        const forex = localStorage.getItem('forexAccountBalance');
-        const crypto = localStorage.getItem('cryptoAccountBalance');
-        const options = localStorage.getItem('optionsAccountBalance');
+        const forex = localStorage.getItem('forexAccountBalance_v2');
+        const crypto = localStorage.getItem('cryptoAccountBalance_v2');
+        const options = localStorage.getItem('optionsAccountBalance_v2');
         setForexBalance(forex ? parseFloat(forex) : 0);
         setCryptoBalance(crypto ? parseFloat(crypto) : 0);
         setOptionsBalance(options ? parseFloat(options) : 0);
@@ -1531,7 +1466,7 @@ function TradingAccountModalContent() {
   // Default to 0 if user hasn't set any balance
   const [forexAccountBalance, setForexAccountBalance] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('forexAccountBalance');
+      const saved = localStorage.getItem('forexAccountBalance_v2');
       return saved ? parseFloat(saved) : 0;
     }
     return 0;
@@ -1539,7 +1474,7 @@ function TradingAccountModalContent() {
   
   const [cryptoAccountBalance, setCryptoAccountBalance] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cryptoAccountBalance');
+      const saved = localStorage.getItem('cryptoAccountBalance_v2');
       return saved ? parseFloat(saved) : 0;
     }
     return 0;
@@ -1547,7 +1482,7 @@ function TradingAccountModalContent() {
   
   const [optionsAccountBalance, setOptionsAccountBalance] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('optionsAccountBalance');
+      const saved = localStorage.getItem('optionsAccountBalance_v2');
       return saved ? parseFloat(saved) : 0;
     }
     return 0;
@@ -1569,7 +1504,7 @@ function TradingAccountModalContent() {
   // Save forex balance to localStorage and trigger updates
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('forexAccountBalance', forexAccountBalance.toString());
+      localStorage.setItem('forexAccountBalance_v2', forexAccountBalance.toString());
       window.dispatchEvent(new Event('tradingDataChanged'));
       window.dispatchEvent(new Event('financialDataChanged'));
     }
@@ -1578,7 +1513,7 @@ function TradingAccountModalContent() {
   // Save crypto balance to localStorage and trigger updates
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cryptoAccountBalance', cryptoAccountBalance.toString());
+      localStorage.setItem('cryptoAccountBalance_v2', cryptoAccountBalance.toString());
       window.dispatchEvent(new Event('tradingDataChanged'));
       window.dispatchEvent(new Event('financialDataChanged'));
     }
@@ -1587,7 +1522,7 @@ function TradingAccountModalContent() {
   // Save options balance to localStorage and trigger updates
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('optionsAccountBalance', optionsAccountBalance.toString());
+      localStorage.setItem('optionsAccountBalance_v2', optionsAccountBalance.toString());
       window.dispatchEvent(new Event('tradingDataChanged'));
       window.dispatchEvent(new Event('financialDataChanged'));
     }
@@ -2523,9 +2458,9 @@ export function TradingAccountCard() {
   useEffect(() => {
     const loadBalances = () => {
       if (typeof window !== 'undefined') {
-        const forex = localStorage.getItem('forexAccountBalance');
-        const crypto = localStorage.getItem('cryptoAccountBalance');
-        const options = localStorage.getItem('optionsAccountBalance');
+        const forex = localStorage.getItem('forexAccountBalance_v2');
+        const crypto = localStorage.getItem('cryptoAccountBalance_v2');
+        const options = localStorage.getItem('optionsAccountBalance_v2');
         setForexBalance(forex ? parseFloat(forex) : 0);
         setCryptoBalance(crypto ? parseFloat(crypto) : 0);
         setOptionsBalance(options ? parseFloat(options) : 0);
@@ -2656,7 +2591,7 @@ function TradingToolsModalContent() {
   // Separate balances for each trading account type - default to 0 if not set
   const [forexBalance, setForexBalance] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('forexAccountBalance');
+      const saved = localStorage.getItem('forexAccountBalance_v2');
       return saved ? parseFloat(saved) : 0;
     }
     return 0;
@@ -2664,7 +2599,7 @@ function TradingToolsModalContent() {
   
   const [cryptoBalance, setCryptoBalance] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('cryptoAccountBalance');
+      const saved = localStorage.getItem('cryptoAccountBalance_v2');
       return saved ? parseFloat(saved) : 0;
     }
     return 0;
@@ -2672,7 +2607,7 @@ function TradingToolsModalContent() {
   
   const [optionsBalance, setOptionsBalance] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('optionsAccountBalance');
+      const saved = localStorage.getItem('optionsAccountBalance_v2');
       return saved ? parseFloat(saved) : 0;
     }
     return 0;
@@ -2681,7 +2616,7 @@ function TradingToolsModalContent() {
   // Save balances to localStorage when they change
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('forexAccountBalance', forexBalance.toString());
+      localStorage.setItem('forexAccountBalance_v2', forexBalance.toString());
       // Dispatch event to update other components
       window.dispatchEvent(new Event('tradingDataChanged'));
     }
@@ -2689,14 +2624,14 @@ function TradingToolsModalContent() {
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('cryptoAccountBalance', cryptoBalance.toString());
+      localStorage.setItem('cryptoAccountBalance_v2', cryptoBalance.toString());
       window.dispatchEvent(new Event('tradingDataChanged'));
     }
   }, [cryptoBalance]);
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('optionsAccountBalance', optionsBalance.toString());
+      localStorage.setItem('optionsAccountBalance_v2', optionsBalance.toString());
       window.dispatchEvent(new Event('tradingDataChanged'));
     }
   }, [optionsBalance]);

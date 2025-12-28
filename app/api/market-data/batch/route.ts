@@ -322,6 +322,52 @@ async function fetchStockPrices(symbols: string[]): Promise<Record<string, Price
   return results;
 }
 
+// Fetch prices for multiple symbols (shared logic)
+async function getBatchPrices(symbols: string[]) {
+  // Limit batch size
+  const limitedSymbols = symbols.slice(0, 50);
+  
+  // Check cache first
+  const cachedResults: Record<string, PriceData> = {};
+  const uncachedSymbols: string[] = [];
+  
+  for (const symbol of limitedSymbols) {
+    const cached = getFromCache(symbol);
+    if (cached) {
+      cachedResults[symbol.toUpperCase()] = cached;
+    } else {
+      uncachedSymbols.push(symbol);
+    }
+  }
+  
+  // Separate crypto and stock symbols
+  const cryptoSymbols = uncachedSymbols.filter(isCryptoSymbol);
+  const stockSymbols = uncachedSymbols.filter(s => !isCryptoSymbol(s));
+  
+  // Fetch in parallel
+  const [cryptoPrices, stockPrices] = await Promise.all([
+    fetchCryptoPrices(cryptoSymbols),
+    fetchStockPrices(stockSymbols),
+  ]);
+  
+  // Merge results
+  const allPrices = {
+    ...cachedResults,
+    ...cryptoPrices,
+    ...stockPrices,
+  };
+  
+  // Track errors for symbols not found
+  const errors: Record<string, string> = {};
+  for (const symbol of limitedSymbols) {
+    if (!allPrices[symbol.toUpperCase()]) {
+      errors[symbol.toUpperCase()] = 'Price not found';
+    }
+  }
+  
+  return { allPrices, errors, limitedSymbols, cachedResults };
+}
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
@@ -348,46 +394,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Limit batch size
-    const limitedSymbols = symbols.slice(0, 50);
-    
-    // Check cache first
-    const cachedResults: Record<string, PriceData> = {};
-    const uncachedSymbols: string[] = [];
-    
-    for (const symbol of limitedSymbols) {
-      const cached = getFromCache(symbol);
-      if (cached) {
-        cachedResults[symbol.toUpperCase()] = cached;
-      } else {
-        uncachedSymbols.push(symbol);
-      }
-    }
-    
-    // Separate crypto and stock symbols
-    const cryptoSymbols = uncachedSymbols.filter(isCryptoSymbol);
-    const stockSymbols = uncachedSymbols.filter(s => !isCryptoSymbol(s));
-    
-    // Fetch in parallel
-    const [cryptoPrices, stockPrices] = await Promise.all([
-      fetchCryptoPrices(cryptoSymbols),
-      fetchStockPrices(stockSymbols),
-    ]);
-    
-    // Merge results
-    const allPrices = {
-      ...cachedResults,
-      ...cryptoPrices,
-      ...stockPrices,
-    };
-    
-    // Track errors for symbols not found
-    const errors: Record<string, string> = {};
-    for (const symbol of limitedSymbols) {
-      if (!allPrices[symbol.toUpperCase()]) {
-        errors[symbol.toUpperCase()] = 'Price not found';
-      }
-    }
+    const { allPrices, errors, limitedSymbols, cachedResults } = await getBatchPrices(symbols);
     
     const fetchTime = Date.now() - startTime;
     
@@ -419,10 +426,56 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint for single symbol (with caching)
+// GET endpoint for single symbol or batch via query param
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol');
+  const symbolsParam = searchParams.get('symbols');
+  
+  // Handle batch GET via ?symbols=BTC,ETH
+  if (symbolsParam) {
+    const startTime = Date.now();
+    const symbols = symbolsParam.split(',').map(s => s.trim()).filter(Boolean);
+    
+    if (symbols.length === 0) {
+      return NextResponse.json(
+        { error: 'symbols parameter is empty' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const { allPrices, errors, limitedSymbols, cachedResults } = await getBatchPrices(symbols);
+      
+      const fetchTime = Date.now() - startTime;
+      
+      const response: BatchResponse = {
+        prices: allPrices,
+        errors,
+        meta: {
+          total: limitedSymbols.length,
+          successful: Object.keys(allPrices).length,
+          cached: Object.keys(cachedResults).length,
+          failed: Object.keys(errors).length,
+          fetchTime,
+        },
+      };
+      
+      return NextResponse.json(response, {
+        headers: {
+          'Cache-Control': `public, s-maxage=${CACHE_DURATION}, stale-while-revalidate=${STALE_WHILE_REVALIDATE}`,
+          'X-Fetch-Time': `${fetchTime}ms`,
+          'X-Cache-Hits': String(Object.keys(cachedResults).length),
+        },
+      });
+    } catch (error) {
+      console.error('Batch market data GET error:', error);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+  }
   
   if (!symbol) {
     return NextResponse.json(

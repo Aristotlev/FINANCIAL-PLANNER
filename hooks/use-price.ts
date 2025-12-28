@@ -9,7 +9,8 @@ const isCrypto = (symbol: string) => {
   const cryptoSymbols = [
     'BTC', 'ETH', 'ADA', 'DOT', 'SOL', 'LINK', 'MATIC', 'AVAX', 'ATOM', 'NEAR',
     'XRP', 'BNB', 'DOGE', 'UNI', 'LTC', 'ALGO', 'VET', 'XLM', 'SHIB', 'TRX',
-    'DAI', 'USDT', 'USDC', 'WBTC', 'AAVE', 'CRO', 'FTM'
+    'DAI', 'USDT', 'USDC', 'WBTC', 'AAVE', 'CRO', 'FTM', 'HBAR', 'PEPE', 'SUI',
+    'APT', 'LDO', 'ARB', 'OP', 'INJ', 'RNDR', 'FIL', 'ICP', 'STX', 'IMX'
   ];
   return cryptoSymbols.includes(symbol.toUpperCase());
 };

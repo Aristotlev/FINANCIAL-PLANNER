@@ -223,54 +223,65 @@ export async function GET(request: NextRequest) {
 }
 
 async function fetchFromYahooFinance(symbol: string) {
-  try {
-    const response = await fetch(
-      `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-        cache: 'no-store',
+  const hosts = ['query2.finance.yahoo.com', 'query1.finance.yahoo.com'];
+  
+  for (const host of hosts) {
+    try {
+      const response = await fetch(
+        `https://${host}/v7/finance/quote?symbols=${symbol}`,
+        {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          },
+          cache: 'no-store',
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          console.warn(`Yahoo ${host} 401/403 for ${symbol}, trying next host...`);
+          continue;
+        }
+        throw new Error(`Yahoo API error: ${response.status}`);
       }
-    );
 
-    if (!response.ok) throw new Error(`Yahoo API error: ${response.status}`);
+      const data = await response.json();
+      const quote = data?.quoteResponse?.result?.[0];
 
-    const data = await response.json();
-    const quote = data?.quoteResponse?.result?.[0];
+      if (!quote) throw new Error('No quote data');
 
-    if (!quote) throw new Error('No quote data');
+      const currentPrice = quote.regularMarketPrice || quote.currentPrice || quote.ask;
+      const previousClose = quote.regularMarketPreviousClose || quote.previousClose;
+      const change = quote.regularMarketChange || (currentPrice - previousClose);
+      const changePercent = quote.regularMarketChangePercent || ((change / previousClose) * 100);
 
-    const currentPrice = quote.regularMarketPrice || quote.currentPrice || quote.ask;
-    const previousClose = quote.regularMarketPreviousClose || quote.previousClose;
-    const change = quote.regularMarketChange || (currentPrice - previousClose);
-    const changePercent = quote.regularMarketChangePercent || ((change / previousClose) * 100);
-
-    return {
-      symbol: symbol,
-      name: quote.longName || quote.shortName || symbol,
-      currentPrice: currentPrice,
-      change24h: change,
-      changePercent24h: changePercent,
-      type: 'stock',
-      lastUpdated: Date.now(),
-      marketCap: quote.marketCap,
-      volume: quote.regularMarketVolume,
-      high24h: quote.regularMarketDayHigh,
-      low24h: quote.regularMarketDayLow,
-      high52Week: quote.fiftyTwoWeekHigh,
-      low52Week: quote.fiftyTwoWeekLow,
-      peRatio: quote.trailingPE || quote.forwardPE,
-      dividendYield: quote.dividendYield,
-      avgVolume: quote.averageDailyVolume3Month,
-      sector: quote.sector,
-      industry: quote.industry,
-      dataSource: 'Yahoo Finance',
-    };
-  } catch (error) {
-    console.warn(`Yahoo Finance failed for ${symbol}:`, error);
-    return null;
+      return {
+        symbol: symbol,
+        name: quote.longName || quote.shortName || symbol,
+        currentPrice: currentPrice,
+        change24h: change,
+        changePercent24h: changePercent,
+        type: 'stock',
+        lastUpdated: Date.now(),
+        marketCap: quote.marketCap,
+        volume: quote.regularMarketVolume,
+        high24h: quote.regularMarketDayHigh,
+        low24h: quote.regularMarketDayLow,
+        high52Week: quote.fiftyTwoWeekHigh,
+        low52Week: quote.fiftyTwoWeekLow,
+        peRatio: quote.trailingPE || quote.forwardPE,
+        dividendYield: quote.dividendYield,
+        avgVolume: quote.averageDailyVolume3Month,
+        sector: quote.sector,
+        industry: quote.industry,
+        dataSource: 'Yahoo Finance',
+      };
+    } catch (error) {
+      console.warn(`Yahoo Finance (${host}) failed for ${symbol}:`, error);
+    }
   }
+  return null;
 }
 
 async function fetchFromCoinMarketCap(symbol: string) {

@@ -17,7 +17,11 @@ import {
   LineChart,
   Building2,
   Coins,
-  Receipt
+  Receipt,
+  Lock,
+  Database,
+  Bot,
+  Newspaper
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -112,7 +116,7 @@ export function LandingPage() {
     { value: "4.9/5", label: "User Rating" }
   ];
 
-  const trustedCompanies = ["TechCo", "StartupX", "GrowthLab", "Acme Inc", "ScaleNow"];
+  const trustedCompanies = ["Gemini", "Google Cloud", "Yahoo Finance", "CoinGecko", "CoinMarketCap", "Finnhub", "TradingView"];
 
   return (
     <>
@@ -292,15 +296,17 @@ export function LandingPage() {
         </section>
 
         {/* Trusted By Section */}
-        <section className="relative z-10 py-12 border-y border-gray-800/50">
+        <section className="relative z-10 py-12 border-y border-gray-800/50 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-center text-xs uppercase tracking-widest text-gray-500 mb-8">Trusted by fast-growing companies</p>
-            <div className="flex items-center justify-center gap-8 sm:gap-12 flex-wrap opacity-50">
-              {trustedCompanies.map((company, i) => (
-                <span key={i} className="text-lg sm:text-xl font-bold text-gray-400 hover:text-gray-300 transition-colors cursor-default">
-                  {company}
-                </span>
-              ))}
+            <p className="text-center text-xs uppercase tracking-widest text-gray-500 mb-8">Powered by</p>
+            <div className="relative flex overflow-hidden opacity-50 mask-linear-gradient">
+              <div className="flex animate-scroll whitespace-nowrap min-w-full">
+                {[...trustedCompanies, ...trustedCompanies, ...trustedCompanies, ...trustedCompanies].map((company, i) => (
+                  <span key={i} className="mx-8 text-lg sm:text-xl font-bold text-gray-400 hover:text-gray-300 transition-colors cursor-default inline-block">
+                    {company}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -352,29 +358,29 @@ export function LandingPage() {
               {/* Step 1 */}
               <div className="relative">
                 <div className="text-6xl font-extrabold text-gray-800 mb-4">01</div>
-                <h3 className="text-2xl font-bold text-white mb-3">Connect Your Accounts</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed">Link your bank accounts, brokerages, and crypto wallets in seconds.</p>
+                <h3 className="text-2xl font-bold text-white mb-3">Secure & Private</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">No external connections required. Maximum security with military-grade encryption for your peace of mind.</p>
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
                       <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <Building2 className="w-4 h-4 text-green-400" />
+                        <Shield className="w-4 h-4 text-green-400" />
                       </div>
-                      <span className="text-green-400 text-sm font-medium">Chase Bank</span>
+                      <span className="text-green-400 text-sm font-medium">AES-256 Encryption</span>
                       <Check className="w-4 h-4 text-green-400 ml-auto" />
                     </div>
                     <div className="flex items-center gap-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                       <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                        <LineChart className="w-4 h-4 text-blue-400" />
+                        <Lock className="w-4 h-4 text-blue-400" />
                       </div>
-                      <span className="text-blue-400 text-sm font-medium">Fidelity</span>
+                      <span className="text-blue-400 text-sm font-medium">Zero External Access</span>
                       <Check className="w-4 h-4 text-blue-400 ml-auto" />
                     </div>
                     <div className="flex items-center gap-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg">
                       <div className="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                        <Coins className="w-4 h-4 text-orange-400" />
+                        <Database className="w-4 h-4 text-orange-400" />
                       </div>
-                      <span className="text-orange-400 text-sm font-medium">Coinbase</span>
+                      <span className="text-orange-400 text-sm font-medium">Local Data Control</span>
                       <Check className="w-4 h-4 text-orange-400 ml-auto" />
                     </div>
                   </div>
@@ -384,20 +390,23 @@ export function LandingPage() {
               {/* Step 2 */}
               <div className="relative">
                 <div className="text-6xl font-extrabold text-gray-800 mb-4">02</div>
-                <h3 className="text-2xl font-bold text-white mb-3">Set Your Goals</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed">Define your financial targets, risk tolerance, and timeline.</p>
+                <h3 className="text-2xl font-bold text-white mb-3">Meet Lisa & Gemini</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">Your personal assistant for personalized news feeds and Gemini-powered analytics.</p>
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-sm">Net Worth Goal</span>
-                      <span className="text-cyan-400 font-bold">$1,000,000</span>
+                    <div className="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                      <Bot className="w-5 h-5 text-purple-400" />
+                      <div className="flex-1">
+                        <p className="text-xs text-purple-300 font-medium">Lisa (AI Assistant)</p>
+                        <p className="text-xs text-gray-400">"Your portfolio is up 12% today!"</p>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-cyan-500 to-purple-500 h-2 rounded-full" style={{ width: '68%' }}></div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500">Current: $680,000</span>
-                      <span className="text-purple-400">68% Complete</span>
+                    <div className="flex items-center gap-3 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+                      <Newspaper className="w-5 h-5 text-cyan-400" />
+                      <div className="flex-1">
+                        <p className="text-xs text-cyan-300 font-medium">Smart News Feed</p>
+                        <p className="text-xs text-gray-400">Curated updates for your assets</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -406,8 +415,8 @@ export function LandingPage() {
               {/* Step 3 */}
               <div className="relative">
                 <div className="text-6xl font-extrabold text-gray-800 mb-4">03</div>
-                <h3 className="text-2xl font-bold text-white mb-3">Watch Your Wealth Grow</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed">Get real-time insights, alerts, and recommendations.</p>
+                <h3 className="text-2xl font-bold text-white mb-3">Master Every Metric</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">Manage your finances with precision. Check every analytic and data point in existence.</p>
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
                   <div className="flex items-end justify-between h-20 gap-2">
                     {[40, 55, 45, 70, 60, 85, 75, 90].map((height, i) => (
@@ -415,9 +424,9 @@ export function LandingPage() {
                     ))}
                   </div>
                   <div className="flex items-center justify-between mt-3">
-                    <span className="text-xs text-gray-500">Jan</span>
-                    <span className="text-xs text-green-400 font-medium">+24.5% YTD</span>
-                    <span className="text-xs text-gray-500">Dec</span>
+                    <span className="text-xs text-gray-500">Data</span>
+                    <span className="text-xs text-green-400 font-medium">Real-time</span>
+                    <span className="text-xs text-gray-500">Live</span>
                   </div>
                 </div>
               </div>
@@ -522,7 +531,6 @@ export function LandingPage() {
                   <li><a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">Features</a></li>
                   <li><a href="#how-it-works" className="text-gray-400 hover:text-white text-sm transition-colors">How it Works</a></li>
                   <li><a href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Integrations</a></li>
                 </ul>
               </div>
 
@@ -540,7 +548,7 @@ export function LandingPage() {
                 <ul className="space-y-2">
                   <li><a href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a></li>
                   <li><a href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a></li>
-                  <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Security</a></li>
+                  <li><a href="/affiliates" className="text-gray-400 hover:text-white text-sm transition-colors">Affiliates</a></li>
                 </ul>
               </div>
             </div>

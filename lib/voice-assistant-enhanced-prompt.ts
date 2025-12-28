@@ -11,7 +11,7 @@
 
 export function getEnhancedVoicePrompt(userData: { name?: string; email?: string }, financialData?: any): string {
   // Extract user's first name for personalization
-  const userName = userData.name?.split(' ')[0] || userData.email?.split('@')[0] || 'there';
+  const userName = userData.name?.split(' ')[0] || 'there';
   
   // Calculate real-time portfolio stats
   let portfolioSummary = '';

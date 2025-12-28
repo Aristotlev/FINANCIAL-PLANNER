@@ -41,6 +41,15 @@ module.exports = {
         'touch': '44px',
         'touch-lg': '48px',
       },
+      keyframes: {
+        scroll: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+      },
+      animation: {
+        scroll: 'scroll 25s linear infinite',
+      },
     },
   },
   plugins: [],

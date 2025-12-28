@@ -31,15 +31,15 @@ async function checkTables() {
       if (exists) {
         // Get column count
         const columns = await pool.query(`
-          SELECT column_name, data_type 
+          SELECT table_schema, column_name, data_type 
           FROM information_schema.columns 
           WHERE table_name = $1
-          ORDER BY ordinal_position;
+          ORDER BY table_schema, ordinal_position;
         `, [table]);
         
         console.log(`   Columns (${columns.rows.length}):`);
         columns.rows.forEach(col => {
-          console.log(`   - ${col.column_name} (${col.data_type})`);
+          console.log(`   - [${col.table_schema}] ${col.column_name} (${col.data_type})`);
         });
         console.log();
       }
@@ -52,6 +52,10 @@ async function checkTables() {
     users.rows.forEach(user => {
       console.log(`   - ${user.email} (${user.name || 'No name'})`);
     });
+
+    // Count sessions
+    const sessions = await pool.query('SELECT count(*) FROM sessions');
+    console.log(`   Total sessions: ${sessions.rows[0].count}`);
 
   } catch (error) {
     console.error('\n❌ Error:', error.message);
