@@ -91,7 +91,38 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        {/* Trusted Types Polyfill - Must be loaded first to prevent policy errors */}
+        {/* Runtime environment variables - MUST be FIRST to ensure availability before any code runs */}
+        {/* Primary: inline script with build-time values (works for local dev and when build vars are set) */}
+        {/* Fallback: fetch from /api/env for runtime values (works in Cloud Run when env vars are set at runtime) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // Initial values from build time (may be empty in production if not set during build)
+                window.__ENV__ = {
+                  NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
+                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
+                  NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env.NEXT_PUBLIC_APP_URL || '')},
+                };
+                
+                // If Supabase URL is missing, fetch from API (runtime values)
+                if (!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL) {
+                  fetch('/api/env', { cache: 'no-store' })
+                    .then(function(res) { return res.text(); })
+                    .then(function(script) {
+                      // Execute the script to update window.__ENV__
+                      var el = document.createElement('script');
+                      el.textContent = script;
+                      document.head.appendChild(el);
+                    })
+                    .catch(function(e) { console.error('[ENV] Failed to fetch runtime env:', e); });
+                }
+              })();
+            `,
+          }}
+        />
+        {/* Trusted Types Polyfill - Must be loaded early to prevent policy errors */}
         <script src="/trusted-types.js" />
         {/* Suppress harmless TradingView 403 errors and telemetry blocks */}
         <script
@@ -146,8 +177,6 @@ export default function RootLayout({
             gtag('config', 'AW-17821905669');
           `}
         </Script>
-        {/* Runtime environment variables - fetched from API to ensure runtime values */}
-        <Script src="/api/env" strategy="beforeInteractive" />
         {/* Ethereum safeguard - prevents wallet extension conflicts */}
         <Script
           src="/ethereum-safeguard.js"

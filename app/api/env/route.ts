@@ -6,13 +6,30 @@
  * to necessary configuration (Supabase URL, API keys, etc.)
  * 
  * Security: Only NEXT_PUBLIC_ variables should be exposed here
+ * 
+ * IMPORTANT: We use dynamic property access (process.env[varName]) instead of
+ * static access (process.env.NEXT_PUBLIC_*) because Next.js inlines NEXT_PUBLIC_*
+ * variables at build time. Dynamic access ensures we read runtime values.
  */
 
 import { NextResponse } from 'next/server';
 
+// Helper to get env var at runtime (bypasses Next.js compile-time inlining)
+const getEnvVar = (name: string): string => {
+  // Use dynamic property access to prevent Next.js from inlining at build time
+  const value = (process.env as Record<string, string | undefined>)[name];
+  return value || '';
+};
+
 export async function GET() {
   try {
-    console.log('[ENV API] Request received');
+    // Read environment variables at runtime using dynamic access
+    const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL');
+    const supabaseAnonKey = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    const googleMapsKey = getEnvVar('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY');
+    const appUrl = getEnvVar('NEXT_PUBLIC_APP_URL') || 'https://www.omnifolio.app';
+    
+    console.log('[ENV API] Request received, Supabase URL present:', !!supabaseUrl);
     
     // Create JavaScript that sets window.__ENV__
     const envScript = `
@@ -21,10 +38,10 @@ export async function GET() {
   
   // Set environment variables on window object
   window.__ENV__ = {
-    NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_URL'] || process.env.NEXT_PUBLIC_SUPABASE_URL || '')},
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')},
-    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(process.env['NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'] || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')},
-    NEXT_PUBLIC_APP_URL: ${JSON.stringify(process.env['NEXT_PUBLIC_APP_URL'] || process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'))},
+    NEXT_PUBLIC_SUPABASE_URL: ${JSON.stringify(supabaseUrl)},
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: ${JSON.stringify(supabaseAnonKey)},
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${JSON.stringify(googleMapsKey)},
+    NEXT_PUBLIC_APP_URL: ${JSON.stringify(appUrl)},
   };
   
   // Log in development
@@ -38,8 +55,9 @@ export async function GET() {
 `;
 
     // Check if critical variables are missing on the server
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       console.warn('[ENV API] CRITICAL: Supabase environment variables are missing on the server!');
+      console.warn('[ENV API] Available env keys:', Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC')));
     }
 
     // Return as JavaScript with proper MIME type
