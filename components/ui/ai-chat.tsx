@@ -29,6 +29,7 @@ import { smartVoiceService, selectVoiceService } from "@/lib/smart-voice-service
 import { useSubscription, useAILimit } from "@/hooks/use-subscription";
 import { getEffectivePlanLimits } from "@/types/subscription";
 import { useRouter } from "next/navigation";
+import { useBetterAuth } from "@/contexts/better-auth-context";
 
 interface Message {
   id: string;
@@ -87,9 +88,12 @@ export function AIChatAssistant() {
   const { subscription, loading: isSubscriptionLoading } = useSubscription();
   const { checkLimit, recordCall, callsRemaining, limitInfo } = useAILimit();
   const router = useRouter();
+  const { user } = useBetterAuth();
   
   const planLimits = subscription ? getEffectivePlanLimits(subscription) : null;
   const isAiAllowed = planLimits?.ai_assistant ?? false;
+  const isAdmin = user?.email === 'ariscsc@gmail.com';
+  const [adminBypass, setAdminBypass] = useState(false);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -1172,25 +1176,48 @@ export function AIChatAssistant() {
   }
 
   // If AI is not allowed for this plan, show upgrade prompt inside the chat with blurred background
-  if (!isSubscriptionLoading && !isAiAllowed) {
+  // For admins, show the restriction initially but allow bypass
+  if (!isSubscriptionLoading && (!isAiAllowed || (isAdmin && !adminBypass))) {
     return (
+      <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .markdown-content strong {
+          font-weight: 600;
+          color: inherit;
+        }
+        .markdown-content em {
+          font-style: italic;
+        }
+        .markdown-content code {
+          font-family: 'Courier New', monospace;
+          font-size: 0.9em;
+        }
+      `}} />
       <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Header - same as regular chat but grayed out */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600/50 to-blue-600/50 text-white rounded-t-2xl">
+        {/* Header - Normal style */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 opacity-50" />
+            <Sparkles className="w-5 h-5" />
             <div>
               <h3 className="font-semibold flex items-center gap-2">
                 Lisa AI Assistant
-                <span className="inline-flex items-center gap-1 text-xs bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded-full border border-amber-500/40">
-                  <Lock className="w-3 h-3" />
-                  Premium
-                </span>
               </h3>
-              <p className="text-xs text-white/60">Upgrade to unlock</p>
+              <p className="text-xs text-purple-100">🔇 Voice: OFF</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              title="Enable voice responses (CURRENTLY OFF)"
+            >
+              <VolumeX className="w-4 h-4" />
+            </button>
+            <button
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              title="Clear chat"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
             <button
               onClick={() => setIsMinimized(true)}
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
@@ -1203,111 +1230,93 @@ export function AIChatAssistant() {
               className="p-2 hover:bg-white/20 rounded-lg transition-colors"
               title="Close"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 text-gray-600 dark:text-white dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
             </button>
           </div>
         </div>
 
         {/* Chat Content Area - Blurred with Overlay */}
         <div className="flex-1 relative overflow-hidden">
-          {/* Blurred Background Content - Simulated Chat Messages */}
-          <div className="absolute inset-0 p-4 space-y-4 blur-[6px] opacity-40 pointer-events-none select-none">
-            {/* Fake welcome message */}
-            <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-3 h-3 text-purple-600" />
-                  <span className="text-xs font-medium text-purple-600">AI Assistant</span>
+          {/* Blurred Background Content - Real Welcome Message */}
+          <div className="absolute inset-0 p-4 space-y-4 blur-[4px] opacity-60 pointer-events-none select-none overflow-y-auto">
+             <div className="flex justify-start">
+                <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Sparkles className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                        <span className="text-xs font-medium text-purple-600 dark:text-purple-400">AI Assistant</span>
+                    </div>
+                    <div 
+                        className="text-sm whitespace-pre-line dark:text-white leading-relaxed markdown-content"
+                        dangerouslySetInnerHTML={{ __html: formatMarkdown(messages[0].content) }}
+                    />
+                    <p className="text-xs opacity-60 mt-1 dark:text-white">
+                        {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
                 </div>
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  👋 Hi! I'm Lisa, your intelligent AI financial assistant powered by Google Gemini...
-                </p>
-              </div>
-            </div>
-            {/* Fake user message */}
-            <div className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-                <p className="text-sm">Analyze my portfolio performance</p>
-              </div>
-            </div>
-            {/* Fake assistant response */}
-            <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-3 h-3 text-purple-600" />
-                  <span className="text-xs font-medium text-purple-600">AI Assistant</span>
-                </div>
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  📊 Your portfolio is up 12.5% this month! Here's a detailed breakdown...
-                </p>
-              </div>
-            </div>
-            {/* More fake messages */}
-            <div className="flex justify-end">
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-                <p className="text-sm">Compare BTC vs ETH</p>
-              </div>
-            </div>
-            <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
-                <p className="text-sm text-gray-900 dark:text-gray-100">
-                  🔍 Bitcoin vs Ethereum Analysis: BTC is showing stronger momentum...
-                </p>
-              </div>
-            </div>
+             </div>
           </div>
 
           {/* Centered Upgrade Card */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-black/40 backdrop-blur-[2px]">
-            <div className="text-center p-6 bg-gray-900/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border border-gray-700 mx-4 max-w-[320px]">
-              <div className="w-14 h-14 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-7 h-7 text-purple-400" />
+          <div 
+            className={`absolute inset-0 flex items-center justify-center bg-white/30 dark:bg-black/40 backdrop-blur-[2px] z-10 ${isAdmin ? 'cursor-pointer' : ''}`}
+            onClick={() => isAdmin && setAdminBypass(true)}
+          >
+            <div className="text-center p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 mx-4 max-w-[320px]">
+              <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-7 h-7 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-white font-bold text-lg mb-2">Upgrade to Chat with Lisa</p>
-              <p className="text-gray-400 text-sm mb-5 leading-relaxed">
-                Get AI-powered financial insights, market analysis, and voice interaction with a paid plan.
+              <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-2">Upgrade to Chat with Lisa</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed">
+                Unlock AI-powered financial insights, market analysis, and voice interaction.
               </p>
               <a
                 href="/pricing"
                 onClick={(e) => {
                   e.preventDefault();
-                  setIsOpen(false);
-                  router.push('/pricing');
+                  if (isAdmin) {
+                    setAdminBypass(true);
+                  } else {
+                    setIsOpen(false);
+                    router.push('/pricing');
+                  }
                 }}
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors shadow-lg hover:shadow-xl"
+                className="inline-flex items-center justify-center w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg hover:shadow-purple-500/25"
               >
-                View Plans
+                View Upgrade Options
               </a>
-              <p className="mt-4 text-xs text-gray-500">
-                Starting at $9.99/mo
-              </p>
             </div>
           </div>
         </div>
 
         {/* Blurred Input Area */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
-          <div className="flex gap-2 opacity-50 pointer-events-none">
-            <button className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-xl">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 blur-[2px] pointer-events-none select-none">
+          <div className="flex gap-2">
+            <button className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-xl">
               <Paperclip className="w-5 h-5" />
             </button>
             <div className="flex-1 relative">
-              <input
-                type="text"
+              <textarea
                 placeholder="Type or speak your command..."
                 disabled
-                className="w-full px-4 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+                className="w-full px-4 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-400 resize-none"
+                rows={2}
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gray-100 dark:bg-gray-600 rounded-lg">
-                <Mic className="w-4 h-4 text-gray-400" />
-              </div>
+              <button className="absolute right-2 top-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-400">
+                <Mic className="w-4 h-4" />
+              </button>
             </div>
-            <button className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-400 rounded-xl">
+            <button className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl opacity-50">
               <Send className="w-5 h-5" />
             </button>
           </div>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-300">
+              💡 Drag & drop files or click 📎 to attach
+            </p>
+          </div>
         </div>
       </div>
+      </>
     );
   }
 

@@ -117,15 +117,15 @@ export default function CommunityPage() {
   
   // Permission state
   const [canInteract, setCanInteract] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkPermission = async () => {
       if (!user) return;
       
-      // Admin bypass
+      // Admin check
       if (user.email === 'ariscsc@gmail.com') {
-        setCanInteract(true);
-        return;
+        setIsAdmin(true);
       }
 
       const { data, error } = await supabase.rpc('can_interact_with_community', { p_user_id: user.id } as any);
@@ -349,11 +349,6 @@ export default function CommunityPage() {
   const handleLikePost = async (postId: string) => {
     if (!user) return;
 
-    if (!canInteract) {
-      alert("Please upgrade your plan to like posts.");
-      return;
-    }
-
     const isLiked = likedPosts.has(postId);
     
     // Optimistic update
@@ -476,7 +471,7 @@ export default function CommunityPage() {
   const handleCommentSubmit = async (postId: string) => {
     if (!user || !commentText[postId]?.trim()) return;
 
-    if (!canInteract) {
+    if (!canInteract && !isAdmin) {
       alert("Please upgrade your plan to comment.");
       return;
     }
@@ -686,7 +681,10 @@ export default function CommunityPage() {
             {/* Create Post */}
             <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 relative">
               {!canInteract && (
-                 <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                 <div 
+                    className={`absolute inset-0 bg-gray-900/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl ${isAdmin ? 'cursor-pointer' : ''}`}
+                    onClick={() => isAdmin && setCanInteract(true)}
+                 >
                     <div className="text-center p-4">
                         <p className="text-white font-bold mb-2">Upgrade to Post</p>
                         <p className="text-gray-400 text-sm mb-4">Join the conversation with a paid plan.</p>
@@ -900,12 +898,6 @@ export default function CommunityPage() {
                               <MessageSquare className="h-4 w-4" />
                             </div>
                             <span className="text-sm">{post.comments_count}</span>
-                          </button>
-                          <button className="flex items-center gap-2 hover:text-green-400 transition-colors group">
-                            <div className="p-2 rounded-full group-hover:bg-green-500/10">
-                              <Share2 className="h-4 w-4" />
-                            </div>
-                            <span className="text-sm">0</span>
                           </button>
                           <button 
                             onClick={() => handleLikePost(post.id)}

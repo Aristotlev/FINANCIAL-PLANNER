@@ -17,15 +17,15 @@ export async function GET() {
     plans: {
       TRADER: {
         priceId: getPriceIdForPlan('TRADER'),
-        productId: STRIPE_CONFIG.TRADER.productId,
+        productIds: STRIPE_CONFIG.TRADER.productIds,
       },
       INVESTOR: {
         priceId: getPriceIdForPlan('INVESTOR'),
-        productId: STRIPE_CONFIG.INVESTOR.productId,
+        productIds: STRIPE_CONFIG.INVESTOR.productIds,
       },
       WHALE: {
         priceId: getPriceIdForPlan('WHALE'),
-        productId: STRIPE_CONFIG.WHALE.productId,
+        productIds: STRIPE_CONFIG.WHALE.productIds,
       },
     },
     environment: process.env.NODE_ENV,

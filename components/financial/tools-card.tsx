@@ -874,16 +874,16 @@ function ToolsModalContent() {
         {/* Chart Tab */}
         <div className={`space-y-4 ${activeTab === 'chart' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Live</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Real-time Data</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">50+</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">50+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Indicators</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Global</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">Global</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Markets</div>
               </div>
             </div>
@@ -930,16 +930,16 @@ function ToolsModalContent() {
         {/* Stocks Tab */}
         <div className={`space-y-4 ${activeTab === 'stocks' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">500+</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">500+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">US Stocks</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Live</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Market Data</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Multi</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">Multi</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Screener</div>
               </div>
             </div>
@@ -986,16 +986,16 @@ function ToolsModalContent() {
         {/* Crypto Tab */}
         <div className={`space-y-4 ${activeTab === 'crypto' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">24/7</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">24/7</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Trading</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">1000+</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">1000+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Cryptocurrencies</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Live</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Market Cap</div>
               </div>
             </div>
@@ -1042,16 +1042,16 @@ function ToolsModalContent() {
         {/* Forex Tab */}
         <div className={`space-y-4 ${activeTab === 'forex' ? 'block' : 'hidden'}`}>
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">8</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">8</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Major Currencies</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Live</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">Live</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Exchange Rates</div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg transition-all duration-300  cursor-pointer">
-                <div className="text-2xl font-bold text-purple-600">Multi</div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg transition-all duration-300  cursor-pointer">
+                <div className="text-xl font-bold text-purple-600">Multi</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Currency Pairs</div>
               </div>
             </div>

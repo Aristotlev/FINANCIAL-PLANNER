@@ -551,29 +551,7 @@ function NewsModalContent() {
           </div>
         )}
 
-        {/* News Sources Info */}
-        {activeTab !== 'mynews' && (
-          <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-gray-800 dark:to-gray-800 p-4 rounded-lg border border-orange-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-2">
-              <Globe className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">News Sources for {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {NEWS_SOURCES[activeTab as keyof typeof NEWS_SOURCES].map((source) => (
-                <a
-                  key={source.name}
-                  href={source.url.includes('rss') || source.url.includes('feed') ? source.url.split('/').slice(0, 3).join('/') : source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1 bg-white dark:bg-gray-900 rounded-full text-xs font-medium border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 cursor-pointer no-underline"
-                  style={{ color: source.color }}
-                >
-                  {source.name}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

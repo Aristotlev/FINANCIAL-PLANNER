@@ -24,7 +24,10 @@ export interface StripePriceConfig {
 }
 
 export interface StripeProductConfig {
-  productId: string;
+  productIds: {
+    monthly: string;
+    yearly?: string;
+  };
   prices: StripePriceConfig;
   name: string;
   description: string;
@@ -42,27 +45,39 @@ export interface StripeProductConfig {
  */
 export const STRIPE_CONFIG: Record<Exclude<SubscriptionPlan, 'STARTER'>, StripeProductConfig> = {
   TRADER: {
-    productId: process.env.STRIPE_TRADER_PRODUCT_ID || 'prod_Tet932v2B53Owv',
+    productIds: {
+      monthly: process.env.STRIPE_TRADER_PRODUCT_ID || 'prod_Tet932v2B53Owv',
+      yearly: process.env.STRIPE_TRADER_YEARLY_PRODUCT_ID || 'prod_Th8PqpNy6EOoYf',
+    },
     prices: {
       monthly: process.env.STRIPE_TRADER_PRICE_ID || 'price_1ShZN4E5xZWoLB7alzjybz7e',
+      yearly: process.env.STRIPE_TRADER_YEARLY_PRICE_ID || 'price_1Sjk8TE5xZWoLB7ar1VRQRH4',
     },
     name: 'Omnifolio Trader',
     description: 'Unlimited Imports & Exports, All Analytics, AI Assistant (10 msgs/day)',
     priceMonthlyUsd: 9.99,
   },
   INVESTOR: {
-    productId: process.env.STRIPE_INVESTOR_PRODUCT_ID || 'prod_TetJXzh000d3eK',
+    productIds: {
+      monthly: process.env.STRIPE_INVESTOR_PRODUCT_ID || 'prod_TetJXzh000d3eK',
+      yearly: process.env.STRIPE_INVESTOR_YEARLY_PRODUCT_ID || 'prod_Th8Pi0rWCQ91TV',
+    },
     prices: {
       monthly: process.env.STRIPE_INVESTOR_PRICE_ID || 'price_1ShZWZE5xZWoLB7afhQ67UIW',
+      yearly: process.env.STRIPE_INVESTOR_YEARLY_PRICE_ID || 'price_1Sjk8lE5xZWoLB7aEd6rBARS',
     },
     name: 'Omnifolio Investor',
     description: 'AI Assistant (50 msgs/day), Priority Support, Everything in Trader',
     priceMonthlyUsd: 19.99,
   },
   WHALE: {
-    productId: process.env.STRIPE_WHALE_PRODUCT_ID || 'prod_TetJCuGPxuKNCu',
+    productIds: {
+      monthly: process.env.STRIPE_WHALE_PRODUCT_ID || 'prod_TetJCuGPxuKNCu',
+      yearly: process.env.STRIPE_WHALE_YEARLY_PRODUCT_ID || 'prod_Th8PG36licQ8yQ',
+    },
     prices: {
       monthly: process.env.STRIPE_WHALE_PRICE_ID || 'price_1ShZX4E5xZWoLB7aVXbMsKF3',
+      yearly: process.env.STRIPE_WHALE_YEARLY_PRICE_ID || 'price_1Sjk93E5xZWoLB7aaQw0f0R3',
     },
     name: 'Omnifolio Whale',
     description: 'Unlimited AI, VIP Priority Support, Beta Access to new features',
@@ -87,9 +102,15 @@ export function getPriceIdForPlan(plan: SubscriptionPlan, interval: 'monthly' | 
 /**
  * Get the product ID for a subscription plan
  */
-export function getProductIdForPlan(plan: SubscriptionPlan): string | null {
+export function getProductIdForPlan(plan: SubscriptionPlan, interval: 'monthly' | 'yearly' = 'monthly'): string | null {
   if (plan === 'STARTER') return null;
-  return STRIPE_CONFIG[plan]?.productId || null;
+  const config = STRIPE_CONFIG[plan];
+  if (!config) return null;
+  
+  if (interval === 'yearly' && config.productIds.yearly) {
+    return config.productIds.yearly;
+  }
+  return config.productIds.monthly;
 }
 
 /**
@@ -97,7 +118,7 @@ export function getProductIdForPlan(plan: SubscriptionPlan): string | null {
  */
 export function getPlanFromProductId(productId: string): SubscriptionPlan | null {
   for (const [plan, config] of Object.entries(STRIPE_CONFIG)) {
-    if (config.productId === productId) {
+    if (config.productIds.monthly === productId || config.productIds.yearly === productId) {
       return plan as SubscriptionPlan;
     }
   }
@@ -134,9 +155,15 @@ export const STRIPE_ENV_VARS = [
   'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
   'STRIPE_WEBHOOK_SECRET',
   'STRIPE_TRADER_PRODUCT_ID',
+  'STRIPE_TRADER_YEARLY_PRODUCT_ID',
   'STRIPE_TRADER_PRICE_ID',
+  'STRIPE_TRADER_YEARLY_PRICE_ID',
   'STRIPE_INVESTOR_PRODUCT_ID',
+  'STRIPE_INVESTOR_YEARLY_PRODUCT_ID',
   'STRIPE_INVESTOR_PRICE_ID',
+  'STRIPE_INVESTOR_YEARLY_PRICE_ID',
   'STRIPE_WHALE_PRODUCT_ID',
+  'STRIPE_WHALE_YEARLY_PRODUCT_ID',
   'STRIPE_WHALE_PRICE_ID',
+  'STRIPE_WHALE_YEARLY_PRICE_ID',
 ] as const;

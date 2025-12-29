@@ -505,7 +505,7 @@ export default function BillingPage() {
     }
 
     try {
-        await startCheckout(planId as SubscriptionPlan, { id: user.id, email: user.email });
+        await startCheckout(planId as SubscriptionPlan, { id: user.id, email: user.email }, currentCycle === 'annually' ? 'yearly' : 'monthly');
     } catch (error) {
         console.error("Checkout failed", error);
     }

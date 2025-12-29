@@ -1149,7 +1149,7 @@ function AddTradingPositionModal({
 
           {/* Live Metrics Display */}
           {metrics && formData.shares > 0 && (
-            <div className="p-4 bg-gradient-to-r from-cyan-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 rounded-lg border border-cyan-200 dark:border-gray-700 space-y-2">
+            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 space-y-2">
               <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 Trade Analysis
@@ -1751,9 +1751,9 @@ function TradingAccountModalContent() {
             {/* Trading Account Balances - Three Separate Accounts */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Forex Account Balance */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800 transition-all">
+              <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 transition-all">
                 <div className="flex items-center gap-2 mb-3">
-                  <DollarSign className="w-5 h-5 text-blue-600" />
+                  <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Forex Account
                   </label>
@@ -1764,7 +1764,7 @@ function TradingAccountModalContent() {
                   onChange={(e) => setForexAccountBalance(parseFloat(e.target.value) || 0)}
                   step="100"
                   min="0"
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-800 border-2 border-blue-300 dark:border-blue-600 rounded-lg text-xl font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xl font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                   For forex trading positions
@@ -1772,9 +1772,9 @@ function TradingAccountModalContent() {
               </div>
 
               {/* Crypto Account Balance */}
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-5 rounded-xl border-2 border-purple-200 dark:border-purple-800 transition-all">
+              <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 transition-all">
                 <div className="flex items-center gap-2 mb-3">
-                  <CoinsIcon className="w-5 h-5 text-purple-600" />
+                  <CoinsIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Crypto Account
                   </label>
@@ -1785,7 +1785,7 @@ function TradingAccountModalContent() {
                   onChange={(e) => setCryptoAccountBalance(parseFloat(e.target.value) || 0)}
                   step="100"
                   min="0"
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-800 border-2 border-purple-300 dark:border-purple-600 rounded-lg text-xl font-bold focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xl font-bold focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
                 <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                   For crypto futures trading
@@ -1793,9 +1793,9 @@ function TradingAccountModalContent() {
               </div>
 
               {/* Options Account Balance */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border-2 border-green-200 dark:border-green-800 transition-all">
+              <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 transition-all">
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUpIcon className="w-5 h-5 text-green-600" />
+                  <TrendingUpIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Options Account
                   </label>
@@ -1806,7 +1806,7 @@ function TradingAccountModalContent() {
                   onChange={(e) => setOptionsAccountBalance(parseFloat(e.target.value) || 0)}
                   step="100"
                   min="0"
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-800 border-2 border-green-300 dark:border-green-600 rounded-lg text-xl font-bold focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xl font-bold focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
                 <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                   For options trading positions
@@ -1870,16 +1870,16 @@ function TradingAccountModalContent() {
                   {/* Forex Account Summary */}
                   <div 
                     onClick={() => setTradingSubTab('forex')}
-                    className="group relative bg-gradient-to-br from-blue-50 via-blue-100 to-indigo-100 dark:from-blue-950/50 dark:via-blue-900/40 dark:to-indigo-900/40 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-700 hover:border-blue-400 dark:hover:border-blue-500 shadow-lg transition-all duration-300 cursor-pointer"
+                    className="group relative bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     {/* 3D Background Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-600/10 dark:from-blue-400/5 dark:to-indigo-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-3 bg-blue-500 dark:bg-blue-600 rounded-xl shadow-lg  transition-transform duration-300">
-                            <DollarSign className="w-7 h-7 text-white" />
+                          <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl shadow-sm transition-transform duration-300">
+                            <DollarSign className="w-7 h-7 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Forex Trading</h3>
@@ -1889,24 +1889,24 @@ function TradingAccountModalContent() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-xs px-3 py-1 bg-blue-600 dark:bg-blue-700 text-white rounded-full font-bold shadow-md">
+                          <span className="text-xs px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full font-bold shadow-sm border border-blue-200 dark:border-blue-800">
                             ACTIVE
                           </span>
                         </div>
                       </div>
                       
-                      <div className="space-y-3 bg-white/50 dark:bg-gray-900/30 p-4 rounded-xl backdrop-blur-sm">
+                      <div className="space-y-3 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl backdrop-blur-sm border border-gray-100 dark:border-gray-700/50">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Account Balance</span>
                           <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">${formatNumber(forexAccountBalance)}</span>
                         </div>
-                        <div className="h-px bg-gradient-to-r from-transparent via-blue-300 dark:via-blue-700 to-transparent" />
+                        <div className="h-px bg-gray-200 dark:bg-gray-700" />
                         <div className="grid grid-cols-3 gap-3">
                           <div className="text-center">
                             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Positions</div>
                             <div className="text-lg font-bold text-gray-900 dark:text-white">{forexPositions.length}</div>
                           </div>
-                          <div className="text-center border-x border-blue-200 dark:border-blue-800">
+                          <div className="text-center border-x border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Used Margin</div>
                             <div className="text-lg font-bold text-gray-900 dark:text-white">
                               ${formatNumber(forexPositions.reduce((sum, p) => sum + (p.margin || 0), 0))}
@@ -1920,7 +1920,7 @@ function TradingAccountModalContent() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t border-blue-200 dark:border-blue-800">
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
                           <span className="text-xs text-gray-600 dark:text-gray-400">
                             {forexPositions.filter(p => p.direction === 'long').length} Long • {forexPositions.filter(p => p.direction === 'short').length} Short
                           </span>
@@ -1935,16 +1935,16 @@ function TradingAccountModalContent() {
                   {/* Crypto Account Summary */}
                   <div 
                     onClick={() => setTradingSubTab('crypto-futures')}
-                    className="group relative bg-gradient-to-br from-purple-50 via-purple-100 to-pink-100 dark:from-purple-950/50 dark:via-purple-900/40 dark:to-pink-900/40 p-6 rounded-2xl border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 shadow-lg transition-all duration-300 cursor-pointer"
+                    className="group relative bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-500 shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     {/* 3D Background Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-pink-600/10 dark:from-purple-400/5 dark:to-pink-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-3 bg-purple-500 dark:bg-purple-600 rounded-xl shadow-lg  transition-transform duration-300">
-                            <CoinsIcon className="w-7 h-7 text-white" />
+                          <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl shadow-sm transition-transform duration-300">
+                            <CoinsIcon className="w-7 h-7 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Crypto Futures</h3>
@@ -1954,24 +1954,24 @@ function TradingAccountModalContent() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-xs px-3 py-1 bg-purple-600 dark:bg-purple-700 text-white rounded-full font-bold shadow-md">
+                          <span className="text-xs px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full font-bold shadow-sm border border-purple-200 dark:border-purple-800">
                             ACTIVE
                           </span>
                         </div>
                       </div>
                       
-                      <div className="space-y-3 bg-white/50 dark:bg-gray-900/30 p-4 rounded-xl backdrop-blur-sm">
+                      <div className="space-y-3 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl backdrop-blur-sm border border-gray-100 dark:border-gray-700/50">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Account Balance</span>
                           <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">${formatNumber(cryptoAccountBalance)}</span>
                         </div>
-                        <div className="h-px bg-gradient-to-r from-transparent via-purple-300 dark:via-purple-700 to-transparent" />
+                        <div className="h-px bg-gray-200 dark:bg-gray-700" />
                         <div className="grid grid-cols-3 gap-3">
                           <div className="text-center">
                             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Positions</div>
                             <div className="text-lg font-bold text-gray-900 dark:text-white">{cryptoPositions.length}</div>
                           </div>
-                          <div className="text-center border-x border-purple-200 dark:border-purple-800">
+                          <div className="text-center border-x border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Used Margin</div>
                             <div className="text-lg font-bold text-gray-900 dark:text-white">
                               ${formatNumber(cryptoPositions.reduce((sum, p) => sum + (p.margin || 0), 0))}
@@ -1985,7 +1985,7 @@ function TradingAccountModalContent() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t border-purple-200 dark:border-purple-800">
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
                           <span className="text-xs text-gray-600 dark:text-gray-400">
                             {cryptoPositions.filter(p => p.direction === 'long').length} Long • {cryptoPositions.filter(p => p.direction === 'short').length} Short
                           </span>
@@ -2000,16 +2000,16 @@ function TradingAccountModalContent() {
                   {/* Options Account Summary */}
                   <div 
                     onClick={() => setTradingSubTab('options')}
-                    className="group relative bg-gradient-to-br from-green-50 via-green-100 to-emerald-100 dark:from-green-950/50 dark:via-green-900/40 dark:to-emerald-900/40 p-6 rounded-2xl border-2 border-green-200 dark:border-green-700 hover:border-green-400 dark:hover:border-green-500 shadow-lg transition-all duration-300 cursor-pointer"
+                    className="group relative bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     {/* 3D Background Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-600/10 dark:from-green-400/5 dark:to-emerald-600/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-3 bg-green-500 dark:bg-green-600 rounded-xl shadow-lg  transition-transform duration-300">
-                            <TrendingUpIcon className="w-7 h-7 text-white" />
+                          <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl shadow-sm transition-transform duration-300">
+                            <TrendingUpIcon className="w-7 h-7 text-green-600 dark:text-green-400" />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Options Trading</h3>
@@ -2019,27 +2019,27 @@ function TradingAccountModalContent() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1">
-                          <span className="text-xs px-3 py-1 bg-green-600 dark:bg-green-700 text-white rounded-full font-bold shadow-md">
+                          <span className="text-xs px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full font-bold shadow-sm border border-green-200 dark:border-green-800">
                             ACTIVE
                           </span>
                         </div>
                       </div>
                       
-                      <div className="space-y-3 bg-white/50 dark:bg-gray-900/30 p-4 rounded-xl backdrop-blur-sm">
+                      <div className="space-y-3 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl backdrop-blur-sm border border-gray-100 dark:border-gray-700/50">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Account Balance</span>
                           <span className="text-2xl font-bold text-green-600 dark:text-green-400">${formatNumber(optionsAccountBalance)}</span>
                         </div>
-                        <div className="h-px bg-gradient-to-r from-transparent via-green-300 dark:via-green-700 to-transparent" />
+                        <div className="h-px bg-gray-200 dark:bg-gray-700" />
                         <div className="grid grid-cols-3 gap-3">
                           <div className="text-center">
                             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Contracts</div>
                             <div className="text-lg font-bold text-gray-900 dark:text-white">{optionsPositions.length}</div>
                           </div>
-                          <div className="text-center border-x border-green-200 dark:border-green-800">
+                          <div className="text-center border-x border-gray-200 dark:border-gray-700">
                             <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Deployed</div>
                             <div className="text-lg font-bold text-gray-900 dark:text-white">
-                              ${formatNumber(optionsPositions.reduce((sum, p) => sum + ((p.premium || 0) * (p.contracts || 0) * 100), 0))}
+                              ${formatNumber(optionsPositions.reduce((sum, p) => sum + (p.premium || 0), 0))}
                             </div>
                           </div>
                           <div className="text-center">
@@ -2050,9 +2050,9 @@ function TradingAccountModalContent() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t border-green-200 dark:border-green-800">
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
                           <span className="text-xs text-gray-600 dark:text-gray-400">
-                            {optionsPositions.filter(p => p.optionType === 'call').length} Calls • {optionsPositions.filter(p => p.optionType === 'put').length} Puts
+                            {optionsPositions.filter(p => p.type === 'call').length} Calls • {optionsPositions.filter(p => p.type === 'put').length} Puts
                           </span>
                           <span className="text-xs font-semibold text-green-600 dark:text-green-400 group-hover:translate-x-1 transition-transform">
                             View Details →
@@ -2974,7 +2974,7 @@ function TradingToolsModalContent() {
         {mainTab === 'trading' && (
           <div className="space-y-6">
             {/* Account Balance Input */}
-            <div className="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 {tradingSubTab === 'forex' ? 'Forex' : tradingSubTab === 'crypto-futures' ? 'Crypto Futures' : 'Options'} Account Balance
               </label>
@@ -2990,29 +2990,29 @@ function TradingToolsModalContent() {
                   }}
                   step="100"
                   min="0"
-                  className="flex-1 px-6 py-3 bg-white dark:bg-gray-800 border-2 border-purple-300 dark:border-purple-600 rounded-lg text-2xl font-bold focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="flex-1 px-6 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-2xl font-bold focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <DollarSign className="w-8 h-8 text-purple-600" />
+                <DollarSign className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 Set your {tradingSubTab === 'forex' ? 'Forex' : tradingSubTab === 'crypto-futures' ? 'Crypto Futures' : 'Options'} account balance for accurate calculations
               </p>
               <div className="mt-3 flex gap-3 text-xs">
-                <div className="bg-white/50 dark:bg-black/20 px-3 py-1.5 rounded">
+                <div className="bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded border border-gray-200 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-400">Forex: </span>
-                  <span className="font-bold text-blue-600">${forexBalance.toLocaleString()}</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">${forexBalance.toLocaleString()}</span>
                 </div>
-                <div className="bg-white/50 dark:bg-black/20 px-3 py-1.5 rounded">
+                <div className="bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded border border-gray-200 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-400">Crypto: </span>
-                  <span className="font-bold text-purple-600">${cryptoBalance.toLocaleString()}</span>
+                  <span className="font-bold text-purple-600 dark:text-purple-400">${cryptoBalance.toLocaleString()}</span>
                 </div>
-                <div className="bg-white/50 dark:bg-black/20 px-3 py-1.5 rounded">
+                <div className="bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded border border-gray-200 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-400">Options: </span>
-                  <span className="font-bold text-orange-600">${optionsBalance.toLocaleString()}</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">${optionsBalance.toLocaleString()}</span>
                 </div>
-                <div className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 px-3 py-1.5 rounded border border-green-300 dark:border-green-700">
+                <div className="bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded border border-gray-200 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-400">Total: </span>
-                  <span className="font-black text-green-600 dark:text-green-400">${(forexBalance + cryptoBalance + optionsBalance).toLocaleString()}</span>
+                  <span className="font-black text-gray-900 dark:text-white">${(forexBalance + cryptoBalance + optionsBalance).toLocaleString()}</span>
                 </div>
               </div>
             </div>

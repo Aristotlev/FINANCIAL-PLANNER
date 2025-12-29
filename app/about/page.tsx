@@ -377,9 +377,8 @@ export default function AboutPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="bg-gradient-to-br from-purple-600 to-blue-700 rounded-[3rem] p-12 sm:p-20 text-center relative overflow-hidden shadow-2xl shadow-purple-900/40"
+              className="rounded-[3rem] p-12 sm:p-20 text-center relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-grid-white/10 [mask-image:radial-gradient(white,transparent_85%)]" />
               <div className="relative z-10">
                 <h2 className="text-4xl sm:text-6xl font-bold text-white mb-8 tracking-tight leading-tight">
                   Ready to See Your Complete <br className="hidden sm:block" /> Financial Picture?

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { STRIPE_CONFIG, getPriceIdForPlan } from '@/lib/stripe/config';
+import { STRIPE_CONFIG, getPriceIdForPlan, getProductIdForPlan } from '@/lib/stripe/config';
 import type { SubscriptionPlan } from '@/types/subscription';
 
 // Initialize Stripe only if the secret key is available
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { plan, userId, email } = await req.json();
+    const { plan, userId, email, interval = 'monthly' } = await req.json();
 
     if (!userId || !email) {
       return NextResponse.json(
@@ -37,18 +37,18 @@ export async function POST(req: Request) {
     }
 
     // Get price ID from configuration
-    const priceId = getPriceIdForPlan(plan as SubscriptionPlan);
+    const priceId = getPriceIdForPlan(plan as SubscriptionPlan, interval);
     
     if (!priceId) {
-      console.error(`Price ID not configured for plan: ${plan}`);
+      console.error(`Price ID not configured for plan: ${plan} (${interval})`);
       return NextResponse.json(
-        { error: `Price ID not configured for ${plan} plan. Please create prices in Stripe Dashboard.` },
+        { error: `Price ID not configured for ${plan} plan (${interval}). Please create prices in Stripe Dashboard.` },
         { status: 500 }
       );
     }
 
-    // Get product configuration for metadata
-    const productConfig = STRIPE_CONFIG[plan as Exclude<SubscriptionPlan, 'STARTER'>];
+    // Get product ID for metadata
+    const productId = getProductIdForPlan(plan as SubscriptionPlan, interval);
 
     // Get the base URL - use NEXT_PUBLIC_APP_URL, fallback to localhost for dev
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
@@ -68,12 +68,14 @@ export async function POST(req: Request) {
       metadata: {
         userId: userId,
         plan: plan,
-        productId: productConfig.productId,
+        productId: productId || '',
+        interval: interval,
       },
       subscription_data: {
         metadata: {
           userId: userId,
           plan: plan,
+          interval: interval,
         },
       },
       success_url: `${baseUrl}/billing?success=true&plan=${plan}`,

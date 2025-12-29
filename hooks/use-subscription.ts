@@ -81,7 +81,7 @@ export function useSubscription() {
     []
   );
 
-  const startCheckout = useCallback(async (plan: SubscriptionPlan, user?: { id: string; email: string }) => {
+  const startCheckout = useCallback(async (plan: SubscriptionPlan, user?: { id: string; email: string }, interval: 'monthly' | 'yearly' = 'monthly') => {
     try {
       setLoading(true);
       setError(null);
@@ -97,7 +97,7 @@ export function useSubscription() {
         currentUser = { id: authUser.id, email: authUser.email };
       }
 
-      console.log('Starting checkout for user:', currentUser.id, 'plan:', plan);
+      console.log('Starting checkout for user:', currentUser.id, 'plan:', plan, 'interval:', interval);
 
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -108,6 +108,7 @@ export function useSubscription() {
           plan,
           userId: currentUser.id,
           email: currentUser.email,
+          interval,
         }),
       });
 

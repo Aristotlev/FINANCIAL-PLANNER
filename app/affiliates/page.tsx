@@ -51,10 +51,9 @@ export default function AffiliatesPage() {
               </Link>
               <Link
                 href="/signup"
-                className="relative group px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+                className="px-4 py-2 bg-white/5 border border-gray-700 hover:border-gray-600 rounded-lg text-sm font-medium hover:bg-white/10 transition-all duration-300"
               >
-                <span className="relative z-10">Join Program</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur-xl"></div>
+                Join Program
               </Link>
             </div>
           </div>
@@ -83,7 +82,7 @@ export default function AffiliatesPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
             <Link
               href="/signup"
-              className="group relative w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl text-lg font-semibold hover:shadow-2xl hover:shadow-purple-500/30 transition-all duration-300 flex items-center justify-center gap-2"
+              className="group w-full sm:w-auto px-8 py-4 bg-white/5 border border-gray-700 hover:border-gray-600 rounded-xl text-lg font-medium hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2"
             >
               Become a Partner
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -213,10 +212,7 @@ export default function AffiliatesPage() {
       {/* CTA Section */}
       <section className="relative z-10 py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="relative overflow-hidden bg-gradient-to-r from-cyan-600 via-purple-600 to-blue-600 rounded-3xl p-12 text-center">
-            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl"></div>
-
+          <div className="relative overflow-hidden rounded-3xl p-12 text-center">
             <div className="relative z-10">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-6">
                 Ready to Start Earning?

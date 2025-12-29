@@ -159,12 +159,6 @@ export async function toggleLike(postId: string) {
     const supabase = getSupabaseAdmin();
     const userId = session.user.id;
 
-    // Check permission
-    const canInteract = await checkCommunityPermission(userId, supabase, session.user.email || undefined);
-    if (!canInteract) {
-        throw new Error("You must be on a paid plan to interact with the community.");
-    }
-
     // Ensure user exists in public.users (self-healing)
     const { data: userExists } = await supabase
       .from('users')
