@@ -4,7 +4,12 @@ import { headers } from "next/headers";
 import { auth } from "../../lib/auth";
 import { getSupabaseAdmin } from "../../lib/supabase/server";
 
-async function checkCommunityPermission(userId: string, supabase: any) {
+async function checkCommunityPermission(userId: string, supabase: any, userEmail?: string) {
+  // Admin bypass
+  if (userEmail === 'ariscsc@gmail.com') {
+    return true;
+  }
+
   const { data, error } = await supabase.rpc('can_interact_with_community', { p_user_id: userId });
   if (error) {
     console.error("Error checking community permission:", error);
@@ -26,7 +31,7 @@ export async function createPost(content: string, imageUrl?: string, sentiment?:
     const supabase = getSupabaseAdmin();
     
     // Check permission
-    const canInteract = await checkCommunityPermission(session.user.id, supabase);
+    const canInteract = await checkCommunityPermission(session.user.id, supabase, session.user.email || undefined);
     if (!canInteract) {
         throw new Error("You must be on a paid plan to interact with the community.");
     }
@@ -155,7 +160,7 @@ export async function toggleLike(postId: string) {
     const userId = session.user.id;
 
     // Check permission
-    const canInteract = await checkCommunityPermission(userId, supabase);
+    const canInteract = await checkCommunityPermission(userId, supabase, session.user.email || undefined);
     if (!canInteract) {
         throw new Error("You must be on a paid plan to interact with the community.");
     }
@@ -265,7 +270,7 @@ export async function createComment(postId: string, content: string) {
     const userId = session.user.id;
 
     // Check permission
-    const canInteract = await checkCommunityPermission(userId, supabase);
+    const canInteract = await checkCommunityPermission(userId, supabase, session.user.email || undefined);
     if (!canInteract) {
         throw new Error("You must be on a paid plan to interact with the community.");
     }

@@ -150,6 +150,20 @@ export class SubscriptionService {
 
   // ==================== USER ID ====================
 
+  private static async getUserEmail(): Promise<string | null> {
+    // During SSR or build, we can't fetch the session
+    if (typeof window === 'undefined') return null;
+
+    if (!this.isConfigured) return null;
+
+    try {
+      const session = await authClient.getSession();
+      return session.data?.user?.email || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
   private static async getUserId(): Promise<string | null> {
     // During SSR or build, we can't fetch the session
     if (typeof window === 'undefined') return null;
@@ -428,6 +442,12 @@ export class SubscriptionService {
    * Check if user can add an entry to a specific card
    */
   static async canAddEntry(cardType: CardType): Promise<LimitCheckResult> {
+    // Check for admin bypass
+    const userEmail = await this.getUserEmail();
+    if (userEmail === 'ariscsc@gmail.com') {
+      return { canProceed: true };
+    }
+
     if (!this.isConfigured) {
       // In offline mode, allow unlimited entries
       return { canProceed: true };
@@ -564,6 +584,12 @@ export class SubscriptionService {
    * Check if user can make an AI assistant call
    */
   static async canMakeAICall(): Promise<LimitCheckResult> {
+    // Check for admin bypass
+    const userEmail = await this.getUserEmail();
+    if (userEmail === 'ariscsc@gmail.com') {
+      return { canProceed: true };
+    }
+
     if (!this.isConfigured) {
       // In offline mode, allow unlimited AI calls
       return { canProceed: true };
@@ -697,6 +723,12 @@ export class SubscriptionService {
    * Only available for TRADER, INVESTOR, and WHALE plans
    */
   static async canUseImportExport(): Promise<LimitCheckResult> {
+    // Check for admin bypass
+    const userEmail = await this.getUserEmail();
+    if (userEmail === 'ariscsc@gmail.com') {
+      return { canProceed: true };
+    }
+
     if (!this.isConfigured) {
       // In offline mode, allow imports/exports
       return { canProceed: true };
@@ -726,6 +758,12 @@ export class SubscriptionService {
    * Only available for TRADER (10/day), INVESTOR (50/day), and WHALE (unlimited) plans
    */
   static async canUseAIAssistant(): Promise<LimitCheckResult> {
+    // Check for admin bypass
+    const userEmail = await this.getUserEmail();
+    if (userEmail === 'ariscsc@gmail.com') {
+      return { canProceed: true };
+    }
+
     if (!this.isConfigured) {
       return { canProceed: true };
     }

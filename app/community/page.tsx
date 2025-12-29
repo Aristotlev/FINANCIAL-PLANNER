@@ -121,6 +121,13 @@ export default function CommunityPage() {
   useEffect(() => {
     const checkPermission = async () => {
       if (!user) return;
+      
+      // Admin bypass
+      if (user.email === 'ariscsc@gmail.com') {
+        setCanInteract(true);
+        return;
+      }
+
       const { data, error } = await supabase.rpc('can_interact_with_community', { p_user_id: user.id } as any);
       if (!error) {
         setCanInteract(!!data);
@@ -629,7 +636,14 @@ export default function CommunityPage() {
                   </button>
                 </div>
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold text-white">{userProfile?.name || user?.name || 'User Name'}</h2>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    {userProfile?.name || user?.name || 'User Name'}
+                    {user?.email === 'ariscsc@gmail.com' && (
+                      <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full border border-blue-500/30 font-medium">
+                        Admin
+                      </span>
+                    )}
+                  </h2>
                   <p className="text-gray-400">@{userProfile?.name?.toLowerCase().replace(/\s+/g, '') || user?.name?.toLowerCase().replace(/\s+/g, '') || 'username'}</p>
                 </div>
                 <p className="text-gray-300 text-sm mb-4">
