@@ -175,9 +175,9 @@ export const RateLimitConfigs = {
     uniqueTokenPerInterval: 100, // 100 requests per hour
   },
   
-  // Very strict for authentication endpoints
+  // Strict for authentication endpoints
   AUTH: {
-    interval: 900000, // 15 minutes
-    uniqueTokenPerInterval: 5, // 5 attempts per 15 minutes
+    interval: 60000, // 1 minute
+    uniqueTokenPerInterval: 10, // 10 attempts per minute
   },
 };

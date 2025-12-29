@@ -47,6 +47,16 @@ const RSS_FEEDS = {
     { name: "CNBC World Markets", url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", priority: 3 },
     { name: "The Motley Fool", url: "https://www.fool.com/feeds/index.aspx", priority: 3 },
     { name: "Seeking Alpha Markets", url: "https://seekingalpha.com/feed.xml", priority: 3 }
+  ],
+  general: [
+    { name: "Reuters Top News", url: "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best", priority: 1 },
+    { name: "CNBC Top News", url: "https://www.cnbc.com/id/100003114/device/rss/rss.html", priority: 1 },
+    { name: "WSJ World News", url: "https://feeds.wsj.com/wsj/xml/rss/3_7085.xml", priority: 1 },
+    { name: "Financial Times World", url: "https://www.ft.com/world?format=rss", priority: 2 },
+    { name: "BBC Business", url: "http://feeds.bbci.co.uk/news/business/rss.xml", priority: 2 },
+    { name: "CNN Business", url: "http://rss.cnn.com/rss/money_latest.rss", priority: 2 },
+    { name: "Forbes Business", url: "https://www.forbes.com/business/feed/", priority: 2 },
+    { name: "Business Insider", url: "https://feeds.businessinsider.com/custom/all", priority: 3 }
   ]
 };
 
@@ -94,6 +104,15 @@ const CATEGORY_KEYWORDS = {
     'market outlook', 'index performance', 'broad market', 'index futures',
     'vix', 'volatility index', 'fear gauge', 'market-wide', 'basket of stocks',
     'weighted average', 'index level', 'all-time high', 'record high', 'milestone'
+  ],
+  general: [
+    'economy', 'economic', 'inflation', 'recession', 'gdp', 'interest rate', 'federal reserve',
+    'central bank', 'policy', 'market', 'finance', 'business', 'trade', 'global', 'world',
+    'investment', 'investor', 'money', 'wealth', 'tax', 'regulation', 'government',
+    'employment', 'jobs', 'unemployment', 'consumer', 'spending', 'retail', 'sales',
+    'supply chain', 'energy', 'oil', 'gas', 'technology', 'tech', 'innovation',
+    'startup', 'venture capital', 'merger', 'acquisition', 'earnings', 'revenue',
+    'profit', 'loss', 'debt', 'credit', 'banking', 'financial', 'crisis', 'growth'
   ]
 };
 
@@ -116,13 +135,15 @@ function matchesCategory(item: NewsItem, targetCategory: string): boolean {
   const forexMatches = CATEGORY_KEYWORDS.forex.filter(kw => content.includes(kw)).length;
   const stocksMatches = CATEGORY_KEYWORDS.stocks.filter(kw => content.includes(kw)).length;
   const indicesMatches = CATEGORY_KEYWORDS.indices.filter(kw => content.includes(kw)).length;
+  const generalMatches = CATEGORY_KEYWORDS.general.filter(kw => content.includes(kw)).length;
   
   // Determine dominant category
   const categoryScores = {
     crypto: cryptoMatches,
     forex: forexMatches,
     stocks: stocksMatches,
-    indices: indicesMatches
+    indices: indicesMatches,
+    general: generalMatches
   };
   
   const dominantCategory = Object.entries(categoryScores).reduce((a, b) => 

@@ -21,7 +21,12 @@ import {
   Lock,
   Database,
   Bot,
-  Newspaper
+  Newspaper,
+  Code2,
+  Sparkles,
+  Trophy,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -38,6 +43,7 @@ const AuthModal = dynamic(() => import('./auth-modal').then(mod => mod.AuthModal
 export function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const openLogin = () => {
     setAuthMode('login');
@@ -48,6 +54,54 @@ export function LandingPage() {
     setAuthMode('signup');
     setShowAuthModal(true);
   };
+
+  const slides = [
+    {
+      title: "Meet Lisa, Your AI Financial Genius",
+      description: "Powered by Google's Gemini models, Lisa analyzes your portfolio 24/7 to find opportunities you might miss.",
+      icon: <Bot className="w-16 h-16 text-purple-400" />,
+      bg: "bg-purple-500/10",
+      border: "border-purple-500/20"
+    },
+    {
+      title: "Bank-Grade Security",
+      description: "Your data is protected with AES-256 encryption. We use the same security standards as major financial institutions.",
+      icon: <Shield className="w-16 h-16 text-green-400" />,
+      bg: "bg-green-500/10",
+      border: "border-green-500/20"
+    },
+    {
+      title: "100% Open Source",
+      description: "Transparency is trust. Our code is open for audit, ensuring no hidden backdoors or data selling.",
+      icon: <Code2 className="w-16 h-16 text-blue-400" />,
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/20"
+    },
+    {
+      title: "World-Class Design",
+      description: "Experience the most intuitive, beautiful, and responsive financial interface ever built.",
+      icon: <Sparkles className="w-16 h-16 text-amber-400" />,
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20"
+    },
+    {
+      title: "The #1 Finance Tracker",
+      description: "Crypto, Stocks, Real Estate, Expenses. Everything you own, tracked in one powerful dashboard.",
+      icon: <Trophy className="w-16 h-16 text-yellow-400" />,
+      bg: "bg-yellow-500/10",
+      border: "border-yellow-500/20"
+    }
+  ];
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
   const features = [
     {
@@ -109,12 +163,7 @@ export function LandingPage() {
     }
   ];
 
-  const stats = [
-    { value: "$2.4B+", label: "Assets Tracked" },
-    { value: "50,000+", label: "Active Users" },
-    { value: "99.9%", label: "Uptime" },
-    { value: "4.9/5", label: "User Rating" }
-  ];
+
 
   const trustedCompanies = ["Gemini", "Google Cloud", "Yahoo Finance", "CoinGecko", "CoinMarketCap", "Finnhub", "TradingView"];
 
@@ -227,7 +276,7 @@ export function LandingPage() {
                     <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <span className="text-gray-400 text-sm">50,000+ portfolios managed</span>
+                <span className="text-gray-400 text-sm">Join 2,000+ early adopters</span>
               </div>
             </div>
 
@@ -433,18 +482,58 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="relative z-10 py-16 border-y border-gray-800/50 bg-gray-900/30">
+        {/* Feature Slideshow Section */}
+        <section className="relative z-10 py-20 border-y border-gray-800/50 bg-gray-900/30 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, i) => (
-                <div key={i} className="text-center">
-                  <p className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                    {stat.value}
-                  </p>
-                  <p className="mt-2 text-gray-400 text-sm sm:text-base">{stat.label}</p>
+            <div className="relative">
+              <div className="overflow-hidden rounded-2xl bg-gray-900/50 border border-gray-800 backdrop-blur-sm p-8 md:p-12">
+                <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
+                  
+                  {/* Icon Side */}
+                  <div className={`flex-shrink-0 w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center ${slides[currentSlide].bg} ${slides[currentSlide].border} border-2 transition-all duration-500`}>
+                    {slides[currentSlide].icon}
+                  </div>
+
+                  {/* Content Side */}
+                  <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-2xl md:text-4xl font-bold text-white mb-4 transition-all duration-300">
+                      {slides[currentSlide].title}
+                    </h3>
+                    <p className="text-lg text-gray-400 leading-relaxed max-w-2xl transition-all duration-300">
+                      {slides[currentSlide].description}
+                    </p>
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex gap-4 mt-6 md:mt-0">
+                    <button 
+                      onClick={prevSlide}
+                      className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors border border-gray-700"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <button 
+                      onClick={nextSlide}
+                      className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors border border-gray-700"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </div>
                 </div>
-              ))}
+
+                {/* Progress Indicators */}
+                <div className="flex justify-center gap-2 mt-8 md:mt-0 md:absolute md:bottom-8 md:left-1/2 md:-translate-x-1/2">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        currentSlide === index ? 'w-8 bg-cyan-500' : 'w-2 bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -496,7 +585,7 @@ export function LandingPage() {
                   Ready to take control?
                 </h2>
                 <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-                  Join 50,000+ users who have transformed their financial lives with OmniFolio.
+                  Join 2,000+ users who have transformed their financial lives with OmniFolio.
                 </p>
                 <button
                   onClick={openSignup}

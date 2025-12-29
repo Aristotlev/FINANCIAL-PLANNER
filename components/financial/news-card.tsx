@@ -77,6 +77,16 @@ const NEWS_SOURCES = {
     { name: "CNBC World", url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", color: "#00AAE7" },
     { name: "The Motley Fool", url: "https://www.fool.com/feeds/index.aspx", color: "#D9232D" },
     { name: "Seeking Alpha", url: "https://seekingalpha.com/feed.xml", color: "#FF7A00" }
+  ],
+  general: [
+    { name: "Reuters Top News", url: "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best", color: "#FF6600" },
+    { name: "CNBC Top News", url: "https://www.cnbc.com/id/100003114/device/rss/rss.html", color: "#0099CC" },
+    { name: "WSJ World News", url: "https://feeds.wsj.com/wsj/xml/rss/3_7085.xml", color: "#0274B6" },
+    { name: "Financial Times World", url: "https://www.ft.com/world?format=rss", color: "#FFF1E5" },
+    { name: "BBC Business", url: "http://feeds.bbci.co.uk/news/business/rss.xml", color: "#BB1919" },
+    { name: "CNN Business", url: "http://rss.cnn.com/rss/money_latest.rss", color: "#CC0000" },
+    { name: "Forbes Business", url: "https://www.forbes.com/business/feed/", color: "#000000" },
+    { name: "Business Insider", url: "https://feeds.businessinsider.com/custom/all", color: "#1C1C1C" }
   ]
 };
 
@@ -151,7 +161,7 @@ function parseTimeToMinutes(pubDate: string): number {
 
 // News Modal Content
 function NewsModalContent() {
-  const [activeTab, setActiveTab] = useState<'mynews' | 'crypto' | 'stocks' | 'forex' | 'indices'>('mynews');
+  const [activeTab, setActiveTab] = useState<'mynews' | 'crypto' | 'stocks' | 'forex' | 'indices' | 'general'>('mynews');
   const [error, setError] = useState<string | null>(null);
   
   // Store news for each tab separately for instant switching
@@ -160,7 +170,8 @@ function NewsModalContent() {
     crypto: [],
     stocks: [],
     forex: [],
-    indices: []
+    indices: [],
+    general: []
   });
   
   // Track loading state for each tab
@@ -169,7 +180,8 @@ function NewsModalContent() {
     crypto: false,
     stocks: false,
     forex: false,
-    indices: false
+    indices: false,
+    general: false
   });
   
   // Track which tabs have been loaded
@@ -389,7 +401,7 @@ function NewsModalContent() {
     fetchNewsForTab(activeTab);
     
     // Prefetch other tabs in background (with delay to not overwhelm the API)
-    const tabs = ['mynews', 'crypto', 'stocks', 'forex', 'indices'];
+    const tabs = ['mynews', 'crypto', 'stocks', 'forex', 'indices', 'general'];
     const currentIndex = tabs.indexOf(activeTab);
     
     // Prefetch next and previous tabs after a short delay
@@ -429,6 +441,8 @@ function NewsModalContent() {
         return DollarSign;
       case 'indices':
         return BarChart3;
+      case 'general':
+        return Globe;
       default:
         return Newspaper;
     }
@@ -452,7 +466,8 @@ function NewsModalContent() {
                 { id: 'crypto', label: 'Crypto' },
                 { id: 'stocks', label: 'Stocks' },
                 { id: 'forex', label: 'Forex' },
-                { id: 'indices', label: 'Indices' }
+                { id: 'indices', label: 'Indices' },
+                { id: 'general', label: 'General' }
               ].map(({ id, label }) => {
                 const Icon = getTabIcon(id);
                 return (
@@ -497,9 +512,9 @@ function NewsModalContent() {
 
         {/* My News Info Banner */}
         {activeTab === 'mynews' && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-purple-600" />
+              <Sparkles className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                 {((cryptoHoldings?.length || 0) > 0 || (stockHoldings?.length || 0) > 0) ? 'Personalized News Feed' : 'General Market News'}
               </h3>
@@ -525,8 +540,8 @@ function NewsModalContent() {
                       key={holding.id}
                       className="px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200"
                       style={{ 
-                        backgroundColor: `${holding.color}20`,
-                        borderColor: `${holding.color}60`,
+                        backgroundColor: `${holding.color}15`,
+                        borderColor: `${holding.color}40`,
                         color: holding.color
                       }}
                     >
@@ -536,12 +551,12 @@ function NewsModalContent() {
                 })()}
               </div>
             ) : (
-              <div className="bg-purple-100 dark:bg-purple-900/40 rounded-lg p-3 text-xs text-purple-700 dark:text-purple-300">
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-xs text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-1">
                   <Globe className="w-4 h-4" />
                   <span className="font-semibold">Get Started:</span>
                 </div>
-                <ul className="list-disc list-inside space-y-1 ml-2">
+                <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600 dark:text-gray-400">
                   <li>Add crypto or stock holdings to your portfolio</li>
                   <li>Your news feed will automatically filter relevant articles</li>
                   <li>Each holding gets guaranteed news coverage</li>
