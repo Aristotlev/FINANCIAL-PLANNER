@@ -24,36 +24,54 @@ if (typeof window !== 'undefined') {
 }
 
 let supabaseAdminInstance: SupabaseClient<Database> | null = null;
+let lastCredentials: { url: string; key: string } | null = null;
 
 /**
  * Helper to get environment variables at runtime without build-time inlining
+ * Uses dynamic access to prevent Next.js from inlining values at build time
  */
 function getRuntimeEnv(key: string): string {
+  // Access process.env dynamically to avoid build-time inlining
   const env = process.env;
-  return (env[key] as string) || '';
+  const value = env[key];
+  return typeof value === 'string' ? value : '';
 }
 
 /**
  * Get the Supabase admin client (service role)
  * This bypasses RLS - use with caution!
+ * 
+ * Note: The client is cached, but if credentials change (e.g., during container restart),
+ * a new client will be created automatically.
  */
 export function getSupabaseAdmin(): SupabaseClient<Database> {
-  if (supabaseAdminInstance) {
-    return supabaseAdminInstance;
-  }
-
   const supabaseUrl = getRuntimeEnv('NEXT_PUBLIC_SUPABASE_URL');
   const supabaseServiceKey = getRuntimeEnv('SUPABASE_SERVICE_ROLE_KEY');
+
+  // Check if we need to create a new instance
+  // (first call, credentials missing previously but now available, or credentials changed)
+  const credentialsChanged = lastCredentials && 
+    (lastCredentials.url !== supabaseUrl || lastCredentials.key !== supabaseServiceKey);
+  
+  if (supabaseAdminInstance && !credentialsChanged) {
+    return supabaseAdminInstance;
+  }
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('[SUPABASE SERVER] Missing credentials:', {
       hasUrl: !!supabaseUrl,
       hasServiceKey: !!supabaseServiceKey,
+      urlLength: supabaseUrl?.length || 0,
+      keyLength: supabaseServiceKey?.length || 0,
+      nodeEnv: process.env.NODE_ENV,
     });
     throw new Error(
       'Missing Supabase credentials. Ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.'
     );
   }
+
+  // Store credentials to detect changes
+  lastCredentials = { url: supabaseUrl, key: supabaseServiceKey };
 
   supabaseAdminInstance = createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
@@ -61,6 +79,8 @@ export function getSupabaseAdmin(): SupabaseClient<Database> {
       persistSession: false,
     },
   });
+
+  console.log('[SUPABASE SERVER] Admin client initialized successfully');
 
   return supabaseAdminInstance;
 }
@@ -72,12 +92,15 @@ export function isSupabaseAdminConfigured(): boolean {
   const url = getRuntimeEnv('NEXT_PUBLIC_SUPABASE_URL');
   const key = getRuntimeEnv('SUPABASE_SERVICE_ROLE_KEY');
   
-  const configured = !!(url && key);
+  const configured = !!(url && key && url.length > 0 && key.length > 0);
   
-  if (!configured && process.env.NODE_ENV === 'production') {
+  if (!configured) {
     console.warn('[SUPABASE SERVER] Configuration check failed:', {
       hasUrl: !!url,
       hasServiceKey: !!key,
+      urlLength: url?.length || 0,
+      keyLength: key?.length || 0,
+      nodeEnv: process.env.NODE_ENV,
     });
   }
   

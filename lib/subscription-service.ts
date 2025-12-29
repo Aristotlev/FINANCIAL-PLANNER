@@ -20,6 +20,49 @@ import type {
 } from '@/types/subscription';
 import { PLAN_CONFIG, getEffectivePlanLimits, isTrialActive } from '@/types/subscription';
 
+// CSRF token cache for mutation requests
+let csrfToken: string | null = null;
+let csrfTokenExpiry: number = 0;
+
+/**
+ * Get CSRF token for mutation requests
+ * Caches the token for 50 minutes (tokens expire after 1 hour)
+ */
+async function getCsrfToken(): Promise<string | null> {
+  // Return cached token if still valid
+  if (csrfToken && Date.now() < csrfTokenExpiry) {
+    return csrfToken;
+  }
+
+  try {
+    const response = await fetch('/api/auth/csrf', {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      // CSRF endpoint not available or user not authenticated
+      return null;
+    }
+
+    const data = await response.json();
+    csrfToken = data.csrfToken;
+    // Cache for 50 minutes
+    csrfTokenExpiry = Date.now() + 50 * 60 * 1000;
+    return csrfToken;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clear cached CSRF token (call on logout or when token is rejected)
+ */
+function clearCsrfToken(): void {
+  csrfToken = null;
+  csrfTokenExpiry = 0;
+}
+
 export class SubscriptionService {
   private static isConfigured = isSupabaseConfigured();
 
@@ -53,14 +96,47 @@ export class SubscriptionService {
   private static async apiPost<T>(table: string, payload: any, id?: string): Promise<{ data: T | null; error: Error | null }> {
     try {
       const url = id ? `/api/data?table=${table}&id=${id}` : `/api/data?table=${table}`;
+      
+      // Get CSRF token for mutations
+      const token = await getCsrfToken();
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Include CSRF token if available
+      if (token) {
+        headers['X-CSRF-Token'] = token;
+      }
+      
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify(payload),
       });
       
       if (!response.ok) {
+        // Handle CSRF token expiration - retry with fresh token
+        if (response.status === 403) {
+          clearCsrfToken();
+          const newToken = await getCsrfToken();
+          if (newToken) {
+            headers['X-CSRF-Token'] = newToken;
+            const retryResponse = await fetch(url, {
+              method: 'POST',
+              headers,
+              credentials: 'include',
+              body: JSON.stringify(payload),
+            });
+            
+            if (retryResponse.ok) {
+              const data = await retryResponse.json();
+              return { data: data.data || data, error: null };
+            }
+          }
+        }
+        
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         return { data: null, error: new Error(errorData.error || `HTTP ${response.status}`) };
       }

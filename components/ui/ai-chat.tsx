@@ -1171,73 +1171,141 @@ export function AIChatAssistant() {
     );
   }
 
-  // If AI is not allowed for this plan, show upgrade prompt
+  // If AI is not allowed for this plan, show upgrade prompt inside the chat with blurred background
   if (!isSubscriptionLoading && !isAiAllowed) {
     return (
-      <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[500px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-t-2xl">
+      <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {/* Header - same as regular chat but grayed out */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600/50 to-blue-600/50 text-white rounded-t-2xl">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-gray-400" />
+            <Sparkles className="w-5 h-5 opacity-50" />
             <div>
               <h3 className="font-semibold flex items-center gap-2">
                 Lisa AI Assistant
-                <span className="inline-flex items-center gap-1 text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                <span className="inline-flex items-center gap-1 text-xs bg-amber-500/30 text-amber-200 px-2 py-0.5 rounded-full border border-amber-500/40">
                   <Lock className="w-3 h-3" />
                   Premium
                 </span>
               </h3>
+              <p className="text-xs text-white/60">Upgrade to unlock</p>
             </div>
           </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            title="Close"
-          >
-            <X className="w-4 h-4 text-white" />
-          </button>
-        </div>
-
-        {/* Upgrade Content */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-          <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-6 relative">
-            <Sparkles className="w-10 h-10 text-purple-600 dark:text-purple-400" />
-            <div className="absolute -top-2 -right-2 bg-amber-500 text-white p-1.5 rounded-full shadow-lg">
-              <Lock className="w-4 h-4" />
-            </div>
-          </div>
-          
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-            Unlock Lisa AI Assistant
-          </h3>
-          
-          <p className="text-gray-600 dark:text-gray-300 mb-8 text-sm leading-relaxed">
-            Upgrade to <span className="font-semibold text-purple-600 dark:text-purple-400">Trader</span> or higher to get instant financial insights, market analysis, and voice interaction.
-          </p>
-          
-          <div className="space-y-3 w-full">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => {
-                setIsOpen(false);
-                router.push('/pricing');
-              }}
-              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              onClick={() => setIsMinimized(true)}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              title="Minimize"
             >
-              <Sparkles className="w-4 h-4" />
-              Upgrade to Unlock
+              <Minimize2 className="w-4 h-4" />
             </button>
-            
             <button
               onClick={() => setIsOpen(false)}
-              className="w-full py-3 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors"
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              title="Close"
             >
-              Maybe Later
+              <X className="w-4 h-4" />
             </button>
           </div>
-          
-          <p className="mt-6 text-xs text-gray-400 dark:text-gray-500">
-            Available in Trader, Investor & Whale plans
-          </p>
+        </div>
+
+        {/* Chat Content Area - Blurred with Overlay */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Blurred Background Content - Simulated Chat Messages */}
+          <div className="absolute inset-0 p-4 space-y-4 blur-[6px] opacity-40 pointer-events-none select-none">
+            {/* Fake welcome message */}
+            <div className="flex justify-start">
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-3 h-3 text-purple-600" />
+                  <span className="text-xs font-medium text-purple-600">AI Assistant</span>
+                </div>
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  👋 Hi! I'm Lisa, your intelligent AI financial assistant powered by Google Gemini...
+                </p>
+              </div>
+            </div>
+            {/* Fake user message */}
+            <div className="flex justify-end">
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                <p className="text-sm">Analyze my portfolio performance</p>
+              </div>
+            </div>
+            {/* Fake assistant response */}
+            <div className="flex justify-start">
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-3 h-3 text-purple-600" />
+                  <span className="text-xs font-medium text-purple-600">AI Assistant</span>
+                </div>
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  📊 Your portfolio is up 12.5% this month! Here's a detailed breakdown...
+                </p>
+              </div>
+            </div>
+            {/* More fake messages */}
+            <div className="flex justify-end">
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                <p className="text-sm">Compare BTC vs ETH</p>
+              </div>
+            </div>
+            <div className="flex justify-start">
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800">
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  🔍 Bitcoin vs Ethereum Analysis: BTC is showing stronger momentum...
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Centered Upgrade Card */}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-black/40 backdrop-blur-[2px]">
+            <div className="text-center p-6 bg-gray-900/95 dark:bg-gray-800/95 rounded-2xl shadow-2xl border border-gray-700 mx-4 max-w-[320px]">
+              <div className="w-14 h-14 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-7 h-7 text-purple-400" />
+              </div>
+              <p className="text-white font-bold text-lg mb-2">Upgrade to Chat with Lisa</p>
+              <p className="text-gray-400 text-sm mb-5 leading-relaxed">
+                Get AI-powered financial insights, market analysis, and voice interaction with a paid plan.
+              </p>
+              <a
+                href="/pricing"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsOpen(false);
+                  router.push('/pricing');
+                }}
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-colors shadow-lg hover:shadow-xl"
+              >
+                View Plans
+              </a>
+              <p className="mt-4 text-xs text-gray-500">
+                Starting at $9.99/mo
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Blurred Input Area */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+          <div className="flex gap-2 opacity-50 pointer-events-none">
+            <button className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-400 rounded-xl">
+              <Paperclip className="w-5 h-5" />
+            </button>
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Type or speak your command..."
+                disabled
+                className="w-full px-4 py-2 pr-12 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gray-100 dark:bg-gray-600 rounded-lg">
+                <Mic className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
+            <button className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-400 rounded-xl">
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
     );
