@@ -390,7 +390,7 @@ export default function CommunityPage() {
   };
 
   const handleShare = (platform: string, post: Post) => {
-    const url = `${window.location.origin}/community?post=${post.id}`;
+    const url = `${window.location.origin}/community/post/${post.id}`;
     const text = `Check out this post by ${post.users?.name} on OmniFolio!`;
     
     let shareUrl = '';
