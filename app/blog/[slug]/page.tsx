@@ -225,7 +225,6 @@ export default function BlogPostPage() {
                   viewport={{ once: true }}
                   className="relative rounded-[2.5rem] overflow-hidden group"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600/90 via-blue-600/90 to-cyan-600/90" />
                   <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
 
                   <div className="relative p-12 text-center flex flex-col items-center">
