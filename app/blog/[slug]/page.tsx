@@ -36,32 +36,39 @@ export default function BlogPostPage() {
     router.push('/');
   };
 
-  const getCategoryColor = (color: string) => {
-    const colors: Record<string, string> = {
-      purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-      rose: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-      orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      violet: 'bg-violet-500/20 text-violet-400 border-violet-500/30',
+  // Map legacy colors to the new Green/Cyan/Purple design system
+  const getDesignSystemColor = (legacyColor: string) => {
+    const map: Record<string, 'green' | 'cyan' | 'purple'> = {
+      purple: 'purple',
+      amber: 'green',
+      emerald: 'green',
+      cyan: 'cyan',
+      rose: 'purple',
+      orange: 'green',
+      blue: 'cyan',
+      violet: 'purple',
     };
-    return colors[color] || colors.purple;
+    return map[legacyColor] || 'green';
+  };
+
+  const getCategoryColor = (color: string) => {
+    const dsColor = getDesignSystemColor(color);
+    const colors = {
+      green: 'bg-green-500/20 text-green-400 border-green-500/30',
+      cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+      purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    };
+    return colors[dsColor];
   };
 
   const getIconBgColor = (color: string) => {
-    const colors: Record<string, string> = {
-      purple: 'from-purple-500 to-purple-800',
-      amber: 'from-amber-500 to-amber-800',
-      emerald: 'from-emerald-500 to-emerald-800',
+    const dsColor = getDesignSystemColor(color);
+    const colors = {
+      green: 'from-green-500 to-green-800',
       cyan: 'from-cyan-500 to-cyan-800',
-      rose: 'from-rose-500 to-rose-800',
-      orange: 'from-orange-500 to-orange-800',
-      blue: 'from-blue-500 to-blue-800',
-      violet: 'from-violet-500 to-violet-800',
+      purple: 'from-purple-500 to-purple-800',
     };
-    return colors[color] || colors.purple;
+    return colors[dsColor];
   };
 
   const PostIcon = post.icon;
@@ -69,26 +76,32 @@ export default function BlogPostPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#030712] text-white selection:bg-purple-500/30 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0a0f] text-white selection:bg-green-500/30 relative overflow-x-hidden font-sans">
       <BackgroundBeams />
 
+      {/* Grid Pattern Overlay */}
+      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
+        backgroundSize: '50px 50px'
+      }}></div>
+
       {/* Decorative gradients */}
-      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 blur-[120px] rounded-full pointer-events-none z-0" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/20 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-900/10 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none z-0" />
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/60 backdrop-blur-xl border-b border-white/5">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <Link href="/" className="flex items-center gap-2 group">
               <OmnifolioLogo size="sm" />
-              <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute -inset-2 bg-gradient-to-r from-green-500/20 to-cyan-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </Link>
             <div className="flex items-center gap-4">
               <motion.div whileHover={{ x: -2 }}>
                 <Link
                   href="/blog"
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-medium py-2 px-4 rounded-full hover:bg-white/5"
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-medium py-2 px-4 rounded-full hover:bg-white/5 font-sans"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Blog</span>
@@ -126,7 +139,7 @@ export default function BlogPostPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm ${getCategoryColor(post.color)} mb-8`}
+              className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm font-sans ${getCategoryColor(post.color)} mb-8`}
             >
               {post.category}
             </motion.span>
@@ -135,7 +148,7 @@ export default function BlogPostPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-8 leading-tight tracking-tight px-4"
+              className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-8 leading-tight tracking-tight px-4 font-serif"
             >
               {post.title}
             </motion.h1>
@@ -144,10 +157,10 @@ export default function BlogPostPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="flex items-center justify-center gap-8 text-sm text-gray-400 font-medium"
+              className="flex items-center justify-center gap-8 text-sm text-gray-400 font-medium font-sans"
             >
               <span className="flex items-center gap-2 bg-white/5 py-1.5 px-4 rounded-full border border-white/5">
-                <Calendar className="w-4 h-4 text-purple-400" />
+                <Calendar className="w-4 h-4 text-green-400" />
                 {post.date}
               </span>
               <span className="flex items-center gap-2 bg-white/5 py-1.5 px-4 rounded-full border border-white/5">
@@ -167,7 +180,7 @@ export default function BlogPostPage() {
             <div className="absolute -inset-x-4 -inset-y-4 bg-white/[0.02] backdrop-blur-2xl rounded-[3rem] border border-white/5 -z-10 shadow-2xl" />
 
             <div className="p-8 sm:p-12 md:p-16">
-              <div className="prose prose-invert prose-lg max-w-none">
+              <div className="prose prose-invert prose-lg max-w-none font-sans">
                 {post.content.map((block, index) => {
                   if (block.type === 'paragraph') {
                     return (
@@ -189,7 +202,7 @@ export default function BlogPostPage() {
                         initial={{ opacity: 0, x: -10 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="text-3xl font-bold text-white mt-16 mb-8 flex items-center gap-4"
+                        className="text-3xl font-bold text-white mt-16 mb-8 flex items-center gap-4 font-serif"
                       >
                         <span className={`w-8 h-1.5 rounded-full bg-gradient-to-r ${getIconBgColor(post.color)}`} />
                         {block.text}
@@ -228,10 +241,10 @@ export default function BlogPostPage() {
                   <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
 
                   <div className="relative p-12 text-center flex flex-col items-center">
-                    <h3 className="text-3xl font-black text-white mb-4 tracking-tight">
+                    <h3 className="text-3xl font-black text-white mb-4 tracking-tight font-serif">
                       Ready to master your finances?
                     </h3>
-                    <p className="text-white/80 text-lg mb-10 max-w-xl mx-auto font-medium">
+                    <p className="text-white/80 text-lg mb-10 max-w-xl mx-auto font-medium font-sans">
                       Join thousands of sophisticated investors who use OmniFolio to gain
                       an unfair advantage in their financial life.
                     </p>
@@ -239,13 +252,13 @@ export default function BlogPostPage() {
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleBackToHome}
-                      className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-[#030712] rounded-2xl text-lg font-black transition-all shadow-xl"
+                      className="group relative inline-flex items-center gap-3 px-8 py-4 bg-green-500 text-white rounded-2xl text-lg font-black transition-all shadow-xl hover:bg-green-600 font-sans"
                     >
                       Get Started Free
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" />
                     </motion.button>
 
-                    <p className="mt-8 text-white/60 text-xs font-bold flex items-center gap-2">
+                    <p className="mt-8 text-white/60 text-xs font-bold flex items-center gap-2 font-sans">
                       <Shield className="w-4 h-4" />
                       No credit card required • Privacy first
                     </p>
@@ -258,36 +271,36 @@ export default function BlogPostPage() {
       </article>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-12 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#030712]/50 backdrop-blur-md">
+      <footer className="border-t border-white/5 py-12 px-4 sm:px-6 lg:px-8 relative z-10 bg-[#0a0a0f]/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12">
             <div className="flex items-center gap-3 group">
               <OmnifolioLogo size="sm" />
               <div className="w-px h-6 bg-white/10 mx-2" />
-              <span className="text-gray-500 font-medium">Digital Wealth Management</span>
+              <span className="text-gray-500 font-medium font-sans">Digital Wealth Management</span>
             </div>
 
             <div className="flex items-center gap-8">
-              <Link href="/" className="text-gray-400 hover:text-white transition-colors font-medium relative group">
+              <Link href="/" className="text-gray-400 hover:text-white transition-colors font-medium relative group font-sans">
                 Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-500 transition-all group-hover:w-full" />
               </Link>
-              <Link href="/about" className="text-gray-400 hover:text-white transition-colors font-medium relative group">
+              <Link href="/about" className="text-gray-400 hover:text-white transition-colors font-medium relative group font-sans">
                 About
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-500 transition-all group-hover:w-full" />
               </Link>
-              <Link href="/blog" className="text-white transition-colors font-medium relative group">
+              <Link href="/blog" className="text-white transition-colors font-medium relative group font-sans">
                 Blog
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-purple-500" />
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-green-500" />
               </Link>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-white/5 gap-4">
-            <p className="text-gray-600 text-xs font-medium">
+            <p className="text-gray-600 text-xs font-medium font-sans">
               © {new Date().getFullYear()} OmniFolio Technologies. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-xs text-gray-500 font-medium">
+            <div className="flex items-center gap-6 text-xs text-gray-500 font-medium font-sans">
               <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             </div>

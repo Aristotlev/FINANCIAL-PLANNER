@@ -1438,7 +1438,7 @@ function CryptoModalContent() {
             {/* Wallet Distribution Chart */}
             {cryptoHoldings.length > 0 && (
               <div
-                className="mt-6 bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700"
+                className="mt-6 bg-transparent"
                 style={{
                   overflow: 'visible',
                   position: 'relative',

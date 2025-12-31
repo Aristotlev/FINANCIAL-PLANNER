@@ -1457,12 +1457,39 @@ function StocksModalContent() {
                 <LazyRechartsWrapper height={256}>
                   {({ BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }) => (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dividendHistory}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="quarter" />
-                        <YAxis />
-                        <Tooltip cursor={false} formatter={(value: any) => [`$${value}`, 'Dividend']} />
-                        <Bar dataKey="dividend" fill="#8b5cf6" isAnimationActive={true} animationDuration={300} />
+                      <BarChart data={dividendHistory} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" opacity={0.5} />
+                        <XAxis 
+                          dataKey="quarter" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#6B7280', fontSize: 12 }}
+                          dy={10}
+                        />
+                        <YAxis 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#6B7280', fontSize: 12 }}
+                          tickFormatter={(value) => `$${value}`}
+                        />
+                        <Tooltip 
+                          cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }}
+                          contentStyle={{ 
+                            backgroundColor: 'var(--tooltip-bg, #fff)',
+                            borderRadius: '8px', 
+                            border: '1px solid var(--tooltip-border, #E5E7EB)', 
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' 
+                          }}
+                          formatter={(value: any) => [`$${value}`, 'Dividend']}
+                          allowEscapeViewBox={{ x: true, y: true }}
+                        />
+                        <Bar 
+                          dataKey="dividend" 
+                          fill="#6366f1" 
+                          radius={[4, 4, 0, 0]} 
+                          maxBarSize={50}
+                          isAnimationActive={false}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   )}

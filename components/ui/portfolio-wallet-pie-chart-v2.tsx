@@ -109,19 +109,19 @@ export function PortfolioWalletPieChartV2({ holdings, prices }: PortfolioWalletP
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-          <Wallet className="w-5 h-5" />
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <Wallet className="w-4 h-4" />
           Portfolio by Wallet
         </h3>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-xs text-gray-600 dark:text-gray-400">
           {displayWalletData.length} {displayWalletData.length === 1 ? 'wallet' : 'wallets'}
         </div>
       </div>
 
-      <div className="relative rounded-lg [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100" style={{ height: '300px', width: '100%' }}>
-        <LazyRechartsWrapper height={300}>
+      <div className="relative rounded-lg [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100" style={{ height: '160px', width: '100%' }}>
+        <LazyRechartsWrapper height={160}>
           {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -131,7 +131,7 @@ export function PortfolioWalletPieChartV2({ holdings, prices }: PortfolioWalletP
                   nameKey="displayName" 
                   cx="50%" 
                   cy="50%"
-                  outerRadius={100} 
+                  outerRadius={60} 
                   innerRadius={0} 
                   paddingAngle={0}
                   strokeWidth={displayWalletData.length > 1 ? 2 : 0} 
@@ -173,27 +173,27 @@ export function PortfolioWalletPieChartV2({ holdings, prices }: PortfolioWalletP
           return (
             <div 
               key={index} 
-              className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <div 
-                  className="w-4 h-4 rounded-full flex-shrink-0 shadow-md" 
+                  className="w-3 h-3 rounded-full flex-shrink-0 shadow-md" 
                   style={{ backgroundColor: wallet.color }} 
                 />
-                <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
                   {wallet.displayName}
                 </span>
                 <span 
-                  className={'text-xs px-1.5 py-0.5 rounded font-medium flex-shrink-0 ' + (wallet.type === 'defi' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300')}
+                  className={'text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0 ' + (wallet.type === 'defi' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300')}
                 >
                   {wallet.type === 'defi' ? 'DeFi' : 'CeFi'}
                 </span>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
                   {percentage.toFixed(1)}%
                 </span>
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                <span className="text-xs font-semibold text-gray-900 dark:text-white">
                   {formatMain(wallet.value)}
                 </span>
               </div>

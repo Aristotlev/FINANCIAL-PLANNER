@@ -41,6 +41,11 @@ module.exports = {
         'touch': '44px',
         'touch-lg': '48px',
       },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+        serif: ['var(--font-playfair)', 'serif'],
+        calligraphy: ['var(--font-dancing)', 'cursive'],
+      },
       keyframes: {
         scroll: {
           '0%': { transform: 'translateX(0)' },

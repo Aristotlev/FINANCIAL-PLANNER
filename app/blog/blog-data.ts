@@ -35,7 +35,7 @@ export const blogPosts: BlogPost[] = [
     icon: Wallet,
     date: 'December 15, 2024',
     readTime: '5 min read',
-    color: 'purple',
+    color: 'emerald',
     content: [
       { type: 'paragraph', text: "If you're like most people, your financial life is scattered across a dozen different apps. Your checking account is with one bank, savings with another. Crypto on an exchange. Stocks with a broker. Expenses tracked in a spreadsheet (maybe). Sound familiar?" },
       { type: 'paragraph', text: "This fragmentation isn't just inconvenient—it's actively hurting your financial health. When you can't see your complete picture, you make decisions in a vacuum. You might feel rich because your investment account is up, while ignoring that your credit card debt is growing." },

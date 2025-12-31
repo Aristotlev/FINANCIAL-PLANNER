@@ -1426,7 +1426,7 @@ function CashModalContent() {
 
             <div>
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Cash Flow Analysis</h3>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg">
+              <div className="p-4 rounded-lg">
                 <div className="space-y-3">
                   {/* Dynamic recommendations based on actual holdings */}
                   {(() => {
@@ -1552,7 +1552,7 @@ function CashModalContent() {
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Market Analysis</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Risk Level Card */}
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="bg-gradient-to-br from-red-50 to-red-50 dark:from-red-900/20 dark:to-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold text-gray-900 dark:text-white">Risk Level</h4>
                     <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -1576,10 +1576,10 @@ function CashModalContent() {
                 </div>
 
                 {/* Opportunity Score Card */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="bg-gradient-to-br from-green-50 to-green-50 dark:from-green-900/20 dark:to-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-semibold text-gray-900 dark:text-white">Opportunity Score</h4>
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                       {(() => {
                         const avgAPY = weightedAPY;
                         if (avgAPY >= 4.5) return '9.5/10';
@@ -1604,7 +1604,7 @@ function CashModalContent() {
               </div>
 
               {/* Best Options - Real-time rates */}
-              <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="mt-4 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Best Current Options (As of {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -1717,7 +1717,7 @@ function CashModalContent() {
           <div className="space-y-6">
             {/* Income Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
                     <DollarSign className="w-5 h-5 text-white" />
@@ -1734,7 +1734,7 @@ function CashModalContent() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-5 h-5 text-white" />
@@ -1751,7 +1751,7 @@ function CashModalContent() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
                     <Briefcase className="w-5 h-5 text-white" />

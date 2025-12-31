@@ -17,6 +17,25 @@ import { ConsentBanner } from "../components/ui/consent-banner";
 import { Preloader } from "../components/ui/preloader";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from "next/script";
+import { Inter, Playfair_Display, Dancing_Script } from 'next/font/google';
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const playfair = Playfair_Display({ 
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+});
+
+const dancing = Dancing_Script({ 
+  subsets: ['latin'],
+  variable: '--font-dancing',
+  display: 'swap',
+});
 
 // Force dynamic rendering for all pages (disable static generation)
 export const dynamic = 'force-dynamic';
@@ -89,7 +108,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${inter.variable} ${playfair.variable} ${dancing.variable}`}>
       <head>
         {/* Runtime environment variables - MUST be FIRST to ensure availability before any code runs */}
         {/* Uses synchronous XHR to block until env vars are loaded - critical for production */}

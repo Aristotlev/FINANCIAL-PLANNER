@@ -48,7 +48,7 @@ export function OmnifolioLogo({
 
       {/* Text */}
       {showText && (
-        <span className={`ml-2 font-bold bg-gradient-to-r from-cyan-500 via-purple-500 to-blue-500 bg-clip-text text-transparent ${textSizes[size]} ${textClassName}`}>
+        <span className={`ml-2 font-bold bg-gradient-to-r from-green-500 via-cyan-500 to-blue-500 bg-clip-text text-transparent ${textSizes[size]} ${textClassName}`}>
           OmniFolio
         </span>
       )}
