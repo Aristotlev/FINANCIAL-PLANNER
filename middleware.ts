@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Security header configuration via environment variables
+// CSP_MODE: 'enforce' | 'report-only' | 'off' (default: 'enforce' in prod, 'off' in dev)
+// CSP_REPORT_URI: Optional URI for CSP violation reports
+
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   
@@ -44,9 +48,11 @@ export function middleware(request: NextRequest) {
   // More permissive CSP in development
   const isDev = process.env.NODE_ENV === 'development';
   
-  // In development, we don't set CSP to avoid conflicts with extensions and debugging tools
-  // The browser will default to permissive mode
-  if (!isDev) {
+  // CSP Mode: 'enforce' (default in prod), 'report-only', or 'off'
+  const cspMode = process.env.CSP_MODE || (isDev ? 'off' : 'enforce');
+  const cspReportUri = process.env.CSP_REPORT_URI;
+  
+  if (cspMode !== 'off') {
     const cspDirectives = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://maps.googleapis.com https://*.googleapis.com https://maps.gstatic.com https://*.gstatic.com https://accounts.google.com https://*.googletagmanager.com https://*.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://maps.google.com",
@@ -62,12 +68,19 @@ export function middleware(request: NextRequest) {
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
+      "upgrade-insecure-requests",
     ];
 
-    response.headers.set(
-      'Content-Security-Policy',
-      cspDirectives.join('; ')
-    );
+    // Add report-uri if configured
+    if (cspReportUri) {
+      cspDirectives.push(`report-uri ${cspReportUri}`);
+    }
+
+    const cspHeader = cspMode === 'report-only' 
+      ? 'Content-Security-Policy-Report-Only'
+      : 'Content-Security-Policy';
+    
+    response.headers.set(cspHeader, cspDirectives.join('; '));
   }
 
   // Additional security headers
@@ -84,11 +97,45 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  // Permissions Policy
+  // Permissions Policy - restrictive by default, only enable what's needed
   response.headers.set(
     'Permissions-Policy',
-    'microphone=(self), camera=(), geolocation=(self)'
+    [
+      'accelerometer=()',
+      'ambient-light-sensor=()',
+      'autoplay=()',
+      'battery=()',
+      'camera=()',
+      'cross-origin-isolated=()',
+      'display-capture=()',
+      'document-domain=()',
+      'encrypted-media=()',
+      'execution-while-not-rendered=()',
+      'execution-while-out-of-viewport=()',
+      'fullscreen=(self)',
+      'geolocation=(self)',      // Needed for map features
+      'gyroscope=()',
+      'keyboard-map=()',
+      'magnetometer=()',
+      'microphone=(self)',       // For voice features if any
+      'midi=()',
+      'navigation-override=()',
+      'payment=()',
+      'picture-in-picture=()',
+      'publickey-credentials-get=()',
+      'screen-wake-lock=()',
+      'sync-xhr=()',
+      'usb=()',
+      'web-share=(self)',
+      'xr-spatial-tracking=()',
+    ].join(', ')
   );
+
+  // Cross-Origin policies for additional isolation
+  // Note: These can break some third-party integrations, enable carefully
+  // response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  // response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  // response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
 
   return response;
 }
