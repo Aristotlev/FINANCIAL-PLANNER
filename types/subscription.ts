@@ -18,6 +18,8 @@ export interface PlanLimits {
   imports_exports: boolean;
   ai_assistant: boolean;
   paid_apis_allowed: boolean;
+  community_access: boolean;
+  sec_filings_access: boolean;
   price_monthly_usd: number;
   created_at?: string;
   updated_at?: string;
@@ -136,6 +138,8 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     imports_exports: false,             // Manual Entry Only - NO imports/exports
     ai_assistant: false,                // No AI Assistant
     paid_apis_allowed: false,           // No paid APIs (Google Maps, etc.)
+    community_access: false,            // No Community Access
+    sec_filings_access: false,          // No SEC Filings Access
     price_monthly_usd: 0.00,
   },
   TRADER: {
@@ -148,6 +152,8 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     imports_exports: true,               // Unlimited Imports & Exports
     ai_assistant: true,                  // AI Assistant enabled (10 msgs/day)
     paid_apis_allowed: true,             // Paid APIs allowed
+    community_access: true,              // Community Access
+    sec_filings_access: false,           // No SEC Filings Access
     price_monthly_usd: 9.99,
   },
   INVESTOR: {
@@ -160,6 +166,8 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     imports_exports: true,
     ai_assistant: true,
     paid_apis_allowed: true,
+    community_access: true,              // Community Access
+    sec_filings_access: true,            // SEC Filings Access
     price_monthly_usd: 19.99,
   },
   WHALE: {
@@ -172,6 +180,8 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, PlanLimits> = {
     imports_exports: true,
     ai_assistant: true,
     paid_apis_allowed: true,
+    community_access: true,              // Community Access
+    sec_filings_access: true,            // SEC Filings Access
     price_monthly_usd: 49.99,
   },
 };
@@ -201,17 +211,22 @@ export const PLAN_FEATURES: Record<SubscriptionPlan, PlanFeature[]> = {
     { name: 'Advanced Tax Calculator (41+ Countries)', included: true },
     { name: 'Custom Income Sources', included: true },
     { name: 'Tax Optimization', included: true },
+    { name: 'Community Access', included: false, tooltip: 'Access to investor community' },
+    { name: 'SEC Filings Access', included: false, tooltip: 'SEC EDGAR filings and insider trading data' },
     { name: 'Google Maps Integration', included: false, tooltip: 'Paid API feature' },
     { name: 'Lisa AI Assistant', included: false },
   ],
   TRADER: [
     { name: 'Everything in Starter', included: true },
+    { name: 'Community Access', included: true, tooltip: 'Access to investor community' },
     { name: 'Google Maps Integration', included: true },
     { name: 'Interactive Charts (Advanced)', included: true },
     { name: 'Lisa AI Assistant (10 msgs/day)', included: true },
+    { name: 'SEC Filings Access', included: false, tooltip: 'SEC EDGAR filings and insider trading data' },
   ],
   INVESTOR: [
     { name: 'Everything in Trader', included: true },
+    { name: 'SEC Filings Access', included: true, tooltip: 'SEC EDGAR filings and insider trading data' },
     { name: 'Lisa AI Assistant (50 msgs/day)', included: true },
     { name: 'Priority Support', included: true },
   ],

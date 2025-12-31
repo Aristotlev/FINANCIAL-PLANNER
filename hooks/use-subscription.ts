@@ -420,6 +420,60 @@ export function useImportExportLimit() {
   };
 }
 
+// ==================== useCommunityAccess ====================
+
+/**
+ * Hook to check if user can access the Community feature
+ * Only available for paid plans (TRADER, INVESTOR, WHALE)
+ */
+export function useCommunityAccess() {
+  const { subscription, loading } = useSubscription();
+  const [hasAccess, setHasAccess] = useState(false);
+
+  useEffect(() => {
+    if (!loading && subscription) {
+      // Community access for TRADER, INVESTOR, WHALE or during trial
+      const paidPlans: SubscriptionPlan[] = ['TRADER', 'INVESTOR', 'WHALE'];
+      const hasPaidPlan = paidPlans.includes(subscription.plan);
+      const inTrial = isTrialActive(subscription);
+      setHasAccess(hasPaidPlan || inTrial);
+    }
+  }, [subscription, loading]);
+
+  return {
+    hasAccess,
+    loading,
+    subscription,
+  };
+}
+
+// ==================== useSECFilingsAccess ====================
+
+/**
+ * Hook to check if user can access the SEC Filings feature
+ * Only available for INVESTOR and WHALE plans
+ */
+export function useSECFilingsAccess() {
+  const { subscription, loading } = useSubscription();
+  const [hasAccess, setHasAccess] = useState(false);
+
+  useEffect(() => {
+    if (!loading && subscription) {
+      // SEC Filings access for INVESTOR, WHALE or during trial
+      const eligiblePlans: SubscriptionPlan[] = ['INVESTOR', 'WHALE'];
+      const hasEligiblePlan = eligiblePlans.includes(subscription.plan);
+      const inTrial = isTrialActive(subscription);
+      setHasAccess(hasEligiblePlan || inTrial);
+    }
+  }, [subscription, loading]);
+
+  return {
+    hasAccess,
+    loading,
+    subscription,
+  };
+}
+
 // ==================== useUpgradePrompt ====================
 
 /**
