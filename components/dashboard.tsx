@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   CashCard, 
   SavingsCard, 
@@ -28,18 +28,10 @@ import { DraggableCardWrapper } from './ui/draggable-card-wrapper';
 import { CardOrderPanel } from './ui/card-order-panel';
 import { useHiddenCards, CardType } from '../contexts/hidden-cards-context';
 import { useCardOrder } from '../contexts/card-order-context';
-import { useFinancialData } from '../contexts/financial-data-context';
-import { usePortfolioValues } from '../hooks/use-portfolio';
-import { useCurrency } from '../contexts/currency-context';
 import { useImportExportLimit } from '../hooks/use-subscription';
 import { GPUOptimizedWrapper } from './ui/gpu-optimized-wrapper';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-// Lazy load the 3D visualization to improve initial load
-const DataVisualization3D = lazy(() => 
-  import('./ui/data-visualization-3d').then(mod => ({ default: mod.DataVisualization3D }))
-);
 
 // Extend jsPDF interface to include autoTable
 declare module 'jspdf' {
@@ -52,11 +44,7 @@ export function Dashboard() {
   const { user, logout } = useBetterAuth();
   const { isCardHidden } = useHiddenCards();
   const { cardOrder } = useCardOrder();
-  const { cash, savings, valuableItems, realEstate, tradingAccount, expenses } = useFinancialData();
-  const { crypto, stocks } = usePortfolioValues();
-  const { mainCurrency, convert } = useCurrency();
   const { canUse: canUseImportExport, limitInfo: importExportLimitInfo } = useImportExportLimit();
-  const [showVisualization, setShowVisualization] = useState(true);
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [showApiKeysMenu, setShowApiKeysMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -69,91 +57,6 @@ export function Dashboard() {
   const [showCardOrderPanel, setShowCardOrderPanel] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAccountSettingsModal, setShowAccountSettingsModal] = useState(false);
-
-  // Memoized currency update trigger - debounced to prevent cascading renders
-  const currencyUpdateTriggerRef = React.useRef(0);
-
-  // Memoized event handler for currency changes
-  const handleCurrencyChange = useCallback(() => {
-    currencyUpdateTriggerRef.current += 1;
-  }, []);
-
-  // Listen for currency changes - optimized with cleanup
-  React.useEffect(() => {
-    window.addEventListener('currencyChanged', handleCurrencyChange);
-    return () => window.removeEventListener('currencyChanged', handleCurrencyChange);
-  }, [handleCurrencyChange]);
-
-  // Calculate portfolio distribution data with currency conversion
-  const portfolioData = React.useMemo(() => {
-    // Crypto and stocks are in USD, need conversion
-    const cryptoValue = crypto.value || 0;
-    const stocksValue = stocks.value || 0;
-    const cryptoChange = crypto.return || 0;
-    const stocksChange = stocks.return || 0;
-
-    // Convert USD values to main currency
-    const cryptoConverted = convert(cryptoValue, 'USD', mainCurrency.code);
-    const stocksConverted = convert(stocksValue, 'USD', mainCurrency.code);
-
-    // Other assets are assumed to be in main currency already (or need conversion based on their currency)
-    // For now, treating them as USD and converting
-    const realEstateConverted = convert(realEstate, 'USD', mainCurrency.code);
-    const tradingAccountConverted = convert(tradingAccount, 'USD', mainCurrency.code);
-    const savingsConverted = convert(savings, 'USD', mainCurrency.code);
-    const valuableItemsConverted = convert(valuableItems, 'USD', mainCurrency.code);
-    const cashConverted = convert(cash, 'USD', mainCurrency.code);
-
-    const totalPortfolio = realEstateConverted + tradingAccountConverted + stocksConverted + cryptoConverted + savingsConverted + valuableItemsConverted + cashConverted;
-
-    return {
-      total: totalPortfolio,
-      items: [
-        { 
-          label: "Real Estate", 
-          value: realEstateConverted, 
-          change: "+0%",
-          color: "#06b6d4" 
-        },
-        { 
-          label: "Trading Account", 
-          value: tradingAccountConverted, 
-          change: "+0%",
-          color: "#0891b2" 
-        },
-        { 
-          label: "Stocks", 
-          value: stocksConverted, 
-          change: stocksChange > 0 ? `+${stocksChange.toFixed(1)}%` : `${stocksChange.toFixed(1)}%`,
-          color: "#8b5cf6" 
-        },
-        { 
-          label: "Crypto", 
-          value: cryptoConverted, 
-          change: cryptoChange > 0 ? `+${cryptoChange.toFixed(1)}%` : `${cryptoChange.toFixed(1)}%`,
-          color: "#f59e0b" 
-        },
-        { 
-          label: "Savings", 
-          value: savingsConverted, 
-          change: "+0%",
-          color: "#3b82f6" 
-        },
-        { 
-          label: "Valuable Items", 
-          value: valuableItemsConverted, 
-          change: "+0%",
-          color: "#ec4899" 
-        },
-        { 
-          label: "Cash", 
-          value: cashConverted, 
-          change: "+0%",
-          color: "#10b981" 
-        },
-      ]
-    };
-  }, [cash, savings, valuableItems, realEstate, tradingAccount, crypto, stocks, mainCurrency.code, convert]);
 
   // NOTE: Total assets calculation removed - each card now shows its own real data
   // Net worth will aggregate from individual cards when they have data
@@ -682,19 +585,6 @@ export function Dashboard() {
 
       {/* AI Chat Assistant with Voice */}
       <AIChatAssistant />
-
-      {/* 3D Data Visualization Overlay - Lazy loaded for better initial performance */}
-      {showVisualization && (
-        <Suspense fallback={null}>
-          <DataVisualization3D
-            title="Portfolio Distribution"
-            chartType="bar"
-            totalLabel="Total Portfolio Value"
-            totalValue={portfolioData.total}
-            data={portfolioData.items}
-          />
-        </Suspense>
-      )}
 
       {/* Account Settings Modal */}
       {showAccountSettingsModal && (
