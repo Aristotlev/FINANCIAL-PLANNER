@@ -29,6 +29,7 @@ import { ThemedStatBox, ConditionalThemedStatBox, ThemedContainer, CARD_THEME_CO
 import { formatNumber } from "../../lib/utils";
 import { useCurrency } from "../../contexts/currency-context";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useTranslation } from "../../contexts/translation-context";
 import { PLAN_CONFIG, getEffectivePlanLimits } from "@/types/subscription";
 
 interface RealEstateProperty {
@@ -1926,6 +1927,7 @@ function RealEstateModalContent() {
 }
 
 export function RealEstateCard() {
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<RealEstateProperty[]>([]);
   const { mainCurrency, convert } = useCurrency();
 
@@ -1985,8 +1987,8 @@ export function RealEstateCard() {
 
   return (
     <EnhancedFinancialCard
-      title="Real Estate"
-      description="Property portfolio and real estate investments"
+      title={t('realEstate.title')}
+      description={t('realEstate.totalValue')}
       amount={displayAmount}
       change={changePercent}
       changeType={changeType}
@@ -1994,8 +1996,8 @@ export function RealEstateCard() {
       secondaryColor="#2dd4bf"
       gridColor="#14b8a615"
       stats={[
-        { label: "Equity", value: `${mainCurrency.symbol}${formatNumber(totalEquity)}`, color: "#84cc16" },
-        { label: "Rental Income", value: `${mainCurrency.symbol}${formatNumber(monthlyRentalIncome)}/mo`, color: "#a3e635" }
+        { label: t('realEstate.equity'), value: `${mainCurrency.symbol}${formatNumber(totalEquity)}`, color: "#84cc16" },
+        { label: t('realEstate.rentalIncome'), value: `${mainCurrency.symbol}${formatNumber(monthlyRentalIncome)}/mo`, color: "#a3e635" }
       ]}
       icon={Building}
       hoverContent={<RealEstateHoverContent />}

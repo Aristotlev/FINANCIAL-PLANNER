@@ -28,6 +28,7 @@ import { formatNumber } from "../../lib/utils";
 import { useFinancialData } from "../../contexts/financial-data-context";
 import { useCurrency } from "../../contexts/currency-context";
 import { SubscriptionManager, type SubscriptionItem } from "./subscription-manager";
+import { useTranslation } from "../../contexts/translation-context";
 
 interface ExpenseCategory {
   id: string;
@@ -1147,6 +1148,7 @@ function ExpensesModalContent() {
 }
 
 export function ExpensesCard() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([]);
   const { mainCurrency, convert } = useCurrency();
@@ -1218,8 +1220,8 @@ export function ExpensesCard() {
 
   return (
     <EnhancedFinancialCard
-      title="Expenses & Debt"
-      description="Monthly spending and debt obligations"
+      title={t('expenses.title')}
+      description={t('expenses.monthlyTotal')}
       amount={displayAmount}
       change={changePercent}
       changeType={changeType}
@@ -1227,9 +1229,9 @@ export function ExpensesCard() {
       secondaryColor="#f87171"
       gridColor="#ef444415"
       stats={[
-        { label: "Monthly Expenses", value: `-${mainCurrency.symbol}${formatNumber(totalExpenses)}`, color: "#ef4444" },
-        { label: "Total Debt Balance", value: `-${mainCurrency.symbol}${formatNumber(totalDebtBalance)}`, color: "#dc2626" },
-        { label: "Debt Payments/mo", value: `-${mainCurrency.symbol}${formatNumber(totalDebtPayments)}`, color: "#f87171" }
+        { label: t('expenses.monthly'), value: `-${mainCurrency.symbol}${formatNumber(totalExpenses)}`, color: "#ef4444" },
+        { label: t('expenses.totalDebt'), value: `-${mainCurrency.symbol}${formatNumber(totalDebtBalance)}`, color: "#dc2626" },
+        { label: t('expenses.debtPayments'), value: `-${mainCurrency.symbol}${formatNumber(totalDebtPayments)}`, color: "#f87171" }
       ]}
       icon={Receipt}
       hoverContent={<ExpensesHoverContent />}

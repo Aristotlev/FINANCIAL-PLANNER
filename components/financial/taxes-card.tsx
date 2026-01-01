@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "@/contexts/translation-context";
 import { 
   Receipt, 
   Plus, 
@@ -1503,6 +1504,7 @@ function TaxesModalContent() {
 }
 
 export function TaxesCard() {
+  const { t } = useTranslation();
   const [profiles, setProfiles] = useState<TaxProfile[]>([]);
   const [activeProfile, setActiveProfile] = useState<TaxProfile | null>(null);
   const [calculation, setCalculation] = useState<TaxCalculationResult | null>(null);
@@ -1558,27 +1560,27 @@ export function TaxesCard() {
 
   return (
     <EnhancedFinancialCard
-      title="Taxes"
-      description={activeProfile ? `${activeProfile.country} • ${getCompanyTypeName(activeProfile.companyType)}` : "Smart tax calculator"}
+      title={t('taxes.title')}
+      description={activeProfile ? `${activeProfile.country} • ${getCompanyTypeName(activeProfile.companyType)}` : t('taxes.description')}
       amount={calculation && activeProfile ? `-${formatCurrency(totalTax, activeProfile.country)}` : "$0.00"}
-      change={effectiveRate > 0 ? `${effectiveRate.toFixed(1)}% effective rate` : "0%"}
+      change={effectiveRate > 0 ? `${effectiveRate.toFixed(1)}% ${t('taxes.effectiveRate')}` : "0%"}
       changeType="negative"
       mainColor="#3b82f6"
       secondaryColor="#60a5fa"
       gridColor="#3b82f615"
       stats={[
         { 
-          label: "Total Income", 
+          label: t('taxes.totalIncome'), 
           value: calculation && activeProfile ? `+${formatCurrency(totalIncome, activeProfile.country)}` : "$0.00", 
           color: "#10b981" 
         },
         { 
-          label: "Total Tax", 
+          label: t('taxes.totalTax'), 
           value: calculation && activeProfile ? `-${formatCurrency(totalTax, activeProfile.country)}` : "$0.00", 
           color: "#ef4444" 
         },
         { 
-          label: "Net Income", 
+          label: t('taxes.netIncome'), 
           value: calculation && activeProfile ? formatCurrency(netIncome, activeProfile.country) : "$0.00", 
           color: "#3b82f6" 
         }

@@ -21,6 +21,7 @@ import {
 import { OmnifolioLogo } from '@/components/ui/omnifolio-logo';
 import { BackgroundBeams } from '@/components/ui/background-beams';
 import { CardContainer, CardItem } from '@/components/ui/3d-card';
+import { useTranslation } from '@/contexts/translation-context';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -38,6 +39,7 @@ const staggerContainer = {
 
 export default function AboutPage() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleBackToHome = () => {
     router.push('/');
@@ -132,7 +134,7 @@ export default function AboutPage() {
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors group font-sans"
               >
                 <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                <span className="text-sm font-medium">Back to Home</span>
+                <span className="text-sm font-medium">{t('about.backToHome')}</span>
               </motion.button>
             </div>
           </div>
@@ -155,14 +157,13 @@ export default function AboutPage() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="inline-block px-4 py-1.5 mb-6 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium tracking-wide font-sans"
               >
-                Our Journey & Vision
+                {t('about.badge')}
               </motion.div>
               <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-8 font-serif">
-                The Vision Behind <span className="bg-gradient-to-r from-green-400 via-cyan-400 to-purple-500 bg-clip-text text-transparent font-calligraphy">OmniFolio</span>
+                {t('about.title')} <span className="bg-gradient-to-r from-green-400 via-cyan-400 to-purple-500 bg-clip-text text-transparent font-calligraphy">{t('about.titleHighlight')}</span>
               </h1>
               <p className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto font-sans">
-                We dreamed of a world where managing your entire financial life didn't require
-                a dozen different apps, endless spreadsheets, and hours of manual work.
+                {t('about.subtitle')}
               </p>
             </motion.div>
           </div>
@@ -178,10 +179,9 @@ export default function AboutPage() {
               variants={fadeIn}
               className="max-w-3xl mx-auto text-center mb-20"
             >
-              <h2 className="text-3xl sm:text-5xl font-bold mb-6 font-serif">The Problem We Solve</h2>
+              <h2 className="text-3xl sm:text-5xl font-bold mb-6 font-serif">{t('about.problemTitle')}</h2>
               <p className="text-gray-400 text-lg leading-relaxed font-sans">
-                Traditional finance tools are siloed and complex. We're rebuilding the experience from the ground up
-                to give you total control over your wealth.
+                {t('about.problemSubtitle')}
               </p>
             </motion.div>
 
@@ -232,20 +232,17 @@ export default function AboutPage() {
                   <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20">
                     <Target className="w-7 h-7 text-white" />
                   </div>
-                  <h2 className="text-4xl font-bold font-serif">Our Vision</h2>
+                  <h2 className="text-4xl font-bold font-serif">{t('about.visionTitle')}</h2>
                 </div>
                 <div className="space-y-6 text-lg text-gray-400 leading-relaxed font-sans">
                   <p>
-                    We envisioned an <strong className="text-white font-semibold">all-in-one financial command center</strong> where
-                    you could track <em>everything</em>—and actually <em>do</em> everything—without ever leaving
-                    the platform.
+                    {t('about.visionText1')}
                   </p>
                   <p>
-                    Imagine seeing your complete net worth update in real-time. Your crypto gains, stock
-                    performance, property values, and savings—all in one beautiful dashboard.
+                    {t('about.visionText2')}
                   </p>
                   <p>
-                    That's what we're building. A single source of truth for your entire financial life.
+                    {t('about.visionText3')}
                   </p>
                 </div>
               </motion.div>
@@ -261,7 +258,7 @@ export default function AboutPage() {
                 <div className="relative bg-gray-900/60 backdrop-blur-xl rounded-3xl p-10 border border-white/10 shadow-2xl">
                   <h3 className="text-2xl font-bold mb-8 flex items-center gap-3 font-serif">
                     <Sparkles className="w-6 h-6 text-green-400" />
-                    Everything in One Place
+                    {t('about.everythingInOnePlace')}
                   </h3>
                   <div className="grid grid-cols-1 gap-4">
                     {features.map((feature, index) => (
@@ -295,22 +292,17 @@ export default function AboutPage() {
               transition={{ duration: 1 }}
             >
               <h2 className="text-4xl sm:text-6xl font-bold mb-12 bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent font-serif">
-                Why We Built This
+                {t('about.whyWeBuilt')}
               </h2>
               <div className="space-y-8 text-xl sm:text-2xl text-gray-400 leading-relaxed font-light italic font-serif">
                 <p>
-                  "We were tired of the fragmentation. Every financial tool we tried solved one piece of the
-                  puzzle but ignored the rest. Budget apps didn't track investments. Investment apps didn't
-                  handle crypto."
+                  {t('about.whyWeBuiltQuote1')}
                 </p>
                 <p className="text-white font-normal not-italic font-sans">
-                  We wanted to see our <span className="text-green-400">complete financial picture</span>—not
-                  just a slice of it.
+                  {t('about.whyWeBuiltQuote2')}
                 </p>
                 <p>
-                  So we built OmniFolio: the financial dashboard we always wanted but could never find.
-                  A place where every dollar, euro, bitcoin, and asset comes together in one unified,
-                  beautiful interface.
+                  {t('about.whyWeBuiltQuote3')}
                 </p>
               </div>
             </motion.div>
@@ -321,9 +313,9 @@ export default function AboutPage() {
         <section className="py-24 relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
-              <h2 className="text-3xl sm:text-5xl font-bold mb-6 font-serif">What We Believe In</h2>
+              <h2 className="text-3xl sm:text-5xl font-bold mb-6 font-serif">{t('about.valuesTitle')}</h2>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto font-sans">
-                The principles that guide every pixel we design and every line of code we write.
+                {t('about.valuesSubtitle')}
               </p>
             </div>
             <motion.div
@@ -362,15 +354,13 @@ export default function AboutPage() {
             >
               <Zap className="w-10 h-10 text-white" />
             </motion.div>
-            <h2 className="text-3xl sm:text-5xl font-bold mb-8 font-serif">Where We're Headed</h2>
+            <h2 className="text-3xl sm:text-5xl font-bold mb-8 font-serif">{t('about.futureTitle')}</h2>
             <div className="space-y-6 text-lg text-gray-400 leading-relaxed font-sans">
               <p>
-                We're just getting started. Our vision extends beyond tracking—we want to help you
-                make smarter financial decisions with AI-powered insights and automated recommendations.
+                {t('about.futureText1')}
               </p>
               <p>
-                Whether you're just starting your financial journey or managing a complex portfolio,
-                OmniFolio is designed to be your lifelong financial companion.
+                {t('about.futureText2')}
               </p>
             </div>
           </div>
@@ -387,11 +377,10 @@ export default function AboutPage() {
             >
               <div className="relative z-10">
                 <h2 className="text-4xl sm:text-6xl font-bold text-white mb-8 tracking-tight leading-tight font-serif">
-                  Ready to See Your Complete <br className="hidden sm:block" /> Financial Picture?
+                  {t('about.ctaTitle')}
                 </h2>
                 <p className="text-white/80 text-xl mb-12 max-w-2xl mx-auto font-light leading-relaxed font-sans">
-                  Join us in building the future of personal finance management.
-                  Your entire financial life, finally in one place.
+                  {t('about.ctaSubtitle')}
                 </p>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -401,7 +390,7 @@ export default function AboutPage() {
                     href="/"
                     className="inline-flex items-center gap-3 px-10 py-5 bg-green-500 text-white rounded-2xl text-xl font-bold hover:bg-green-600 transition-all shadow-xl shadow-green-500/20 font-sans"
                   >
-                    Get Started Now
+                    {t('about.ctaButton')}
                     <ArrowRight className="w-6 h-6" />
                   </Link>
                 </motion.div>
@@ -417,7 +406,7 @@ export default function AboutPage() {
           <div className="flex flex-col items-center md:items-start gap-4">
             <OmnifolioLogo size="sm" />
             <p className="text-gray-500 text-sm italic font-sans">
-              Empowering your financial future.
+              {t('about.footerTagline')}
             </p>
           </div>
 

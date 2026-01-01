@@ -49,6 +49,7 @@ import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, LargeDualCurrency } from "../ui/dual-currency-display";
 import { lttb } from "../../lib/chart-utils";
 import { getBrandColor } from "../../lib/brand-colors";
+import { useTranslation } from "../../contexts/translation-context";
 
 // Stock Icon Component - TradingView style
 function StockIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
@@ -1123,15 +1124,11 @@ function StocksModalContent() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Individual Stock Allocation */}
               <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Portfolio Allocation</h3>
-                {loading ? (
-                  <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
-                    <div className="text-center">
-                      <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                      <p>Loading prices...</p>
-                    </div>
-                  </div>
-                ) : stockAllocation.length > 0 ? (
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                  Portfolio Allocation
+                  {loading && <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />}
+                </h3>
+                {stockAllocation.length > 0 ? (
                   <div className="h-[280px] w-full [&_.recharts-pie-sector]:!opacity-100 [&_.recharts-pie]:!opacity-100 [&_.recharts-sector]:!opacity-100">
                     <LazyRechartsWrapper height={280}>
                       {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
@@ -1206,12 +1203,11 @@ function StocksModalContent() {
                     )}
                   </LazyRechartsWrapper>
                 </div>
-                ) : stockHoldings.length > 0 ? (
+                ) : loading ? (
                   <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
                     <div className="text-center">
-                      <PieChartIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>Calculating allocation...</p>
-                      <p className="text-sm mt-1">Please wait</p>
+                      <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                      <p>Loading prices...</p>
                     </div>
                   </div>
                 ) : (
@@ -1731,6 +1727,7 @@ function StocksHoverContent() {
 import { SharePortfolioModal } from "./share-portfolio-modal";
 
 function StocksCardWithPrices({ userName }: { userName?: string }) {
+  const { t } = useTranslation();
   const [stockHoldings, setStockHoldings] = useState<StockHolding[]>([]);
   const { convertToMain, formatMain, mainCurrency } = useCurrencyConversion();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -1833,15 +1830,15 @@ function StocksCardWithPrices({ userName }: { userName?: string }) {
 
   // Currency conversion - show in user's selected currency
   const convertedValue = convertToMain(totalValue, 'USD');
-  // Show value immediately if we have any prices or if loading takes too long (fallback to entry points)
-  const displayAmount = (loading && Object.keys(prices).length === 0) ? "Loading..." : formatMain(convertedValue);
+  // Show value immediately using fallback prices if needed
+  const displayAmount = formatMain(convertedValue);
   const originalAmount = (loading && Object.keys(prices).length === 0) || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
 
   return (
     <>
       <EnhancedFinancialCard
-        title="Stock Portfolio"
-        description="Equity investments and dividend income"
+        title={t('stocks.title')}
+        description={t('stocks.totalValue')}
         amount={displayAmount}
         change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
         changeType={changeTypeCalc}
@@ -1851,12 +1848,12 @@ function StocksCardWithPrices({ userName }: { userName?: string }) {
         stats={[
           { 
             label: "AAPL", 
-            value: loading || !aaplHolding ? "Loading..." : formatMain(convertToMain(aaplHolding.value, 'USD')), 
+            value: loading || !aaplHolding ? t('common.loading') : formatMain(convertToMain(aaplHolding.value, 'USD')), 
             color: "#8b5cf6" 
           },
           { 
             label: "VOO", 
-            value: loading || !vooHolding ? "Loading..." : formatMain(convertToMain(vooHolding.value, 'USD')), 
+            value: loading || !vooHolding ? t('common.loading') : formatMain(convertToMain(vooHolding.value, 'USD')), 
             color: "#a78bfa" 
           }
         ]}
@@ -1872,7 +1869,7 @@ function StocksCardWithPrices({ userName }: { userName?: string }) {
       <SharePortfolioModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        title="Stock Portfolio"
+        title={t('stocks.title')}
         totalValue={convertedValue}
         currencySymbol={mainCurrency.symbol}
         userName={userName || "User"}

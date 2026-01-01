@@ -27,6 +27,7 @@ import {
 import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { formatNumber } from "../../lib/utils";
 import { TRADING_DATABASE } from "../../lib/trading-database";
+import { useTranslation } from "../../contexts/translation-context";
 
 // Types
 interface Alert {
@@ -1111,6 +1112,7 @@ function ToolsModalContent() {
 
 // Tools Card Component
 export function ToolsCard() {
+  const { t } = useTranslation();
   const chartData = [
     { value: 95, change: "+3.5%" },
     { value: 100, change: "+2.8%" },
@@ -1121,8 +1123,8 @@ export function ToolsCard() {
 
   return (
     <EnhancedFinancialCard
-      title="Tools"
-      description="Trading tools for stocks, crypto & forex"
+      title={t('tools.title')}
+      description={t('tools.analysis')}
       amount="Active"
       change="Live Data"
       changeType="positive"
@@ -1130,8 +1132,8 @@ export function ToolsCard() {
       secondaryColor="#fb7185"
       gridColor="#f43f5e15"
       stats={[
-        { label: "Stocks", value: "Charts", color: "#8b5cf6" },
-        { label: "Crypto", value: "Screener", color: "#a78bfa" }
+        { label: t('cards.stocks'), value: t('tools.charts'), color: "#8b5cf6" },
+        { label: t('cards.crypto'), value: t('tools.screener'), color: "#a78bfa" }
       ]}
       icon={Wrench}
       hoverContent={<ToolsHoverContent />}

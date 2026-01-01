@@ -9,6 +9,7 @@ import { FinancialDataProvider } from "../contexts/financial-data-context";
 import { HiddenCardsProvider } from "../contexts/hidden-cards-context";
 import { CardOrderProvider } from "../contexts/card-order-context";
 import { CurrencyProvider } from "../contexts/currency-context";
+import { TranslationProvider } from "../contexts/translation-context";
 import { HybridDataProvider } from "../contexts/hybrid-data-context";
 import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
@@ -240,22 +241,24 @@ export default function RootLayout({
           <ThemeProvider>
             <BetterAuthProvider>
               <SecurityKeyModal />
-              <CurrencyProvider>
-                <HybridDataProvider>
-                  <APIConnectionProvider>
-                    <PortfolioProvider>
-                      <FinancialDataProvider>
-                        <HiddenCardsProvider>
-                          <CardOrderProvider>
-                            {children}
-                            <ConsentBanner />
-                          </CardOrderProvider>
-                        </HiddenCardsProvider>
-                      </FinancialDataProvider>
-                    </PortfolioProvider>
-                  </APIConnectionProvider>
-                </HybridDataProvider>
-              </CurrencyProvider>
+              <TranslationProvider>
+                <CurrencyProvider>
+                  <HybridDataProvider>
+                    <APIConnectionProvider>
+                      <PortfolioProvider>
+                        <FinancialDataProvider>
+                          <HiddenCardsProvider>
+                            <CardOrderProvider>
+                              {children}
+                              <ConsentBanner />
+                            </CardOrderProvider>
+                          </HiddenCardsProvider>
+                        </FinancialDataProvider>
+                      </PortfolioProvider>
+                    </APIConnectionProvider>
+                  </HybridDataProvider>
+                </CurrencyProvider>
+              </TranslationProvider>
             </BetterAuthProvider>
           </ThemeProvider>
         </ExtensionErrorBoundary>

@@ -28,6 +28,7 @@ import { formatNumber } from "../../lib/utils";
 import { searchBanks, BankInfo } from "../../lib/banks-database";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, CompactDualCurrency } from "../ui/dual-currency-display";
+import { useTranslation } from "../../contexts/translation-context";
 
 // Bank Logo Component
 function BankLogo({ bank }: { bank: BankInfo }) {
@@ -1035,6 +1036,7 @@ function EditIncomeModal({
 }
 
 function CashModalContent() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'accounts' | 'analytics' | 'income'>('accounts');
   const [accounts, setAccounts] = useState<CashAccount[]>([]);
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
@@ -1175,9 +1177,9 @@ function CashModalContent() {
           <div className="flex border-b border-gray-200 dark:border-gray-700 flex-1 min-w-0">
             <div className="flex overflow-x-auto scrollbar-hide w-full">
               {[
-                { id: 'accounts', label: 'Accounts', icon: Wallet },
-                { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-                { id: 'income', label: 'Income', icon: Briefcase }
+                { id: 'accounts', label: t('cash.accounts'), icon: Wallet },
+                { id: 'analytics', label: t('tools.analysis'), icon: TrendingUp },
+                { id: 'income', label: t('cash.income'), icon: Briefcase }
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -1203,8 +1205,8 @@ function CashModalContent() {
                   className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Add Account</span>
-                  <span className="sm:hidden">Add</span>
+                  <span className="hidden sm:inline">{t('cash.addAccount')}</span>
+                  <span className="sm:hidden">{t('common.add')}</span>
                 </button>
               </>
             )}
@@ -1214,8 +1216,8 @@ function CashModalContent() {
                 className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Income Source</span>
-                <span className="sm:hidden">Add</span>
+                <span className="hidden sm:inline">{t('cash.addIncome')}</span>
+                <span className="sm:hidden">{t('common.add')}</span>
               </button>
             )}
           </div>
@@ -1993,6 +1995,7 @@ function CashModalContent() {
 }
 
 export function CashCard() {
+  const { t } = useTranslation();
   const [accounts, setAccounts] = useState<CashAccount[]>([]);
   const { convertToMain, formatMain, mainCurrency } = useCurrencyConversion();
 
@@ -2066,8 +2069,8 @@ export function CashCard() {
 
   return (
     <EnhancedFinancialCard
-      title="Cash & Liquid Assets"
-      description="Available liquid funds across all accounts"
+      title={t('cash.title')}
+      description={t('cash.totalBalance')}
       amount={displayAmount}
       change={changePercent}
       changeType="positive"
@@ -2075,8 +2078,8 @@ export function CashCard() {
       secondaryColor="#34d399"
       gridColor="#10b98115"
       stats={[
-        { label: "Checking", value: formatMain(checkingTotal), color: "#10b981" },
-        { label: "Savings", value: formatMain(savingsTotal), color: "#34d399" }
+        { label: t('cash.checking'), value: formatMain(checkingTotal), color: "#10b981" },
+        { label: t('cash.savings'), value: formatMain(savingsTotal), color: "#34d399" }
       ]}
       icon={Coins}
       hoverContent={<CashHoverContent />}

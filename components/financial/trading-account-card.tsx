@@ -120,6 +120,7 @@ import { ForexTradingTab } from "../ui/forex-trading-tab";
 import { CryptoFuturesTradingTab } from "../ui/crypto-futures-trading-tab";
 import { OptionsTradingTab } from "../ui/options-trading-tab";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
+import { useTranslation } from "../../contexts/translation-context";
 
 // Trading Icon Component - TradingView style icons
 function TradingIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
@@ -2528,14 +2529,15 @@ export function TradingAccountCard() {
 
   // Currency conversion - show in user's selected currency
   const { convertToMain, formatMain, mainCurrency } = useCurrencyConversion();
+  const { t } = useTranslation();
   const convertedValue = convertToMain(totalValue, 'USD');
   const displayAmount = formatMain(convertedValue);
   const originalAmount = mainCurrency.code !== 'USD' ? `$${formatNumber(totalValue)}` : undefined;
 
   return (
     <EnhancedFinancialCard
-      title="Trading Account"
-      description="Active trading positions and performance"
+      title={t('trading.title')}
+      description={t('trading.totalBalance')}
       amount={displayAmount}
       change={changePercent}
       changeType={changeType}

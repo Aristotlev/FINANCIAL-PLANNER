@@ -25,10 +25,12 @@ import { OmnifolioLogo } from '@/components/ui/omnifolio-logo';
 import { blogPosts } from './blog-data';
 import { CardContainer, CardItem } from '@/components/ui/3d-card';
 import { BackgroundBeams } from '@/components/ui/background-beams';
+import { useTranslation } from '@/contexts/translation-context';
 
 export default function BlogPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setMounted(true);
@@ -114,7 +116,7 @@ export default function BlogPage() {
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-medium py-2 px-4 rounded-full hover:bg-white/5 font-sans"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Home</span>
+                <span>{t('blog.backToHome')}</span>
               </motion.button>
             </div>
           </div>
@@ -131,7 +133,7 @@ export default function BlogPage() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium mb-8 font-sans"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Latest Updates & Insights</span>
+            <span>{t('blog.badge')}</span>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -139,7 +141,7 @@ export default function BlogPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-8 font-serif"
           >
-            The <span className="bg-gradient-to-r from-green-400 via-cyan-400 to-purple-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(74,222,128,0.3)] font-calligraphy">OmniFolio</span> Blog
+            {t('blog.title')}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -147,8 +149,7 @@ export default function BlogPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto font-sans"
           >
-            Master your financial destiny with expert guides, strategic tips,
-            and deep insights into the OmniFolio ecosystem.
+            {t('blog.subtitle')}
           </motion.p>
         </div>
       </section>
@@ -204,7 +205,7 @@ export default function BlogPage() {
                         href={`/blog/${blogPosts[0].id}`}
                         className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-600 to-cyan-600 text-white rounded-2xl font-bold hover:shadow-[0_0_30px_rgba(74,222,128,0.4)] hover:scale-105 transition-all duration-300 font-sans"
                       >
-                        Read Article
+                        {t('blog.readArticle')}
                         <ArrowRight className="w-5 h-5" />
                       </Link>
                     </CardItem>
@@ -242,7 +243,7 @@ export default function BlogPage() {
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-3xl font-bold text-white flex items-center gap-3 font-serif">
               <span className="w-8 h-1 bg-green-500 rounded-full" />
-              All Articles
+              {t('blog.allArticles')}
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -338,11 +339,10 @@ export default function BlogPage() {
               />
 
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-6 tracking-tight leading-tight font-serif">
-                Empower Your <span className="underline decoration-cyan-400 decoration-8 underline-offset-8">Financial Future</span>
+                {t('blog.ctaTitle')}
               </h2>
               <p className="text-white/90 text-xl mb-12 max-w-2xl mx-auto font-medium font-sans">
-                Stop guessing and start growing. Join thousands of sophisticated investors
-                who use OmniFolio to gain an unfair advantage in their financial life.
+                {t('blog.ctaSubtitle')}
               </p>
 
               <motion.button
@@ -351,13 +351,13 @@ export default function BlogPage() {
                 onClick={handleBackToHome}
                 className="group relative inline-flex items-center gap-3 px-10 py-5 bg-green-500 text-white rounded-2xl text-xl font-black transition-all shadow-[0_20px_50px_rgba(74,222,128,0.3)] hover:shadow-[0_25px_60px_rgba(74,222,128,0.4)] hover:bg-green-600 font-sans"
               >
-                Get Started Now — It's Free
+                {t('blog.ctaButton')}
                 <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
               </motion.button>
 
               <p className="mt-8 text-white/60 text-sm font-bold flex items-center gap-2 font-sans">
                 <Shield className="w-4 h-4" />
-                No credit card required • High-level encryption • Privacy first
+                {t('blog.ctaNote')}
               </p>
             </div>
           </motion.div>

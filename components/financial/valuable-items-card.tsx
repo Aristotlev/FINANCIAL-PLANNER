@@ -22,6 +22,7 @@ import { MarketAnalysisWidget } from "../ui/market-analysis-widget";
 import { ThemedStatBox, ConditionalThemedStatBox, ThemedContainer, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { formatNumber } from "../../lib/utils";
 import { useCurrency } from "../../contexts/currency-context";
+import { useTranslation } from "../../contexts/translation-context";
 
 interface ValuableItem {
   id: string;
@@ -1217,6 +1218,7 @@ function ValuableItemsModalContent() {
 }
 
 export function ValuableItemsCard() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ValuableItem[]>([]);
   const { mainCurrency, convert } = useCurrency();
 
@@ -1284,8 +1286,8 @@ export function ValuableItemsCard() {
 
   return (
     <EnhancedFinancialCard
-      title="Valuable Items"
-      description="Collectibles, jewelry, art, and other valuable assets"
+      title={t('valuables.title')}
+      description={t('valuables.totalValue')}
       amount={displayAmount}
       change={changePercent}
       changeType={changeType}

@@ -19,6 +19,7 @@ import { EnhancedFinancialCard } from "../ui/enhanced-financial-card";
 import { formatNumber } from "../../lib/utils";
 import { usePortfolioContext } from "../../contexts/portfolio-context";
 import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
+import { useTranslation } from "../../contexts/translation-context";
 
 interface NewsItem {
   title: string;
@@ -701,6 +702,7 @@ function NewsModalContent() {
 
 // News Card Component
 export function NewsCard() {
+  const { t } = useTranslation();
   // Generate comprehensive news activity chart data
   // Represents realistic 24-hour news cycle with smooth variations
   const chartData = [
@@ -732,8 +734,8 @@ export function NewsCard() {
 
   return (
     <EnhancedFinancialCard
-      title="News"
-      description="32 premium sources, AI-ranked headlines"
+      title={t('news.title')}
+      description={t('news.latest')}
       amount="Live"
       change="24/7"
       changeType="positive"
@@ -741,8 +743,8 @@ export function NewsCard() {
       secondaryColor="#fb923c"
       gridColor="#f9731615"
       stats={[
-        { label: "Sources", value: "32", color: "#f97316" },
-        { label: "Coverage", value: "Global", color: "#fb923c" }
+        { label: t('news.sources'), value: "32", color: "#f97316" },
+        { label: t('news.coverage'), value: t('news.global'), color: "#fb923c" }
       ]}
       icon={Newspaper}
       hoverContent={<NewsHoverContent />}

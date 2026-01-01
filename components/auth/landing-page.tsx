@@ -29,6 +29,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useTranslation } from '@/contexts/translation-context';
+import { LanguageSelector } from '@/components/ui/language-selector';
 
 // Dynamically import components to avoid circular dependencies and reduce bundle size
 const OmnifolioLogo = dynamic(() => import('@/components/ui/omnifolio-logo').then(mod => mod.OmnifolioLogo), {
@@ -41,6 +43,7 @@ const AuthModal = dynamic(() => import('./auth-modal').then(mod => mod.AuthModal
 });
 
 export function LandingPage() {
+  const { t } = useTranslation();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -57,36 +60,36 @@ export function LandingPage() {
 
   const slides = [
     {
-      title: "Meet Lisa, Your AI Financial Genius",
-      description: "Powered by Google's Gemini models, Lisa analyzes your portfolio 24/7 to find opportunities you might miss.",
+      title: t('slides.lisa.title'),
+      description: t('slides.lisa.description'),
       icon: <Bot className="w-16 h-16 text-purple-400" />,
       bg: "bg-purple-500/10",
       border: "border-purple-500/20"
     },
     {
-      title: "Bank-Grade Security",
-      description: "Your data is protected with AES-256 encryption. We use the same security standards as major financial institutions.",
+      title: t('slides.security.title'),
+      description: t('slides.security.description'),
       icon: <Shield className="w-16 h-16 text-green-400" />,
       bg: "bg-green-500/10",
       border: "border-green-500/20"
     },
     {
-      title: "100% Open Source",
-      description: "Transparency is trust. Our code is open for audit, ensuring no hidden backdoors or data selling.",
+      title: t('slides.opensource.title'),
+      description: t('slides.opensource.description'),
       icon: <Code2 className="w-16 h-16 text-cyan-400" />,
       bg: "bg-cyan-500/10",
       border: "border-cyan-500/20"
     },
     {
-      title: "World-Class Design",
-      description: "Experience the most intuitive, beautiful, and responsive financial interface ever built.",
+      title: t('slides.design.title'),
+      description: t('slides.design.description'),
       icon: <Sparkles className="w-16 h-16 text-purple-400" />,
       bg: "bg-purple-500/10",
       border: "border-purple-500/20"
     },
     {
-      title: "The #1 Finance Tracker",
-      description: "Crypto, Stocks, Real Estate, Expenses. Everything you own, tracked in one powerful dashboard.",
+      title: t('slides.tracker.title'),
+      description: t('slides.tracker.description'),
       icon: <Trophy className="w-16 h-16 text-green-400" />,
       bg: "bg-green-500/10",
       border: "border-green-500/20"
@@ -106,38 +109,38 @@ export function LandingPage() {
   const features = [
     {
       icon: <BarChart3 className="w-6 h-6" />,
-      title: "Smart Portfolio Tracking",
-      description: "AI-powered tracking for stocks, crypto, real estate, and valuables in one unified dashboard.",
+      title: t('features.portfolio.title'),
+      description: t('features.portfolio.description'),
       gradient: "from-blue-500 to-cyan-500"
     },
     {
       icon: <PieChart className="w-6 h-6" />,
-      title: "Intelligent Expense Management",
-      description: "Auto-categorize expenses and get AI-driven insights to optimize your spending habits.",
+      title: t('features.expenses.title'),
+      description: t('features.expenses.description'),
       gradient: "from-green-500 to-emerald-500"
     },
     {
       icon: <TrendingUp className="w-6 h-6" />,
-      title: "Real-Time Analytics",
-      description: "Track performance, growth, and ROI across all your assets with live market data.",
+      title: t('features.analytics.title'),
+      description: t('features.analytics.description'),
       gradient: "from-purple-500 to-violet-500"
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Bank-Level Security",
-      description: "256-bit encryption with multi-factor authentication protects your financial data.",
+      title: t('features.security.title'),
+      description: t('features.security.description'),
       gradient: "from-red-500 to-rose-500"
     },
     {
       icon: <Target className="w-6 h-6" />,
-      title: "Goal-Based Planning",
-      description: "Set financial milestones and get personalized roadmaps to achieve them faster.",
+      title: t('features.goals.title'),
+      description: t('features.goals.description'),
       gradient: "from-orange-500 to-amber-500"
     },
     {
       icon: <Smartphone className="w-6 h-6" />,
-      title: "Access Anywhere",
-      description: "Responsive design works seamlessly on desktop, tablet, and mobile devices.",
+      title: t('features.mobile.title'),
+      description: t('features.mobile.description'),
       gradient: "from-indigo-500 to-blue-500"
     }
   ];
@@ -167,24 +170,25 @@ export function LandingPage() {
               <OmnifolioLogo size="md" />
 
               <nav className="hidden md:flex items-center gap-8">
-                <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">Features</a>
-                <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">How it Works</a>
-                <a href="#workflow" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">Workflow</a>
-                <a href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">Pricing</a>
+                <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">{t('nav.features')}</a>
+                <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">{t('nav.howItWorks')}</a>
+                <a href="#workflow" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">{t('nav.workflow')}</a>
+                <a href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm font-medium font-sans">{t('nav.pricing')}</a>
               </nav>
 
               <div className="flex items-center gap-3">
+                <LanguageSelector />
                 <button
                   onClick={openLogin}
                   className="hidden sm:block text-sm font-medium text-gray-300 hover:text-white transition-colors font-sans"
                 >
-                  Sign in
+                  {t('nav.signIn')}
                 </button>
                 <button
                   onClick={openSignup}
                   className="px-4 py-2 bg-white/5 border border-gray-700 hover:border-gray-600 rounded-lg text-sm font-medium hover:bg-white/10 transition-all duration-300 font-sans"
                 >
-                  Get Started
+                  {t('nav.getStarted')}
                 </button>
               </div>
             </div>
@@ -198,20 +202,20 @@ export function LandingPage() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500/10 to-cyan-500/10 border border-green-500/20 rounded-full mb-8">
                 <Zap className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-gray-300 font-sans">100% Secure • 100% Open Source</span>
+                <span className="text-sm text-gray-300 font-sans">{t('hero.badge')}</span>
               </div>
 
               {/* Main Headline */}
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 font-serif">
-                <span className="block text-white">Portfolio Simulator</span>
+                <span className="block text-white">{t('hero.title')}</span>
                 <span className="block bg-gradient-to-r from-green-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent font-calligraphy text-6xl sm:text-7xl lg:text-8xl mt-2">
-                  No External Connections
+                  {t('hero.subtitle')}
                 </span>
               </h1>
 
               {/* Subheadline */}
               <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed font-sans">
-                Visualize your portfolio and have everything in one dashboard. Control your data — erase it from our database with the click of a button.
+                {t('hero.description')}
               </p>
 
               {/* CTA Buttons */}
@@ -220,7 +224,7 @@ export function LandingPage() {
                   onClick={openSignup}
                   className="group w-full sm:w-auto px-8 py-4 bg-green-500 hover:bg-green-600 text-white rounded-xl text-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
                 >
-                  Start Simulator
+                  {t('hero.cta.primary')}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button
@@ -228,7 +232,7 @@ export function LandingPage() {
                   className="group w-full sm:w-auto px-8 py-4 bg-white/5 border border-gray-700 hover:border-gray-600 rounded-xl text-lg font-medium hover:bg-white/10 transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   <Play className="w-5 h-5 text-cyan-400" />
-                  Watch Demo
+                  {t('hero.cta.secondary')}
                 </button>
               </div>
 
@@ -252,7 +256,7 @@ export function LandingPage() {
                     <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <span className="text-gray-400 text-sm font-sans">Join the Omnifolio Community</span>
+                <span className="text-gray-400 text-sm font-sans">{t('hero.social.users')}</span>
               </div>
             </div>
 
@@ -268,7 +272,7 @@ export function LandingPage() {
                         <Wallet className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white font-serif">Total Net Worth</h3>
+                        <h3 className="font-semibold text-white font-serif">{t('dashboard.netWorth')}</h3>
                         <p className="text-sm text-gray-400 font-sans">Updated just now</p>
                       </div>
                     </div>
@@ -322,7 +326,7 @@ export function LandingPage() {
         {/* Trusted By Section */}
         <section className="relative z-10 py-12 border-y border-gray-800/50 overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-center text-xs uppercase tracking-widest text-gray-500 mb-8 font-sans">Powered by</p>
+            <p className="text-center text-xs uppercase tracking-widest text-gray-500 mb-8 font-sans">{t('trustedBy.label')}</p>
             <div className="relative flex overflow-hidden opacity-50 mask-linear-gradient">
               <div className="flex animate-scroll whitespace-nowrap min-w-full">
                 {[...trustedCompanies, ...trustedCompanies, ...trustedCompanies, ...trustedCompanies].map((company, i) => (
@@ -339,16 +343,10 @@ export function LandingPage() {
         <section id="features" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <span className="text-sm font-medium text-green-400 uppercase tracking-widest font-sans">Features</span>
+              <span className="text-sm font-medium text-green-400 uppercase tracking-widest font-sans">{t('features.label')}</span>
               <h2 className="mt-4 text-4xl sm:text-5xl font-extrabold text-white font-serif">
-                Everything you need to{' '}
-                <span className="bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent font-calligraphy text-5xl sm:text-6xl">
-                  control your data
-                </span>
+                {t('features.title')}
               </h2>
-              <p className="mt-4 text-lg text-gray-400 max-w-2xl mx-auto font-sans">
-                Powerful tools designed to give you complete control over your financial data.
-              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -356,48 +354,48 @@ export function LandingPage() {
                 <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-green-500/10 rounded-lg">
                   <Shield className="w-6 h-6 text-green-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 font-serif">High Level Encryption</h3>
-                <p className="text-gray-400 leading-relaxed font-sans">Your data is protected with military-grade encryption. We prioritize your security above all else.</p>
+                <h3 className="text-xl font-semibold text-white mb-2 font-serif">{t('features.security.title')}</h3>
+                <p className="text-gray-400 leading-relaxed font-sans">{t('features.security.description')}</p>
               </div>
 
               <div className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 hover:border-cyan-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10">
                 <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-cyan-500/10 rounded-lg">
                   <Sparkles className="w-6 h-6 text-cyan-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 font-serif">Cutting Edge UI/UX</h3>
-                <p className="text-gray-400 leading-relaxed font-sans">Experience a beautiful, intuitive interface designed for clarity and ease of use.</p>
+                <h3 className="text-xl font-semibold text-white mb-2 font-serif">{t('slides.design.title')}</h3>
+                <p className="text-gray-400 leading-relaxed font-sans">{t('slides.design.description')}</p>
               </div>
 
               <div className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 hover:border-purple-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10">
                 <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-purple-500/10 rounded-lg">
                   <Bot className="w-6 h-6 text-purple-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 font-serif">Lisa AI Assistant</h3>
-                <p className="text-gray-400 leading-relaxed font-sans">Meet Lisa, your Gemini-powered AI assistant, ready to help you analyze your portfolio.</p>
+                <h3 className="text-xl font-semibold text-white mb-2 font-serif">{t('slides.lisa.title')}</h3>
+                <p className="text-gray-400 leading-relaxed font-sans">{t('slides.lisa.description')}</p>
               </div>
 
               <div className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 hover:border-cyan-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10">
                 <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-cyan-500/10 rounded-lg">
                   <Database className="w-6 h-6 text-cyan-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 font-serif">Total Data Control</h3>
-                <p className="text-gray-400 leading-relaxed font-sans">Delete your account and erase your data from our databases instantly with one click.</p>
+                <h3 className="text-xl font-semibold text-white mb-2 font-serif">{t('howItWorks.step3.title')}</h3>
+                <p className="text-gray-400 leading-relaxed font-sans">{t('howItWorks.step3.description')}</p>
               </div>
 
               <div className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 hover:border-purple-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10">
                 <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-purple-500/10 rounded-lg">
                   <Code2 className="w-6 h-6 text-purple-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 font-serif">100% Open Source</h3>
-                <p className="text-gray-400 leading-relaxed font-sans">Transparency is key. Our code is open for you to inspect, ensuring no hidden backdoors.</p>
+                <h3 className="text-xl font-semibold text-white mb-2 font-serif">{t('slides.opensource.title')}</h3>
+                <p className="text-gray-400 leading-relaxed font-sans">{t('slides.opensource.description')}</p>
               </div>
 
               <div className="group relative bg-gray-900/50 backdrop-blur-sm border border-gray-800 hover:border-green-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/10">
                 <div className="w-12 h-12 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-green-500/10 rounded-lg">
                   <Target className="w-6 h-6 text-green-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2 font-serif">Omnifolio Community</h3>
-                <p className="text-gray-400 leading-relaxed font-sans">Join a growing community of users who are taking control of their financial data.</p>
+                <h3 className="text-xl font-semibold text-white mb-2 font-serif">{t('hero.social.users')}</h3>
+                <p className="text-gray-400 leading-relaxed font-sans">{t('hero.description')}</p>
               </div>
             </div>
           </div>
@@ -407,12 +405,9 @@ export function LandingPage() {
         <section id="how-it-works" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-transparent via-green-900/10 to-transparent">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <span className="text-sm font-medium text-green-400 uppercase tracking-widest font-sans">How It Works</span>
+              <span className="text-sm font-medium text-green-400 uppercase tracking-widest font-sans">{t('howItWorks.label')}</span>
               <h2 className="mt-4 text-4xl sm:text-5xl font-extrabold text-white font-serif">
-                Secure by{' '}
-                <span className="bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent font-calligraphy text-5xl sm:text-6xl">
-                  Design
-                </span>
+                {t('howItWorks.title')}
               </h2>
             </div>
 
@@ -420,22 +415,22 @@ export function LandingPage() {
               {/* Step 1 */}
               <div className="relative">
                 <div className="text-6xl font-extrabold text-gray-800 mb-4 font-serif">01</div>
-                <h3 className="text-2xl font-bold text-white mb-3 font-serif">No External Connections</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed font-sans">We don't connect to your bank accounts. No APIs. Your data stays isolated and secure.</p>
+                <h3 className="text-2xl font-bold text-white mb-3 font-serif">{t('howItWorks.step1.title')}</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed font-sans">{t('howItWorks.step1.description')}</p>
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
                       <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
                         <Shield className="w-4 h-4 text-green-400" />
                       </div>
-                      <span className="text-green-400 text-sm font-medium font-sans">High Level Encryption</span>
+                      <span className="text-green-400 text-sm font-medium font-sans">{t('features.security.title')}</span>
                       <Check className="w-4 h-4 text-green-400 ml-auto" />
                     </div>
                     <div className="flex items-center gap-3 p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
                       <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center">
                         <Lock className="w-4 h-4 text-cyan-400" />
                       </div>
-                      <span className="text-cyan-400 text-sm font-medium font-sans">Zero External Access</span>
+                      <span className="text-cyan-400 text-sm font-medium font-sans">{t('security.noBackdoors')}</span>
                       <Check className="w-4 h-4 text-cyan-400 ml-auto" />
                     </div>
                   </div>
@@ -445,8 +440,8 @@ export function LandingPage() {
               {/* Step 2 */}
               <div className="relative">
                 <div className="text-6xl font-extrabold text-gray-800 mb-4 font-serif">02</div>
-                <h3 className="text-2xl font-bold text-white mb-3 font-serif">Lisa & Gemini AI</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed font-sans">Your personal assistant for personalized news feeds and Gemini-powered analytics.</p>
+                <h3 className="text-2xl font-bold text-white mb-3 font-serif">{t('howItWorks.step2.title')}</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed font-sans">{t('howItWorks.step2.description')}</p>
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
@@ -463,16 +458,16 @@ export function LandingPage() {
               {/* Step 3 */}
               <div className="relative">
                 <div className="text-6xl font-extrabold text-gray-800 mb-4 font-serif">03</div>
-                <h3 className="text-2xl font-bold text-white mb-3 font-serif">You Are In Control</h3>
-                <p className="text-gray-400 mb-6 leading-relaxed font-sans">Delete your accounts and delete your data from our databases with a single click.</p>
+                <h3 className="text-2xl font-bold text-white mb-3 font-serif">{t('howItWorks.step3.title')}</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed font-sans">{t('howItWorks.step3.description')}</p>
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
                   <div className="flex items-center gap-3 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
                     <Database className="w-5 h-5 text-cyan-400" />
                     <div className="flex-1">
-                      <p className="text-xs text-cyan-300 font-medium font-sans">Delete Data</p>
+                      <p className="text-xs text-cyan-300 font-medium font-sans">{t('common.delete')}</p>
                       <p className="text-xs text-gray-400 font-sans">Instantly erased from DB</p>
                     </div>
-                    <button className="px-2 py-1 bg-cyan-500/20 rounded text-xs text-cyan-400 border border-cyan-500/30">Erase</button>
+                    <button className="px-2 py-1 bg-cyan-500/20 rounded text-xs text-cyan-400 border border-cyan-500/30">{t('common.delete')}</button>
                   </div>
                 </div>
               </div>
@@ -540,7 +535,7 @@ export function LandingPage() {
         <section id="workflow" className="relative z-10 py-24 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
-              <span className="text-sm font-medium text-green-400 uppercase tracking-widest font-sans">Workflow</span>
+              <span className="text-sm font-medium text-green-400 uppercase tracking-widest font-sans">{t('nav.workflow')}</span>
               <h2 className="mt-4 text-4xl sm:text-5xl font-extrabold text-white font-serif">
                 Simple, Powerful{' '}
                 <span className="bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent font-calligraphy text-5xl sm:text-6xl">
@@ -589,19 +584,19 @@ export function LandingPage() {
             <div className="relative overflow-hidden rounded-3xl p-12 text-center border border-green-500/20 bg-gradient-to-b from-green-900/10 to-transparent">
               <div className="relative z-10">
                 <span className="inline-block px-4 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-sm font-medium mb-6 text-green-400 font-sans">
-                  Start creating magic today
+                  {t('cta.label')}
                 </span>
                 <h2 className="text-4xl sm:text-5xl font-extrabold text-white mb-6 font-serif">
-                  Ready to take control?
+                  {t('cta.title')}
                 </h2>
                 <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto font-sans">
-                  Join 2,000+ users who have transformed their financial lives with OmniFolio.
+                  {t('cta.description')}
                 </p>
                 <button
                   onClick={openSignup}
                   className="group inline-flex items-center gap-2 px-8 py-4 bg-green-500 text-white rounded-xl text-lg font-bold hover:bg-green-600 transition-all shadow-xl hover:shadow-2xl hover:shadow-green-500/20 hover:scale-105"
                 >
-                  Get Started for Free
+                  {t('cta.button')}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
@@ -616,41 +611,41 @@ export function LandingPage() {
               <div className="md:col-span-1">
                 <OmnifolioLogo size="md" />
                 <p className="mt-4 text-gray-400 text-sm font-sans">
-                  Your complete financial command center. Track, analyze, and grow your wealth.
+                  {t('footer.tagline')}
                 </p>
               </div>
 
               <div>
-                <h4 className="font-semibold text-white mb-4 font-serif">Product</h4>
+                <h4 className="font-semibold text-white mb-4 font-serif">{t('footer.product')}</h4>
                 <ul className="space-y-2 font-sans">
-                  <li><a href="#features" className="text-gray-400 hover:text-green-400 text-sm transition-colors">Features</a></li>
-                  <li><a href="#how-it-works" className="text-gray-400 hover:text-green-400 text-sm transition-colors">How it Works</a></li>
-                  <li><a href="/pricing" className="text-gray-400 hover:text-green-400 text-sm transition-colors">Pricing</a></li>
+                  <li><a href="#features" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('nav.features')}</a></li>
+                  <li><a href="#how-it-works" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('nav.howItWorks')}</a></li>
+                  <li><a href="/pricing" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('nav.pricing')}</a></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-semibold text-white mb-4 font-serif">Company</h4>
+                <h4 className="font-semibold text-white mb-4 font-serif">{t('footer.company')}</h4>
                 <ul className="space-y-2 font-sans">
-                  <li><a href="/about" className="text-gray-400 hover:text-green-400 text-sm transition-colors">About</a></li>
-                  <li><a href="/blog" className="text-gray-400 hover:text-green-400 text-sm transition-colors">Blog</a></li>
+                  <li><a href="/about" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('footer.about')}</a></li>
+                  <li><a href="/blog" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('footer.blog')}</a></li>
                   <li><a href="#" className="text-gray-400 hover:text-green-400 text-sm transition-colors">Contact</a></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-semibold text-white mb-4 font-serif">Legal</h4>
+                <h4 className="font-semibold text-white mb-4 font-serif">{t('footer.legal')}</h4>
                 <ul className="space-y-2 font-sans">
-                  <li><a href="/privacy" className="text-gray-400 hover:text-green-400 text-sm transition-colors">Privacy Policy</a></li>
-                  <li><a href="/terms" className="text-gray-400 hover:text-green-400 text-sm transition-colors">Terms of Service</a></li>
-                  <li><a href="/affiliates" className="text-gray-400 hover:text-green-400 text-sm transition-colors">Affiliates</a></li>
+                  <li><a href="/privacy" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('footer.privacy')}</a></li>
+                  <li><a href="/terms" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('footer.terms')}</a></li>
+                  <li><a href="/affiliates" className="text-gray-400 hover:text-green-400 text-sm transition-colors">{t('footer.affiliates')}</a></li>
                 </ul>
               </div>
             </div>
 
             <div className="pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
               <p className="text-gray-500 text-sm font-sans">
-                © {new Date().getFullYear()} OmniFolio. All rights reserved.
+                © {new Date().getFullYear()} OmniFolio. {t('footer.copyright')}
               </p>
               <div className="flex items-center gap-4">
                 {/* Twitter */}

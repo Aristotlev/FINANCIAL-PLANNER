@@ -34,7 +34,7 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
 
   const passwordStrength = getPasswordStrength(password);
   const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-cyan-500', 'bg-green-500'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +121,7 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white"
               placeholder="Enter your full name"
               disabled={isLoading}
             />
@@ -152,7 +152,7 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white"
               placeholder="Enter your email"
               disabled={isLoading}
             />
@@ -169,7 +169,7 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white"
               placeholder="Create a strong password"
               disabled={isLoading}
             />
@@ -210,7 +210,7 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full pl-10 pr-12 py-3 border rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white ${
+              className={`w-full pl-10 pr-12 py-3 border rounded-md focus:ring-cyan-500 focus:border-cyan-500 dark:bg-gray-700 dark:text-white ${
                 confirmPassword && password !== confirmPassword 
                   ? 'border-red-300 dark:border-red-600' 
                   : 'border-gray-300 dark:border-gray-600'
@@ -238,16 +238,16 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
             type="checkbox"
             checked={agreeToTerms}
             onChange={(e) => setAgreeToTerms(e.target.checked)}
-            className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="mt-1 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
             disabled={isLoading}
           />
           <label htmlFor="agree-terms" className="ml-2 text-sm text-gray-600 dark:text-gray-400">
             I agree to the{' '}
-            <a href="/terms" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+            <a href="/terms" className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400">
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="/privacy" className="text-blue-600 hover:text-blue-700 dark:text-blue-400">
+            <a href="/privacy" className="text-cyan-600 hover:text-cyan-700 dark:text-cyan-400">
               Privacy Policy
             </a>
           </label>
@@ -256,7 +256,7 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
         <button
           type="submit"
           disabled={isLoading || !agreeToTerms}
-          className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-green-500 via-cyan-500 to-blue-500 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <>
@@ -301,7 +301,7 @@ export function SignupForm({ onClose, onSwitchToLogin }: SignupFormProps) {
           Already have an account?{' '}
           <button
             onClick={onSwitchToLogin}
-            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+            className="font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400"
           >
             Sign in
           </button>

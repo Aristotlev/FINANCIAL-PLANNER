@@ -25,6 +25,7 @@ import { ThemedStatBox, CARD_THEME_COLORS } from "../ui/themed-stat-box";
 import { INTERNATIONAL_BANKS, BankInfo, searchBanks, getBanksByCountry, getBanksByContinent, getAllCountries, getAllContinents } from "../../lib/banks-database";
 import { formatNumber } from "../../lib/utils";
 import { useCurrency } from "../../contexts/currency-context";
+import { useTranslation } from "../../contexts/translation-context";
 
 interface SavingsGoal {
   id: string;
@@ -1387,6 +1388,7 @@ function SavingsHoverContent() {
 }
 
 export function SavingsCard() {
+  const { t } = useTranslation();
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const { mainCurrency, convert } = useCurrency();
 
@@ -1443,8 +1445,8 @@ export function SavingsCard() {
 
   return (
     <EnhancedFinancialCard
-      title="Savings"
-      description="High-yield savings and emergency funds"
+      title={t('savings.title')}
+      description={t('savings.totalSaved')}
       amount={displayAmount}
       change={changePercent}
       changeType={changeType}
@@ -1452,8 +1454,8 @@ export function SavingsCard() {
       secondaryColor="#60a5fa"
       gridColor="#3b82f615"
       stats={[
-        { label: "Emergency", value: `${mainCurrency.symbol}${emergencyFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, color: "#3b82f6" },
-        { label: "Goals", value: `${mainCurrency.symbol}${goalsFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, color: "#60a5fa" }
+        { label: t('savings.emergency'), value: `${mainCurrency.symbol}${emergencyFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, color: "#3b82f6" },
+        { label: t('savings.goals'), value: `${mainCurrency.symbol}${goalsFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, color: "#60a5fa" }
       ]}
       icon={PiggyBank}
       hoverContent={<SavingsHoverContent />}

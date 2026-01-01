@@ -29,7 +29,9 @@ import { CardOrderPanel } from './ui/card-order-panel';
 import { useHiddenCards, CardType } from '../contexts/hidden-cards-context';
 import { useCardOrder } from '../contexts/card-order-context';
 import { useImportExportLimit } from '../hooks/use-subscription';
+import { useTranslation } from '../contexts/translation-context';
 import { GPUOptimizedWrapper } from './ui/gpu-optimized-wrapper';
+import { LanguageSelector } from './ui/language-selector';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -45,6 +47,7 @@ export function Dashboard() {
   const { isCardHidden } = useHiddenCards();
   const { cardOrder } = useCardOrder();
   const { canUse: canUseImportExport, limitInfo: importExportLimitInfo } = useImportExportLimit();
+  const { t } = useTranslation();
   const [showDataMenu, setShowDataMenu] = useState(false);
   const [showApiKeysMenu, setShowApiKeysMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -298,9 +301,9 @@ export function Dashboard() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-900/95 backdrop-blur-xl border-2 border-purple-500/50 rounded-2xl p-8 shadow-2xl max-w-md">
           <div className="text-center space-y-4">
             <div className="text-4xl mb-2">🖱️</div>
-            <h3 className="text-2xl font-bold text-white">Zoom Dashboard</h3>
+            <h3 className="text-2xl font-bold text-white">{t('dashboard.zoomHint')}</h3>
             <p className="text-gray-300 text-lg">
-              Hold <kbd className="px-2 py-1 bg-gray-800 rounded text-purple-400 font-mono">Ctrl</kbd> or <kbd className="px-2 py-1 bg-gray-800 rounded text-purple-400 font-mono">⌘</kbd> and scroll
+              {t('dashboard.zoomInstruction')}
             </p>
             <p className="text-gray-400 text-sm">
               Zoom from 50% to 100% smoothly
@@ -339,6 +342,9 @@ export function Dashboard() {
               {/* Currency Selector */}
               <CurrencySelector />
               
+              {/* Language Selector */}
+              <LanguageSelector />
+              
               {/* Hidden Cards Folder */}
               <HiddenCardsFolder />
 
@@ -346,14 +352,14 @@ export function Dashboard() {
               <button 
                 onClick={resetCardPositions}
                 className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors relative group min-h-touch"
-                title="Reset Layout"
+                title={t('dashboard.resetLayout')}
               >
                 <RotateCcw className="w-4 h-4" />
-                <span className="text-sm hidden lg:inline">Reset Layout</span>
+                <span className="text-sm hidden lg:inline">{t('dashboard.resetLayout')}</span>
                 <span className="text-xs text-gray-400 ml-1 hidden xl:inline">(⌘Z)</span>
                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-gray-700">
-                  <div className="font-semibold mb-1">Reset Layout: ⌘Z / Ctrl+Z</div>
-                  <div className="text-gray-400">Zoom: Hold Ctrl/⌘ + Scroll</div>
+                  <div className="font-semibold mb-1">{t('dashboard.resetLayout')}: ⌘Z / Ctrl+Z</div>
+                  <div className="text-gray-400">{t('dashboard.zoomInstruction')}</div>
                 </span>
               </button>
               
@@ -361,10 +367,10 @@ export function Dashboard() {
               <Link 
                 href="/community"
                 className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors min-h-touch"
-                title="Community"
+                title={t('dashboard.community')}
               >
                 <Users className="w-4 h-4" />
-                <span className="text-sm hidden lg:inline">Community</span>
+                <span className="text-sm hidden lg:inline">{t('dashboard.community')}</span>
               </Link>
 
               {/* Data Management Dropdown */}
@@ -372,10 +378,10 @@ export function Dashboard() {
                 <button 
                   onClick={() => setShowDataMenu(!showDataMenu)}
                   className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors min-h-touch"
-                  title="Data Management"
+                  title={t('dashboard.data')}
                 >
                   <Database className="w-4 h-4" />
-                  <span className="text-sm hidden lg:inline">Data</span>
+                  <span className="text-sm hidden lg:inline">{t('dashboard.data')}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${showDataMenu ? 'rotate-180' : ''}`} />
                 </button>
                 
@@ -391,11 +397,11 @@ export function Dashboard() {
                         <div className="flex items-center gap-2 mb-2">
                           <Save className="w-4 h-4 text-blue-500" />
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            Auto-Save Active
+                            {t('dashboard.autoSaveActive')}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {lastSaved ? `Last saved: ${lastSaved.toLocaleString()}` : 'No data saved yet'}
+                          {lastSaved ? t('dashboard.lastSaved', { time: lastSaved.toLocaleString() }) : t('dashboard.noDataSaved')}
                         </p>
                       </div>
                       
@@ -408,7 +414,7 @@ export function Dashboard() {
                               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                             >
                               <Download className="w-4 h-4 text-blue-500" />
-                              <span>Export JSON Backup</span>
+                              <span>{t('dashboard.exportJSON')}</span>
                             </button>
                             
                             <button
@@ -416,12 +422,12 @@ export function Dashboard() {
                               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                             >
                               <Download className="w-4 h-4 text-green-500" />
-                              <span>Export PDF Report</span>
+                              <span>{t('dashboard.exportPDF')}</span>
                             </button>
                             
                             <label className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-colors">
                               <Upload className="w-4 h-4 text-green-500" />
-                              <span>Import Backup</span>
+                              <span>{t('dashboard.importBackup')}</span>
                               <input
                                 type="file"
                                 accept=".json"
@@ -434,16 +440,16 @@ export function Dashboard() {
                           <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
                               <Lock className="w-4 h-4 text-purple-400" />
-                              <span className="text-sm font-medium text-purple-300">Upgrade Required</span>
+                              <span className="text-sm font-medium text-purple-300">{t('dashboard.upgradeRequired')}</span>
                             </div>
                             <p className="text-xs text-gray-400 mb-3">
-                              Import/Export features are only available on Trader plan and above.
+                              {t('dashboard.upgradeDescription')}
                             </p>
                             <a
                               href="/pricing"
                               className="block w-full text-center py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white text-sm font-medium hover:from-purple-600 hover:to-pink-600 transition-all"
                             >
-                              View Plans
+                              {t('dashboard.viewPlans')}
                             </a>
                           </div>
                         )}
@@ -455,7 +461,7 @@ export function Dashboard() {
                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
-                          <span>Clear All Data</span>
+                          <span>{t('dashboard.clearAllData')}</span>
                         </button>
                       </div>
                     </div>
@@ -490,7 +496,7 @@ export function Dashboard() {
                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                         >
                           <User className="w-4 h-4 text-blue-500" />
-                          <span>Account Settings</span>
+                          <span>{t('dashboard.accountSettings')}</span>
                         </button>
 
                         <a
@@ -498,7 +504,7 @@ export function Dashboard() {
                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                         >
                           <CreditCard className="w-4 h-4 text-green-500" />
-                          <span>Billing & Plans</span>
+                          <span>{t('dashboard.billingPlans')}</span>
                         </a>
                         
                         <a
@@ -506,7 +512,7 @@ export function Dashboard() {
                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                         >
                           <Shield className="w-4 h-4 text-blue-500" />
-                          <span>Terms & Conditions</span>
+                          <span>{t('dashboard.termsConditions')}</span>
                         </a>
                         
                         <a
@@ -514,7 +520,7 @@ export function Dashboard() {
                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                         >
                           <Shield className="w-4 h-4 text-purple-500" />
-                          <span>Privacy Policy</span>
+                          <span>{t('dashboard.privacyPolicy')}</span>
                         </a>
                       </div>
                     </div>
@@ -545,10 +551,10 @@ export function Dashboard() {
               <button
                 onClick={logout}
                 className="inline-flex items-center px-2 sm:px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-gray-200 hover:bg-gray-700 dark:hover:bg-gray-800 min-h-touch"
-                title="Sign out"
+                title={t('dashboard.signOut')}
               >
                 <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Sign out</span>
+                <span className="hidden sm:inline">{t('dashboard.signOut')}</span>
               </button>
             </div>
 

@@ -25,6 +25,7 @@ import {
 import { OmnifolioLogo } from '@/components/ui/omnifolio-logo';
 import { BackgroundBeams } from '@/components/ui/background-beams';
 import { CardContainer, CardItem } from '@/components/ui/3d-card';
+import { useTranslation } from '@/contexts/translation-context';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -56,6 +57,7 @@ export default function TermsOfServicePage() {
   const [mounted, setMounted] = useState(false);
   const lastUpdated = "December 19, 2025";
   const effectiveDate = "December 19, 2025";
+  const { t } = useTranslation();
 
   useEffect(() => {
     setMounted(true);
@@ -427,7 +429,7 @@ export default function TermsOfServicePage() {
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-medium py-2 px-4 rounded-full hover:bg-white/5"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Back to Home</span>
+                <span>{t('terms.backToHome')}</span>
               </motion.button>
             </div>
           </div>
@@ -444,7 +446,7 @@ export default function TermsOfServicePage() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-purple-400 text-sm font-medium mb-8"
           >
             <Scale className="w-4 h-4" />
-            <span>Transparency & Trust</span>
+            <span>{t('terms.badge')}</span>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -452,7 +454,7 @@ export default function TermsOfServicePage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-8"
           >
-            Terms of <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">Service</span>
+            {t('terms.title')} <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">{t('terms.titleHighlight')}</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -460,8 +462,7 @@ export default function TermsOfServicePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto"
           >
-            Please read these terms carefully before using OmniFolio.
-            By using our service, you agree to these legal conditions.
+            {t('terms.subtitle')}
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
@@ -469,9 +470,9 @@ export default function TermsOfServicePage() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-gray-500 text-sm font-medium"
           >
-            <span>Effective Date: {effectiveDate}</span>
+            <span>{t('terms.effectiveDate')}: {effectiveDate}</span>
             <span className="hidden sm:inline">•</span>
-            <span>Last Updated: {lastUpdated}</span>
+            <span>{t('terms.lastUpdated')}: {lastUpdated}</span>
           </motion.div>
         </div>
       </section>
@@ -528,7 +529,7 @@ export default function TermsOfServicePage() {
           >
             <h2 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
               <FileText className="w-5 h-5 text-purple-400" />
-              Quick Navigation
+              {t('terms.quickNavigation')}
             </h2>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2">
               {sections.map((section) => (
@@ -609,7 +610,7 @@ export default function TermsOfServicePage() {
             <div className="bg-white/[0.02] border border-white/5 rounded-[2rem] p-8">
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                 <Shield className="w-5 h-5 text-cyan-400" />
-                Resources
+                {t('terms.resources')}
               </h3>
               <div className="flex flex-wrap gap-4">
                 <Link
