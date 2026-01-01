@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         has_seen_security_modal: true,
         security_key: encryptedKey, // Save encrypted key
         updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
+      } as any, { onConflict: 'user_id' });
 
     if (error) {
       console.error('Error updating security key:', error);
@@ -74,13 +74,13 @@ export async function GET(req: NextRequest) {
 
     // 3. Decrypt the key if it exists
     let decryptedKey = null;
-    if (data?.security_key) {
-      decryptedKey = decrypt(data.security_key);
+    if ((data as any)?.security_key) {
+      decryptedKey = decrypt((data as any).security_key);
     }
 
     return NextResponse.json({ 
       securityKey: decryptedKey,
-      hasSeenModal: data?.has_seen_security_modal || false
+      hasSeenModal: (data as any)?.has_seen_security_modal || false
     });
   } catch (error) {
     console.error('Error in security key route:', error);
