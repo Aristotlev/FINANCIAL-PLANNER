@@ -18,6 +18,7 @@ import { Preloader } from "../components/ui/preloader";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from "next/script";
 import { Inter, Playfair_Display, Dancing_Script } from 'next/font/google';
+import { SecurityKeyModal } from "../components/auth/SecurityKeyModal";
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -238,6 +239,7 @@ export default function RootLayout({
           <ZoomHandler />
           <ThemeProvider>
             <BetterAuthProvider>
+              <SecurityKeyModal />
               <CurrencyProvider>
                 <HybridDataProvider>
                   <APIConnectionProvider>

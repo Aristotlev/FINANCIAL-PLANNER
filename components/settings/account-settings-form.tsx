@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBetterAuth } from '@/contexts/better-auth-context';
 import { authClient } from '@/lib/auth-client';
-import { User, Save, Loader2, Upload, Camera } from 'lucide-react';
+import { User, Save, Loader2, Upload, Camera, Shield, Eye, EyeOff, Copy, CheckCircle } from 'lucide-react';
 
 export default function AccountSettingsForm() {
   const { user } = useBetterAuth();
@@ -13,6 +13,9 @@ export default function AccountSettingsForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [securityKey, setSecurityKey] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState(false);
+  const [hasCopiedKey, setHasCopiedKey] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -20,8 +23,33 @@ export default function AccountSettingsForm() {
       setName(user.name || '');
       setBio(user.bio || '');
       setImage(user.avatarUrl || '');
+      fetchSecurityKey();
     }
   }, [user]);
+
+  const fetchSecurityKey = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await fetch('/api/user/security-key');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.securityKey) {
+          setSecurityKey(data.securityKey);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching security key:', error);
+    }
+  };
+
+  const handleCopyKey = () => {
+    if (securityKey) {
+      navigator.clipboard.writeText(securityKey);
+      setHasCopiedKey(true);
+      setTimeout(() => setHasCopiedKey(false), 2000);
+    }
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -227,6 +255,53 @@ export default function AccountSettingsForm() {
           />
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Brief description for your profile.
+          </p>
+        </div>
+
+        {/* Security Key Section */}
+        <div className="bg-zinc-900/50 border border-white/10 rounded-lg p-4 space-y-3">
+          <div className="flex items-center gap-2 text-white/90">
+            <Shield className="w-4 h-4 text-emerald-500" />
+            <h3 className="font-medium text-sm">Security Key</h3>
+          </div>
+          
+          {securityKey ? (
+            <div className="relative">
+              <div className={`
+                w-full px-3 py-2 pr-24 bg-black/40 border border-white/10 rounded-md 
+                font-mono text-sm text-emerald-400 break-all
+                ${!showKey ? 'blur-sm select-none' : 'select-all'}
+              `}>
+                {showKey ? securityKey : '•'.repeat(24)}
+              </div>
+              
+              <div className="absolute right-1 top-1 bottom-1 flex items-center gap-1 bg-zinc-900/80 pl-2 rounded-r-md">
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="p-1.5 hover:bg-white/10 rounded-md text-white/60 hover:text-white transition-colors"
+                  title={showKey ? "Hide key" : "Show key"}
+                >
+                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyKey}
+                  className="p-1.5 hover:bg-white/10 rounded-md text-white/60 hover:text-white transition-colors"
+                  title="Copy to clipboard"
+                >
+                  {hasCopiedKey ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+              No security key found. Please refresh the page to generate one.
+            </div>
+          )}
+          
+          <p className="text-xs text-white/40">
+            This is your unique security key. Keep it safe.
           </p>
         </div>
 

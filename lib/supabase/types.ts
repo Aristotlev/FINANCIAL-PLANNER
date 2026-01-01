@@ -398,6 +398,8 @@ export interface Database {
           language: string
           notifications_enabled: boolean
           preferences: Json
+          has_seen_security_modal: boolean
+          security_key: string | null
           created_at: string
           updated_at: string
         }
@@ -408,6 +410,8 @@ export interface Database {
           language?: string
           notifications_enabled?: boolean
           preferences?: Json
+          has_seen_security_modal?: boolean
+          security_key?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -418,6 +422,8 @@ export interface Database {
           language?: string
           notifications_enabled?: boolean
           preferences?: Json
+          has_seen_security_modal?: boolean
+          security_key?: string | null
           created_at?: string
           updated_at?: string
         }

@@ -10,9 +10,19 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   maxWidth?: string;
+  hideCloseButton?: boolean;
+  preventCloseOnOutsideClick?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl" }: ModalProps) {
+export function Modal({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  maxWidth = "max-w-6xl",
+  hideCloseButton = false,
+  preventCloseOnOutsideClick = false
+}: ModalProps) {
   const scrollYRef = useRef(0);
   const modalContentRef = useRef<HTMLDivElement>(null);
   
@@ -83,7 +93,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !preventCloseOnOutsideClick) {
         onClose();
       }
     };
@@ -95,7 +105,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, preventCloseOnOutsideClick]);
 
   if (!isOpen) return null;
 
@@ -117,7 +127,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
+        onClick={preventCloseOnOutsideClick ? undefined : onClose}
         style={{
           position: 'fixed',
           top: 0,
@@ -141,13 +151,15 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-6xl"
             <h2 className="text-lg sm:text-2xl font-bold text-white/95 pr-2">
               {title}
             </h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors min-h-touch min-w-touch flex-shrink-0"
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5 text-white/70 hover:text-white" />
-            </button>
+            {!hideCloseButton && (
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors min-h-touch min-w-touch flex-shrink-0"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5 text-white/70 hover:text-white" />
+              </button>
+            )}
           </div>
           
           {/* Content */}
