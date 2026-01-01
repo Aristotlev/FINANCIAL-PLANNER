@@ -472,30 +472,55 @@ export class SECEdgarAPI {
     const normalizedCIK = cik.padStart(10, '0');
     const directoryCIK = cik.replace(/^0+/, '');
     const accessionPath = accessionNumber.replace(/-/g, '');
-    const url = `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${accessionNumber}-index.json`;
     
+    // First, try to get filing info from the submissions API (more reliable)
     try {
-      const data = await this.request<any>(url);
+      const submissionsUrl = `${this.dataUrl}/submissions/CIK${normalizedCIK}.json`;
+      const submissionsData = await this.request<any>(submissionsUrl);
+      const companyName = submissionsData.name || '';
+      const ticker = submissionsData.tickers?.[0] || '';
       
-      const documents: SECDocument[] = data.directory?.item?.map((item: any) => ({
-        sequence: item.sequence || '',
-        description: item.description || item.name,
-        documentUrl: `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${item.name}`,
-        type: item.type || '',
-        size: item.size || 0,
-      })) || [];
+      // Find the filing in recent filings
+      const recentFilings = submissionsData.filings?.recent;
+      if (recentFilings) {
+        const idx = recentFilings.accessionNumber?.indexOf(accessionNumber);
+        if (idx !== -1 && idx !== undefined) {
+          // Try to get documents from index.json if available
+          let documents: SECDocument[] = [];
+          try {
+            const indexUrl = `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${accessionNumber}-index.json`;
+            const indexData = await this.request<any>(indexUrl);
+            documents = indexData.directory?.item?.map((item: any) => ({
+              sequence: item.sequence || '',
+              description: item.description || item.name,
+              documentUrl: `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${item.name}`,
+              type: item.type || '',
+              size: item.size || 0,
+            })) || [];
+          } catch {
+            // index.json not available, that's fine
+          }
+          
+          return {
+            accessionNumber,
+            filingDate: recentFilings.filingDate[idx],
+            form: recentFilings.form[idx],
+            primaryDocument: recentFilings.primaryDocument[idx],
+            primaryDocumentUrl: `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${recentFilings.primaryDocument[idx]}`,
+            filingDetailUrl: `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${accessionNumber}-index.htm`,
+            size: recentFilings.size[idx],
+            cik: normalizedCIK,
+            ticker,
+            companyName,
+            acceptanceDateTime: recentFilings.filingDate[idx],
+            documents,
+          };
+        }
+      }
       
-      // Get the main filing from company filings
-      const filings = await this.getCompanyFilings(cik);
-      const filing = filings.find(f => f.accessionNumber === accessionNumber);
-      
-      if (!filing) return null;
-      
-      return {
-        ...filing,
-        acceptanceDateTime: data.acceptedDate || filing.filingDate,
-        documents,
-      };
+      // Not found in recent filings
+      console.warn(`[SEC] Filing ${accessionNumber} not found in recent filings for CIK ${cik}`);
+      return null;
     } catch (error) {
       console.error(`[SEC] Failed to get filing detail:`, error);
       return null;

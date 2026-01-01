@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const cik = searchParams.get('cik');
-    const accessionNumber = searchParams.get('accessionNumber');
+    let accessionNumber = searchParams.get('accessionNumber');
 
     if (!cik || !accessionNumber) {
       return NextResponse.json(
@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Sanitize accession number - remove any trailing :1 or similar suffixes from RSS feeds
+    accessionNumber = accessionNumber.replace(/:\d+$/, '');
 
     // Get filing detail
     const detail = await secApi.getFilingDetail(cik, accessionNumber);
