@@ -157,31 +157,37 @@ export default function SECPage() {
   const [searchTicker, setSearchTicker] = useState('');
   const [selectedTicker, setSelectedTicker] = useState('AAPL');
   const [selectedCompanyName, setSelectedCompanyName] = useState('Apple Inc.');
-  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [watchlist, setWatchlist] = useState<any[]>([]);
+  const [popularTickers, setPopularTickers] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Load watchlist from localStorage
+  // Load watchlist and popular tickers
   useEffect(() => {
-    const savedWatchlist = localStorage.getItem('sec_watchlist');
-    if (savedWatchlist) {
-      try {
-        setWatchlist(JSON.parse(savedWatchlist));
-      } catch (e) {
-        console.error('Failed to parse watchlist', e);
-        setWatchlist(['AAPL', 'MSFT', 'GOOGL']);
-      }
-    } else {
-      setWatchlist(['AAPL', 'MSFT', 'GOOGL']);
-    }
-  }, []);
+    async function loadData() {
+      if (!isAuthenticated) return;
 
-  // Save watchlist to localStorage whenever it changes
-  useEffect(() => {
-    if (watchlist.length > 0) {
-      localStorage.setItem('sec_watchlist', JSON.stringify(watchlist));
+      try {
+        // Load watchlist from API
+        const watchlistRes = await fetch('/api/sec/watchlist');
+        if (watchlistRes.ok) {
+          const data = await watchlistRes.json();
+          setWatchlist(data.watchlist || []);
+        }
+
+        // Load popular tickers
+        const popularRes = await fetch('/api/sec/popular?limit=8');
+        if (popularRes.ok) {
+          const data = await popularRes.json();
+          setPopularTickers(data.results || []);
+        }
+      } catch (error) {
+        console.error('Failed to load SEC data', error);
+      }
     }
-  }, [watchlist]);
-  
+
+    loadData();
+  }, [isAuthenticated]);
+
   // Autocomplete state
   const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -253,12 +259,26 @@ export default function SECPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  const selectCompany = (result: CompanySearchResult) => {
+  const selectCompany = async (result: CompanySearchResult) => {
     setSelectedTicker(result.ticker);
     setSelectedCompanyName(result.name);
     setSearchTicker('');
     setShowDropdown(false);
     setSearchResults([]);
+
+    // Record search
+    try {
+      await fetch(`/api/sec/search?record=true&ticker=${result.ticker}&cik=${result.cik}&name=${encodeURIComponent(result.name)}`);
+      
+      // Refresh popular tickers after recording a search
+      const popularRes = await fetch('/api/sec/popular?limit=8');
+      if (popularRes.ok) {
+        const data = await popularRes.json();
+        setPopularTickers(data.results || []);
+      }
+    } catch (error) {
+      console.error('Failed to record search', error);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -300,17 +320,57 @@ export default function SECPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    try {
+      // Refresh watchlist
+      const watchlistRes = await fetch('/api/sec/watchlist');
+      if (watchlistRes.ok) {
+        const data = await watchlistRes.json();
+        setWatchlist(data.watchlist || []);
+      }
+
+      // Refresh popular
+      const popularRes = await fetch('/api/sec/popular?limit=8');
+      if (popularRes.ok) {
+        const data = await popularRes.json();
+        setPopularTickers(data.results || []);
+      }
+    } catch (error) {
+      console.error('Refresh failed', error);
+    }
+    
     setIsRefreshing(false);
   };
 
-  const toggleWatchlist = (ticker: string) => {
-    setWatchlist(prev => 
-      prev.includes(ticker) 
-        ? prev.filter(t => t !== ticker)
-        : [...prev, ticker]
-    );
+  const toggleWatchlist = async (ticker: string, name?: string) => {
+    const isWatched = watchlist.some(item => item.ticker === ticker);
+    
+    try {
+      if (isWatched) {
+        // Remove from watchlist
+        const res = await fetch(`/api/sec/watchlist?ticker=${ticker}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          setWatchlist(prev => prev.filter(item => item.ticker !== ticker));
+        }
+      } else {
+        // Add to watchlist
+        const res = await fetch('/api/sec/watchlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ticker, name })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setWatchlist(prev => [data.watchlistItem, ...prev]);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle watchlist', error);
+    }
   };
 
   if (isLoading) {
@@ -384,7 +444,7 @@ export default function SECPage() {
                     >
                       {searchResults.map((result, index) => (
                         <button
-                          key={result.cik}
+                          key={`${result.cik}-${index}`}
                           onClick={() => selectCompany(result)}
                           className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
                             index === highlightedIndex
@@ -460,14 +520,14 @@ export default function SECPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-gray-400">Current Ticker</h3>
                 <button
-                  onClick={() => toggleWatchlist(selectedTicker)}
+                  onClick={() => toggleWatchlist(selectedTicker, selectedCompanyName)}
                   className={`p-1.5 rounded-lg transition-colors ${
-                    watchlist.includes(selectedTicker)
+                    watchlist.some(item => item.ticker === selectedTicker)
                       ? 'text-yellow-400 bg-yellow-400/10'
                       : 'text-gray-500 hover:text-yellow-400 hover:bg-yellow-400/10'
                   }`}
                 >
-                  <Star className={`h-4 w-4 ${watchlist.includes(selectedTicker) ? 'fill-current' : ''}`} />
+                  <Star className={`h-4 w-4 ${watchlist.some(item => item.ticker === selectedTicker) ? 'fill-current' : ''}`} />
                 </button>
               </div>
               <div className="flex items-center gap-3">
@@ -525,7 +585,7 @@ export default function SECPage() {
                     >
                       {searchResults.map((result, index) => (
                         <button
-                          key={result.cik}
+                          key={`${result.cik}-${index}`}
                           onClick={() => selectCompany(result)}
                           className={`w-full px-3 py-2.5 flex items-center gap-3 text-left transition-colors ${
                             index === highlightedIndex
@@ -550,20 +610,40 @@ export default function SECPage() {
             <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-4 hover:border-green-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/10 relative z-10">
               <h3 className="text-sm font-medium text-gray-400 mb-3">Popular</h3>
               <div className="flex flex-wrap gap-2">
-                {popularTickers.map(ticker => (
-                  <button
-                    key={ticker}
-                    onClick={() => setSelectedTicker(ticker)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${
-                      selectedTicker === ticker
-                        ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/10'
-                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white border border-transparent hover:border-gray-700'
-                    }`}
-                  >
-                    <CompanyIcon ticker={ticker} className="h-4 w-4" showPlaceholder={false} />
-                    {ticker}
-                  </button>
-                ))}
+                {popularTickers.length > 0 ? (
+                  popularTickers.map((item, index) => (
+                    <button
+                      key={`${item.ticker}-${index}`}
+                      onClick={() => {
+                        setSelectedTicker(item.ticker);
+                        setSelectedCompanyName(item.company_name || item.ticker);
+                      }}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${
+                        selectedTicker === item.ticker
+                          ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/10'
+                          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white border border-transparent hover:border-gray-700'
+                      }`}
+                    >
+                      <CompanyIcon ticker={item.ticker} className="h-4 w-4" showPlaceholder={false} />
+                      {item.ticker}
+                    </button>
+                  ))
+                ) : (
+                  ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'JPM'].map(ticker => (
+                    <button
+                      key={ticker}
+                      onClick={() => setSelectedTicker(ticker)}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${
+                        selectedTicker === ticker
+                          ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/10'
+                          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white border border-transparent hover:border-gray-700'
+                      }`}
+                    >
+                      <CompanyIcon ticker={ticker} className="h-4 w-4" showPlaceholder={false} />
+                      {ticker}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
 
@@ -574,23 +654,29 @@ export default function SECPage() {
                 <span className="text-xs text-gray-500">{watchlist.length} stocks</span>
               </div>
               <div className="space-y-2">
-                {watchlist.map(ticker => (
+                {watchlist.map((item, index) => (
                   <button
-                    key={ticker}
-                    onClick={() => setSelectedTicker(ticker)}
+                    key={`${item.ticker}-${index}`}
+                    onClick={() => {
+                      setSelectedTicker(item.ticker);
+                      setSelectedCompanyName(item.company?.company_name || item.ticker);
+                    }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
-                      selectedTicker === ticker
+                      selectedTicker === item.ticker
                         ? 'bg-cyan-500/10 border border-cyan-500/20 text-white'
                         : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white border border-transparent hover:border-gray-700'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <CompanyIcon ticker={ticker} className="h-6 w-6" />
-                      <span className="font-medium">{ticker}</span>
+                      <CompanyIcon ticker={item.ticker} className="h-6 w-6" />
+                      <span className="font-medium">{item.ticker}</span>
                     </div>
                     <Star className="h-4 w-4 text-yellow-400 fill-current" />
                   </button>
                 ))}
+                {watchlist.length === 0 && (
+                  <p className="text-xs text-gray-500 text-center py-4">Your watchlist is empty</p>
+                )}
               </div>
             </div>
           </div>
@@ -634,6 +720,7 @@ export default function SECPage() {
                       </div>
                     </div>
                     <SECFilingFeed 
+                      ticker={selectedTicker}
                       maxItems={20}
                     />
                   </div>
@@ -670,9 +757,14 @@ export default function SECPage() {
 
                 {activeTab === 'screener' && (
                   <SECScreener 
-                    onSelectCompany={(ticker: string) => {
+                    onSelectCompany={(ticker: string, cik: string) => {
                       setSelectedTicker(ticker);
+                      // Find company name from results if possible, or just use ticker
+                      setSelectedCompanyName(ticker);
                       setActiveTab('filings');
+                      
+                      // Record search/selection
+                      fetch(`/api/sec/search?record=true&ticker=${ticker}&cik=${cik}`).catch(console.error);
                     }}
                   />
                 )}

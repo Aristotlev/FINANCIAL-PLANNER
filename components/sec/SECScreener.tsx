@@ -275,7 +275,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
             <tbody className="divide-y divide-gray-700/30">
               {results.map((result, index) => (
                 <motion.tr
-                  key={result.cik}
+                  key={`${result.cik}-${index}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.05 }}

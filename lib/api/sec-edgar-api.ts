@@ -435,6 +435,7 @@ export class SECEdgarAPI {
     if (!recentFilings) return filings;
     
     const count = recentFilings.accessionNumber?.length || 0;
+    const directoryCIK = String(data.cik).replace(/^0+/, '');
     
     for (let i = 0; i < count; i++) {
       const form = recentFilings.form[i];
@@ -452,8 +453,8 @@ export class SECEdgarAPI {
         filingDate: recentFilings.filingDate[i],
         form,
         primaryDocument: recentFilings.primaryDocument[i],
-        primaryDocumentUrl: `${this.baseUrl}/Archives/edgar/data/${data.cik}/${accessionPath}/${recentFilings.primaryDocument[i]}`,
-        filingDetailUrl: `${this.baseUrl}/Archives/edgar/data/${data.cik}/${accessionPath}/${accessionNumber}-index.htm`,
+        primaryDocumentUrl: `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${recentFilings.primaryDocument[i]}`,
+        filingDetailUrl: `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${accessionNumber}-index.htm`,
         size: recentFilings.size[i],
         cik: normalizedCIK,
         ticker: data.tickers?.[0],
@@ -469,8 +470,9 @@ export class SECEdgarAPI {
    */
   async getFilingDetail(cik: string, accessionNumber: string): Promise<SECFilingDetail | null> {
     const normalizedCIK = cik.padStart(10, '0');
+    const directoryCIK = cik.replace(/^0+/, '');
     const accessionPath = accessionNumber.replace(/-/g, '');
-    const url = `${this.baseUrl}/Archives/edgar/data/${normalizedCIK}/${accessionPath}/${accessionNumber}-index.json`;
+    const url = `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${accessionNumber}-index.json`;
     
     try {
       const data = await this.request<any>(url);
@@ -478,7 +480,7 @@ export class SECEdgarAPI {
       const documents: SECDocument[] = data.directory?.item?.map((item: any) => ({
         sequence: item.sequence || '',
         description: item.description || item.name,
-        documentUrl: `${this.baseUrl}/Archives/edgar/data/${normalizedCIK}/${accessionPath}/${item.name}`,
+        documentUrl: `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${item.name}`,
         type: item.type || '',
         size: item.size || 0,
       })) || [];
@@ -630,26 +632,66 @@ export class SECEdgarAPI {
   /**
    * Parse Form 4 XML document
    */
-  private async parseForm4(filing: SECFiling): Promise<Form4Filing | null> {
+  public async parseForm4(filing: SECFiling | SECFilingDetail): Promise<Form4Filing | null> {
     // Find XML document in filing
     const normalizedCIK = filing.cik.padStart(10, '0');
+    const directoryCIK = filing.cik.replace(/^0+/, '');
     const accessionPath = filing.accessionNumber.replace(/-/g, '');
-    const xmlUrl = `${this.baseUrl}/Archives/edgar/data/${normalizedCIK}/${accessionPath}/xslForm4X01/primary_doc.xml`;
     
-    // Try the standard naming convention first
     let data: any;
-    try {
-      const primaryDoc = filing.primaryDocument.replace('.htm', '.xml');
-      const url = `${this.baseUrl}/Archives/edgar/data/${normalizedCIK}/${accessionPath}/${primaryDoc}`;
-      data = await this.request<any>(url, { parseXML: true });
-    } catch {
-      // Try alternate URL pattern
-      try {
-        data = await this.request<any>(xmlUrl, { parseXML: true });
-      } catch {
-        return null;
+    let success = false;
+
+    // Strategy 1: If we have documents list (from SECFilingDetail), look for the XML
+    if ('documents' in filing && filing.documents) {
+      // Look for the XML document
+      // Usually has type '4' or '4/A' and ends in .xml, or description contains 'XML'
+      const xmlDoc = filing.documents.find(d => 
+        d.documentUrl.endsWith('.xml') && 
+        (d.type === '4' || d.type === '4/A' || d.description.includes('XML'))
+      );
+      
+      if (xmlDoc) {
+        try {
+          data = await this.request<any>(xmlDoc.documentUrl, { parseXML: true });
+          success = true;
+        } catch (e) {
+          console.warn(`[SEC] Failed to fetch Form 4 XML from document list: ${xmlDoc.documentUrl}`);
+        }
       }
     }
+
+    // Strategy 2: Try standard naming convention (primary_doc.xml)
+    if (!success) {
+      try {
+        // If primaryDocument has xsl prefix path (like xslF345X05/file.xml), strip the prefix
+        let primaryXml = filing.primaryDocument;
+        if (primaryXml.includes('/')) {
+          // Extract just the filename from paths like "xslF345X05/tm2534544-1_4seq1.xml"
+          primaryXml = primaryXml.split('/').pop() || primaryXml;
+        }
+        if (primaryXml.endsWith('.htm')) primaryXml = primaryXml.replace('.htm', '.xml');
+        else if (primaryXml.endsWith('.html')) primaryXml = primaryXml.replace('.html', '.xml');
+
+        const url = `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/${primaryXml}`;
+        data = await this.request<any>(url, { parseXML: true });
+        success = true;
+      } catch {
+        // Ignore
+      }
+    }
+
+    // Strategy 3: Try common XSL path
+    if (!success) {
+      try {
+        const xmlUrl = `${this.baseUrl}/Archives/edgar/data/${directoryCIK}/${accessionPath}/xslForm4X01/primary_doc.xml`;
+        data = await this.request<any>(xmlUrl, { parseXML: true });
+        success = true;
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (!success || !data) return null;
     
     const ownership = data?.ownershipDocument;
     if (!ownership) return null;

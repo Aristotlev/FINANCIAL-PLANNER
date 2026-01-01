@@ -4,10 +4,30 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 const SEC_USER_AGENT = process.env.SEC_USER_AGENT || 'OmniFolio contact@omnifolio.com';
 const SEC_BASE_URL = 'https://efts.sec.gov/LATEST/search-index';
 const SEC_COMPANY_TICKERS_URL = 'https://www.sec.gov/files/company_tickers.json';
+
+// Helper to get Supabase Admin client (bypasses RLS)
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!url || !key) {
+    throw new Error('Supabase admin credentials not configured');
+  }
+  
+  return createClient(url, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
 
 interface CompanyTickerEntry {
   cik_str: number;
@@ -115,13 +135,47 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
     const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const recordSearch = searchParams.get('record') === 'true';
+    const ticker = searchParams.get('ticker');
+    const cik = searchParams.get('cik');
+    const name = searchParams.get('name');
 
-    if (!query || query.length < 1) {
+    if (!query && !ticker) {
       return NextResponse.json({ results: [] });
     }
 
+    // If we're just recording a selection, do that and return
+    if (recordSearch && (ticker || query)) {
+      const supabase = getSupabaseAdmin();
+      
+      // Try to get user ID from session
+      let userId = null;
+      try {
+        const session = await auth.api.getSession({
+          headers: await headers()
+        });
+        if (session?.user) {
+          userId = session.user.id;
+        }
+      } catch (e) {
+        // Ignore auth errors for search recording
+      }
+
+      await supabase.from('sec_search_history').insert({
+        user_id: userId,
+        query: query || ticker,
+        ticker: ticker,
+        cik: cik,
+        company_name: name,
+      });
+
+      if (recordSearch && !query) {
+        return NextResponse.json({ success: true });
+      }
+    }
+
     const companies = await loadCompanyTickers();
-    const results = searchCompanies(companies, query, Math.min(limit, 50));
+    const results = searchCompanies(companies, query || '', Math.min(limit, 50));
 
     return NextResponse.json({ 
       results,

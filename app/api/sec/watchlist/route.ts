@@ -7,19 +7,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSECEdgarClient } from '@/lib/api/sec-edgar-api';
 import { withRateLimit, RateLimitPresets } from '@/lib/rate-limiter';
 import { createClient } from '@supabase/supabase-js';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 const secApi = createSECEdgarClient();
 
-// Helper to get Supabase client
-function getSupabaseClient() {
+// Helper to get Supabase Admin client (bypasses RLS)
+function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
   if (!url || !key) {
-    throw new Error('Supabase credentials not configured');
+    throw new Error('Supabase admin credentials not configured');
   }
   
-  return createClient(url, key);
+  return createClient(url, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 }
 
 // GET /api/sec/watchlist - Get user's watchlist
@@ -30,27 +37,20 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get user ID from auth header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
+    // Verify session with Better Auth
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
+
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseAdmin();
     
-    // Verify token and get user
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication' },
-        { status: 401 }
-      );
-    }
-
     // Get watchlist
     const { data: watchlist, error } = await supabase
       .from('sec_watchlist')
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         *,
         company:sec_companies(*)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -88,25 +88,19 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
+    // Verify session with Better Auth
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
+
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const supabase = getSupabaseClient();
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication' },
-        { status: 401 }
-      );
-    }
-
+    const supabase = getSupabaseAdmin();
     const body = await request.json();
     const { 
       ticker, 
@@ -154,7 +148,7 @@ export async function POST(request: NextRequest) {
     const { data: watchlistItem, error } = await supabase
       .from('sec_watchlist')
       .upsert({
-        user_id: user.id,
+        user_id: session.user.id,
         company_id: existingCompany?.id,
         ticker: company.ticker,
         cik: company.cik,
@@ -197,25 +191,19 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
+    // Verify session with Better Auth
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
+
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const supabase = getSupabaseClient();
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid authentication' },
-        { status: 401 }
-      );
-    }
-
+    const supabase = getSupabaseAdmin();
     const searchParams = request.nextUrl.searchParams;
     const ticker = searchParams.get('ticker');
     const id = searchParams.get('id');
@@ -230,7 +218,7 @@ export async function DELETE(request: NextRequest) {
     let query = supabase
       .from('sec_watchlist')
       .delete()
-      .eq('user_id', user.id);
+      .eq('user_id', session.user.id);
 
     if (id) {
       query = query.eq('id', id);
