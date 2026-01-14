@@ -10,7 +10,7 @@ import { headers } from "next/headers";
 import { rateLimit, getClientIP, RateLimitConfigs } from "@/lib/rate-limit";
 
 const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
 interface GeminiRequest {
   text: string;
@@ -34,6 +34,7 @@ async function callGeminiWithRetry(
 ): Promise<string> {
   try {
     console.log(`[LLM] Calling Gemini API (attempt ${attempt})...`);
+    console.log(`[LLM] Endpoint: ${GEMINI_ENDPOINT}`);
     
     const response = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -144,6 +145,18 @@ export async function POST(request: NextRequest) {
 
     if (!GEMINI_API_KEY) {
       console.error('[LLM] GEMINI_API_KEY not configured');
+      // For development, return mock data if key is missing
+      if (process.env.NODE_ENV === 'development') {
+        const mockResponse = `**Portfolio Analysis (MOCK DATA)**\n\n**1. Portfolio Allocation & Diversification Rating: 7/10**\n- Your portfolio shows a decent mix of assets, but might be heavy on major caps.\n\n**2. Risk Assessment: Medium**\n- Typical volatility for the crypto market.\n\n**3. Strengths**\n- Established assets present.\n- Clear entry points tracked.\n\n**4. Weaknesses**\n- Potential lack of sector variety (e.g., DeFi, Gaming, L2s).\n\n**5. Strategic Suggestions**\n- Consider exploring emerging ecosystems.\n- Set stop-loss orders for volatility management.`;
+        
+        await new Promise(r => setTimeout(r, 1500)); // Simulate delay
+        return NextResponse.json({
+          text: mockResponse,
+          model: 'gemini-1.5-flash-mock',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
       return NextResponse.json(
         { error: 'Gemini API key not configured' },
         { status: 500 }
@@ -163,7 +176,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       text: responseText,
-      model: 'gemini-1.5-flash',
+      model: 'gemini-pro',
       timestamp: new Date().toISOString(),
     });
 

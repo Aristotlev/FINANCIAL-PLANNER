@@ -29,10 +29,13 @@ const RSS_FEEDS = {
     { name: "FXStreet", url: "https://www.fxstreet.com/news/rss", priority: 1 },
     { name: "DailyFX", url: "https://www.dailyfx.com/feeds/market-news", priority: 1 },
     { name: "ForexLive", url: "https://www.forexlive.com/feed/news", priority: 1 },
+    { name: "Babypips", url: "https://www.babypips.com/feed", priority: 1 },
     { name: "Investing.com FX", url: "https://www.investing.com/rss/news_1.rss", priority: 2 },
     { name: "FXEmpire", url: "https://www.fxempire.com/api/rss/news", priority: 2 },
     { name: "Action Forex", url: "https://www.actionforex.com/rss/", priority: 3 },
-    { name: "Finance Magnates", url: "https://www.financemagnates.com/feed/", priority: 2 }
+    { name: "Finance Magnates", url: "https://www.financemagnates.com/feed/", priority: 2 },
+    { name: "Google News Forex", url: "https://news.google.com/rss/search?q=forex+market&hl=en-US&gl=US&ceid=US:en", priority: 2 },
+    { name: "XM Research", url: "https://www.xm.com/research/api/rss/contents/analysis", priority: 2 }
   ],
   indices: [
     { name: "MarketWatch", url: "https://www.marketwatch.com/rss/topstories", priority: 1 },
@@ -40,13 +43,15 @@ const RSS_FEEDS = {
     { name: "Reuters Markets", url: "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best", priority: 1 },
     { name: "CNBC Markets", url: "https://www.cnbc.com/id/10000664/device/rss/rss.html", priority: 1 },
     { name: "Yahoo Finance Markets", url: "https://finance.yahoo.com/news/rssindex", priority: 1 },
+    { name: "Google News Markets", url: "https://news.google.com/rss/search?q=stock+market+indices&hl=en-US&gl=US&ceid=US:en", priority: 1 },
     { name: "Bloomberg", url: "https://www.bloomberg.com/feed/podcast/etf-iq.xml", priority: 2 },
     { name: "Financial Times", url: "https://www.ft.com/markets?format=rss", priority: 2 },
     { name: "WSJ Markets", url: "https://feeds.wsj.com/wsj/xml/rss/3_7031.xml", priority: 2 },
     { name: "Barron's Markets", url: "https://www.barrons.com/xml/rss/3_7031.xml", priority: 2 },
     { name: "CNBC World Markets", url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", priority: 3 },
     { name: "The Motley Fool", url: "https://www.fool.com/feeds/index.aspx", priority: 3 },
-    { name: "Seeking Alpha Markets", url: "https://seekingalpha.com/feed.xml", priority: 3 }
+    { name: "Seeking Alpha Markets", url: "https://seekingalpha.com/feed.xml", priority: 3 },
+    { name: "Business Insider Markets", url: "https://feeds.businessinsider.com/custom?type=markets", priority: 2 }
   ],
   general: [
     { name: "Reuters Top News", url: "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best", priority: 1 },
@@ -150,6 +155,11 @@ function matchesCategory(item: NewsItem, targetCategory: string): boolean {
     categoryScores[b[0] as keyof typeof categoryScores] > categoryScores[a[0] as keyof typeof categoryScores] ? b : a
   )[0];
   
+  // Relaxed matching for indices/forex which can be broad
+  if (targetCategory === 'indices' || targetCategory === 'forex') {
+      return dominantCategory === targetCategory || matchCount >= 1;
+  }
+
   // Article matches if it's the dominant category or has at least 2 matching keywords
   return dominantCategory === targetCategory || matchCount >= 2;
 }
@@ -225,7 +235,7 @@ function parseRSSFeed(xmlText: string, sourceName: string, category: string, sou
     
     // Try RSS format first
     $('item').each((index: number, element: any) => {
-      if (index >= 20) return false; // Limit to 20 items per feed for better coverage
+      if (index >= 30) return false; // Limit to 30 items per feed for better coverage
       
       const $item = $(element);
       const title = $item.find('title').text().trim();
@@ -516,13 +526,8 @@ export async function GET(request: NextRequest) {
         }
       });
       
-      // Sort by engagement score (prioritizes top headlines + recency)
-      uniqueNews.sort((a, b) => {
-        const scoreA = a.engagementScore || 0;
-        const scoreB = b.engagementScore || 0;
-        if (scoreB !== scoreA) return scoreB - scoreA;
-        return b.pubDateTimestamp - a.pubDateTimestamp; // Tie-breaker: most recent
-      });
+      // Sort by recency (newest first) as requested
+      uniqueNews.sort((a, b) => b.pubDateTimestamp - a.pubDateTimestamp);
       
       return NextResponse.json({
         category,
@@ -634,13 +639,8 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    // Sort by engagement score (prioritizes top headlines + recency)
-    uniqueNews.sort((a, b) => {
-      const scoreA = a.engagementScore || 0;
-      const scoreB = b.engagementScore || 0;
-      if (scoreB !== scoreA) return scoreB - scoreA;
-      return b.pubDateTimestamp - a.pubDateTimestamp; // Tie-breaker: most recent
-    });
+    // Sort by recency (newest first) as requested
+    uniqueNews.sort((a, b) => b.pubDateTimestamp - a.pubDateTimestamp);
     
     return NextResponse.json({
       category,

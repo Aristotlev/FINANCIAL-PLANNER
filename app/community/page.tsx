@@ -584,7 +584,7 @@ export default function CommunityPage() {
                 <div className="flex items-baseline space-x-4">
                   <Link href="/dashboard" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</Link>
                   <Link href="/community" className="bg-gray-800 text-white px-3 py-2 rounded-md text-sm font-medium">Community</Link>
-                  <Link href="/markets" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">SEC Filings</Link>
+                  <Link href="/markets/sec" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">SEC Filings</Link>
                 </div>
               </div>
             </div>

@@ -130,37 +130,37 @@ export default function AccountSettingsForm() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 w-full">
+    <div className="bg-[#0D0D0D] rounded-lg border border-gray-800 p-6 w-full">
       <form onSubmit={handleSubmit} className="space-y-6">
         
         {/* Profile Picture */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Profile Picture
           </label>
           <div className="flex items-center gap-6">
             <div className="relative group">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 relative">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-[#1A1A1A] border-2 border-gray-800 relative">
                 {image ? (
                   <img src={image} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <div className="w-full h-full flex items-center justify-center text-gray-500">
                     <User className="w-12 h-12" />
                   </div>
                 )}
                 
                 {/* Overlay for upload */}
                 <div 
-                  className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Camera className="w-8 h-8 text-white" />
+                  <Camera className="w-8 h-8 text-cyan-400" />
                 </div>
               </div>
               
               {isUploading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
                 </div>
               )}
               
@@ -179,38 +179,38 @@ export default function AccountSettingsForm() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-700 rounded-md shadow-sm text-sm font-medium text-gray-300 bg-[#1A1A1A] hover:bg-gray-800 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50"
                 >
                   {isUploading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
                       Uploading...
                     </>
                   ) : (
                     <>
-                      <Upload className="w-4 h-4" />
+                      <Upload className="w-4 h-4 text-cyan-400" />
                       Upload New Picture
                     </>
                   )}
                 </button>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-gray-500">
                   JPG, GIF or PNG. Max size of 5MB.
                 </p>
               </div>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                  <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                  <div className="w-full border-t border-gray-800" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="px-2 bg-white dark:bg-gray-800 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="px-2 bg-[#0D0D0D] text-xs text-gray-500">
                     OR
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-gray-400 mb-1">
                   Image URL
                 </label>
                 <input
@@ -218,7 +218,7 @@ export default function AccountSettingsForm() {
                   value={image?.startsWith('/api/auth/avatar') ? '' : image}
                   onChange={(e) => setImage(e.target.value)}
                   placeholder="https://example.com/avatar.jpg"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 bg-[#1A1A1A] text-white text-sm placeholder-gray-600"
                 />
               </div>
             </div>
@@ -227,7 +227,7 @@ export default function AccountSettingsForm() {
 
         {/* Username */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
             Username / Display Name
           </label>
           <input
@@ -235,14 +235,14 @@ export default function AccountSettingsForm() {
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 bg-[#1A1A1A] text-white placeholder-gray-600"
             placeholder="Your name"
           />
         </div>
 
         {/* Bio */}
         <div>
-          <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="bio" className="block text-sm font-medium text-gray-300 mb-1">
             Bio
           </label>
           <textarea
@@ -250,36 +250,36 @@ export default function AccountSettingsForm() {
             rows={4}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 bg-[#1A1A1A] text-white placeholder-gray-600"
             placeholder="Tell us a little about yourself..."
           />
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-xs text-gray-500">
             Brief description for your profile.
           </p>
         </div>
 
         {/* Security Key Section */}
-        <div className="bg-zinc-900/50 border border-white/10 rounded-lg p-4 space-y-3">
-          <div className="flex items-center gap-2 text-white/90">
-            <Shield className="w-4 h-4 text-emerald-500" />
+        <div className="bg-[#1A1A1A] border border-gray-800 rounded-lg p-4 space-y-3">
+          <div className="flex items-center gap-2 text-gray-200">
+            <Shield className="w-4 h-4 text-cyan-400" />
             <h3 className="font-medium text-sm">Security Key</h3>
           </div>
           
           {securityKey ? (
             <div className="relative">
               <div className={`
-                w-full px-3 py-2 pr-24 bg-black/40 border border-white/10 rounded-md 
-                font-mono text-sm text-emerald-400 break-all
+                w-full px-3 py-2 pr-24 bg-black/40 border border-gray-700 rounded-md 
+                font-mono text-sm text-cyan-400 break-all
                 ${!showKey ? 'blur-sm select-none' : 'select-all'}
               `}>
                 {showKey ? securityKey : '•'.repeat(24)}
               </div>
               
-              <div className="absolute right-1 top-1 bottom-1 flex items-center gap-1 bg-zinc-900/80 pl-2 rounded-r-md">
+              <div className="absolute right-1 top-1 bottom-1 flex items-center gap-1 bg-[#1A1A1A] pl-2 rounded-r-md">
                 <button
                   type="button"
                   onClick={() => setShowKey(!showKey)}
-                  className="p-1.5 hover:bg-white/10 rounded-md text-white/60 hover:text-white transition-colors"
+                  className="p-1.5 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white transition-colors"
                   title={showKey ? "Hide key" : "Show key"}
                 >
                   {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -287,27 +287,27 @@ export default function AccountSettingsForm() {
                 <button
                   type="button"
                   onClick={handleCopyKey}
-                  className="p-1.5 hover:bg-white/10 rounded-md text-white/60 hover:text-white transition-colors"
+                  className="p-1.5 hover:bg-gray-800 rounded-md text-gray-400 hover:text-white transition-colors"
                   title="Copy to clipboard"
                 >
-                  {hasCopiedKey ? <CheckCircle className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  {hasCopiedKey ? <CheckCircle className="w-4 h-4 text-cyan-400" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+            <div className="text-sm text-gray-500 italic">
               No security key found. Please refresh the page to generate one.
             </div>
           )}
           
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-gray-500">
             This is your unique security key. Keep it safe.
           </p>
         </div>
 
         {/* Message */}
         {message && (
-          <div className={`p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'}`}>
+          <div className={`p-4 rounded-md border ${message.type === 'success' ? 'bg-green-900/20 text-green-400 border-green-900/50' : 'bg-red-900/20 text-red-400 border-red-900/50'}`}>
             {message.text}
           </div>
         )}
@@ -317,7 +317,7 @@ export default function AccountSettingsForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700"
+            className="flex items-center gap-2 px-6 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-black bg-cyan-400 hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? (
               <>

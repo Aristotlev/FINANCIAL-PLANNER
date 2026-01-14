@@ -82,13 +82,35 @@ function formatMarkdown(text: string): string {
   return html;
 }
 
-export function AIChatAssistant() {
+interface AIChatAssistantProps {
+  theme?: 'default' | 'portfolio';
+}
+
+export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const { subscription, loading: isSubscriptionLoading } = useSubscription();
   const { checkLimit, recordCall, callsRemaining, limitInfo } = useAILimit();
   const router = useRouter();
   const { user } = useBetterAuth();
+  
+  // Theme-based styling
+  const themeStyles = {
+    default: {
+      buttonGradient: 'bg-gradient-to-r from-purple-600 to-blue-600',
+      headerGradient: 'bg-gradient-to-r from-purple-600 to-blue-600',
+      accentColor: 'bg-green-500',
+      accentPulse: 'bg-green-400',
+    },
+    portfolio: {
+      buttonGradient: 'bg-gradient-to-r from-cyan-500 to-blue-600',
+      headerGradient: 'bg-gradient-to-r from-cyan-500 to-blue-600',
+      accentColor: 'bg-cyan-400',
+      accentPulse: 'bg-cyan-300',
+    },
+  };
+  
+  const currentTheme = themeStyles[theme];
   
   const planLimits = subscription ? getEffectivePlanLimits(subscription) : null;
   const isAiAllowed = planLimits?.ai_assistant ?? false;
@@ -1151,11 +1173,11 @@ export function AIChatAssistant() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-[1000000] p-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all group"
+        className={`fixed bottom-6 right-6 z-[1000000] p-4 ${currentTheme.buttonGradient} text-white rounded-full shadow-lg hover:shadow-xl transition-all group`}
         title="Open AI Assistant"
       >
         <Sparkles className="w-6 h-6 animate-pulse" />
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+        <span className={`absolute -top-1 -right-1 w-3 h-3 ${currentTheme.accentColor} rounded-full animate-pulse`}></span>
       </button>
     );
   }
@@ -1165,11 +1187,11 @@ export function AIChatAssistant() {
       <div className="fixed bottom-6 right-6 z-[1000000]">
         <button
           onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all"
+          className={`flex items-center gap-2 px-4 py-3 ${currentTheme.buttonGradient} text-white rounded-full shadow-lg hover:shadow-xl transition-all`}
         >
           <Sparkles className="w-5 h-5" />
           <span className="font-medium">AI Assistant</span>
-          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+          <span className={`w-2 h-2 ${currentTheme.accentPulse} rounded-full animate-pulse`}></span>
         </button>
       </div>
     );
@@ -1195,7 +1217,7 @@ export function AIChatAssistant() {
       `}} />
       <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header - Normal style */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-2xl">
+        <div className={`flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 ${currentTheme.headerGradient} text-white rounded-t-2xl`}>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
             <div>
@@ -1338,7 +1360,7 @@ export function AIChatAssistant() {
       
     <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-2xl">
+      <div className={`flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 ${currentTheme.headerGradient} text-white rounded-t-2xl`}>
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5" />
           <div>

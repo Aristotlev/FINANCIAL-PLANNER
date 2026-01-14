@@ -515,6 +515,85 @@ export class SupabaseDataService {
     }
   }
 
+  // ==================== CRYPTO TRANSACTIONS ====================
+
+  static async getCryptoTransactions(limit: number = 50): Promise<any[]> {
+    return this.fetchWithDeduplication<any[]>(
+      'crypto_transactions',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('crypto_transactions');
+        
+        return (data || []).map((tx: any) => ({
+          id: tx.id,
+          type: tx.type,
+          symbol: tx.symbol,
+          name: tx.name,
+          amount: tx.amount,
+          pricePerUnit: tx.price_per_unit,
+          totalValue: tx.total_value,
+          date: tx.date,
+          originalPrice: tx.original_price
+        }));
+      },
+      () => {
+        const stored = localStorage.getItem('cryptoTransactions');
+        return stored ? JSON.parse(stored) : [];
+      }
+    );
+  }
+
+  static async saveCryptoTransaction(transaction: any): Promise<void> {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
+      const stored = localStorage.getItem('cryptoTransactions');
+      const transactions = stored ? JSON.parse(stored) : [];
+      transactions.unshift(transaction);
+      localStorage.setItem('cryptoTransactions', JSON.stringify(transactions));
+      return;
+    }
+
+    try {
+      const userId = await this.getUserId();
+      
+      if (!userId) {
+        // Fall back to localStorage if not authenticated
+        const stored = localStorage.getItem('cryptoTransactions');
+        const transactions = stored ? JSON.parse(stored) : [];
+        transactions.unshift(transaction);
+        localStorage.setItem('cryptoTransactions', JSON.stringify(transactions));
+        return;
+      }
+
+      const dbTransaction = {
+        id: transaction.id,
+        user_id: userId,
+        type: transaction.type,
+        symbol: transaction.symbol,
+        name: transaction.name,
+        amount: transaction.amount,
+        price_per_unit: transaction.pricePerUnit,
+        total_value: transaction.totalValue,
+        date: transaction.date,
+        original_price: transaction.originalPrice || null
+      };
+      
+      // Use secure API endpoint
+      const result = await saveData('crypto_transactions', dbTransaction);
+
+      if (!result) throw new Error('Failed to save crypto transaction via API');
+      
+      this.invalidateCache('crypto_transactions');
+    } catch (error) {
+      console.error('Error saving crypto transaction:', error);
+      // Fall back to localStorage
+      const stored = localStorage.getItem('cryptoTransactions');
+      const transactions = stored ? JSON.parse(stored) : [];
+      transactions.unshift(transaction);
+      localStorage.setItem('cryptoTransactions', JSON.stringify(transactions));
+    }
+  }
+
   // ==================== STOCK HOLDINGS ====================
   
   static async getStockHoldings(defaultHoldings: any[] = []): Promise<any[]> {
@@ -622,6 +701,85 @@ export class SupabaseDataService {
       const holdings = DataService.loadStockHoldings([]);
       const filtered = holdings.filter(h => h.id !== holdingId);
       DataService.saveStockHoldings(filtered);
+    }
+  }
+
+  // ==================== STOCK TRANSACTIONS ====================
+
+  static async getStockTransactions(limit: number = 50): Promise<any[]> {
+    return this.fetchWithDeduplication<any[]>(
+      'stock_transactions',
+      async () => {
+        // Use secure API endpoint
+        const data = await fetchData<any[]>('stock_transactions');
+        
+        return (data || []).map((tx: any) => ({
+          id: tx.id,
+          type: tx.type,
+          symbol: tx.symbol,
+          name: tx.name,
+          shares: tx.shares,
+          pricePerShare: tx.price_per_share,
+          totalValue: tx.total_value,
+          date: tx.date,
+          originalPrice: tx.original_price
+        }));
+      },
+      () => {
+        const stored = localStorage.getItem('stockTransactions');
+        return stored ? JSON.parse(stored) : [];
+      }
+    );
+  }
+
+  static async saveStockTransaction(transaction: any): Promise<void> {
+    // Check configuration dynamically
+    if (!isSupabaseConfigured()) {
+      const stored = localStorage.getItem('stockTransactions');
+      const transactions = stored ? JSON.parse(stored) : [];
+      transactions.unshift(transaction);
+      localStorage.setItem('stockTransactions', JSON.stringify(transactions));
+      return;
+    }
+
+    try {
+      const userId = await this.getUserId();
+      
+      if (!userId) {
+        // Fall back to localStorage if not authenticated
+        const stored = localStorage.getItem('stockTransactions');
+        const transactions = stored ? JSON.parse(stored) : [];
+        transactions.unshift(transaction);
+        localStorage.setItem('stockTransactions', JSON.stringify(transactions));
+        return;
+      }
+
+      const dbTransaction = {
+        id: transaction.id,
+        user_id: userId,
+        type: transaction.type,
+        symbol: transaction.symbol,
+        name: transaction.name,
+        shares: transaction.shares,
+        price_per_share: transaction.pricePerShare,
+        total_value: transaction.totalValue,
+        date: transaction.date,
+        original_price: transaction.originalPrice || null
+      };
+      
+      // Use secure API endpoint
+      const result = await saveData('stock_transactions', dbTransaction);
+
+      if (!result) throw new Error('Failed to save stock transaction via API');
+      
+      this.invalidateCache('stock_transactions');
+    } catch (error) {
+      console.error('Error saving stock transaction:', error);
+      // Fall back to localStorage
+      const stored = localStorage.getItem('stockTransactions');
+      const transactions = stored ? JSON.parse(stored) : [];
+      transactions.unshift(transaction);
+      localStorage.setItem('stockTransactions', JSON.stringify(transactions));
     }
   }
 

@@ -395,7 +395,7 @@ export default function SECPage() {
                 <div className="flex items-baseline space-x-4">
                   <Link href="/dashboard" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</Link>
                   <Link href="/community" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Community</Link>
-                  <Link href="/markets" className="bg-white/10 text-white px-3 py-2 rounded-md text-sm font-medium border border-white/10">SEC Filings</Link>
+                  <Link href="/markets/sec" className="bg-white/10 text-white px-3 py-2 rounded-md text-sm font-medium border border-white/10">SEC Filings</Link>
                 </div>
               </div>
             </div>
@@ -480,11 +480,11 @@ export default function SECPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link 
-                href="/markets" 
+                href="/dashboard" 
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm">Markets</span>
+                <span className="text-sm">Dashboard</span>
               </Link>
               <div className="h-6 w-px bg-gray-700/50" />
               <div className="flex items-center gap-2">

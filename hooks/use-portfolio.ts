@@ -89,6 +89,23 @@ export function usePortfolioValues() {
     return sum + (holding.shares * (holding.entryPoint || holding.buyPrice || 0)); // fallback to entry price
   }, 0);
 
+  // Calculate 24h change
+  const cryptoChange24h = cryptoHoldings.reduce((sum, holding) => {
+    const currentPriceData = cryptoPrices[holding.symbol];
+    if (currentPriceData) {
+      return sum + (holding.amount * (currentPriceData.change24h || 0));
+    }
+    return sum;
+  }, 0);
+
+  const stockChange24h = stockHoldings.reduce((sum, holding) => {
+    const currentPriceData = stockPrices[holding.symbol];
+    if (currentPriceData && currentPriceData.change24h) {
+      return sum + (holding.shares * currentPriceData.change24h);
+    }
+    return sum;
+  }, 0);
+
   // Debug logging for stock calculation
   if (process.env.NODE_ENV === 'development') {
     console.log('[Portfolio] Stock calculation:', {
@@ -119,17 +136,20 @@ export function usePortfolioValues() {
       value: cryptoValue,
       gainLoss: cryptoGainLoss,
       return: cryptoReturn,
+      change24h: cryptoChange24h,
       loading: isLoading
     },
     stocks: {
       value: stockValue,
       gainLoss: stockGainLoss,
       return: stockReturn,
+      change24h: stockChange24h,
       loading: isLoading
     },
     total: {
       value: cryptoValue + stockValue,
       gainLoss: cryptoGainLoss + stockGainLoss,
+      change24h: cryptoChange24h + stockChange24h,
       loading: isLoading
     }
   };

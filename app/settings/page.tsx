@@ -28,24 +28,24 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Settings className="w-8 h-8 text-primary" />
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+            <Settings className="w-8 h-8 text-cyan-400" />
+            <h1 className="text-4xl font-bold text-white">
               Settings
             </h1>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-gray-400 text-lg">
             Manage your account, subscription, and preferences
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-          <div className="border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-[#0D0D0D] border border-gray-800 rounded-xl overflow-hidden">
+          <div className="border-b border-gray-800">
             <nav className="flex overflow-x-auto">
               {tabs.map((tab) => (
                 <button
@@ -55,8 +55,8 @@ export default function SettingsPage() {
                     flex items-center gap-2 px-6 py-4 border-b-2 font-medium text-sm
                     transition-all duration-200 whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'border-primary text-white bg-primary'
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                      ? 'border-cyan-400 text-cyan-400 bg-cyan-400/10'
+                      : 'border-transparent text-gray-400 hover:text-white hover:bg-gray-800'
                     }
                   `}
                 >
@@ -71,11 +71,11 @@ export default function SettingsPage() {
           <div className="p-6">
             {activeTab === 'account' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Account Settings</h2>
-                <p className="text-gray-600 dark:text-gray-400">
+                <h2 className="text-2xl font-bold text-white">Account Settings</h2>
+                <p className="text-gray-400">
                   Manage your account information and profile.
                 </p>
-                <div className="max-w-2xl">
+                <div className="max-w-2xl text-gray-300">
                   <AccountSettingsForm />
                 </div>
               </div>

@@ -66,6 +66,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'img.logo.dev',
       },
+      {
+        protocol: 'https',
+        hostname: 'assets.aceternity.com',
+      },
     ],
     // Optimize images for all devices
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

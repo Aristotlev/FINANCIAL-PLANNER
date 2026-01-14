@@ -26,7 +26,9 @@ type DataTable =
   | 'subscriptions'
   | 'debt_accounts'
   | 'user_preferences'
-  | 'portfolio_snapshots';
+  | 'portfolio_snapshots'
+  | 'crypto_transactions'
+  | 'stock_transactions';
 
 interface ApiResponse<T> {
   data?: T;

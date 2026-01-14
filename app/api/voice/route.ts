@@ -38,7 +38,7 @@ async function transcribeWithGemini(audioBase64: string): Promise<string> {
 async function generateResponseWithGemini(text: string): Promise<string> {
   console.log('[LLM] Generating response for:', text.substring(0, 50) + '...');
   
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -16,7 +16,7 @@ import {
   TaxesCard
 } from "./financial/financial-cards";
 import { useBetterAuth } from '../contexts/better-auth-context';
-import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Users, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, Lock, X } from "lucide-react";
+import { LayoutDashboard, Search, Bell, Settings, Database, LogOut, Download, Upload, Save, Trash2, User, Users, Moon, Sun, Bot, ChevronDown, Key, Bitcoin, TrendingUp, DollarSign, Building, BarChart3, Plug, RotateCcw, Shield, CreditCard, Lock, X, Wallet } from "lucide-react";
 import Link from 'next/link';
 import AccountSettingsForm from './settings/account-settings-form';
 import { AIChatAssistant } from './ui/ai-chat';
@@ -362,6 +362,16 @@ export function Dashboard() {
                   <div className="text-gray-400">{t('dashboard.zoomInstruction')}</div>
                 </span>
               </button>
+              
+              {/* Portfolio Page Link */}
+              <Link 
+                href="/portfolio"
+                className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors min-h-touch"
+                title="Portfolio"
+              >
+                <Wallet className="w-4 h-4" />
+                <span className="text-sm hidden lg:inline">Portfolio</span>
+              </Link>
               
               {/* Community Page Link */}
               <Link 

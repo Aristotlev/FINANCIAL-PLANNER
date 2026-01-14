@@ -37,7 +37,9 @@ type DataTable =
   | 'user_preferences'
   | 'portfolio_snapshots'
   | 'user_subscriptions'
-  | 'user_usage';
+  | 'user_usage'
+  | 'crypto_transactions'
+  | 'stock_transactions';
 
 const ALLOWED_TABLES: DataTable[] = [
   'cash_accounts',
@@ -56,6 +58,8 @@ const ALLOWED_TABLES: DataTable[] = [
   'portfolio_snapshots',
   'user_subscriptions',
   'user_usage',
+  'crypto_transactions',
+  'stock_transactions',
 ];
 
 // Fields that should be encrypted in the database
@@ -140,7 +144,12 @@ function decryptSensitiveData(data: any): any {
 }
 
 function isValidTable(table: string): table is DataTable {
-  return ALLOWED_TABLES.includes(table as DataTable);
+  const allowed = ALLOWED_TABLES.includes(table as DataTable);
+  if (!allowed) {
+      console.log(`[API Validation] Rejected table: "${table}"`);
+      console.log(`[API Validation] Allowed: ${ALLOWED_TABLES.join(', ')}`);
+  }
+  return allowed;
 }
 
 /**
@@ -177,6 +186,12 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
 
   const { searchParams } = new URL(request.url);
   const table = searchParams.get('table');
+
+  // Debug logging
+  if (table === 'crypto_transactions') {
+    console.log(`[API] Received request for table: ${table}`);
+    console.log(`[API] Is valid table? ${isValidTable(table)}`);
+  }
 
   if (!table || !isValidTable(table)) {
     logApiResponse(request, 400, requestId, user.id);
