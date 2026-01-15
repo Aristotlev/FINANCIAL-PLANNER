@@ -25,7 +25,7 @@ class CacheService {
   
   // TTL configurations (in milliseconds)
   private readonly TTL_CONFIG = {
-    MARKET_PRICE: 30 * 1000,        // 30 seconds - real-time prices
+    MARKET_PRICE: 60 * 1000,        // 60 seconds - matches polling interval to avoid rate limits
     MARKET_DATA: 60 * 1000,         // 1 minute - detailed market data
     CRYPTO_LIST: 300 * 1000,        // 5 minutes - cryptocurrency list
     STOCK_PROFILE: 3600 * 1000,     // 1 hour - company profiles

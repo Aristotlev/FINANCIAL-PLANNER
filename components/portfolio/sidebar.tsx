@@ -15,7 +15,9 @@ import {
   DollarSign,
   Coins,
   Target,
-  List
+  List,
+  Briefcase,
+  CalendarDays
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo } from "../ui/omnifolio-logo";
@@ -31,7 +33,6 @@ const defaultNavigation = [
   { name: "Assets", id: "assets", icon: Wallet },
   { name: "Activity", id: "activity", icon: Clock },
   { name: "AI Analytics", id: "ai-analytics", icon: Bot },
-  { name: "News", id: "news", icon: Newspaper },
 ];
 
 const networthNavigation = [
@@ -48,7 +49,16 @@ const cryptoNavigation = [
   { name: "Analytics", id: "analytics", icon: ChartColumn || BarChart3 },
 ];
 
+const stocksNavigation = [
+  { name: "Holdings", id: "overview", icon: Wallet },
+  { name: "Breakdown", id: "breakdown", icon: PieChart },
+  { name: "Transactions", id: "transactions", icon: List },
+  { name: "Analytics", id: "analytics", icon: ChartColumn || BarChart3 },
+];
+
 const newsNavigation = [
+  { name: "My Holdings", id: "holdings-news", icon: Briefcase },
+  { name: "Calendar", id: "calendar", icon: CalendarDays },
   { name: "Stocks", id: "stocks", icon: TrendingUp },
   { name: "Indices", id: "indices", icon: PieChart },
   { name: "Forex", id: "forex", icon: DollarSign },
@@ -56,7 +66,7 @@ const newsNavigation = [
 ];
 
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
-  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto'].includes(activeTab);
+  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar'].includes(activeTab);
   
   let currentNavigation;
   if (isNewsSection) {
@@ -65,6 +75,8 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
     currentNavigation = networthNavigation;
   } else if (selectedCategory === "Crypto") {
     currentNavigation = cryptoNavigation;
+  } else if (selectedCategory === "Stocks") {
+    currentNavigation = stocksNavigation;
   } else {
     currentNavigation = defaultNavigation;
   }

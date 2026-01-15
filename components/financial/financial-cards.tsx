@@ -3,18 +3,11 @@
 import { AnimatedCard, CardBody, CardTitle, CardDescription, Visual3 } from "../ui/animated-card";
 
 // Enhanced cards from separate files with hover previews and modal functionality
-export { RealEstateCard } from "./real-estate-card";
 export { CryptoCard } from "./crypto-card";
 export { StocksCard } from "./stocks-card";
 export { CashCard } from "./cash-card";
 export { SavingsCard } from "./savings-card";
-export { ExpensesCard } from "./expenses-card";
-export { ValuableItemsCard } from "./valuable-items-card";
-export { TradingAccountCard } from "./trading-account-card";
 export { NetWorthCard } from "./net-worth-card";
-export { ToolsCard } from "./tools-card";
-export { NewsCard } from "./news-card";
-export { TaxesCard } from "./taxes-card";
 
 interface FinancialData {
   title: string;

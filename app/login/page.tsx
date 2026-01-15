@@ -38,7 +38,7 @@ function LoginForm() {
       } else if (email.includes('affiliate') || email.includes('partner')) {
          router.push('/affiliates/dashboard');
       } else {
-         router.push('/dashboard');
+         router.push('/portfolio');
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Login failed. Please check your credentials.';
@@ -63,8 +63,8 @@ function LoginForm() {
     try {
       setIsLoading(true);
       // If there's a callback URL (e.g. from affiliate page), use it
-      // Otherwise default to dashboard
-      await loginWithGoogle(callbackUrl || '/dashboard');
+      // Otherwise default to portfolio
+      await loginWithGoogle(callbackUrl || '/portfolio');
     } catch (err: any) {
       setError(err.message || 'Google login failed. Please try again.');
       setIsLoading(false);

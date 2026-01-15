@@ -92,7 +92,7 @@ export function AddStockPositionModal({
   const [selectedStock, setSelectedStock] = useState<SearchResult | null>(null);
   const [shares, setShares] = useState('');
   const [entryPoint, setEntryPoint] = useState('');
-  const [color, setColor] = useState('#8b5cf6');
+  const [color, setColor] = useState('#06b6d4');
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -172,7 +172,7 @@ export function AddStockPositionModal({
       setSelectedStock(null);
       setShares('');
       setEntryPoint('');
-      setColor('#8b5cf6');
+      setColor('#06b6d4');
       setSearchResults(popularStocks);
     }
   };
@@ -184,7 +184,7 @@ export function AddStockPositionModal({
       setSelectedStock(null);
       setShares('');
       setEntryPoint('');
-      setColor('#8b5cf6');
+      setColor('#06b6d4');
       setSearchResults(popularStocks);
       setShowDropdown(false);
     }
@@ -216,7 +216,7 @@ export function AddStockPositionModal({
                   setShowDropdown(true);
                 }}
                 onFocus={() => setShowDropdown(true)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
                 placeholder="Search by symbol or name..."
               />
               {isSearching && (
@@ -267,9 +267,9 @@ export function AddStockPositionModal({
             )}
           </div>
 
-          {/* Selected Stock */}
+            {/* Selected Stock */}
           {selectedStock && (
-            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-900/30">
+            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-cyan-200 dark:border-cyan-900/30">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <StockIcon symbol={selectedStock.symbol} />
@@ -298,7 +298,7 @@ export function AddStockPositionModal({
               step="1"
               value={shares}
               onChange={(e) => setShares(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
               placeholder="Enter shares..."
             />
           </div>
@@ -311,7 +311,7 @@ export function AddStockPositionModal({
               step="any"
               value={entryPoint}
               onChange={(e) => setEntryPoint(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
               placeholder="Enter price..."
             />
           </div>
@@ -339,7 +339,7 @@ export function AddStockPositionModal({
             <button
               onClick={handleAdd}
               disabled={!selectedStock || !shares || !entryPoint}
-              className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Position
             </button>

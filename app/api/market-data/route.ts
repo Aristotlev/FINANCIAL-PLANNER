@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const cache = new Map<string, { data: any; timestamp: number }>();
 const pendingRequests = new Map<string, Promise<any>>();
 const DEFAULT_CACHE_DURATION = 60000; // 1 minute default
-const LIVE_CACHE_DURATION = 1000; // 1 second for live data
+const LIVE_CACHE_DURATION = 60000; // 1 minute for live data (matches 60s polling interval)
 const STALE_CACHE_DURATION = 3600000; // 1 hour
 
 function getCachedData(key: string, duration: number, allowStale: boolean = false) {

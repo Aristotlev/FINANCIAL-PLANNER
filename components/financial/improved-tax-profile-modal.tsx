@@ -29,7 +29,7 @@ import {
   EmploymentStatus,
   IncomeCategory
 } from "../../lib/tax-wizard-system";
-import { TaxProfile } from "./taxes-card";
+import { TaxProfile } from "../../lib/types/tax-profile";
 
 interface ImprovedTaxProfileModalProps {
   isOpen: boolean;
@@ -110,7 +110,7 @@ export function ImprovedTaxProfileModal({
       setProfileName(profile.name);
       setCountry(profile.country);
       setCompanyType(profile.companyType);
-      setIsActive(profile.isActive);
+      setIsActive(profile.isActive ?? false);
       setNotes(profile.notes || '');
       setIncomeData({
         salaryIncome: profile.salaryIncome,

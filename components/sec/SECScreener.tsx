@@ -144,12 +144,12 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
   };
 
   return (
-    <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
+    <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700/50">
+      <div className="p-4 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/20 rounded-lg">
-            <svg className="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="p-2 bg-blue-500/20 rounded-lg">
+            <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
           </div>
@@ -161,7 +161,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
       </div>
 
       {/* Presets */}
-      <div className="p-4 border-b border-gray-700/50 bg-gray-800/30">
+      <div className="p-4 border-b border-gray-800 bg-[#212121]">
         <p className="text-xs text-gray-400 mb-2">Quick Filters</p>
         <div className="flex flex-wrap gap-2">
           {SCREENER_PRESETS.map(preset => (
@@ -170,8 +170,8 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
               onClick={() => applyPreset(preset)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                 activePreset === preset.name
-                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 border border-transparent'
+                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                  : 'bg-[#1A1A1A] text-gray-400 hover:bg-gray-700 border border-transparent'
               }`}
               title={preset.description}
             >
@@ -182,7 +182,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
       </div>
 
       {/* Filters */}
-      <div className="p-4 border-b border-gray-700/50">
+      <div className="p-4 border-b border-gray-800">
         <div className="space-y-3">
           {filters.map((filter, index) => (
             <motion.div
@@ -194,7 +194,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
               <select
                 value={filter.field}
                 onChange={(e) => updateFilter(index, { field: e.target.value })}
-                className="flex-1 px-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
+                className="flex-1 px-3 py-2 bg-[#212121] border border-gray-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
               >
                 {FILTER_FIELDS.map(f => (
                   <option key={f.value} value={f.value}>{f.label}</option>
@@ -204,7 +204,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
               <select
                 value={filter.operator}
                 onChange={(e) => updateFilter(index, { operator: e.target.value as ScreenerFilter['operator'] })}
-                className="w-16 px-2 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white text-sm text-center focus:outline-none focus:border-blue-500/50"
+                className="w-16 px-2 py-2 bg-[#212121] border border-gray-800 rounded-lg text-white text-sm text-center focus:outline-none focus:border-blue-500/50"
               >
                 {OPERATORS.map(op => (
                   <option key={op.value} value={op.value}>{op.label}</option>
@@ -215,7 +215,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
                 type="number"
                 value={filter.value}
                 onChange={(e) => updateFilter(index, { value: parseFloat(e.target.value) || 0 })}
-                className="w-32 px-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
+                className="w-32 px-3 py-2 bg-[#212121] border border-gray-800 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500/50"
               />
 
               <button
@@ -234,7 +234,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
         <div className="flex items-center gap-2 mt-4">
           <button
             onClick={addFilter}
-            className="px-3 py-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="px-3 py-1.5 text-sm text-blue-400 hover:text-blue-300 transition-colors"
           >
             + Add Filter
           </button>
@@ -255,7 +255,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
           <div className="p-8 text-center text-gray-400">
             {loading ? (
               <div className="flex items-center justify-center gap-2">
-                <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <span>Searching...</span>
               </div>
             ) : (
@@ -264,7 +264,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
           </div>
         ) : (
           <table className="w-full">
-            <thead className="bg-gray-800/50 sticky top-0">
+            <thead className="bg-[#212121] sticky top-0">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Company</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase">Value</th>
@@ -272,14 +272,14 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700/30">
+            <tbody className="divide-y divide-gray-800">
               {results.map((result, index) => (
                 <motion.tr
                   key={`${result.cik}-${index}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  className="hover:bg-gray-800/50 transition-colors"
+                  className="hover:bg-[#212121] transition-colors"
                 >
                   <td className="px-4 py-3">
                     <div>
@@ -298,7 +298,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
                   <td className="px-4 py-3 text-center">
                     <button
                       onClick={() => onSelectCompany?.(result.ticker, result.cik)}
-                      className="px-3 py-1 text-xs bg-gray-800 text-gray-300 rounded hover:bg-gray-700 hover:text-white transition-colors border border-gray-700"
+                      className="px-3 py-1 text-xs bg-[#212121] text-gray-300 rounded hover:bg-gray-700 hover:text-white transition-colors border border-gray-800"
                     >
                       View
                     </button>
@@ -312,7 +312,7 @@ export function SECScreener({ onSelectCompany }: SECScreenerProps) {
 
       {/* Footer */}
       {results.length > 0 && (
-        <div className="p-3 border-t border-gray-700/50 bg-gray-800/30">
+        <div className="p-3 border-t border-gray-800 bg-[#212121]">
           <p className="text-xs text-gray-500 text-center">
             Found {results.length} companies matching your criteria
           </p>

@@ -6,8 +6,6 @@ import { ThemeProvider } from "../contexts/theme-context";
 import { APIConnectionProvider } from "../contexts/api-connection-context";
 import { PortfolioProvider } from "../contexts/portfolio-context";
 import { FinancialDataProvider } from "../contexts/financial-data-context";
-import { HiddenCardsProvider } from "../contexts/hidden-cards-context";
-import { CardOrderProvider } from "../contexts/card-order-context";
 import { CurrencyProvider } from "../contexts/currency-context";
 import { TranslationProvider } from "../contexts/translation-context";
 import { HybridDataProvider } from "../contexts/hybrid-data-context";
@@ -247,12 +245,8 @@ export default function RootLayout({
                     <APIConnectionProvider>
                       <PortfolioProvider>
                         <FinancialDataProvider>
-                          <HiddenCardsProvider>
-                            <CardOrderProvider>
-                              {children}
-                              <ConsentBanner />
-                            </CardOrderProvider>
-                          </HiddenCardsProvider>
+                          {children}
+                          <ConsentBanner />
                         </FinancialDataProvider>
                       </PortfolioProvider>
                     </APIConnectionProvider>

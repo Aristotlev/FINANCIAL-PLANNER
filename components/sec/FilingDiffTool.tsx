@@ -117,9 +117,9 @@ export function FilingDiffTool({
   };
 
   return (
-    <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
+    <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700/50">
+      <div className="p-4 border-b border-gray-800">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-orange-500/20 rounded-lg">
             <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -141,7 +141,7 @@ export function FilingDiffTool({
               value={ticker}
               onChange={(e) => setTicker(e.target.value.toUpperCase())}
               placeholder="AAPL"
-              className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
+              className="w-full px-3 py-2 bg-[#212121] border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
             />
           </div>
 
@@ -150,7 +150,7 @@ export function FilingDiffTool({
             <select
               value={formType}
               onChange={(e) => setFormType(e.target.value as '10-K' | '10-Q')}
-              className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white focus:outline-none focus:border-blue-500/50"
+              className="w-full px-3 py-2 bg-[#212121] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-blue-500/50"
             >
               <option value="10-K">10-K (Annual)</option>
               <option value="10-Q">10-Q (Quarterly)</option>
@@ -162,7 +162,7 @@ export function FilingDiffTool({
             <select
               value={section}
               onChange={(e) => setSection(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white focus:outline-none focus:border-blue-500/50"
+              className="w-full px-3 py-2 bg-[#212121] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-blue-500/50"
             >
               {SECTIONS.map(s => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -203,12 +203,12 @@ export function FilingDiffTool({
         <div className="p-4">
           {/* Filing Info */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="p-3 bg-gray-800/50 rounded-lg">
+            <div className="p-3 bg-[#212121] rounded-lg">
               <p className="text-xs text-gray-400 mb-1">Current Filing</p>
               <p className="text-white font-medium">{result.currentFiling.form}</p>
               <p className="text-sm text-gray-400">{result.currentFiling.filingDate}</p>
             </div>
-            <div className="p-3 bg-gray-800/50 rounded-lg">
+            <div className="p-3 bg-[#212121] rounded-lg">
               <p className="text-xs text-gray-400 mb-1">Previous Filing</p>
               <p className="text-white font-medium">{result.previousFiling.form}</p>
               <p className="text-sm text-gray-400">{result.previousFiling.filingDate}</p>
@@ -250,7 +250,7 @@ export function FilingDiffTool({
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-2 bg-gray-800/30 rounded-lg"
+                  className="flex items-center justify-between p-2 bg-[#212121] rounded-lg"
                 >
                   <span className="text-sm text-gray-300 capitalize">
                     {s.name.replace('_', ' ')}

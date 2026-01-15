@@ -382,20 +382,20 @@ export default function SECPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden relative">
+    <div className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-gray-900/50 backdrop-blur-xl border-b border-gray-800/50">
+      <nav className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <Link href="/dashboard" className="flex-shrink-0 font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-cyan-400 to-purple-400 font-serif">
+              <Link href="/portfolio" className="flex-shrink-0 font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-cyan-400 to-purple-400 font-serif">
                 OmniFolio
               </Link>
               <div className="hidden md:block ml-10">
                 <div className="flex items-baseline space-x-4">
-                  <Link href="/dashboard" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</Link>
+                  <Link href="/portfolio" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Portfolio</Link>
                   <Link href="/community" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Community</Link>
-                  <Link href="/markets/sec" className="bg-white/10 text-white px-3 py-2 rounded-md text-sm font-medium border border-white/10">SEC Filings</Link>
+                  <Link href="/markets/sec" className="bg-[#1A1A1A] text-white px-3 py-2 rounded-md text-sm font-medium border border-gray-800">SEC Filings</Link>
                 </div>
               </div>
             </div>
@@ -415,7 +415,7 @@ export default function SECPage() {
                     onChange={(e) => setSearchTicker(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-                    className="bg-gray-800/50 border border-gray-700/50 text-gray-300 text-sm rounded-full focus:ring-cyan-500 focus:border-cyan-500 block w-64 pl-10 pr-8 p-2.5 backdrop-blur-sm transition-all focus:bg-gray-800"
+                    className="bg-[#1A1A1A] border border-gray-800 text-gray-300 text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 block w-64 pl-10 pr-8 p-2.5 transition-all focus:bg-[#212121]"
                     placeholder="Search company or ticker..."
                   />
                   {searchTicker && (
@@ -440,7 +440,7 @@ export default function SECPage() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-gray-900/90 border border-gray-700/50 rounded-xl shadow-xl overflow-hidden z-50 backdrop-blur-xl"
+                      className="absolute top-full left-0 right-0 mt-2 bg-[#1A1A1A] border border-gray-800 rounded-xl shadow-xl overflow-hidden z-50"
                     >
                       {searchResults.map((result, index) => (
                         <button
@@ -448,8 +448,8 @@ export default function SECPage() {
                           onClick={() => selectCompany(result)}
                           className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
                             index === highlightedIndex
-                              ? 'bg-cyan-500/20'
-                              : 'hover:bg-gray-800/50'
+                              ? 'bg-blue-500/20'
+                              : 'hover:bg-[#212121]'
                           }`}
                         >
                           <CompanyIcon ticker={result.ticker} className="h-8 w-8" />
@@ -463,10 +463,10 @@ export default function SECPage() {
                   )}
                 </AnimatePresence>
               </div>
-              <button className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors">
+              <button className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-[#1A1A1A] transition-colors">
                 <Bell className="h-5 w-5" />
               </button>
-              <Link href="/dashboard" className="h-8 w-8 rounded-full overflow-hidden border border-gray-700/50 ring-2 ring-transparent hover:ring-cyan-500/50 transition-all">
+              <Link href="/portfolio" className="h-8 w-8 rounded-full overflow-hidden border border-gray-800 ring-2 ring-transparent hover:ring-blue-500/50 transition-all">
                 <img src={user?.avatarUrl || '/api/auth/avatar'} alt="User" className="h-full w-full object-cover" />
               </Link>
             </div>
@@ -475,20 +475,20 @@ export default function SECPage() {
       </nav>
 
       {/* Breadcrumb & Header */}
-      <div className="border-b border-gray-800/50 bg-gray-900/30 backdrop-blur-sm relative z-10">
+      <div className="border-b border-gray-800 bg-black/50 backdrop-blur-sm relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link 
-                href="/dashboard" 
+                href="/portfolio" 
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm">Dashboard</span>
+                <span className="text-sm">Portfolio</span>
               </Link>
-              <div className="h-6 w-px bg-gray-700/50" />
+              <div className="h-6 w-px bg-gray-800" />
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-cyan-400" />
+                <FileText className="h-5 w-5 text-blue-400" />
                 <h1 className="text-lg font-semibold text-white">SEC EDGAR</h1>
               </div>
             </div>
@@ -496,12 +496,12 @@ export default function SECPage() {
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-800/50 hover:bg-gray-700/50 rounded-lg border border-gray-700/50 transition-colors disabled:opacity-50 backdrop-blur-sm"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-[#1A1A1A] hover:bg-[#212121] rounded-lg border border-gray-800 transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
-              <div className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-500/10 text-green-400 rounded-lg border border-green-500/20 backdrop-blur-sm">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-500/10 text-green-400 rounded-lg border border-green-500/20">
                 <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
                 Live
               </div>
@@ -516,7 +516,7 @@ export default function SECPage() {
           {/* Left Sidebar - Ticker Selection */}
           <div className="lg:col-span-3 space-y-6" style={{ overflow: 'visible' }}>
             {/* Current Ticker */}
-            <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-4 hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 group">
+            <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-all duration-300 group">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-gray-400">Current Ticker</h3>
                 <button
@@ -540,7 +540,7 @@ export default function SECPage() {
             </div>
 
             {/* Search Ticker */}
-            <div ref={sidebarSearchRef} className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-4 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10 relative z-40">
+            <div ref={sidebarSearchRef} className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-all duration-300 relative z-40">
               <h3 className="text-sm font-medium text-gray-400 mb-3">Search Company</h3>
               <div className="relative">
                 <div className="relative">
@@ -556,7 +556,7 @@ export default function SECPage() {
                     onKeyDown={handleKeyDown}
                     onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                     placeholder="Enter ticker or company name..."
-                    className="w-full pl-10 pr-8 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white placeholder-gray-500"
+                    className="w-full pl-10 pr-8 py-2.5 bg-[#212121] border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-500"
                   />
                   {searchTicker && (
                     <button
@@ -580,7 +580,7 @@ export default function SECPage() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-gray-900 border border-gray-700/50 rounded-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto"
+                      className="absolute top-full left-0 right-0 mt-2 bg-[#1A1A1A] border border-gray-800 rounded-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto"
                       style={{ zIndex: 9999 }}
                     >
                       {searchResults.map((result, index) => (
@@ -589,8 +589,8 @@ export default function SECPage() {
                           onClick={() => selectCompany(result)}
                           className={`w-full px-3 py-2.5 flex items-center gap-3 text-left transition-colors ${
                             index === highlightedIndex
-                              ? 'bg-cyan-500/20'
-                              : 'hover:bg-gray-800/50'
+                              ? 'bg-blue-500/20'
+                              : 'hover:bg-[#212121]'
                           }`}
                         >
                           <CompanyIcon ticker={result.ticker} className="h-8 w-8" />
@@ -607,7 +607,7 @@ export default function SECPage() {
             </div>
 
             {/* Popular Tickers */}
-            <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-4 hover:border-green-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/10 relative z-10">
+            <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-all duration-300 relative z-10">
               <h3 className="text-sm font-medium text-gray-400 mb-3">Popular</h3>
               <div className="flex flex-wrap gap-2">
                 {popularTickers.length > 0 ? (
@@ -620,8 +620,8 @@ export default function SECPage() {
                       }}
                       className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${
                         selectedTicker === item.ticker
-                          ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/10'
-                          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white border border-transparent hover:border-gray-700'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-[#212121] text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-700'
                       }`}
                     >
                       <CompanyIcon ticker={item.ticker} className="h-4 w-4" showPlaceholder={false} />
@@ -635,8 +635,8 @@ export default function SECPage() {
                       onClick={() => setSelectedTicker(ticker)}
                       className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2 ${
                         selectedTicker === ticker
-                          ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/10'
-                          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white border border-transparent hover:border-gray-700'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-[#212121] text-gray-300 hover:bg-gray-700 hover:text-white border border-transparent hover:border-gray-700'
                       }`}
                     >
                       <CompanyIcon ticker={ticker} className="h-4 w-4" showPlaceholder={false} />
@@ -648,7 +648,7 @@ export default function SECPage() {
             </div>
 
             {/* Watchlist */}
-            <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-4 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 relative z-10">
+            <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-all duration-300 relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-medium text-gray-400">Watchlist</h3>
                 <span className="text-xs text-gray-500">{watchlist.length} stocks</span>
@@ -663,8 +663,8 @@ export default function SECPage() {
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
                       selectedTicker === item.ticker
-                        ? 'bg-cyan-500/10 border border-cyan-500/20 text-white'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white border border-transparent hover:border-gray-700'
+                        ? 'bg-blue-500/10 border border-blue-500/20 text-white'
+                        : 'bg-[#212121] hover:bg-gray-700 text-gray-300 hover:text-white border border-transparent hover:border-gray-700'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -684,7 +684,7 @@ export default function SECPage() {
           {/* Main Content */}
           <div className="lg:col-span-9 space-y-6">
             {/* Tabs */}
-            <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-2">
+            <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-2">
               <div className="flex flex-wrap gap-1">
                 {tabs.map(tab => (
                   <button
@@ -692,8 +692,8 @@ export default function SECPage() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                       activeTab === tab.id
-                        ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/10'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-[#212121]'
                     }`}
                   >
                     <tab.icon className="h-4 w-4" />
@@ -714,9 +714,9 @@ export default function SECPage() {
               >
                 {activeTab === 'filings' && (
                   <div className="space-y-4">
-                    <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-4">
+                    <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-medium text-white">Viewing filings for: <span className="text-cyan-400 font-bold">{selectedTicker}</span></h3>
+                        <h3 className="font-medium text-white">Viewing filings for: <span className="text-blue-400 font-bold">{selectedTicker}</span></h3>
                       </div>
                     </div>
                     <SECFilingFeed 
@@ -735,13 +735,13 @@ export default function SECPage() {
                 )}
 
                 {activeTab === 'holdings' && (
-                  <div className="bg-gray-900/50 backdrop-blur-sm rounded-xl border border-gray-800 p-8 text-center hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10">
+                  <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-8 text-center hover:border-gray-700 transition-all duration-300">
                     <Building2 className="h-16 w-16 text-gray-600 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold mb-2 text-white">13F Institutional Holdings</h3>
                     <p className="text-gray-400 mb-6 max-w-md mx-auto">
                       Track hedge fund and institutional investor positions from quarterly 13F filings.
                     </p>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-lg border border-purple-500/20">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">
                       <Clock className="h-4 w-4" />
                       Coming soon - Q1 2025
                     </div>

@@ -26,8 +26,8 @@ class PriceService {
   private pendingFetches: Map<string, Promise<AssetPrice>> = new Map();
   private updateInterval: NodeJS.Timeout | null = null;
   private updateTimeout: NodeJS.Timeout | null = null;
-  private readonly UPDATE_INTERVAL = 300000; // 5 minutes (reduced API calls to avoid rate limiting)
-  private readonly CACHE_DURATION = 360000; // 6 minutes (keep cache longer than update interval)
+  private readonly UPDATE_INTERVAL = 60000; // 60 seconds - optimal for avoiding rate limits
+  private readonly CACHE_DURATION = 65000; // 65 seconds (slightly longer than update interval)
   
   // Batch request queue for reducing API calls
   private batchQueue: Set<string> = new Set();

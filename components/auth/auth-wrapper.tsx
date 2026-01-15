@@ -10,7 +10,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+      router.push('/portfolio');
     }
   }, [isLoading, isAuthenticated, router]);
 

@@ -26,7 +26,8 @@ export function TotalWorthCard({
     savings, 
     valuableItems, 
     realEstate, 
-    tradingAccount 
+    tradingAccount,
+    expenses 
   } = useFinancialData();
   
   const { total: portfolioTotal, crypto, stocks } = usePortfolioValues();
@@ -42,6 +43,21 @@ export function TotalWorthCard({
   if (selectedCategory === "Crypto") {
       calculatedTotalWorth = crypto.value;
       calculatedChange24h = crypto.change24h;
+  } else if (selectedCategory === "Stocks") {
+      calculatedTotalWorth = stocks.value;
+      calculatedChange24h = stocks.change24h;
+  } else if (selectedCategory === "Real Estate") {
+      calculatedTotalWorth = realEstate;
+      calculatedChange24h = 0; // Real estate doesn't have 24h changes
+  } else if (selectedCategory === "Valuables") {
+      calculatedTotalWorth = valuableItems;
+      calculatedChange24h = 0; // Valuables don't have 24h changes
+  } else if (selectedCategory === "Expenses") {
+      calculatedTotalWorth = expenses;
+      calculatedChange24h = 0; // Expenses don't have 24h changes
+  } else if (selectedCategory === "Liquid Assets") {
+      calculatedTotalWorth = cash + savings;
+      calculatedChange24h = 0; // Liquid assets don't have 24h changes
   } else {
       financialTotal = cash + savings + valuableItems + realEstate + tradingAccount;
       calculatedTotalWorth = financialTotal + portfolioTotal.value;
@@ -65,11 +81,16 @@ export function TotalWorthCard({
 
   const isPositive = change24h >= 0;
 
+  // Don't render the Total Worth card for the Taxes section
+  if (selectedCategory === "Taxes") {
+    return null;
+  }
+
   return (
     <div className="rounded-3xl bg-[#0D0D0D] border border-gray-800 p-8 w-full relative overflow-hidden">
       <div className="space-y-1">
         <h3 className="text-sm font-medium text-gray-400">
-            {selectedCategory === "Crypto" ? "Total Crypto Balance" : "Total Worth"}
+            {selectedCategory === "Crypto" ? "Total Crypto Balance" : selectedCategory === "Stocks" ? "Total Stock Holdings" : selectedCategory === "Real Estate" ? "Total Real Estate Value" : selectedCategory === "Valuables" ? "Total Valuables Worth" : selectedCategory === "Expenses" ? "Monthly Expenses" : selectedCategory === "Liquid Assets" ? "Total Liquid Assets" : "Total Worth"}
         </h3>
         <div className="text-4xl font-bold text-white tracking-tight">
           {format(displayTotalWorth)}
@@ -97,7 +118,7 @@ export function TotalWorthCard({
             <div className="flex items-center gap-2 text-gray-400">
                 <Wallet className="w-4 h-4" />
                 <span className="text-sm font-medium">
-                  {selectedCategory === "Crypto" ? "Crypto Portfolio" : "Main Wallet"}
+                  {selectedCategory === "Crypto" ? "Crypto Portfolio" : selectedCategory === "Stocks" ? "Stock Portfolio" : selectedCategory === "Real Estate" ? "Real Estate Portfolio" : selectedCategory === "Valuables" ? "Valuables Collection" : selectedCategory === "Expenses" ? "Monthly Outflow" : selectedCategory === "Liquid Assets" ? "Cash & Savings" : "Main Wallet"}
                 </span>
             </div>
             <span className="text-white font-bold">{format(displayTotalWorth)}</span>

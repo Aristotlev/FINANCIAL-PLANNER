@@ -141,7 +141,7 @@ function connect(key, symbol, type) {
 
     // Stocks/Forex: Polling
     // console.log(`⚠️ Worker: Polling for ${symbol}`);
-    useFallbackPolling(key, symbol, type, 5000); // Poll every 5s
+    useFallbackPolling(key, symbol, type, 60000); // Poll every 60s to avoid rate limits (Yahoo Finance limit)
 
   } catch (error) {
     console.error(`Worker: Connection failed for ${key}`, error);
@@ -164,7 +164,7 @@ function handleBinanceMessage(key, symbol, data) {
   }
 }
 
-function useFallbackPolling(key, symbol, type, intervalMs = 2000) {
+function useFallbackPolling(key, symbol, type, intervalMs = 60000) {
   // Clear existing if any
   if (pollingIntervals.has(key)) {
     clearInterval(pollingIntervals.get(key));
@@ -177,7 +177,7 @@ function useFallbackPolling(key, symbol, type, intervalMs = 2000) {
       // Note: The relative URL /api/market-data might not work if the worker base URL is different.
       // Usually in Next.js public folder, it should be fine relative to origin.
       
-      const response = await fetch(`/api/market-data?symbol=${symbol}&type=${type}&live=true`);
+      const response = await fetch(`/api/market-data?symbol=${symbol}&type=${type}`);
       const data = await response.json();
 
       if (data && data.currentPrice) {
@@ -195,8 +195,9 @@ function useFallbackPolling(key, symbol, type, intervalMs = 2000) {
     }
   };
 
-  // Initial fetch immediately
-  poll();
+  // Delay initial fetch by 1-3 seconds (randomized to spread out requests)
+  const initialDelay = 1000 + Math.random() * 2000;
+  setTimeout(poll, initialDelay);
 
   const interval = setInterval(poll, intervalMs);
 

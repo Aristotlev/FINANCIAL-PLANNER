@@ -17,16 +17,23 @@ interface NewsItem {
 
 interface NewsFeedProps {
   category: string;
+  holdings?: { symbol: string; name: string; type: 'crypto' | 'stock' }[];
 }
 
 const STORAGE_KEY_PREFIX = 'omnifolio-news-cache-';
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes cache invalidation for new fetch
 
-export function NewsFeed({ category }: NewsFeedProps) {
+export function NewsFeed({ category, holdings }: NewsFeedProps) {
   const [articles, setArticles] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Filter out articles older than 48 hours
+  const filterOldArticles = (items: NewsItem[]) => {
+    const fortyEightHoursAgo = Date.now() - (48 * 60 * 60 * 1000);
+    return items.filter(item => item.pubDateTimestamp > fortyEightHoursAgo);
+  };
 
   const fetchNews = async (forceRefresh = false) => {
     try {
@@ -36,6 +43,69 @@ export function NewsFeed({ category }: NewsFeedProps) {
         setLoading(true);
       }
 
+      // Special handling for holdings
+      if (category === 'holdings' && holdings && holdings.length > 0) {
+           if (!forceRefresh) {
+                const cached = localStorage.getItem(`${STORAGE_KEY_PREFIX}holdings`);
+                if (cached) {
+                    const { data, timestamp } = JSON.parse(cached);
+                    if (Date.now() - timestamp < CACHE_DURATION) {
+                        setArticles(filterOldArticles(data));
+                        setLastUpdated(timestamp);
+                        setLoading(false);
+                        return;
+                    }
+                }
+           }
+
+          const [cryptoRes, stocksRes] = await Promise.all([
+             fetch(`/api/news?category=crypto${forceRefresh ? '&t=' + Date.now() : ''}`),
+             fetch(`/api/news?category=stocks${forceRefresh ? '&t=' + Date.now() : ''}`)
+          ]);
+          
+          const cryptoData = await cryptoRes.json();
+          const stocksData = await stocksRes.json();
+          
+          let allNews: NewsItem[] = [];
+          if (cryptoData.news) allNews = [...allNews, ...cryptoData.news];
+          if (stocksData.news) allNews = [...allNews, ...stocksData.news];
+          
+          const relevantArticles: NewsItem[] = [];
+          const seenLinks = new Set<string>();
+
+          for (const holding of holdings) {
+                const keywords = [holding.symbol.toLowerCase(), holding.name.toLowerCase()];
+                const matches = allNews.filter(article => {
+                    const text = (article.title + ' ' + article.description).toLowerCase();
+                    return keywords.some(kw => text.includes(kw));
+                });
+                
+                const top3 = filterOldArticles(matches)
+                    .sort((a, b) => b.pubDateTimestamp - a.pubDateTimestamp)
+                    .slice(0, 3);
+                
+                for (const article of top3) {
+                    if (!seenLinks.has(article.link)) {
+                        relevantArticles.push(article);
+                        seenLinks.add(article.link);
+                    }
+                }
+          }
+
+          relevantArticles.sort((a, b) => b.pubDateTimestamp - a.pubDateTimestamp);
+          
+          setArticles(relevantArticles);
+          const timestamp = Date.now();
+          setLastUpdated(timestamp);
+          localStorage.setItem(`${STORAGE_KEY_PREFIX}holdings`, JSON.stringify({
+              data: relevantArticles,
+              timestamp
+          }));
+          setLoading(false);
+          setIsRefreshing(false);
+          return;
+      }
+
       // Check local storage cache first if not forcing refresh
       if (!forceRefresh) {
         const cached = localStorage.getItem(`${STORAGE_KEY_PREFIX}${category}`);
@@ -43,7 +113,6 @@ export function NewsFeed({ category }: NewsFeedProps) {
           const { data, timestamp } = JSON.parse(cached);
           const age = Date.now() - timestamp;
           
-          // If cache is fresh enough (e.g. < 15 mins) use it immediately
           if (age < CACHE_DURATION) {
             setArticles(filterOldArticles(data));
             setLastUpdated(timestamp);
@@ -76,12 +145,6 @@ export function NewsFeed({ category }: NewsFeedProps) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  };
-
-  // Filter out articles older than 48 hours
-  const filterOldArticles = (items: NewsItem[]) => {
-    const fortyEightHoursAgo = Date.now() - (48 * 60 * 60 * 1000);
-    return items.filter(item => item.pubDateTimestamp > fortyEightHoursAgo);
   };
 
   useEffect(() => {
@@ -171,7 +234,7 @@ export function NewsFeed({ category }: NewsFeedProps) {
             <div className="mt-6 pt-4 border-t border-gray-800/50 flex items-center justify-between">
                  <div className="flex items-center gap-2">
                    {/* Sentiment indicator placeholder - logic based on title keywords */}
-                   {getSentimentIcon(article.title)}
+                   {getSentimentIcon(article.title, article.description)}
                 </div>
                 <span className="text-xs text-gray-500 flex items-center gap-1 group-hover:text-gray-300 transition-colors">
                     Read more <ExternalLink className="w-3 h-3" />
@@ -191,16 +254,39 @@ export function NewsFeed({ category }: NewsFeedProps) {
   );
 }
 
-function getSentimentIcon(title: string) {
-    const lowercaseTitle = title.toLowerCase();
-    const positiveWords = ['surge', 'soar', 'jump', 'rally', 'record', 'high', 'gain', 'bull', 'growth'];
-    const negativeWords = ['drop', 'fall', 'plunge', 'crash', 'loss', 'bear', 'down', 'decline', 'risk'];
+function getSentimentIcon(title: string, description: string = '') {
+    const text = (title + ' ' + description).toLowerCase();
+    
+    // Weighted Sentiment Scoring
+    const positiveWords = [
+        'surge', 'soar', 'jump', 'rally', 'record high', 'all-time high', 
+        'gain', 'bull', 'growth', 'positive', 'optimistic', 'climb', 
+        'boost', 'recovery', 'strong', 'upgrade', 'buy', 'outperform',
+        'profit', 'revenue up', 'beat', 'exceed', 'higher'
+    ];
+    
+    const negativeWords = [
+        'drop', 'fall', 'plunge', 'crash', 'loss', 'bear', 'down', 
+        'decline', 'risk', 'negative', 'pessimistic', 'slump', 
+        'weak', 'downgrade', 'sell', 'underperform', 'miss',
+        'revenue down', 'lower', 'crisis', 'recession', 'inflation'
+    ];
 
-    if (positiveWords.some(w => lowercaseTitle.includes(w))) {
-        return <span className="text-green-500 flex items-center text-xs font-medium gap-1"><TrendingUp className="w-3 h-3" /> Bullish</span>;
+    let score = 0;
+    
+    positiveWords.forEach(word => {
+        if (text.includes(word)) score += 1;
+    });
+    
+    negativeWords.forEach(word => {
+        if (text.includes(word)) score -= 1;
+    });
+
+    if (score > 0) {
+        return <span className="text-green-500 bg-green-500/10 px-2 py-0.5 rounded flex items-center text-xs font-medium gap-1 border border-green-500/20"><TrendingUp className="w-3 h-3" /> Bullish</span>;
     }
-    if (negativeWords.some(w => lowercaseTitle.includes(w))) {
-        return <span className="text-red-500 flex items-center text-xs font-medium gap-1"><TrendingDown className="w-3 h-3" /> Bearish</span>;
+    if (score < 0) {
+        return <span className="text-red-500 bg-red-500/10 px-2 py-0.5 rounded flex items-center text-xs font-medium gap-1 border border-red-500/20"><TrendingDown className="w-3 h-3" /> Bearish</span>;
     }
-    return <span className="text-gray-500 flex items-center text-xs font-medium gap-1"><Minus className="w-3 h-3" /> Neutral</span>;
+    return <span className="text-gray-400 bg-gray-800 px-2 py-0.5 rounded flex items-center text-xs font-medium gap-1 border border-gray-700"><Minus className="w-3 h-3" /> Neutral</span>;
 }

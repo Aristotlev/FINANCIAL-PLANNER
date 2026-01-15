@@ -124,7 +124,7 @@ export function BetterAuthProvider({ children }: { children: React.ReactNode }) 
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: callbackURL || '/dashboard',
+        callbackURL: callbackURL || '/portfolio',
       });
     } catch (error: any) {
       console.error('Google login error:', error);

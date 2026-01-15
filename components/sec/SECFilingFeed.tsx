@@ -215,9 +215,9 @@ export function SECFilingFeed({
 
   return (
     <>
-      <div className="bg-gray-900/50 backdrop-blur-sm rounded-2xl border border-gray-700/50 overflow-hidden">
+      <div className="bg-[#1A1A1A] rounded-2xl border border-gray-800 overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-gray-700/50">
+        <div className="p-4 border-b border-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -239,7 +239,7 @@ export function SECFilingFeed({
                 className={`p-2 rounded-lg transition-colors ${
                   autoRefresh 
                     ? 'bg-green-500/20 text-green-400' 
-                    : 'bg-gray-700/50 text-gray-400'
+                    : 'bg-[#212121] text-gray-400'
                 }`}
                 title={autoRefresh ? 'Auto-refresh on' : 'Auto-refresh off'}
               >
@@ -250,7 +250,7 @@ export function SECFilingFeed({
               <button
                 onClick={fetchFilings}
                 disabled={loading}
-                className="p-2 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg text-gray-300 transition-colors disabled:opacity-50"
+                className="p-2 bg-[#212121] hover:bg-gray-700 rounded-lg text-gray-300 transition-colors disabled:opacity-50"
               >
                 <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -268,7 +268,7 @@ export function SECFilingFeed({
                 className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                   formType === type.value
                     ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50'
-                    : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50 border border-transparent'
+                    : 'bg-[#212121] text-gray-400 hover:bg-gray-700 border border-transparent'
                 }`}
               >
                 {type.label}
@@ -304,7 +304,7 @@ export function SECFilingFeed({
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: index * 0.02 }}
                   onClick={() => setSelectedFiling(filing)}
-                  className="block p-4 border-b border-gray-700/30 hover:bg-gray-800/50 transition-colors group cursor-pointer"
+                  className="block p-4 border-b border-gray-800 hover:bg-[#212121] transition-colors group cursor-pointer"
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-2xl" role="img" aria-label={filing.formType}>
@@ -340,7 +340,7 @@ export function SECFilingFeed({
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-gray-700/50 bg-gray-800/30">
+        <div className="p-3 border-t border-gray-800 bg-[#212121]">
           <p className="text-xs text-gray-500 text-center">
             Showing {filings.length} recent filings • Data from SEC EDGAR
           </p>
@@ -355,10 +355,10 @@ export function SECFilingFeed({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+              className="bg-[#1A1A1A] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-800 flex items-start justify-between bg-gray-800/30">
+              <div className="p-6 border-b border-gray-800 flex items-start justify-between bg-[#212121]">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <span className={`px-2.5 py-1 rounded-lg text-sm font-medium border ${getFormTypeColor(selectedFiling.formType)}`}>
@@ -379,7 +379,7 @@ export function SECFilingFeed({
                 </div>
                 <button 
                   onClick={() => setSelectedFiling(null)}
-                  className="p-2 hover:bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
+                  className="p-2 hover:bg-[#1A1A1A] rounded-full text-gray-400 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -446,8 +446,8 @@ export function SECFilingFeed({
                             <span className="font-medium text-white">
                               {filingDetails.form4.reportingOwner.name}
                             </span>
-                            <span className="text-xs text-gray-400 px-2 py-0.5 bg-gray-800 rounded-full border border-gray-700">
-                              {filingDetails.form4.reportingOwner.officerTitle || (filingDetails.form4.reportingOwner.isDirector ? 'Director' : 'Insider')}
+                                  <span className="text-xs text-gray-400 px-2 py-0.5 bg-[#212121] rounded-full border border-gray-800">
+                                {filingDetails.form4.reportingOwner.officerTitle || (filingDetails.form4.reportingOwner.isDirector ? 'Director' : 'Insider')}
                             </span>
                             {filingDetails.form4.reportingOwner.isTenPercentOwner && (
                               <span className="text-xs text-yellow-400 px-2 py-0.5 bg-yellow-500/10 rounded-full border border-yellow-500/20">
@@ -460,7 +460,7 @@ export function SECFilingFeed({
                           <div className="space-y-3">
                             {filingDetails.form4.transactions.length > 0 ? (
                               filingDetails.form4.transactions.map((tx, i) => (
-                                <div key={i} className="flex items-start justify-between text-sm bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+                                <div key={i} className="flex items-start justify-between text-sm bg-[#212121] p-3 rounded-lg border border-gray-800">
                                   <div>
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
@@ -544,7 +544,7 @@ export function SECFilingFeed({
                             <User className="w-4 h-4 text-blue-400" />
                             <span className="font-medium text-white">{selectedFiling.reportingPerson}</span>
                             {selectedFiling.form4Summary?.ownerTitle && (
-                              <span className="text-xs text-gray-400 px-2 py-0.5 bg-gray-800 rounded-full border border-gray-700">
+                              <span className="text-xs text-gray-400 px-2 py-0.5 bg-[#212121] rounded-full border border-gray-800">
                                 {selectedFiling.form4Summary.ownerTitle}
                               </span>
                             )}
@@ -579,7 +579,7 @@ export function SECFilingFeed({
                         Key Sections
                       </h3>
                       {filingDetails.sections.map((section, idx) => (
-                        <div key={idx} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+                        <div key={idx} className="bg-[#212121] rounded-lg p-4 border border-gray-800">
                           <h4 className="text-blue-300 font-medium mb-2">{section.title}</h4>
                           <p className="text-gray-400 text-sm line-clamp-6 hover:line-clamp-none transition-all cursor-pointer">
                             {section.content}
@@ -607,7 +607,7 @@ export function SECFilingFeed({
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-gray-800 bg-gray-800/30 flex justify-end">
+              <div className="p-4 border-t border-gray-800 bg-[#212121] flex justify-end">
                 <a 
                   href={selectedFiling.link} 
                   target="_blank" 

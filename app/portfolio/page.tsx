@@ -20,13 +20,17 @@ import { AddValuableItemModal, ValuableItem } from '../../components/portfolio/m
 import { AddExpenseCategoryModal, ExpenseCategory } from '../../components/portfolio/modals/add-expense-category-modal';
 import { AddCashAccountModal, CashAccount } from '../../components/portfolio/modals/add-cash-account-modal';
 import { ImprovedTaxProfileModal } from '../../components/financial/improved-tax-profile-modal';
-import { TaxProfile } from '../../components/financial/taxes-card';
+import { TaxProfile } from '../../lib/types/tax-profile';
 import { CryptoTransactionsView } from '../../components/portfolio/crypto-transactions-view';
+import { StockTransactionsView } from '../../components/portfolio/stock-transactions-view';
 import { CryptoAIAnalyticsView } from '../../components/portfolio/crypto-ai-analytics-view';
+import { StockAIAnalyticsView } from '../../components/portfolio/stock-ai-analytics-view';
 import { usePortfolioContext, CryptoHolding, StockHolding } from '../../contexts/portfolio-context';
 import { SupabaseDataService } from '../../lib/supabase/supabase-data-service';
 import { useAssetPrices } from '../../hooks/use-price';
 import { getBrandColor } from '../../lib/brand-colors';
+
+import { EconomicCalendar } from '../../components/portfolio/economic-calendar';
 
 interface CryptoTransaction {
   id: string;
@@ -50,19 +54,22 @@ const OverviewView = ({ selectedCategory }: { selectedCategory: string }) => {
     // The TotalWorthCard is fetching data from useFinancialData and usePortfolioValues.
     // If selectedCategory is "Crypto", we should probably instruct TotalWorthCard to display ONLY crypto data.
 
+    const showAllocation = ["Networth", "Crypto", "Stocks"].includes(selectedCategory);
+
     return (
     <div className="space-y-8">
         {/* Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <TotalWorthCard selectedCategory={selectedCategory} />
+            {showAllocation && <AllocationCard selectedCategory={selectedCategory} />}
         </div>
     </div>
     );
 };
 
-const BreakdownView = () => (
+const BreakdownView = ({ selectedCategory }: { selectedCategory: string }) => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <AllocationCard />
+        <AllocationCard selectedCategory={selectedCategory} />
     </div>
 );
 
@@ -75,8 +82,11 @@ const AIAnalyticsView = () => (
 );
 
 const NewsView = ({ activeTab }: { activeTab: string }) => {
+    const { cryptoHoldings, stockHoldings } = usePortfolioContext();
+
     const categoryMap: Record<string, string> = {
         'news': 'general',
+        'holdings-news': 'holdings',
         'stocks': 'stocks',
         'indices': 'indices',
         'forex': 'forex',
@@ -86,17 +96,23 @@ const NewsView = ({ activeTab }: { activeTab: string }) => {
     // Default to 'general' if tab not found in map, or use the tab name itself if supported
     const category = categoryMap[activeTab] || 'general';
 
+    // Prepare holdings data for the news feed if needed
+    const allHoldings = category === 'holdings' ? [
+        ...cryptoHoldings.map(h => ({ symbol: h.symbol, name: h.name, type: 'crypto' as const })),
+        ...stockHoldings.map(h => ({ symbol: h.symbol, name: h.name, type: 'stock' as const }))
+    ] : [];
+
     return (
-        <NewsFeed category={category} />
+        <NewsFeed category={category} holdings={allHoldings} />
     );
 };
 
 export default function PortfolioPage() {
   const { isAuthenticated, isLoading } = useBetterAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('holdings-news');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("Networth");
+  const [selectedCategory, setSelectedCategory] = useState("News");
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isAddCryptoModalOpen, setIsAddCryptoModalOpen] = useState(false);
   const [isAddStockModalOpen, setIsAddStockModalOpen] = useState(false);
@@ -327,6 +343,7 @@ export default function PortfolioPage() {
   };
 
   const categories = [
+      "News",
       "Networth",
       "Liquid Assets",
       "Expenses",
@@ -335,7 +352,6 @@ export default function PortfolioPage() {
       "Taxes",
       "Stocks",
       "Crypto",
-      "News",
       "Tools"
   ];
 
@@ -358,19 +374,27 @@ export default function PortfolioPage() {
       case 'overview':
         return <OverviewView selectedCategory={selectedCategory} />;
       case 'breakdown':
-        return <BreakdownView />;
+        return <BreakdownView selectedCategory={selectedCategory} />;
       case 'goals':
         return <GoalsView />;
       case 'ai-analysis':
         return <AIAnalyticsView />;
       case 'transactions':
+        if (selectedCategory === "Stocks") {
+            return <StockTransactionsView />;
+        }
         return <CryptoTransactionsView />;
       case 'analytics':
         if (selectedCategory === "Crypto") {
            return <CryptoAIAnalyticsView />;
+        } else if (selectedCategory === "Stocks") {
+            return <StockAIAnalyticsView />;
         }
         return <OverviewView selectedCategory={selectedCategory} />;
+      case 'calendar':
+        return <EconomicCalendar />;
       case 'news':
+      case 'holdings-news':
       case 'stocks':
       case 'indices':
       case 'forex':
@@ -404,11 +428,6 @@ export default function PortfolioPage() {
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 text-blue-400 font-medium hover:text-blue-300 transition-colors"
                             >
-                                <div className="flex -space-x-1">
-                                    <div className="w-4 h-4 rounded-full bg-green-500" />
-                                    <div className="w-4 h-4 rounded-full bg-blue-500" />
-                                    <div className="w-4 h-4 rounded-full bg-cyan-500" />
-                                </div>
                                 {selectedCategory}
                                 <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                             </button>
@@ -446,7 +465,7 @@ export default function PortfolioPage() {
                         </div>
                     </div>
 
-                    {!['news', 'stocks', 'indices', 'forex', 'crypto'].includes(activeTab) && selectedCategory !== "Networth" && (
+                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar'].includes(activeTab) && selectedCategory !== "Networth" && (
                         <div className="flex items-center gap-3">
                             {selectedCategory === "Real Estate" ? (
                                 <button 
