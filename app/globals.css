@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* YouTube iframe fullscreen fix */
+iframe[allowfullscreen],
+iframe[allow*="fullscreen"] {
+  /* Allow fullscreen to work properly */
+}
+
+/* Video modal - ensure no transforms break fullscreen */
+.video-player-modal {
+  transform: none !important;
+  contain: none !important;
+}
+
 /* Anti-Inspect Protection Styles */
 @layer base {
   /* Disable text selection on the entire page in production */

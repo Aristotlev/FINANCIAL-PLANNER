@@ -17,7 +17,8 @@ import {
   List,
   Briefcase,
   CalendarDays,
-  Twitter
+  Twitter,
+  Youtube
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
@@ -62,6 +63,7 @@ const stocksNavigation = [
 const newsNavigation = [
   { name: "My Holdings", id: "holdings-news", icon: Briefcase },
   { name: "Twitter (X)", id: "twitter-x", icon: Twitter },
+  { name: "Youtube Feed", id: "youtube-feed", icon: Youtube },
   { name: "Calendar", id: "calendar", icon: CalendarDays },
   { name: "Stocks", id: "stocks", icon: TrendingUp },
   { name: "Indices", id: "indices", icon: PieChart },
@@ -71,7 +73,7 @@ const newsNavigation = [
 
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
   const [open, setOpen] = useState(false);
-  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x'].includes(activeTab);
+  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed'].includes(activeTab);
   
   let currentNavigation;
   if (isNewsSection) {

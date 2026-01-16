@@ -14,6 +14,7 @@ import { FloatingDock } from '../../components/ui/floating-dock';
 
 import { NewsFeed } from '../../components/portfolio/news-feed';
 import { TwitterFeed } from '../../components/portfolio/twitter-feed-curated';
+import { YoutubeFeed } from '../../components/portfolio/youtube-feed';
 import { SettingsModal } from '../../components/settings/settings-modal';
 import { AddCryptoPositionModal } from '../../components/portfolio/modals/add-crypto-position-modal';
 import { AddStockPositionModal } from '../../components/portfolio/modals/add-stock-position-modal';
@@ -495,6 +496,8 @@ export default function PortfolioPage() {
         return <EconomicCalendar />;
       case 'twitter-x':
         return <TwitterFeed />;
+      case 'youtube-feed':
+        return <YoutubeFeed />;
       case 'news':
       case 'holdings-news':
       case 'stocks':
@@ -548,9 +551,8 @@ export default function PortfolioPage() {
         <main className="flex-1 p-8 overflow-y-auto scrollbar-hide">
             <div className="max-w-7xl mx-auto space-y-8 pb-20">
                 {/* Global Dashboard Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8">
                     <div className="space-y-4 flex-1 min-w-0">
-                        <h1 className="text-3xl font-bold">Dashboard</h1>
                         <div className="flex items-center gap-2 pb-2">
                              <FloatingDock 
                                 items={floatingDockItems}
@@ -559,7 +561,7 @@ export default function PortfolioPage() {
                         </div>
                     </div>
 
-                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x'].includes(activeTab) && selectedCategory !== "Networth" && (
+                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed'].includes(activeTab) && selectedCategory !== "Networth" && (
                         <div className="flex items-center gap-3">
                             {selectedCategory === "Real Estate" ? (
                                 <button 
