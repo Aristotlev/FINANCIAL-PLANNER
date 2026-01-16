@@ -171,13 +171,10 @@ const FancySearchBar = ({ placeholder = "Search...", value, onChange, suggestion
       <GooeyFilter />
       <motion.form
         onSubmit={handleSubmit}
-        className="relative flex items-center justify-center w-full mx-auto"
-        // Removed fixed width constraints to let it fill parent or approximate
-        // initial={{ width: "240px" }}
-        // animate={{ width: isFocused ? "340px" : "240px", scale: isFocused ? 1.05 : 1 }}
-        // Using layout animation instead
-        layout
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className="relative flex items-center justify-center mx-auto"
+        initial={{ width: "240px" }}
+        animate={{ width: isFocused || value ? "100%" : "240px" }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
         onMouseMove={handleMouseMove}
       >
         <motion.div

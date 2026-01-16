@@ -1,30 +1,58 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Check, Globe } from 'lucide-react';
 import { useTranslation, SUPPORTED_LANGUAGES, Language } from '../../contexts/translation-context';
 
-export function LanguageSelector() {
+interface LanguageSelectorProps {
+  iconOnly?: boolean;
+}
+
+export function LanguageSelector({ iconOnly = false }: LanguageSelectorProps) {
   const { language, setLanguage, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Update position when opening
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setSearchQuery('');
-      }
-    };
+      const handleClickOutside = (event: MouseEvent | Event) => {
+        const target = event.target as Node;
+        if (
+          isOpen &&
+          dropdownRef.current && 
+          !dropdownRef.current.contains(target) &&
+          portalRef.current &&
+          !portalRef.current.contains(target)
+        ) {
+          setIsOpen(false);
+          setSearchQuery('');
+        }
+      };
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleClickOutside, true);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleClickOutside, true);
     };
   }, [isOpen]);
 
@@ -41,23 +69,42 @@ export function LanguageSelector() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${iconOnly ? 'w-full h-full flex items-center justify-center' : ''}`} ref={dropdownRef}>
       {/* Language Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors group"
-        title={t('common.language')}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-lg leading-none">{language.flag}</span>
-          <span className="text-sm font-medium hidden sm:inline-block">{language.name}</span>
-        </div>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      {!iconOnly ? (
+        <button
+            ref={buttonRef}
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors group"
+            title={t('common.language')}
+        >
+            <div className="flex items-center gap-2">
+            <span className="text-lg leading-none">{language.flag}</span>
+            <span className="text-sm font-medium hidden sm:inline-block">{language.name}</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      ) : (
+        <button
+            ref={buttonRef}
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full h-full flex items-center justify-center p-2 rounded-full hover:bg-gray-800/50 transition-colors"
+            title={`${t('common.language')} (${language.name})`}
+        >
+            <span className="text-2xl leading-none">{language.flag}</span>
+        </button>
+      )}
 
       {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[10002] max-h-[500px] flex flex-col">
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+            ref={portalRef}
+             style={{ 
+                top: `${dropdownPos.top}px`, 
+                right: `${dropdownPos.right}px` 
+            }}
+            className="fixed w-72 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[500px] flex flex-col"
+        >
           {/* Header */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-3">
@@ -121,7 +168,8 @@ export function LanguageSelector() {
                 </div>
               )}
             </div>
-          </div>
+          </div>,
+          document.body
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Search, RefreshCw, Check } from 'lucide-react';
 import { useCurrency, SUPPORTED_CURRENCIES, Currency } from '../../contexts/currency-context';
 
@@ -11,8 +12,6 @@ const CurrencyFlag = ({ countryCode, className = "w-5 h-3.5" }: { countryCode?: 
     <img
       src={`https://flagcdn.com/w40/${countryCode}.png`}
       srcSet={`https://flagcdn.com/w80/${countryCode}.png 2x`}
-      width="20"
-      height="14"
       alt={`${countryCode} flag`}
       className={`object-cover rounded-sm flex-shrink-0 ${className}`}
       loading="lazy"
@@ -20,27 +19,56 @@ const CurrencyFlag = ({ countryCode, className = "w-5 h-3.5" }: { countryCode?: 
   );
 };
 
-export function PortfolioCurrencySelector() {
+interface PortfolioCurrencySelectorProps {
+  iconOnly?: boolean;
+}
+
+export function PortfolioCurrencySelector({ iconOnly = false }: PortfolioCurrencySelectorProps) {
   const { mainCurrency, setMainCurrency, lastUpdated, refreshRates, isLoading } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Update position when opening
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent | Event) => {
+      const target = event.target as Node;
+      if (
+        isOpen &&
+        dropdownRef.current && 
+        !dropdownRef.current.contains(target) &&
+        portalRef.current &&
+        !portalRef.current.contains(target)
+      ) {
         setIsOpen(false);
         setSearchQuery('');
       }
     };
 
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      // Close on scroll too as position is fixed
+      window.addEventListener('scroll', handleClickOutside, true);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleClickOutside, true);
     };
   }, [isOpen]);
 
@@ -70,28 +98,52 @@ export function PortfolioCurrencySelector() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${iconOnly ? 'w-full h-full flex items-center justify-center' : ''}`} ref={dropdownRef}>
       {/* Currency Button - Using the requested styling */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-800 transition-colors group ${isOpen ? 'bg-gray-800 text-white' : ''}`}
-        title="Select Main Currency"
-        type="button"
-      >
-        <div className="flex items-center gap-3">
-          {mainCurrency.countryCode ? (
-            <CurrencyFlag countryCode={mainCurrency.countryCode} />
-          ) : (
-            <span className="text-lg leading-none">{mainCurrency.flag}</span>
-          )}
-          <span className="text-sm font-medium">{mainCurrency.code}</span>
-        </div>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      {!iconOnly ? (
+        <button
+            ref={buttonRef}
+            onClick={() => setIsOpen(!isOpen)}
+            className={`flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-800 transition-colors group ${isOpen ? 'bg-gray-800 text-white' : ''}`}
+            title="Select Main Currency"
+            type="button"
+        >
+            <div className="flex items-center gap-3">
+            {mainCurrency.countryCode ? (
+                <CurrencyFlag countryCode={mainCurrency.countryCode} />
+            ) : (
+                <span className="text-lg leading-none">{mainCurrency.flag}</span>
+            )}
+            <span className="text-sm font-medium">{mainCurrency.code}</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      ) : (
+        <button
+            ref={buttonRef}
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full h-full flex items-center justify-center p-2 rounded-full hover:bg-gray-800/50 transition-colors"
+            title={`Currency: ${mainCurrency.code}`}
+            type="button"
+        >
+             {mainCurrency.countryCode ? (
+                <CurrencyFlag countryCode={mainCurrency.countryCode} className="w-full h-full object-cover rounded-sm shadow-sm" />
+            ) : (
+                <span className="text-xl font-bold">{mainCurrency.flag}</span>
+            )}
+        </button>
+      )}
 
       {/* Dropdown Menu - Portfolio Branding */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-[#0D0D0D] border border-gray-800 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.6)] z-[201] max-h-[500px] flex flex-col overflow-hidden ring-1 ring-white/10">
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          ref={portalRef}
+          style={{ 
+            top: `${dropdownPos.top}px`, 
+            right: `${dropdownPos.right}px` 
+          }}
+          className="fixed w-80 bg-[#0D0D0D] border border-gray-800 rounded-xl shadow-[0_4px_24px_rgba(0,0,0,0.6)] z-[9999] max-h-[500px] flex flex-col overflow-hidden ring-1 ring-white/10"
+        >
             {/* Header */}
             <div className="p-4 border-b border-gray-800">
               <div className="flex items-center justify-between mb-3">
@@ -189,7 +241,8 @@ export function PortfolioCurrencySelector() {
                 All amounts will be converted to {mainCurrency.code}
               </p>
             </div>
-          </div>
+          </div>,
+          document.body
       )}
     </div>
   );

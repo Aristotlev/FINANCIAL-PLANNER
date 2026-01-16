@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
             <div style={{ 
               fontSize: '80px', 
               fontWeight: 'bold', 
-              color: 'white',
+              color: '#f59e0b',
               marginTop: '30px',
               fontFamily: 'sans-serif'
             }}>
