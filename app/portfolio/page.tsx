@@ -25,6 +25,8 @@ import { AddPropertyModal, RealEstateProperty } from '../../components/portfolio
 import { AddValuableItemModal, ValuableItem } from '../../components/portfolio/modals/add-valuable-item-modal';
 import { AddExpenseCategoryModal, ExpenseCategory } from '../../components/portfolio/modals/add-expense-category-modal';
 import { AddCashAccountModal, CashAccount } from '../../components/portfolio/modals/add-cash-account-modal';
+import { AddIncomeModal, IncomeSource } from '../../components/portfolio/modals/add-income-modal';
+import { AddGoalModal, SavingsGoal } from '../../components/portfolio/modals/add-goal-modal';
 import { ImprovedTaxProfileModal } from '../../components/financial/improved-tax-profile-modal';
 import { TaxProfile } from '../../lib/types/tax-profile';
 import { CryptoTransactionsView } from '../../components/portfolio/crypto-transactions-view';
@@ -45,6 +47,7 @@ import { InsiderTransactionsView } from '../../components/portfolio/insider-tran
 import { EarningsSurprisesView } from '../../components/portfolio/earnings-surprises-view';
 import { SenateLobbyingView } from '../../components/portfolio/senate-lobbying-view';
 import { USASpendingView } from '../../components/portfolio/usa-spending-view';
+import { ToolsView } from '../../components/tools/ToolsView';
 
 interface CryptoTransaction {
   id: string;
@@ -136,6 +139,8 @@ export default function PortfolioPage() {
   const [isAddValuableItemModalOpen, setIsAddValuableItemModalOpen] = useState(false);
   const [isAddExpenseCategoryModalOpen, setIsAddExpenseCategoryModalOpen] = useState(false);
   const [isAddCashAccountModalOpen, setIsAddCashAccountModalOpen] = useState(false);
+  const [isAddIncomeModalOpen, setIsAddIncomeModalOpen] = useState(false);
+  const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
   const [isAddTaxProfileModalOpen, setIsAddTaxProfileModalOpen] = useState(false);
   
   const { cryptoHoldings, setCryptoHoldings, stockHoldings, setStockHoldings } = usePortfolioContext();
@@ -344,6 +349,41 @@ export default function PortfolioPage() {
     window.dispatchEvent(new Event('financialDataChanged'));
   };
 
+  const handleAddIncome = async (newIncome: Omit<IncomeSource, 'id'>) => {
+    const incomeToAdd: IncomeSource = {
+      ...newIncome,
+      id: crypto.randomUUID(),
+    };
+    
+    // Save to database
+    await SupabaseDataService.saveIncomeSource(incomeToAdd);
+    
+    // Dispatch events to update charts
+    window.dispatchEvent(new Event('cashDataChanged'));
+    window.dispatchEvent(new Event('financialDataChanged'));
+  };
+
+  const handleAddGoal = async (newGoal: Omit<SavingsGoal, 'id' | 'color'>) => {
+    const colors = ['#3b82f6', '#6366f1', '#0ea5e9', '#8b5cf6', '#06b6d4', '#10b981'];
+    // Mock getting existing goals count or just random/sequential color assignment
+    // In a real app we might want to check existing goals to cycle colors properly, 
+    // but random or time-based is fine for now
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    const goalToAdd: SavingsGoal = {
+      ...newGoal,
+      id: crypto.randomUUID(),
+      color
+    };
+    
+    // Save to database
+    await SupabaseDataService.saveSavingsAccount(goalToAdd);
+    
+    // Dispatch events to update charts
+    window.dispatchEvent(new Event('savingsDataChanged'));
+    window.dispatchEvent(new Event('financialDataChanged'));
+  };
+
   const handleAddTaxProfile = async (profile: Omit<TaxProfile, 'id'> | TaxProfile) => {
     const profileToAdd: TaxProfile = {
       ...profile,
@@ -529,6 +569,8 @@ export default function PortfolioPage() {
         return <SenateLobbyingView />;
       case 'usa-spending':
         return <USASpendingView />;
+      case 'charts':
+        return <ToolsView />;
       default:
         return <OverviewView selectedCategory={selectedCategory} />;
     }
@@ -614,14 +656,32 @@ export default function PortfolioPage() {
                                     <span className="sm:hidden">Add</span>
                                 </button>
                             ) : selectedCategory === "Liquid Assets" ? (
-                                <button 
-                                    onClick={() => setIsAddCashAccountModalOpen(true)}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Add Account</span>
-                                    <span className="sm:hidden">Add</span>
-                                </button>
+                                <>
+                                    <button 
+                                        onClick={() => setIsAddCashAccountModalOpen(true)}
+                                        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Add Account</span>
+                                        <span className="sm:hidden">Add</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsAddIncomeModalOpen(true)}
+                                        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Add Income</span>
+                                        <span className="sm:hidden">Add</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => setIsAddGoalModalOpen(true)}
+                                        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Add Goal</span>
+                                        <span className="sm:hidden">Add</span>
+                                    </button>
+                                </>
                             ) : selectedCategory === "Crypto" ? (
                                 <button 
                                     onClick={() => setIsAddCryptoModalOpen(true)}
@@ -695,6 +755,18 @@ export default function PortfolioPage() {
         isOpen={isAddCashAccountModalOpen} 
         onClose={() => setIsAddCashAccountModalOpen(false)} 
         onAdd={handleAddCashAccount}
+      />
+
+      <AddIncomeModal 
+        isOpen={isAddIncomeModalOpen} 
+        onClose={() => setIsAddIncomeModalOpen(false)} 
+        onAdd={handleAddIncome}
+      />
+
+      <AddGoalModal 
+        isOpen={isAddGoalModalOpen} 
+        onClose={() => setIsAddGoalModalOpen(false)} 
+        onAdd={handleAddGoal}
       />
 
       <ImprovedTaxProfileModal 

@@ -1,8 +1,86 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Search, TrendingUp, TrendingDown, Users, DollarSign, Loader2, RefreshCw, ChevronLeft, ChevronRight, Database, Filter, ArrowUpRight, ArrowDownRight, Minus, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tickerDomains } from '@/lib/ticker-domains';
+
+// Generate a consistent color based on ticker
+const getTickerColor = (ticker: string): string => {
+  const colors = [
+    'from-blue-500 to-blue-700',
+    'from-purple-500 to-purple-700',
+    'from-green-500 to-green-700',
+    'from-orange-500 to-orange-700',
+    'from-pink-500 to-pink-700',
+    'from-cyan-500 to-cyan-700',
+    'from-indigo-500 to-indigo-700',
+    'from-teal-500 to-teal-700',
+  ];
+  let hash = 0;
+  for (let i = 0; i < ticker.length; i++) {
+    hash = ticker.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Company Icon Component - Same approach as SEC EDGAR page
+const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: { ticker: string, className?: string, showPlaceholder?: boolean }) => {
+  const [imageError, setImageError] = useState(false);
+  const [fallbackIndex, setFallbackIndex] = useState(0);
+  const upperTicker = ticker.toUpperCase();
+  
+  // Build list of image sources to try
+  const imageSources = useMemo(() => {
+    const sources: string[] = [];
+    
+    // 1. Known domain from our mapping
+    if (tickerDomains[upperTicker]) {
+      sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${tickerDomains[upperTicker]}&size=128`);
+    }
+    
+    // 2. Try logo.dev API (free tier, good coverage)
+    sources.push(`https://img.logo.dev/ticker/${upperTicker}?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ`);
+    
+    // 3. Try common domain patterns
+    sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${ticker.toLowerCase()}.com&size=128`);
+    
+    return sources;
+  }, [upperTicker, ticker]);
+  
+  useEffect(() => {
+    setImageError(false);
+    setFallbackIndex(0);
+  }, [ticker]);
+  
+  const handleImageError = () => {
+    if (fallbackIndex < imageSources.length - 1) {
+      setFallbackIndex(prev => prev + 1);
+    } else {
+      setImageError(true);
+    }
+  };
+  
+  if (!imageError && imageSources.length > 0) {
+    return (
+      <img 
+        src={imageSources[fallbackIndex]}
+        alt={`${ticker} logo`} 
+        className={`${className} rounded-lg object-contain bg-white p-1`}
+        onError={handleImageError}
+        loading="lazy"
+      />
+    );
+  }
+
+  if (!showPlaceholder) return null;
+
+  return (
+    <div className={`${className} rounded-lg bg-gradient-to-br ${getTickerColor(ticker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
+      {ticker.slice(0, 2)}
+    </div>
+  );
+};
 
 interface InsiderTransaction {
   change: number;
@@ -522,9 +600,7 @@ export function InsiderTransactionsView() {
                           onClick={() => setSymbolFilter(transaction.symbol)}
                           className="flex items-center gap-2 hover:text-blue-400 transition-colors"
                         >
-                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                            <Building2 className="w-4 h-4 text-blue-400" />
-                          </div>
+                          <CompanyIcon ticker={transaction.symbol} className="h-8 w-8" />
                           <span className="font-semibold text-white">{transaction.symbol}</span>
                         </button>
                       </td>

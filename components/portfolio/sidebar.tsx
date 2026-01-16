@@ -71,14 +71,15 @@ const newsNavigation = [
   { name: "Crypto", id: "crypto", icon: Coins },
   { name: "Indices", id: "indices", icon: PieChart },
   { name: "Forex", id: "forex", icon: DollarSign },
+  { name: "Economic Calendar", id: "calendar", icon: CalendarDays },
   { name: "IPO Calendar", id: "ipo-calendar", icon: CalendarPlus },
   { name: "Earnings Calendar", id: "earnings-calendar", icon: BarChart3 },
-  { name: "Economic Calendar", id: "calendar", icon: CalendarDays },
   { name: "Twitter (X)", id: "twitter-x", icon: Twitter },
   { name: "Youtube Feed", id: "youtube-feed", icon: Youtube },
 ];
 
 const toolsNavigation = [
+  { name: "Live Charts", id: "charts", icon: Activity },
   { name: "Trades", id: "trades", icon: Activity },
   { name: "Insider Sentiment", id: "insider-sentiment", icon: TrendingUp },
   { name: "Insider Transactions", id: "insider-transactions", icon: Users },
@@ -90,7 +91,7 @@ const toolsNavigation = [
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
   const [open, setOpen] = useState(false);
   const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar'].includes(activeTab);
-  const isToolsSection = ['trades', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
+  const isToolsSection = ['charts', 'trades', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
   
   let currentNavigation;
   if (isNewsSection) {

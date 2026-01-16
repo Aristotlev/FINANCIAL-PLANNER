@@ -356,7 +356,7 @@ export function USASpendingView() {
         {uniqueSymbols.length > 0 && (
           <div className="mt-3 flex items-center gap-2">
             <span className="text-xs text-gray-500 py-1 whitespace-nowrap">Contractors:</span>
-            <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+            <div className="flex-1 flex items-center gap-2 overflow-x-auto scrollbar-none">
               {(symbolFilter || agencyFilter) && (
                 <button
                   onClick={clearFilters}
@@ -386,7 +386,7 @@ export function USASpendingView() {
         {uniqueAgenciesList.length > 0 && (
           <div className="mt-2 flex items-center gap-2">
             <span className="text-xs text-gray-500 py-1 whitespace-nowrap">Agencies:</span>
-            <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+            <div className="flex-1 flex items-center gap-2 overflow-x-auto scrollbar-none">
               {uniqueAgenciesList.map(agency => (
                 <button
                   key={agency}

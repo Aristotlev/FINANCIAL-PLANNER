@@ -2,6 +2,98 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { DollarSign, Search, ExternalLink, FileText, Calendar, Building2, Loader2, RefreshCw, AlertCircle, MapPin, Award, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
+import { tickerDomains } from '@/lib/ticker-domains';
+
+// Generate a consistent color based on ticker
+const getTickerColor = (ticker: string): string => {
+  const colors = [
+    'from-green-500 to-green-700',
+    'from-blue-500 to-blue-700',
+    'from-purple-500 to-purple-700',
+    'from-orange-500 to-orange-700',
+    'from-pink-500 to-pink-700',
+    'from-cyan-500 to-cyan-700',
+    'from-indigo-500 to-indigo-700',
+    'from-teal-500 to-teal-700',
+  ];
+  let hash = 0;
+  for (let i = 0; i < ticker.length; i++) {
+    hash = ticker.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Company Icon Component - Same approach as SEC EDGAR page
+const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: { ticker: string, className?: string, showPlaceholder?: boolean }) => {
+  const safeTicker = ticker || '';
+  const upperTicker = safeTicker.toUpperCase();
+  
+  const [imageError, setImageError] = useState(false);
+  const [fallbackIndex, setFallbackIndex] = useState(0);
+  
+  // Build list of image sources to try
+  const imageSources = useMemo(() => {
+    if (!safeTicker) return [];
+    
+    const sources: string[] = [];
+    
+    // 1. Known domain from our mapping
+    if (tickerDomains[upperTicker]) {
+      sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${tickerDomains[upperTicker]}&size=128`);
+    }
+    
+    // 2. Try logo.dev API (free tier, good coverage)
+    sources.push(`https://img.logo.dev/ticker/${upperTicker}?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ`);
+    
+    // 3. Try common domain patterns
+    sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${safeTicker.toLowerCase()}.com&size=128`);
+    
+    return sources;
+  }, [upperTicker, safeTicker]);
+  
+  useEffect(() => {
+    setImageError(false);
+    setFallbackIndex(0);
+  }, [safeTicker]);
+  
+  const handleImageError = () => {
+    if (fallbackIndex < imageSources.length - 1) {
+      setFallbackIndex(prev => prev + 1);
+    } else {
+      setImageError(true);
+    }
+  };
+  
+  // Safety check for undefined/null ticker - after hooks
+  if (!safeTicker) {
+    if (!showPlaceholder) return null;
+    return (
+      <div className={`${className} rounded-lg bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
+        ??
+      </div>
+    );
+  }
+  
+  if (!imageError && imageSources.length > 0) {
+    return (
+      <img 
+        src={imageSources[fallbackIndex]}
+        alt={`${safeTicker} logo`} 
+        className={`${className} rounded-lg object-contain bg-white p-1`}
+        onError={handleImageError}
+        loading="lazy"
+      />
+    );
+  }
+
+  if (!showPlaceholder) return null;
+
+  return (
+    <div className={`${className} rounded-lg bg-gradient-to-br ${getTickerColor(safeTicker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
+      {safeTicker.slice(0, 2)}
+    </div>
+  );
+};
 
 interface USASpendingActivity {
   actionDate: string;
@@ -328,9 +420,7 @@ export function USASpending() {
                 >
                   <div className="col-span-3">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 bg-[#252525] rounded-lg flex-shrink-0">
-                        <Building2 className="w-4 h-4 text-gray-400" />
-                      </div>
+                      <CompanyIcon ticker={activity.symbol || selectedSymbol || 'N/A'} className="h-8 w-8 flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="font-semibold text-white truncate">{activity.recipientName}</p>
                         <p className="text-xs text-gray-500 truncate">{activity.recipientParentName}</p>
