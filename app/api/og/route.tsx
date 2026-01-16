@@ -163,49 +163,7 @@ export async function GET(request: NextRequest) {
     }
 
     // If no type is specified AND no specific data is passed (default app preview)
-    if (!type && !searchParams.get("title") && !searchParams.get("value") && !searchParams.get("holdings")) {
-      return new ImageResponse(
-        (
-          <div
-            style={{
-              height: '100%',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#030712',
-            }}
-          >
-            <img
-              src={logoUrl}
-              alt="Omnifolio"
-              width="250"
-              height="250"
-              style={{ objectFit: 'contain' }}
-            />
-            <div style={{ 
-              fontSize: '80px', 
-              fontWeight: 'bold', 
-              color: '#f59e0b',
-              marginTop: '30px',
-              fontFamily: 'sans-serif'
-            }}>
-              Omnifolio
-            </div>
-          </div>
-        ),
-        {
-          width: 1200,
-          height: 630,
-        }
-      );
-    }
-
-    const isNetWorth = type === 'net-worth';
-    const bgColor = isNetWorth ? '#9333ea' : theme;
-    const secondaryColor = isNetWorth ? '#2563eb' : theme;
-
+    // AND for any other type that isn't 'post'
     return new ImageResponse(
       (
         <div
@@ -216,132 +174,31 @@ export async function GET(request: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#030712', // gray-950
-            fontFamily: 'sans-serif',
+            backgroundColor: '#030712',
           }}
         >
-          {/* Card Container */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              width: '1000px',
-              height: '550px',
-              backgroundColor: '#111827', // gray-900
-              borderRadius: '24px',
-              padding: '48px',
-              position: 'relative',
-              overflow: 'hidden',
-              border: '1px solid #1f2937',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            }}
-          >
-            {/* Background Gradients */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-100px',
-                right: '-100px',
-                width: '400px',
-                height: '400px',
-                borderRadius: '50%',
-                background: bgColor,
-                opacity: 0.2,
-                filter: 'blur(80px)',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '-100px',
-                left: '-100px',
-                width: '400px',
-                height: '400px',
-                borderRadius: '50%',
-                background: secondaryColor,
-                opacity: 0.2,
-                filter: 'blur(80px)',
-              }}
-            />
-
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '40px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* Logo Icon */}
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                  </svg>
-                  <span style={{ fontSize: '32px', fontWeight: 'bold', color: 'white' }}>Omnifolio</span>
-                </div>
-                <span style={{ fontSize: '16px', color: '#9ca3af', marginLeft: '4px', marginTop: '4px' }}>Financial Analytics</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <span style={{ fontSize: '14px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>User</span>
-                <span style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>{user}</span>
-              </div>
-            </div>
-
-            {/* Main Value */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: 'auto' }}>
-              <span style={{ fontSize: '18px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {isNetWorth ? 'Total Net Worth' : title}
-              </span>
-              <span style={{ fontSize: '72px', fontWeight: 'bold', color: 'white', lineHeight: 1 }}>
-                {currency}{formatNum(value)}
-              </span>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '4px 12px',
-                  borderRadius: '9999px',
-                  backgroundColor: change.includes('+') ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                  color: change.includes('+') ? '#4ade80' : '#f87171',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  alignSelf: 'flex-start',
-                  marginTop: '8px'
-                }}
-              >
-                {change} This Month
-              </div>
-            </div>
-
-            {/* Footer Stats */}
-            <div style={{ display: 'flex', width: '100%', paddingTop: '32px', borderTop: '1px solid #1f2937', gap: '48px' }}>
-              {isNetWorth ? (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '16px', color: '#9ca3af', marginBottom: '4px' }}>Assets</span>
-                    <span style={{ fontSize: '28px', fontWeight: '600', color: '#60a5fa' }}>{currency}{formatNum(assets)}</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '16px', color: '#9ca3af', marginBottom: '4px' }}>Liabilities</span>
-                    <span style={{ fontSize: '28px', fontWeight: '600', color: '#f87171' }}>{currency}{formatNum(liabilities)}</span>
-                  </div>
-                </>
-              ) : (
-                holdings.slice(0, 3).map((holding: any, index: number) => (
-                  <div key={index} style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: holding.color || theme }} />
-                      <span style={{ fontSize: '16px', color: '#9ca3af' }}>{holding.symbol}</span>
-                    </div>
-                    <span style={{ fontSize: '28px', fontWeight: '600', color: theme }}>
-                      {currency}{formatNum(holding.value)}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
+          <img
+            src={logoUrl}
+            alt="Omnifolio"
+            width="250"
+            height="250"
+            style={{ objectFit: 'contain' }}
+          />
+          <div style={{ 
+            fontSize: '80px', 
+            fontWeight: 'bold', 
+            color: 'white',
+            marginTop: '30px',
+            fontFamily: 'sans-serif'
+          }}>
+            OmniFolio
           </div>
         </div>
       ),
       {
         width: 1200,
         height: 630,
-      },
+      }
     );
   } catch (e: any) {
     console.log(`${e.message}`);

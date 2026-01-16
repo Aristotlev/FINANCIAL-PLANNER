@@ -354,56 +354,54 @@ export function USASpendingView() {
         
         {/* Quick Symbol Filters */}
         {uniqueSymbols.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="text-xs text-gray-500 py-1">Contractors:</span>
-            {(symbolFilter || agencyFilter) && (
-              <button
-                onClick={clearFilters}
-                className="px-2 py-1 text-xs rounded-md bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
-              >
-                Clear filters ×
-              </button>
-            )}
-            {uniqueSymbols.slice(0, 12).map(sym => (
-              <button
-                key={sym}
-                onClick={() => setSymbolFilter(symbolFilter === sym ? '' : sym)}
-                className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                  symbolFilter === sym
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
-                }`}
-              >
-                {sym}
-              </button>
-            ))}
-            {uniqueSymbols.length > 12 && (
-              <span className="text-xs text-gray-500 py-1">+{uniqueSymbols.length - 12} more</span>
-            )}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs text-gray-500 py-1 whitespace-nowrap">Contractors:</span>
+            <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+              {(symbolFilter || agencyFilter) && (
+                <button
+                  onClick={clearFilters}
+                  className="px-2 py-1 text-xs rounded-md bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  Clear filters ×
+                </button>
+              )}
+              {uniqueSymbols.map(sym => (
+                <button
+                  key={sym}
+                  onClick={() => setSymbolFilter(symbolFilter === sym ? '' : sym)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                    symbolFilter === sym
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
+                  }`}
+                >
+                  {sym}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Agency Filters */}
         {uniqueAgenciesList.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="text-xs text-gray-500 py-1">Agencies:</span>
-            {uniqueAgenciesList.slice(0, 6).map(agency => (
-              <button
-                key={agency}
-                onClick={() => setAgencyFilter(agencyFilter === agency ? '' : agency)}
-                className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 ${
-                  agencyFilter === agency
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                    : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
-                }`}
-              >
-                {getAgencyIcon(agency)}
-                <span className="truncate max-w-[120px]">{agency}</span>
-              </button>
-            ))}
-            {uniqueAgenciesList.length > 6 && (
-              <span className="text-xs text-gray-500 py-1">+{uniqueAgenciesList.length - 6} more</span>
-            )}
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xs text-gray-500 py-1 whitespace-nowrap">Agencies:</span>
+            <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+              {uniqueAgenciesList.map(agency => (
+                <button
+                  key={agency}
+                  onClick={() => setAgencyFilter(agencyFilter === agency ? '' : agency)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors flex items-center gap-1 whitespace-nowrap flex-shrink-0 ${
+                    agencyFilter === agency
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
+                  }`}
+                >
+                  {getAgencyIcon(agency)}
+                  <span className="truncate max-w-[150px]">{agency}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
