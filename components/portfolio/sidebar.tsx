@@ -67,30 +67,36 @@ const stocksNavigation = [
 
 const newsNavigation = [
   { name: "My Holdings", id: "holdings-news", icon: Briefcase },
+  { name: "Stocks", id: "stocks", icon: TrendingUp },
+  { name: "Crypto", id: "crypto", icon: Coins },
+  { name: "Indices", id: "indices", icon: PieChart },
+  { name: "Forex", id: "forex", icon: DollarSign },
+  { name: "IPO Calendar", id: "ipo-calendar", icon: CalendarPlus },
+  { name: "Earnings Calendar", id: "earnings-calendar", icon: BarChart3 },
+  { name: "Economic Calendar", id: "calendar", icon: CalendarDays },
+  { name: "Twitter (X)", id: "twitter-x", icon: Twitter },
+  { name: "Youtube Feed", id: "youtube-feed", icon: Youtube },
+];
+
+const toolsNavigation = [
   { name: "Trades", id: "trades", icon: Activity },
   { name: "Insider Sentiment", id: "insider-sentiment", icon: TrendingUp },
   { name: "Insider Transactions", id: "insider-transactions", icon: Users },
   { name: "Senate Lobbying", id: "senate-lobbying", icon: Landmark },
   { name: "USA Spending", id: "usa-spending", icon: Banknote },
   { name: "Earnings Surprises", id: "earnings-surprises", icon: Target },
-  { name: "IPO Calendar", id: "ipo-calendar", icon: CalendarPlus },
-  { name: "Earnings", id: "earnings-calendar", icon: BarChart3 },
-  { name: "Twitter (X)", id: "twitter-x", icon: Twitter },
-  { name: "Youtube Feed", id: "youtube-feed", icon: Youtube },
-  { name: "Calendar", id: "calendar", icon: CalendarDays },
-  { name: "Stocks", id: "stocks", icon: TrendingUp },
-  { name: "Indices", id: "indices", icon: PieChart },
-  { name: "Forex", id: "forex", icon: DollarSign },
-  { name: "Crypto", id: "crypto", icon: Coins },
 ];
 
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
   const [open, setOpen] = useState(false);
-  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'trades', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
+  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar'].includes(activeTab);
+  const isToolsSection = ['trades', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
   
   let currentNavigation;
   if (isNewsSection) {
     currentNavigation = newsNavigation;
+  } else if (isToolsSection || selectedCategory === "Tools") {
+    currentNavigation = toolsNavigation;
   } else if (selectedCategory === "Networth") {
     currentNavigation = networthNavigation;
   } else if (selectedCategory === "Crypto") {

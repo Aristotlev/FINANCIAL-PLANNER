@@ -449,7 +449,7 @@ export default function PortfolioPage() {
           icon: <Wrench className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
           onClick: () => {
               setSelectedCategory("Tools");
-              setActiveTab("overview");
+              setActiveTab("insider-sentiment");
           }
       },
   ];

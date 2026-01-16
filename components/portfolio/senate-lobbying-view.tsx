@@ -323,32 +323,31 @@ export function SenateLobbyingView() {
         
         {/* Quick Symbol Filters */}
         {uniqueSymbols.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className="text-xs text-gray-500 py-1">Quick filter:</span>
-            {symbolFilter && (
-              <button
-                onClick={clearSymbolFilter}
-                className="px-2 py-1 text-xs rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
-              >
-                Clear: {symbolFilter} ×
-              </button>
-            )}
-            {uniqueSymbols.slice(0, 15).map(sym => (
-              <button
-                key={sym}
-                onClick={() => setSymbolFilter(symbolFilter === sym ? '' : sym)}
-                className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                  symbolFilter === sym
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                    : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
-                }`}
-              >
-                {sym}
-              </button>
-            ))}
-            {uniqueSymbols.length > 15 && (
-              <span className="text-xs text-gray-500 py-1">+{uniqueSymbols.length - 15} more</span>
-            )}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs text-gray-500 py-1 whitespace-nowrap">Quick filter:</span>
+            <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+              {symbolFilter && (
+                <button
+                  onClick={clearSymbolFilter}
+                  className="px-2 py-1 text-xs rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  Clear: {symbolFilter} ×
+                </button>
+              )}
+              {uniqueSymbols.map(sym => (
+                <button
+                  key={sym}
+                  onClick={() => setSymbolFilter(symbolFilter === sym ? '' : sym)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
+                    symbolFilter === sym
+                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
+                  }`}
+                >
+                  {sym}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
