@@ -9,9 +9,11 @@ import { TopBar } from '../../components/portfolio/top-bar';
 import { TotalWorthCard } from '../../components/portfolio/total-worth-card';
 import { AllocationCard } from '../../components/portfolio/allocation-card';
 import { AIChatAssistant } from '../../components/ui/ai-chat';
-import { Plus, ArrowUpRight, ShoppingCart, Repeat } from 'lucide-react';
+import { Plus, ArrowUpRight, ShoppingCart, Repeat, Newspaper, ChartColumn, Wallet, CreditCard, Gem, Home, Receipt, TrendingUp, Bitcoin, Wrench, Landmark } from 'lucide-react';
+import { FloatingDock } from '../../components/ui/floating-dock';
 
 import { NewsFeed } from '../../components/portfolio/news-feed';
+import { TwitterFeed } from '../../components/portfolio/twitter-feed-curated';
 import { SettingsModal } from '../../components/settings/settings-modal';
 import { AddCryptoPositionModal } from '../../components/portfolio/modals/add-crypto-position-modal';
 import { AddStockPositionModal } from '../../components/portfolio/modals/add-stock-position-modal';
@@ -106,7 +108,10 @@ const NewsView = ({ activeTab }: { activeTab: string }) => {
     ] : [];
 
     return (
-        <NewsFeed category={category} holdings={allHoldings} />
+        <>
+          <NewsFeed category={category} holdings={allHoldings} />
+          <TwitterFeed />
+        </>
     );
 };
 
@@ -357,6 +362,89 @@ export default function PortfolioPage() {
       "Tools"
   ];
 
+  const floatingDockItems = [
+      {
+          title: "News",
+          icon: <Newspaper className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setActiveTab("news");
+              setSelectedCategory("News");
+          }
+      },
+      {
+          title: "Networth",
+          icon: <ChartColumn className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Networth");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Liquid Assets",
+          icon: <Landmark className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Liquid Assets");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Expenses",
+          icon: <CreditCard className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Expenses");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Valuables",
+          icon: <Gem className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Valuables");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Real Estate",
+          icon: <Home className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Real Estate");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Taxes",
+          icon: <Receipt className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Taxes");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Stocks",
+          icon: <TrendingUp className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Stocks");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Crypto",
+          icon: <Bitcoin className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Crypto");
+              setActiveTab("overview");
+          }
+      },
+      {
+          title: "Tools",
+          icon: <Wrench className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
+          onClick: () => {
+              setSelectedCategory("Tools");
+              setActiveTab("overview");
+          }
+      },
+  ];
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/');
@@ -405,6 +493,8 @@ export default function PortfolioPage() {
         return <OverviewView selectedCategory={selectedCategory} />;
       case 'calendar':
         return <EconomicCalendar />;
+      case 'twitter-x':
+        return <TwitterFeed />;
       case 'news':
       case 'holdings-news':
       case 'stocks':
@@ -461,32 +551,15 @@ export default function PortfolioPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-4 flex-1 min-w-0">
                         <h1 className="text-3xl font-bold">Dashboard</h1>
-                        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                            {categories.map((category) => (
-                                <button
-                                    key={category}
-                                    onClick={() => {
-                                        if (category === "News") {
-                                            setActiveTab("news");
-                                            setSelectedCategory("News");
-                                        } else {
-                                            setSelectedCategory(category);
-                                            setActiveTab("overview");
-                                        }
-                                    }}
-                                    className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
-                                        selectedCategory === category 
-                                        ? 'bg-blue-600 border-blue-600 text-white' 
-                                        : 'bg-[#1A1A1A] border-gray-800 text-gray-400 hover:text-white hover:bg-gray-800'
-                                    }`}
-                                >
-                                    {category}
-                                </button>
-                            ))}
+                        <div className="flex items-center gap-2 pb-2">
+                             <FloatingDock 
+                                items={floatingDockItems}
+                                desktopClassName=""
+                             />
                         </div>
                     </div>
 
-                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar'].includes(activeTab) && selectedCategory !== "Networth" && (
+                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x'].includes(activeTab) && selectedCategory !== "Networth" && (
                         <div className="flex items-center gap-3">
                             {selectedCategory === "Real Estate" ? (
                                 <button 

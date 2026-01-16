@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { 
-  LayoutDashboard,
   BarChart3, 
   Clock, 
   Bot, 
-  Newspaper, 
   Settings,
   Wallet,
   ChartColumn,
@@ -17,10 +16,12 @@ import {
   Target,
   List,
   Briefcase,
-  CalendarDays
+  CalendarDays,
+  Twitter
 } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { OmnifolioLogo } from "../ui/omnifolio-logo";
+import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
+import { Sidebar as SidebarContainer, SidebarBody, SidebarLink } from "../ui/sidebar";
 
 interface SidebarProps {
   activeTab: string;
@@ -60,6 +61,7 @@ const stocksNavigation = [
 
 const newsNavigation = [
   { name: "My Holdings", id: "holdings-news", icon: Briefcase },
+  { name: "Twitter (X)", id: "twitter-x", icon: Twitter },
   { name: "Calendar", id: "calendar", icon: CalendarDays },
   { name: "Stocks", id: "stocks", icon: TrendingUp },
   { name: "Indices", id: "indices", icon: PieChart },
@@ -68,7 +70,8 @@ const newsNavigation = [
 ];
 
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
-  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar'].includes(activeTab);
+  const [open, setOpen] = useState(false);
+  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x'].includes(activeTab);
   
   let currentNavigation;
   if (isNewsSection) {
@@ -84,70 +87,69 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
   }
 
   return (
-    <div className="flex h-full w-64 flex-col bg-black border-r border-gray-800 flex-shrink-0">
-      <div className="flex h-16 items-center px-6">
-        <Link href="/" className="hover:opacity-80 transition-opacity">
-          <OmnifolioLogo size="sm" textClassName="text-xl" />
-        </Link>
-      </div>
-      
-      <div className="flex-1 flex flex-col justify-between py-6">
-        <nav className="space-y-1 px-3">
-          {currentNavigation.map((item) => {
-            // @ts-ignore
-            if (item.href) {
-              return (
-                <Link
-                  key={item.id}
-                  // @ts-ignore
-                  href={item.href}
-                  className="w-full group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors text-gray-400 hover:bg-gray-900 hover:text-white"
-                >
-                  <item.icon
-                    className="mr-3 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-white"
-                  />
-                  {item.name}
-                </Link>
-              );
-            }
+    <SidebarContainer open={open} setOpen={setOpen} animate={true}>
+      <SidebarBody className="justify-between gap-10 bg-black border-r border-gray-800">
+        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="py-4 flex flex-col items-start min-h-[64px]">
+             {open ? (
+                 <Link href="/" className="hover:opacity-80 transition-opacity pl-2">
+                    <OmnifolioLogo size="sm" textClassName="text-xl" />
+                 </Link>
+             ) : (
+                 <Link href="/" className="hover:opacity-80 transition-opacity pl-1">
+                    <OmnifolioIcon size={32} />
+                 </Link>
+             )}
+          </div>
+          
+          <div className="mt-8 flex flex-col gap-2">
+            {currentNavigation.map((item) => {
+              // @ts-ignore
+              const onClick = item.href ? undefined : () => onTabChange(item.id);
+              // @ts-ignore
+              const href = item.href || "#";
+              const isActive = activeTab === item.id;
+              
+              const IconComponent = item.icon;
 
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onTabChange(item.id)}
-                className={cn(
-                  "w-full group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-400 hover:bg-gray-900 hover:text-white"
-                )}
-              >
-                <item.icon
+              return (
+                <SidebarLink
+                  key={item.id}
+                  link={{
+                    label: item.name,
+                    href: href,
+                    icon: (
+                      <IconComponent
+                        className={cn(
+                          "h-5 w-5 flex-shrink-0",
+                          isActive ? "text-blue-400" : "text-neutral-200 dark:text-neutral-200"
+                        )}
+                      />
+                    ),
+                    onClick: onClick
+                  }}
                   className={cn(
-                    "mr-3 h-5 w-5 flex-shrink-0",
-                    isActive ? "text-blue-400" : "text-gray-400 group-hover:text-white"
+                      isActive && "bg-gray-900 rounded-md"
                   )}
                 />
-                {item.name}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="px-3">
-            <Link
-                href="/settings"
-                className="group flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-900 hover:text-white transition-colors"
-              >
-                <Settings
-                  className="mr-3 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-white"
-                />
-                Settings
-              </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div>
+            <SidebarLink
+                link={{
+                    label: "Settings",
+                    href: "/settings",
+                    icon: (
+                        <Settings className="h-5 w-5 flex-shrink-0 text-neutral-200 dark:text-neutral-200" />
+                    )
+                }}
+            />
+        </div>
+      </SidebarBody>
+    </SidebarContainer>
   );
 }
 
