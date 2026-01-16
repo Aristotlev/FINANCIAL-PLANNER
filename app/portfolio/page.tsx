@@ -13,6 +13,9 @@ import { Plus, ArrowUpRight, ShoppingCart, Repeat, Newspaper, ChartColumn, Walle
 import { FloatingDock } from '../../components/ui/floating-dock';
 
 import { NewsFeed } from '../../components/portfolio/news-feed';
+import { TradesFeed } from '../../components/portfolio/trades-feed';
+import { IPOCalendar } from '../../components/portfolio/ipo-calendar';
+import { EarningsCalendar } from '../../components/portfolio/earnings-calendar';
 import { TwitterFeed } from '../../components/portfolio/twitter-feed-curated';
 import { YoutubeFeed } from '../../components/portfolio/youtube-feed';
 import { SettingsModal } from '../../components/settings/settings-modal';
@@ -37,6 +40,11 @@ import { useAssetPrices } from '../../hooks/use-price';
 import { getBrandColor } from '../../lib/brand-colors';
 
 import { EconomicCalendar } from '../../components/portfolio/economic-calendar';
+import { InsiderSentimentView } from '../../components/portfolio/insider-sentiment-view';
+import { InsiderTransactionsView } from '../../components/portfolio/insider-transactions-view';
+import { EarningsSurprisesView } from '../../components/portfolio/earnings-surprises-view';
+import { SenateLobbyingView } from '../../components/portfolio/senate-lobbying-view';
+import { USASpendingView } from '../../components/portfolio/usa-spending-view';
 
 interface CryptoTransaction {
   id: string;
@@ -498,6 +506,12 @@ export default function PortfolioPage() {
         return <TwitterFeed />;
       case 'youtube-feed':
         return <YoutubeFeed />;
+      case 'trades':
+        return <TradesFeed />;
+      case 'ipo-calendar':
+        return <IPOCalendar />;
+      case 'earnings-calendar':
+        return <EarningsCalendar />;
       case 'news':
       case 'holdings-news':
       case 'stocks':
@@ -505,6 +519,16 @@ export default function PortfolioPage() {
       case 'forex':
       case 'crypto':
         return <NewsView activeTab={activeTab} />;
+      case 'insider-sentiment':
+        return <InsiderSentimentView />;
+      case 'insider-transactions':
+        return <InsiderTransactionsView />;
+      case 'earnings-surprises':
+        return <EarningsSurprisesView />;
+      case 'senate-lobbying':
+        return <SenateLobbyingView />;
+      case 'usa-spending':
+        return <USASpendingView />;
       default:
         return <OverviewView selectedCategory={selectedCategory} />;
     }
@@ -561,7 +585,7 @@ export default function PortfolioPage() {
                         </div>
                     </div>
 
-                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed'].includes(activeTab) && selectedCategory !== "Networth" && (
+                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'trades', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending'].includes(activeTab) && selectedCategory !== "Networth" && (
                         <div className="flex items-center gap-3">
                             {selectedCategory === "Real Estate" ? (
                                 <button 
@@ -683,3 +707,4 @@ export default function PortfolioPage() {
     </div>
   );
 }
+// End of Portfolio Page

@@ -18,7 +18,12 @@ import {
   Briefcase,
   CalendarDays,
   Twitter,
-  Youtube
+  Youtube,
+  Activity,
+  CalendarPlus,
+  Users,
+  Landmark,
+  Banknote
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
@@ -62,6 +67,14 @@ const stocksNavigation = [
 
 const newsNavigation = [
   { name: "My Holdings", id: "holdings-news", icon: Briefcase },
+  { name: "Trades", id: "trades", icon: Activity },
+  { name: "Insider Sentiment", id: "insider-sentiment", icon: TrendingUp },
+  { name: "Insider Transactions", id: "insider-transactions", icon: Users },
+  { name: "Senate Lobbying", id: "senate-lobbying", icon: Landmark },
+  { name: "USA Spending", id: "usa-spending", icon: Banknote },
+  { name: "Earnings Surprises", id: "earnings-surprises", icon: Target },
+  { name: "IPO Calendar", id: "ipo-calendar", icon: CalendarPlus },
+  { name: "Earnings", id: "earnings-calendar", icon: BarChart3 },
   { name: "Twitter (X)", id: "twitter-x", icon: Twitter },
   { name: "Youtube Feed", id: "youtube-feed", icon: Youtube },
   { name: "Calendar", id: "calendar", icon: CalendarDays },
@@ -73,7 +86,7 @@ const newsNavigation = [
 
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
   const [open, setOpen] = useState(false);
-  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed'].includes(activeTab);
+  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'trades', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
   
   let currentNavigation;
   if (isNewsSection) {

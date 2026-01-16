@@ -9,7 +9,8 @@ import {
   SECFilingFeed, 
   InsiderTrading, 
   FilingDiffTool, 
-  SECScreener 
+  SECScreener,
+  InsiderSentiment
 } from '../../../components/sec';
 import { 
   FileText, 
@@ -34,7 +35,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type TabType = 'filings' | 'insider' | 'holdings' | 'diff' | 'screener';
+type TabType = 'filings' | 'insider' | 'sentiment' | 'holdings' | 'diff' | 'screener';
 
 interface CompanySearchResult {
   cik: string;
@@ -46,6 +47,7 @@ interface CompanySearchResult {
 const tabs: { id: TabType; label: string; icon: React.ElementType; description: string }[] = [
   { id: 'filings', label: 'SEC Filings', icon: FileText, description: 'Browse 10-K, 10-Q, 8-K filings' },
   { id: 'insider', label: 'Insider Trading', icon: Users, description: 'Form 4 transactions' },
+  { id: 'sentiment', label: 'Insider Sentiment', icon: TrendingUp, description: 'MSPR & Insider Confidence' },
   { id: 'holdings', label: 'Institutional', icon: Building2, description: '13F holdings' },
   { id: 'diff', label: 'Filing Diff', icon: GitCompare, description: 'Compare filings' },
   { id: 'screener', label: 'Screener', icon: BarChart3, description: 'Filter companies' },
@@ -244,7 +246,7 @@ export default function SECPage() {
   // Handle URL params for tab
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['filings', 'insider', 'holdings', 'diff', 'screener'].includes(tab)) {
+    if (tab && ['filings', 'insider', 'sentiment', 'holdings', 'diff', 'screener'].includes(tab)) {
       setActiveTab(tab as TabType);
     }
     const ticker = searchParams.get('ticker');
@@ -731,6 +733,12 @@ export default function SECPage() {
                     ticker={selectedTicker}
                     days={90}
                     showSummary={true}
+                  />
+                )}
+
+                {activeTab === 'sentiment' && (
+                  <InsiderSentiment 
+                    ticker={selectedTicker}
                   />
                 )}
 

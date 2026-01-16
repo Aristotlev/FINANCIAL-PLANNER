@@ -16,6 +16,8 @@ type Operation =
   | 'news'
   | 'market-news'
   | 'earnings'
+  | 'lobbying'
+  | 'usa-spending'
   | 'forex'
   | 'crypto'
   | 'search'
@@ -126,6 +128,50 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Missing symbol parameter' }, { status: 400 });
         }
         const data = await client.getEarnings(symbol);
+        return NextResponse.json({ success: true, data });
+      }
+
+      case 'lobbying': {
+        const symbol = searchParams.get('symbol');
+        const from = searchParams.get('from');
+        const to = searchParams.get('to');
+        const years = searchParams.get('years');
+
+        if (!symbol) {
+          return NextResponse.json({ error: 'Missing symbol parameter' }, { status: 400 });
+        }
+
+        let data;
+        if (years) {
+          data = await client.getRecentLobbying(symbol, parseInt(years));
+        } else if (from && to) {
+          data = await client.getLobbying(symbol, from, to);
+        } else {
+          data = await client.getRecentLobbying(symbol, 2); // Default to 2 years
+        }
+
+        return NextResponse.json({ success: true, data });
+      }
+
+      case 'usa-spending': {
+        const symbol = searchParams.get('symbol');
+        const from = searchParams.get('from');
+        const to = searchParams.get('to');
+        const years = searchParams.get('years');
+
+        if (!symbol) {
+          return NextResponse.json({ error: 'Missing symbol parameter' }, { status: 400 });
+        }
+
+        let data;
+        if (years) {
+          data = await client.getRecentUSASpending(symbol, parseInt(years));
+        } else if (from && to) {
+          data = await client.getUSASpending(symbol, from, to);
+        } else {
+          data = await client.getRecentUSASpending(symbol, 2); // Default to 2 years
+        }
+
         return NextResponse.json({ success: true, data });
       }
 

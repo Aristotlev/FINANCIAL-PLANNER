@@ -97,16 +97,16 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
   // Theme-based styling
   const themeStyles = {
     default: {
-      buttonGradient: 'bg-gradient-to-r from-purple-600 to-blue-600',
-      headerGradient: 'bg-gradient-to-r from-purple-600 to-blue-600',
+      button: 'bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg hover:shadow-xl',
+      header: 'bg-gradient-to-r from-purple-600 to-blue-600 border-b border-white/10',
       accentColor: 'bg-green-500',
       accentPulse: 'bg-green-400',
     },
     portfolio: {
-      buttonGradient: 'bg-gradient-to-r from-cyan-500 to-blue-600',
-      headerGradient: 'bg-gradient-to-r from-cyan-500 to-blue-600',
-      accentColor: 'bg-cyan-400',
-      accentPulse: 'bg-cyan-300',
+      button: 'bg-black border border-cyan-500/20 hover:border-cyan-500/60 shadow-[0_0_20px_-5px_rgba(6,182,212,0.15)] hover:shadow-[0_0_30px_-5px_rgba(6,182,212,0.4)]',
+      header: 'bg-black border-b border-cyan-500/20',
+      accentColor: 'bg-cyan-500',
+      accentPulse: 'bg-cyan-400',
     },
   };
   
@@ -1173,7 +1173,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-[1000000] p-4 ${currentTheme.buttonGradient} text-white rounded-full shadow-lg hover:shadow-xl transition-all group`}
+        className={`fixed bottom-6 right-6 z-[1000000] p-4 ${currentTheme.button} text-white rounded-full transition-all group`}
         title="Open AI Assistant"
       >
         <Sparkles className="w-6 h-6 animate-pulse" />
@@ -1187,7 +1187,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       <div className="fixed bottom-6 right-6 z-[1000000]">
         <button
           onClick={() => setIsMinimized(false)}
-          className={`flex items-center gap-2 px-4 py-3 ${currentTheme.buttonGradient} text-white rounded-full shadow-lg hover:shadow-xl transition-all`}
+          className={`flex items-center gap-2 px-4 py-3 ${currentTheme.button} text-white rounded-full transition-all`}
         >
           <Sparkles className="w-5 h-5" />
           <span className="font-medium">AI Assistant</span>
@@ -1217,7 +1217,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       `}} />
       <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header - Normal style */}
-        <div className={`flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 ${currentTheme.headerGradient} text-white rounded-t-2xl`}>
+        <div className={`flex items-center justify-between p-4 ${currentTheme.header} text-white rounded-t-2xl`}>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
             <div>
@@ -1360,7 +1360,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       
     <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className={`flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 ${currentTheme.headerGradient} text-white rounded-t-2xl`}>
+      <div className={`flex items-center justify-between p-4 ${currentTheme.header} text-white rounded-t-2xl`}>
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5" />
           <div>

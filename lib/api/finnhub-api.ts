@@ -117,6 +117,104 @@ export interface FinnhubEarnings {
   year: number;
 }
 
+export interface FinnhubInsiderSentiment {
+  symbol: string;
+  year: number;
+  month: number;
+  change: number;
+  mspr: number;
+}
+
+export interface FinnhubInsiderSentimentResponse {
+  data: FinnhubInsiderSentiment[];
+  symbol: string;
+}
+
+export interface FinnhubLobbyingActivity {
+  clientId: string;
+  country: string;
+  date?: string;
+  description: string;
+  documentUrl: string;
+  expenses: number | null;
+  houseRegistrantId: string;
+  income: number | null;
+  name: string;
+  period: string;
+  postedName: string;
+  registrantId: string;
+  senateId: string;
+  symbol: string;
+  year: number;
+  uuid?: string;
+  type?: string;
+  dtPosted?: string;
+}
+
+export interface FinnhubLobbyingResponse {
+  data: FinnhubLobbyingActivity[];
+  symbol: string;
+}
+
+export interface FinnhubUSASpendingActivity {
+  actionDate: string;
+  awardDescription: string;
+  awardingAgencyName: string;
+  awardingOfficeName: string;
+  awardingSubAgencyName: string;
+  country: string;
+  naicsCode: string;
+  performanceCity: string;
+  performanceCongressionalDistrict: string;
+  performanceCountry: string;
+  performanceCounty: string;
+  performanceEndDate: string;
+  performanceStartDate: string;
+  performanceState: string;
+  performanceZipCode: string;
+  permalink: string;
+  recipientName: string;
+  recipientParentName: string;
+  symbol: string;
+  totalValue: number;
+}
+
+export interface FinnhubUSASpendingResponse {
+  data: FinnhubUSASpendingActivity[];
+  symbol: string;
+}
+
+export interface FinnhubInsiderTransaction {
+  change: number;
+  filingDate: string;
+  name: string;
+  share: number;
+  symbol: string;
+  transactionCode: string;
+  transactionDate: string;
+  transactionPrice: number;
+}
+
+export interface FinnhubInsiderTransactionsResponse {
+  data: FinnhubInsiderTransaction[];
+  symbol: string;
+}
+
+export interface FinnhubIPOEvent {
+  date: string;
+  exchange: string;
+  name: string;
+  numberOfShares: number;
+  price: string;
+  status: 'expected' | 'priced' | 'withdrawn' | 'filed';
+  symbol: string;
+  totalSharesValue: number;
+}
+
+export interface FinnhubIPOCalendarResponse {
+  ipoCalendar: FinnhubIPOEvent[];
+}
+
 export class FinnhubAPI {
   private readonly baseUrl: string = 'https://finnhub.io/api/v1';
   private readonly credentials: FinnhubCredentials;
@@ -298,10 +396,168 @@ export class FinnhubAPI {
   /**
    * Get earnings data
    */
-  async getEarnings(symbol: string): Promise<FinnhubEarnings[]> {
-    return this.request<FinnhubEarnings[]>('/stock/earnings', {
+  async getEarnings(symbol: string, limit?: number): Promise<FinnhubEarnings[]> {
+    const params: Record<string, any> = { symbol: symbol.toUpperCase() };
+    if (limit) {
+      params.limit = limit;
+    }
+    return this.request<FinnhubEarnings[]>('/stock/earnings', params);
+  }
+
+  // ==================== INSIDER SENTIMENT ====================
+
+  /**
+   * Get insider sentiment data
+   * @param symbol Stock symbol (e.g., 'AAPL')
+   * @param from Start date in YYYY-MM-DD format
+   * @param to End date in YYYY-MM-DD format
+   */
+  async getInsiderSentiment(symbol: string, from: string, to: string): Promise<FinnhubInsiderSentimentResponse> {
+    return this.request<FinnhubInsiderSentimentResponse>('/stock/insider-sentiment', {
       symbol: symbol.toUpperCase(),
+      from,
+      to,
     });
+  }
+
+  // ==================== INSIDER TRANSACTIONS ====================
+
+  /**
+   * Get insider transactions data
+   * Sourced from Form 3,4,5, SEDI and relevant companies' filings
+   * Covers US, UK, Canada, Australia, India, and all major EU markets
+   * @param symbol Stock symbol (e.g., 'AAPL', 'TSLA'). Leave empty for latest transactions.
+   * @param from Optional start date in YYYY-MM-DD format
+   * @param to Optional end date in YYYY-MM-DD format
+   * @param limit Max 100 transactions per API call
+   */
+  async getInsiderTransactions(
+    symbol?: string,
+    from?: string,
+    to?: string,
+    limit: number = 100
+  ): Promise<FinnhubInsiderTransactionsResponse> {
+    const params: Record<string, any> = { limit };
+    if (symbol) params.symbol = symbol.toUpperCase();
+    if (from) params.from = from;
+    if (to) params.to = to;
+    
+    return this.request<FinnhubInsiderTransactionsResponse>('/stock/insider-transactions', params);
+  }
+
+  /**
+   * Get recent insider transactions (last N days)
+   */
+  async getRecentInsiderTransactions(
+    symbol: string,
+    days: number = 365
+  ): Promise<FinnhubInsiderTransactionsResponse> {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    
+    return this.getInsiderTransactions(
+      symbol,
+      from.toISOString().split('T')[0],
+      to.toISOString().split('T')[0],
+      100
+    );
+  }
+
+  // ==================== LOBBYING ====================
+
+  /**
+   * Get lobbying activities for a stock
+   * @param symbol Stock symbol (e.g., 'AAPL')
+   * @param from Start date in YYYY-MM-DD format
+   * @param to End date in YYYY-MM-DD format
+   */
+  async getLobbying(symbol: string, from: string, to: string): Promise<FinnhubLobbyingResponse> {
+    return this.request<FinnhubLobbyingResponse>('/stock/lobbying', {
+      symbol: symbol.toUpperCase(),
+      from,
+      to,
+    });
+  }
+
+  /**
+   * Get recent lobbying activities (last N years)
+   */
+  async getRecentLobbying(symbol: string, years: number = 2): Promise<FinnhubLobbyingResponse> {
+    const to = new Date();
+    const from = new Date();
+    from.setFullYear(from.getFullYear() - years);
+    
+    return this.getLobbying(
+      symbol,
+      from.toISOString().split('T')[0],
+      to.toISOString().split('T')[0]
+    );
+  }
+
+  // ==================== USA SPENDING ====================
+
+  /**
+   * Get USA government spending activities for a stock
+   * This dataset helps identify companies that win big government contracts
+   * Important for Defense, Aerospace, and Education industries
+   * @param symbol Stock symbol (e.g., 'LMT', 'BA', 'AAPL')
+   * @param from Start date in YYYY-MM-DD format (filter for actionDate)
+   * @param to End date in YYYY-MM-DD format (filter for actionDate)
+   */
+  async getUSASpending(symbol: string, from: string, to: string): Promise<FinnhubUSASpendingResponse> {
+    return this.request<FinnhubUSASpendingResponse>('/stock/usa-spending', {
+      symbol: symbol.toUpperCase(),
+      from,
+      to,
+    });
+  }
+
+  /**
+   * Get recent USA spending activities (last N years)
+   */
+  async getRecentUSASpending(symbol: string, years: number = 2): Promise<FinnhubUSASpendingResponse> {
+    const to = new Date();
+    const from = new Date();
+    from.setFullYear(from.getFullYear() - years);
+    
+    return this.getUSASpending(
+      symbol,
+      from.toISOString().split('T')[0],
+      to.toISOString().split('T')[0]
+    );
+  }
+
+  // ==================== IPO CALENDAR ====================
+
+  /**
+   * Get IPO calendar events
+   * @param from Start date in YYYY-MM-DD format
+   * @param to End date in YYYY-MM-DD format
+   */
+  async getIPOCalendar(from: string, to: string): Promise<FinnhubIPOCalendarResponse> {
+    return this.request<FinnhubIPOCalendarResponse>('/calendar/ipo', {
+      from,
+      to,
+    });
+  }
+
+  /**
+   * Get IPO calendar for a date range (months from/to today)
+   * @param monthsBack Number of months to look back
+   * @param monthsForward Number of months to look forward
+   */
+  async getIPOCalendarRange(monthsBack: number = 6, monthsForward: number = 6): Promise<FinnhubIPOCalendarResponse> {
+    const today = new Date();
+    const from = new Date(today);
+    from.setMonth(from.getMonth() - monthsBack);
+    const to = new Date(today);
+    to.setMonth(to.getMonth() + monthsForward);
+    
+    return this.getIPOCalendar(
+      from.toISOString().split('T')[0],
+      to.toISOString().split('T')[0]
+    );
   }
 
   // ==================== FOREX ====================
@@ -513,12 +769,12 @@ export class FinnhubAPI {
  * Create Finnhub API instance with environment credentials
  */
 export function createFinnhubClient(): FinnhubAPI {
-  const apiKey = process.env.FINNHUB_API_KEY || '';
+  const apiKey = process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY || 'd3nbll9r01qo7510cpf0d3nbll9r01qo7510cpfg';
   const webhookSecret = process.env.FINNHUB_WEBHOOK_SECRET || '';
 
   if (!apiKey || apiKey === 'your_finnhub_api_key_here') {
-    console.warn('⚠️ Finnhub API key not configured. Using demo key (limited functionality).');
-    return new FinnhubAPI({ apiKey: 'demo' });
+    console.warn('⚠️ Finnhub API key not configured. Using fallback key (limited functionality).');
+    return new FinnhubAPI({ apiKey: 'd3nbll9r01qo7510cpf0d3nbll9r01qo7510cpfg' });
   }
 
   return new FinnhubAPI({
