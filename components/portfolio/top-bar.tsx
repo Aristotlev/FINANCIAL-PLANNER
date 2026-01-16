@@ -3,29 +3,89 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Settings, Bell, LogOut, ChevronDown, User, CreditCard, Shield, Users, FileText } from "lucide-react";
+import { Search, Settings, Bell, LogOut, ChevronDown, User, CreditCard, Shield, Users, FileText, Building, Gem, Banknote, Bitcoin, TrendingUp } from "lucide-react";
 import { useBetterAuth } from "../../contexts/better-auth-context";
 import { PortfolioCurrencySelector } from "./currency-selector";
 import { LanguageSelector } from "../ui/language-selector";
+import { usePortfolioContext } from "../../contexts/portfolio-context";
+import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 
 interface TopBarProps {
   onOpenSettings?: () => void;
+  onNavigate?: (type: string, id?: string) => void;
 }
 
-export function TopBar({ onOpenSettings }: TopBarProps) {
+export function TopBar({ onOpenSettings, onNavigate }: TopBarProps) {
   const { user, logout } = useBetterAuth();
   const router = useRouter();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [valuableItems, setValuableItems] = useState<any[]>([]);
+  const [realEstate, setRealEstate] = useState<any[]>([]);
+  const [cashAccounts, setCashAccounts] = useState<any[]>([]);
+
+  // Get Holdings from Context (already realtime)
+  const { cryptoHoldings, stockHoldings } = usePortfolioContext();
+
+  // Load other searchable assets
+  useEffect(() => {
+    const fetchAssets = async () => {
+        const [valuables, properties, cash] = await Promise.all([
+            SupabaseDataService.getValuableItems(),
+            SupabaseDataService.getRealEstate(),
+            SupabaseDataService.getCashAccounts()
+        ]);
+        setValuableItems(valuables);
+        setRealEstate(properties);
+        setCashAccounts(cash);
+    };
+    fetchAssets();
+  }, []);
+
+  const handleEsc = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      setIsSettingsOpen(false);
+      setIsSearchFocused(false);
+    }
+  };
 
   useEffect(() => {
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsSettingsOpen(false);
-      }
-    };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
+
+  // Filter Assets
+  const filteredAssets = searchQuery.trim() === "" ? [] : [
+      ...cryptoHoldings.map(h => ({ 
+          id: h.id, type: 'crypto', label: h.name, subLabel: h.symbol, icon: Bitcoin, value: h.value 
+      })),
+      ...stockHoldings.map(h => ({ 
+          id: h.id, type: 'stock', label: h.name, subLabel: h.symbol, icon: TrendingUp, value: h.value 
+      })),
+      ...valuableItems.map(i => ({ 
+          id: i.id, type: 'valuable', label: i.name, subLabel: i.category, icon: Gem, value: i.currentValue || 0
+      })),
+      ...realEstate.map(p => ({ 
+          id: p.id, type: 'real_estate', label: p.name, subLabel: p.propertyType, icon: Building, value: p.currentValue 
+      })),
+      ...cashAccounts.map(c => ({ 
+          id: c.id, type: 'cash', label: c.name, subLabel: c.bank, icon: Banknote, value: c.balance 
+      })),
+  ].filter(item => 
+      item.label.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (item.subLabel && item.subLabel.toLowerCase().includes(searchQuery.toLowerCase()))
+  ).slice(0, 10); // Limit to 10 results
+
+  const handleSelectAsset = (asset: any) => {
+      setSearchQuery("");
+      setIsSearchFocused(false);
+      if (onNavigate) {
+          onNavigate(asset.type, asset.id);
+      }
+  };
 
   return (
     <div className="flex h-16 items-center justify-between px-8 bg-black border-b border-gray-800 relative z-[100]">
@@ -43,15 +103,53 @@ export function TopBar({ onOpenSettings }: TopBarProps) {
 
 
       {/* Center - Search */}
-      <div className="flex-1 max-w-xl mx-8">
-        <div className="relative">
+      <div className="flex-1 max-w-xl mx-8 relative">
+        <div className="relative z-10">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search Assets, Wallets, ENS"
             className="w-full rounded-full bg-[#1A1A1A] py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-gray-800"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} // Delay to allow click
           />
         </div>
+
+        {/* Search Results Dropdown */}
+        {isSearchFocused && searchQuery && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1A1A1A] border border-gray-800 rounded-xl shadow-xl overflow-hidden z-20 max-h-96 overflow-y-auto">
+                {filteredAssets.length > 0 ? (
+                    <div className="py-2">
+                        {filteredAssets.map((asset) => (
+                            <button
+                                key={`${asset.type}-${asset.id}`}
+                                onClick={() => handleSelectAsset(asset)}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800 transition-colors text-left"
+                            >
+                                <div className="h-8 w-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400">
+                                    <asset.icon className="h-4 w-4" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="text-sm font-medium text-white">{asset.label}</div>
+                                    <div className="text-xs text-gray-400">{asset.subLabel}</div>
+                                </div>
+                                {asset.value !== undefined && (
+                                    <div className="text-sm text-gray-300">
+                                        ${asset.value.toLocaleString()}
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                        No assets found matching "{searchQuery}"
+                    </div>
+                )}
+            </div>
+        )}
       </div>
 
       {/* Right - Stats & Settings */}

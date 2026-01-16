@@ -398,6 +398,8 @@ export class SupabaseDataService {
           walletName: holding.wallet_name,
           walletAddress: holding.wallet_address,
           iconUrl: holding.icon_url,
+          targetPrice: holding.target_price,
+          alertEnabled: holding.alert_enabled,
         }));
       },
       () => DataService.loadCryptoHoldings(defaultHoldings)
@@ -448,6 +450,8 @@ export class SupabaseDataService {
         wallet_name: holding.walletName || null,
         wallet_address: holding.walletAddress || null,
         icon_url: holding.iconUrl || null,
+        target_price: holding.targetPrice || null,
+        alert_enabled: holding.alertEnabled || false,
       };
       
       // Use secure API endpoint
@@ -607,6 +611,8 @@ export class SupabaseDataService {
         return (data || []).map((holding: any) => ({
           ...holding,
           entryPoint: holding.purchase_price || 0,
+          targetPrice: holding.target_price,
+          alertEnabled: holding.alert_enabled,
         }));
       },
       () => DataService.loadStockHoldings(defaultHoldings)
@@ -652,6 +658,8 @@ export class SupabaseDataService {
         purchase_price: typeof holding.entryPoint === 'number' && !isNaN(holding.entryPoint) ? holding.entryPoint : 0,
         sector: holding.sector || null,
         color: holding.color || '#3b82f6',
+        target_price: holding.targetPrice || null,
+        alert_enabled: holding.alertEnabled || false,
       };
 
       // Use secure API endpoint

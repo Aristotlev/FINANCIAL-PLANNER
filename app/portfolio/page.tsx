@@ -9,7 +9,7 @@ import { TopBar } from '../../components/portfolio/top-bar';
 import { TotalWorthCard } from '../../components/portfolio/total-worth-card';
 import { AllocationCard } from '../../components/portfolio/allocation-card';
 import { AIChatAssistant } from '../../components/ui/ai-chat';
-import { Plus, ArrowUpRight, ShoppingCart, Repeat, ChevronDown } from 'lucide-react';
+import { Plus, ArrowUpRight, ShoppingCart, Repeat } from 'lucide-react';
 
 import { NewsFeed } from '../../components/portfolio/news-feed';
 import { SettingsModal } from '../../components/settings/settings-modal';
@@ -25,6 +25,9 @@ import { CryptoTransactionsView } from '../../components/portfolio/crypto-transa
 import { StockTransactionsView } from '../../components/portfolio/stock-transactions-view';
 import { CryptoAIAnalyticsView } from '../../components/portfolio/crypto-ai-analytics-view';
 import { StockAIAnalyticsView } from '../../components/portfolio/stock-ai-analytics-view';
+import { NetworthAIAnalyticsView } from '../../components/portfolio/networth/networth-ai-analytics-view';
+import { CryptoProjectionsView } from '../../components/portfolio/crypto-projections-view';
+import { StockProjectionsView } from '../../components/portfolio/stock-projections-view';
 import { usePortfolioContext, CryptoHolding, StockHolding } from '../../contexts/portfolio-context';
 import { SupabaseDataService } from '../../lib/supabase/supabase-data-service';
 import { useAssetPrices } from '../../hooks/use-price';
@@ -110,8 +113,7 @@ const NewsView = ({ activeTab }: { activeTab: string }) => {
 export default function PortfolioPage() {
   const { isAuthenticated, isLoading } = useBetterAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('holdings-news');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('news');
   const [selectedCategory, setSelectedCategory] = useState("News");
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isAddCryptoModalOpen, setIsAddCryptoModalOpen] = useState(false);
@@ -389,6 +391,16 @@ export default function PortfolioPage() {
            return <CryptoAIAnalyticsView />;
         } else if (selectedCategory === "Stocks") {
             return <StockAIAnalyticsView />;
+        } else if (selectedCategory === "Networth") {
+            return <NetworthAIAnalyticsView />;
+        }
+        return <OverviewView selectedCategory={selectedCategory} />;
+      case 'projections':
+        if (selectedCategory === "Crypto") {
+            return <CryptoProjectionsView />;
+        }
+        if (selectedCategory === "Stocks") {
+            return <StockProjectionsView />;
         }
         return <OverviewView selectedCategory={selectedCategory} />;
       case 'calendar':
@@ -406,6 +418,29 @@ export default function PortfolioPage() {
   };
 
 
+  const handleSearchNavigation = (type: string, id?: string) => {
+      // Map asset types to categories
+      const typeToCategory: Record<string, string> = {
+          'crypto': 'Crypto',
+          'stock': 'Stocks',
+          'real_estate': 'Real Estate',
+          'valuable': 'Valuables',
+          'cash': 'Liquid Assets',
+          'savings': 'Liquid Assets',
+          'expense': 'Expenses',
+          'tax': 'Taxes'
+      };
+
+      const category = typeToCategory[type];
+      if (category) {
+          setSelectedCategory(category);
+          setActiveTab('overview');
+          
+          // If we had a way to scroll to the specific item or open a modal, handle it here
+          // For now, just switching category is the baseline requirement.
+      }
+  };
+
   return (
     <div className="flex h-screen bg-black text-white overflow-hidden">
       {/* Sidebar - Fixed width, sticky or fixed behavior handled by flex layout */}
@@ -414,54 +449,40 @@ export default function PortfolioPage() {
       {/* Main Content Wrapper */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
         {/* Top Header */}
-        <TopBar onOpenSettings={() => setIsSettingsModalOpen(true)} />
+        <TopBar 
+            onOpenSettings={() => setIsSettingsModalOpen(true)} 
+            onNavigate={handleSearchNavigation}
+        />
 
         {/* Scrollable Content Area */}
         <main className="flex-1 p-8 overflow-y-auto scrollbar-hide">
             <div className="max-w-7xl mx-auto space-y-8 pb-20">
                 {/* Global Dashboard Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-4 flex-1 min-w-0">
                         <h1 className="text-3xl font-bold">Dashboard</h1>
-                        <div className="relative">
-                            <button 
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className="flex items-center gap-2 text-blue-400 font-medium hover:text-blue-300 transition-colors"
-                            >
-                                {selectedCategory}
-                                <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {isDropdownOpen && (
-                                <>
-                                    <div 
-                                        className="fixed inset-0 z-10" 
-                                        onClick={() => setIsDropdownOpen(false)} 
-                                    />
-                                    <div className="absolute top-full left-0 mt-2 w-48 bg-[#1A1A1A] border border-gray-800 rounded-lg shadow-xl z-20 py-1 max-h-64 overflow-y-auto">
-                                        {categories.map((category) => (
-                                            <button
-                                                key={category}
-                                                onClick={() => {
-                                                    if (category === "News") {
-                                                        setActiveTab("news");
-                                                        setSelectedCategory("News");
-                                                    } else {
-                                                        setSelectedCategory(category);
-                                                        setActiveTab("overview");
-                                                    }
-                                                    setIsDropdownOpen(false);
-                                                }}
-                                                className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors ${
-                                                    selectedCategory === category ? 'text-blue-400 bg-gray-800/50' : 'text-gray-300'
-                                                }`}
-                                            >
-                                                {category}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            {categories.map((category) => (
+                                <button
+                                    key={category}
+                                    onClick={() => {
+                                        if (category === "News") {
+                                            setActiveTab("news");
+                                            setSelectedCategory("News");
+                                        } else {
+                                            setSelectedCategory(category);
+                                            setActiveTab("overview");
+                                        }
+                                    }}
+                                    className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
+                                        selectedCategory === category 
+                                        ? 'bg-blue-600 border-blue-600 text-white' 
+                                        : 'bg-[#1A1A1A] border-gray-800 text-gray-400 hover:text-white hover:bg-gray-800'
+                                    }`}
+                                >
+                                    {category}
+                                </button>
+                            ))}
                         </div>
                     </div>
 

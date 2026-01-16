@@ -39,12 +39,13 @@ const networthNavigation = [
   { name: "Overview", id: "overview", icon: ChartColumn || BarChart3 },
   { name: "Breakdown", id: "breakdown", icon: List },
   { name: "Goals", id: "goals", icon: Target },
-  { name: "AI Analysis", id: "ai-analysis", icon: Bot },
+  { name: "AI Analytics", id: "analytics", icon: Bot },
 ];
 
 const cryptoNavigation = [
   { name: "Holdings", id: "overview", icon: Wallet },
   { name: "Breakdown", id: "breakdown", icon: PieChart },
+  { name: "Projections", id: "projections", icon: Target },
   { name: "Transactions", id: "transactions", icon: List },
   { name: "Analytics", id: "analytics", icon: ChartColumn || BarChart3 },
 ];
@@ -52,6 +53,7 @@ const cryptoNavigation = [
 const stocksNavigation = [
   { name: "Holdings", id: "overview", icon: Wallet },
   { name: "Breakdown", id: "breakdown", icon: PieChart },
+  { name: "Projections", id: "projections", icon: Target },
   { name: "Transactions", id: "transactions", icon: List },
   { name: "Analytics", id: "analytics", icon: ChartColumn || BarChart3 },
 ];
