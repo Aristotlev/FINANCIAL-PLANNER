@@ -8,41 +8,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const type = searchParams.get("type");
-    const title = searchParams.get("title") || "Portfolio";
-    const value = searchParams.get("value") || "0";
-    const currency = searchParams.get("currency") || "$";
-    const user = searchParams.get("user") || "User";
-    const change = searchParams.get("change") || "0%";
     
-    // Net Worth specific
-    const assets = searchParams.get("assets") || "0";
-    const liabilities = searchParams.get("liabilities") || "0";
-    
-    // Portfolio specific
-    const theme = searchParams.get("theme") || "#f59e0b";
-    const holdingsParam = searchParams.get("holdings");
-
     // Post specific
     const content = searchParams.get("content") || "";
     const userImage = searchParams.get("userImage");
+    const user = searchParams.get("user") || "User";
     const date = searchParams.get("date");
     
-    let holdings: any[] = [];
-    try {
-      holdings = holdingsParam ? JSON.parse(holdingsParam) : [];
-    } catch (e) {
-      console.error("Failed to parse holdings", e);
-    }
-
-    // Format number helper
-    const formatNum = (numStr: string) => {
-      const num = parseFloat(numStr);
-      return new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }).format(num);
-    };
-
     const { protocol, host } = new URL(request.url);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}//${host}`;
     const logoUrl = `${baseUrl}/images/logo.png`;
