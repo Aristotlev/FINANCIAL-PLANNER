@@ -44,6 +44,13 @@ function StockIcon({ symbol, className = "w-5 h-5" }: { symbol: string; classNam
 type TimeRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
 type AssetType = 'stock' | 'crypto';
 
+interface AssetItem {
+    symbol: string;
+    name: string;
+    type: AssetType;
+    iconUrl?: string;
+}
+
 interface ChartData {
     time: string;
     value?: number;
@@ -57,7 +64,7 @@ export function ToolsView() {
     const { cryptoHoldings, stockHoldings } = usePortfolioContext();
     const [chartType, setChartType] = useState<ChartType>('Area');
     const [timeRange, setTimeRange] = useState<TimeRange>('1M');
-    const [selectedAsset, setSelectedAsset] = useState<{ symbol: string; name: string; type: AssetType; iconUrl?: string } | null>(null);
+    const [selectedAsset, setSelectedAsset] = useState<AssetItem | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -77,9 +84,9 @@ export function ToolsView() {
     }, []);
 
     // Combine all holdings for the asset selector
-    const allAssets = useMemo(() => {
+    const allAssets = useMemo<AssetItem[]>(() => {
         const crypto = cryptoHoldings.map(h => ({ symbol: h.symbol, name: h.name, type: 'crypto' as AssetType, iconUrl: h.iconUrl }));
-        const stocks = stockHoldings.map(h => ({ symbol: h.symbol, name: h.name, type: 'stock' as AssetType }));
+        const stocks = stockHoldings.map(h => ({ symbol: h.symbol, name: h.name, type: 'stock' as AssetType, iconUrl: undefined }));
         return [...stocks, ...crypto];
     }, [cryptoHoldings, stockHoldings]);
 
