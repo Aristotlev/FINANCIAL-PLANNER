@@ -3,28 +3,33 @@
 import Link from "next/link";
 import { useState } from "react";
 import { 
-  BarChart3, 
-  Clock, 
-  Bot, 
-  Settings,
-  Wallet,
-  ChartColumn,
-  TrendingUp,
-  PieChart,
-  DollarSign,
-  Coins,
-  Target,
-  List,
-  Briefcase,
-  CalendarDays,
-  Twitter,
-  Youtube,
-  Activity,
-  CalendarPlus,
-  Users,
-  Landmark,
-  Banknote
-} from "lucide-react";
+  AnalyticsUpIcon, 
+  Wallet02Icon, 
+  Clock01Icon, 
+  AiBrain01Icon, 
+  DashboardSquare01Icon, 
+  Task01Icon, 
+  Target01Icon, 
+  PieChartIcon, 
+  Telescope01Icon, 
+  Exchange02Icon, 
+  Briefcase02Icon, 
+  ChartBreakoutSquareIcon, 
+  BitcoinCircleIcon, 
+  ChartBreakoutCircleIcon, 
+  Exchange01Icon, 
+  Calendar03Icon, 
+  CalendarAdd01Icon, 
+  NewTwitterIcon, 
+  YoutubeIcon, 
+  ChartLineData01Icon, 
+  TradeUpIcon, 
+  HappyIcon, 
+  UserMultiple02Icon, 
+  BankIcon, 
+  Invoice01Icon, 
+  Settings02Icon
+} from "hugeicons-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
 import { Sidebar as SidebarContainer, SidebarBody, SidebarLink } from "../ui/sidebar";
@@ -36,56 +41,56 @@ interface SidebarProps {
 }
 
 const defaultNavigation = [
-  { name: "Analytics", id: "analytics", icon: ChartColumn || BarChart3 },
-  { name: "Assets", id: "assets", icon: Wallet },
-  { name: "Activity", id: "activity", icon: Clock },
-  { name: "AI Analytics", id: "ai-analytics", icon: Bot },
+  { name: "Analytics", id: "analytics", icon: AnalyticsUpIcon },
+  { name: "Assets", id: "assets", icon: Wallet02Icon },
+  { name: "Activity", id: "activity", icon: Clock01Icon },
+  { name: "AI Analytics", id: "ai-analytics", icon: AiBrain01Icon },
 ];
 
 const networthNavigation = [
-  { name: "Overview", id: "overview", icon: ChartColumn || BarChart3 },
-  { name: "Breakdown", id: "breakdown", icon: List },
-  { name: "Goals", id: "goals", icon: Target },
-  { name: "AI Analytics", id: "analytics", icon: Bot },
+  { name: "Overview", id: "overview", icon: DashboardSquare01Icon },
+  { name: "Breakdown", id: "breakdown", icon: Task01Icon },
+  { name: "Goals", id: "goals", icon: Target01Icon },
+  { name: "AI Analytics", id: "analytics", icon: AiBrain01Icon },
 ];
 
 const cryptoNavigation = [
-  { name: "Holdings", id: "overview", icon: Wallet },
-  { name: "Breakdown", id: "breakdown", icon: PieChart },
-  { name: "Projections", id: "projections", icon: Target },
-  { name: "Transactions", id: "transactions", icon: List },
-  { name: "Analytics", id: "analytics", icon: ChartColumn || BarChart3 },
+  { name: "Holdings", id: "overview", icon: Wallet02Icon },
+  { name: "Breakdown", id: "breakdown", icon: PieChartIcon },
+  { name: "Projections", id: "projections", icon: Telescope01Icon },
+  { name: "Transactions", id: "transactions", icon: Exchange02Icon },
+  { name: "Analytics", id: "analytics", icon: AnalyticsUpIcon },
 ];
 
 const stocksNavigation = [
-  { name: "Holdings", id: "overview", icon: Wallet },
-  { name: "Breakdown", id: "breakdown", icon: PieChart },
-  { name: "Projections", id: "projections", icon: Target },
-  { name: "Transactions", id: "transactions", icon: List },
-  { name: "Analytics", id: "analytics", icon: ChartColumn || BarChart3 },
+  { name: "Holdings", id: "overview", icon: Wallet02Icon },
+  { name: "Breakdown", id: "breakdown", icon: PieChartIcon },
+  { name: "Projections", id: "projections", icon: Telescope01Icon },
+  { name: "Transactions", id: "transactions", icon: Exchange02Icon },
+  { name: "Analytics", id: "analytics", icon: AnalyticsUpIcon },
 ];
 
 const newsNavigation = [
-  { name: "My Holdings", id: "holdings-news", icon: Briefcase },
-  { name: "Stocks", id: "stocks", icon: TrendingUp },
-  { name: "Crypto", id: "crypto", icon: Coins },
-  { name: "Indices", id: "indices", icon: PieChart },
-  { name: "Forex", id: "forex", icon: DollarSign },
-  { name: "Economic Calendar", id: "calendar", icon: CalendarDays },
-  { name: "IPO Calendar", id: "ipo-calendar", icon: CalendarPlus },
-  { name: "Earnings Calendar", id: "earnings-calendar", icon: BarChart3 },
-  { name: "Twitter (X)", id: "twitter-x", icon: Twitter },
-  { name: "Youtube Feed", id: "youtube-feed", icon: Youtube },
+  { name: "My Holdings", id: "holdings-news", icon: Briefcase02Icon },
+  { name: "Stocks", id: "stocks", icon: ChartBreakoutSquareIcon },
+  { name: "Crypto", id: "crypto", icon: BitcoinCircleIcon },
+  { name: "Indices", id: "indices", icon: ChartBreakoutCircleIcon },
+  { name: "Forex", id: "forex", icon: Exchange01Icon },
+  { name: "Economic Calendar", id: "calendar", icon: Calendar03Icon },
+  { name: "IPO Calendar", id: "ipo-calendar", icon: CalendarAdd01Icon },
+  { name: "Earnings Calendar", id: "earnings-calendar", icon: Calendar03Icon },
+  { name: "Twitter (X)", id: "twitter-x", icon: NewTwitterIcon },
+  { name: "Youtube Feed", id: "youtube-feed", icon: YoutubeIcon },
 ];
 
 const toolsNavigation = [
-  { name: "Live Charts", id: "charts", icon: Activity },
-  { name: "Trades", id: "trades", icon: Activity },
-  { name: "Insider Sentiment", id: "insider-sentiment", icon: TrendingUp },
-  { name: "Insider Transactions", id: "insider-transactions", icon: Users },
-  { name: "Senate Lobbying", id: "senate-lobbying", icon: Landmark },
-  { name: "USA Spending", id: "usa-spending", icon: Banknote },
-  { name: "Earnings Surprises", id: "earnings-surprises", icon: Target },
+  { name: "Live Charts", id: "charts", icon: ChartLineData01Icon },
+  { name: "Trades", id: "trades", icon: TradeUpIcon },
+  { name: "Insider Sentiment", id: "insider-sentiment", icon: HappyIcon },
+  { name: "Insider Transactions", id: "insider-transactions", icon: UserMultiple02Icon },
+  { name: "Senate Lobbying", id: "senate-lobbying", icon: BankIcon },
+  { name: "USA Spending", id: "usa-spending", icon: Invoice01Icon },
+  { name: "Earnings Surprises", id: "earnings-surprises", icon: Target01Icon },
 ];
 
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
@@ -165,7 +170,7 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
                     label: "Settings",
                     href: "/settings",
                     icon: (
-                        <Settings className="h-5 w-5 flex-shrink-0 text-neutral-200 dark:text-neutral-200" />
+                        <Settings02Icon className="h-5 w-5 flex-shrink-0 text-neutral-200 dark:text-neutral-200" />
                     )
                 }}
             />

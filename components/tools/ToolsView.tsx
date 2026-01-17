@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { TradingViewChart, ChartType } from '@/components/tools/TradingViewChart';
 import { cn } from '@/lib/utils';
-import { AreaChart, CandlestickChart, BarChart, LineChart, Search, TrendingUp, Bitcoin, Loader2, ChevronDown, AlertCircle } from 'lucide-react';
+import { AreaChart, CandlestickChart, BarChart, LineChart, Bitcoin } from 'lucide-react';
+import { Search01Icon, TradeUpIcon, Loading01Icon, ArrowDown01Icon, AlertCircleIcon } from 'hugeicons-react';
 import { usePortfolioContext } from '@/contexts/portfolio-context';
 import { CryptoIcon } from '@/components/ui/crypto-icon';
 import {
@@ -228,7 +229,7 @@ export function ToolsView() {
                             ) : (
                                 <span className="text-gray-400 text-sm">Select asset</span>
                             )}
-                            <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", isDropdownOpen && "rotate-180")} />
+                            <ArrowDown01Icon className={cn("w-4 h-4 text-gray-400 transition-transform", isDropdownOpen && "rotate-180")} />
                         </button>
 
                         {/* Dropdown Menu */}
@@ -237,7 +238,7 @@ export function ToolsView() {
                                 {/* Search */}
                                 <div className="p-3 border-b border-gray-800">
                                     <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                        <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                         <input
                                             type="text"
                                             placeholder="Search assets..."
@@ -344,18 +345,18 @@ export function ToolsView() {
             <div className="bg-[#1A1A1A] border border-gray-800 rounded-xl p-6 shadow-sm min-h-[500px]">
                 {!selectedAsset ? (
                     <div className="h-[400px] flex flex-col items-center justify-center text-gray-500">
-                        <TrendingUp className="w-12 h-12 mb-4 opacity-50" />
+                        <TradeUpIcon className="w-12 h-12 mb-4 opacity-50" />
                         <p className="text-lg font-medium">No Asset Selected</p>
                         <p className="text-sm">Select an asset from the dropdown to view its chart</p>
                     </div>
                 ) : isLoading ? (
                     <div className="h-[400px] flex flex-col items-center justify-center text-gray-500">
-                        <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                        <Loading01Icon className="w-8 h-8 animate-spin mb-4" />
                         <p>Loading real-time data for {selectedAsset.symbol}...</p>
                     </div>
                 ) : error ? (
                     <div className="h-[400px] flex flex-col items-center justify-center text-gray-400">
-                        <AlertCircle className="w-12 h-12 mb-4 text-yellow-500" />
+                        <AlertCircleIcon className="w-12 h-12 mb-4 text-yellow-500" />
                         <p className="text-lg font-medium text-white mb-2">Unable to Load Chart</p>
                         <p className="text-sm text-center max-w-md">{error}</p>
                         <button
@@ -367,7 +368,7 @@ export function ToolsView() {
                     </div>
                 ) : chartData.length === 0 ? (
                     <div className="h-[400px] flex flex-col items-center justify-center text-gray-500">
-                        <AlertCircle className="w-12 h-12 mb-4 opacity-50" />
+                        <AlertCircleIcon className="w-12 h-12 mb-4 opacity-50" />
                         <p className="text-lg font-medium">No Data Available</p>
                         <p className="text-sm">Chart data is not available for {selectedAsset.symbol}</p>
                     </div>
