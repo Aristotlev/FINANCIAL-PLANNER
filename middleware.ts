@@ -63,7 +63,7 @@ export function middleware(request: NextRequest) {
       "media-src 'self' blob: data: https://api.elevenlabs.io https://replicate.delivery",
       "worker-src 'self' blob:",
       "child-src 'self' blob:",
-      "frame-src 'self' https://www.tradingview.com https://s.tradingview.com https://s3.tradingview.com https://www.tradingview-widget.com https://accounts.google.com https://maps.googleapis.com https://*.googleapis.com https://maps.google.com https://*.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net",
+      "frame-src 'self' https://www.tradingview.com https://s.tradingview.com https://s3.tradingview.com https://www.tradingview-widget.com https://accounts.google.com https://maps.googleapis.com https://*.googleapis.com https://maps.google.com https://*.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.youtube.com https://www.youtube-nocookie.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
