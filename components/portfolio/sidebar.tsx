@@ -28,11 +28,16 @@ import {
   UserMultiple02Icon, 
   BankIcon, 
   Invoice01Icon, 
-  Settings02Icon
+  Settings02Icon,
+  Building02Icon
 } from "hugeicons-react";
+import { Lock } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
 import { Sidebar as SidebarContainer, SidebarBody, SidebarLink } from "../ui/sidebar";
+import { useSubscription } from "@/hooks/use-subscription";
+import { isTrialActive } from "@/types/subscription";
+import UpgradeModal from "../pricing/upgrade-modal";
 
 interface SidebarProps {
   activeTab: string;
@@ -85,6 +90,7 @@ const newsNavigation = [
 
 const toolsNavigation = [
   { name: "Live Charts", id: "charts", icon: ChartLineData01Icon },
+  { name: "Company Lookup", id: "company-lookup", icon: Building02Icon },
   { name: "Trades", id: "trades", icon: TradeUpIcon },
   { name: "Insider Sentiment", id: "insider-sentiment", icon: HappyIcon },
   { name: "Insider Transactions", id: "insider-transactions", icon: UserMultiple02Icon },
@@ -95,9 +101,28 @@ const toolsNavigation = [
 
 export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarProps) {
   const [open, setOpen] = useState(false);
-  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar'].includes(activeTab);
-  const isToolsSection = ['charts', 'trades', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState("");
   
+  const { subscription, startCheckout } = useSubscription();
+
+  // Helper to check access - Tools are restricted to INVESTOR and WHALE plans
+  const hasToolsAccess = subscription ? (
+      ['INVESTOR', 'WHALE'].includes(subscription.plan) || 
+      isTrialActive(subscription)
+  ) : false;
+
+  const handleRestrictedClick = (featureName: string) => {
+      setUpgradeReason(`The ${featureName} feature is available on Investor and Whale plans only.`);
+      setShowUpgradeModal(true);
+  };
+ 
+  const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar'].includes(activeTab);
+  const isToolsSection = ['charts', 'company-lookup', 'trades', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
+  
+  // Define restricted tabs for News section
+  const restrictedNewsTabs = ['ipo-calendar', 'earnings-calendar', 'twitter-x', 'youtube-feed'];
+
   let currentNavigation;
   if (isNewsSection) {
     currentNavigation = newsNavigation;
@@ -131,8 +156,19 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
           
           <div className="mt-8 flex flex-col gap-2">
             {currentNavigation.map((item) => {
+              const isLockedTool = isToolsSection && item.id !== 'charts';
+              const isLockedNews = isNewsSection && restrictedNewsTabs.includes(item.id);
+              
+              const isLocked = (isLockedTool || isLockedNews) && !hasToolsAccess;
+
               // @ts-ignore
-              const onClick = item.href ? undefined : () => onTabChange(item.id);
+              const onClick = item.href ? undefined : () => {
+                 if (isLocked) {
+                    handleRestrictedClick(item.name);
+                 } else {
+                    onTabChange(item.id);
+                 }
+              };
               // @ts-ignore
               const href = item.href || "#";
               const isActive = activeTab === item.id;
@@ -144,19 +180,28 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
                   key={item.id}
                   link={{
                     label: item.name,
-                    href: href,
+                    href: isLocked ? "#" : href,
                     icon: (
-                      <IconComponent
-                        className={cn(
-                          "h-5 w-5 flex-shrink-0",
-                          isActive ? "text-blue-400" : "text-neutral-200 dark:text-neutral-200"
-                        )}
-                      />
+                      <div className="relative">
+                        <IconComponent
+                          className={cn(
+                            "h-5 w-5 flex-shrink-0",
+                            isActive ? "text-blue-400" : "text-neutral-200 dark:text-neutral-200",
+                            isLocked && "text-gray-500"
+                          )}
+                        />
+                         {isLocked && (
+                              <div className="absolute -top-1 -right-1 bg-black rounded-full p-[1px]">
+                                <Lock className="h-3 w-3 text-yellow-500" />
+                              </div>
+                          )}
+                      </div>
                     ),
                     onClick: onClick
                   }}
                   className={cn(
-                      isActive && "bg-gray-900 rounded-md"
+                      isActive && "bg-gray-900 rounded-md",
+                      isLocked && "opacity-70 cursor-not-allowed hover:bg-transparent"
                   )}
                 />
               );
@@ -176,6 +221,22 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
             />
         </div>
       </SidebarBody>
+      
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason={upgradeReason}
+        currentPlan={subscription?.plan || 'STARTER'}
+        suggestedPlan="INVESTOR"
+        onUpgrade={async (plan) => {
+            try {
+               await startCheckout(plan);
+            } catch (error) {
+               console.error("Upgrade failed", error);
+               window.location.href = '/settings';
+            }
+        }}
+      />
     </SidebarContainer>
   );
 }

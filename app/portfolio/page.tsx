@@ -48,6 +48,7 @@ import { EarningsSurprisesView } from '../../components/portfolio/earnings-surpr
 import { SenateLobbyingView } from '../../components/portfolio/senate-lobbying-view';
 import { USASpendingView } from '../../components/portfolio/usa-spending-view';
 import { ToolsView } from '../../components/tools/ToolsView';
+import { CompanyLookup } from '../../components/tools/CompanyLookup';
 
 interface CryptoTransaction {
   id: string;
@@ -120,10 +121,7 @@ const NewsView = ({ activeTab }: { activeTab: string }) => {
     ] : [];
 
     return (
-        <>
-          <NewsFeed category={category} holdings={allHoldings} />
-          <TwitterFeed />
-        </>
+        <NewsFeed category={category} holdings={allHoldings} />
     );
 };
 
@@ -489,7 +487,7 @@ export default function PortfolioPage() {
           icon: <Wrench className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
           onClick: () => {
               setSelectedCategory("Tools");
-              setActiveTab("insider-sentiment");
+              setActiveTab("charts");
           }
       },
   ];
@@ -569,6 +567,8 @@ export default function PortfolioPage() {
         return <SenateLobbyingView />;
       case 'usa-spending':
         return <USASpendingView />;
+      case 'company-lookup':
+        return <CompanyLookup />;
       case 'charts':
         return <ToolsView />;
       default:
@@ -627,7 +627,7 @@ export default function PortfolioPage() {
                         </div>
                     </div>
 
-                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'trades', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending'].includes(activeTab) && selectedCategory !== "Networth" && (
+                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'trades', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending', 'company-lookup'].includes(activeTab) && selectedCategory !== "Networth" && (
                         <div className="flex items-center gap-3">
                             {selectedCategory === "Real Estate" ? (
                                 <button 

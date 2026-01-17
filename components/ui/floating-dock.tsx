@@ -110,6 +110,7 @@ const FloatingDockDesktop = ({
   className?: string;
 }) => {
   let mouseX = useMotionValue(Infinity);
+
   return (
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
@@ -120,7 +121,11 @@ const FloatingDockDesktop = ({
       )}
     >
       {items.map((item) => (
-        <IconContainer mouseX={mouseX} key={item.title} {...item} />
+        <IconContainer 
+          mouseX={mouseX} 
+          key={item.title} 
+          {...item} 
+        />
       ))}
     </motion.div>
   );
@@ -131,7 +136,7 @@ function IconContainer({
   title,
   icon,
   href,
-  onClick
+  onClick,
 }: {
   mouseX: MotionValue;
   title: string;
@@ -143,7 +148,6 @@ function IconContainer({
 
   let distance = useTransform(mouseX, (val) => {
     let bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-
     return val - bounds.x - bounds.width / 2;
   });
 
@@ -153,26 +157,27 @@ function IconContainer({
   let widthTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20]);
   let heightTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20]);
 
+  // Higher damping = less bounce, higher stiffness = faster response
   let width = useSpring(widthTransform, {
     mass: 0.1,
-    stiffness: 150,
-    damping: 12,
+    stiffness: 200,
+    damping: 25,
   });
   let height = useSpring(heightTransform, {
     mass: 0.1,
-    stiffness: 150,
-    damping: 12,
+    stiffness: 200,
+    damping: 25,
   });
 
   let widthIcon = useSpring(widthTransformIcon, {
     mass: 0.1,
-    stiffness: 150,
-    damping: 12,
+    stiffness: 200,
+    damping: 25,
   });
   let heightIcon = useSpring(heightTransformIcon, {
     mass: 0.1,
-    stiffness: 150,
-    damping: 12,
+    stiffness: 200,
+    damping: 25,
   });
 
   const [hovered, setHovered] = useState(false);
@@ -184,6 +189,8 @@ function IconContainer({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className="aspect-square rounded-full bg-gray-200 dark:bg-black flex items-center justify-center relative border border-gray-200 dark:border-neutral-800"
+        // Prevent layout animations from interfering with size animations
+        layout={false}
       >
         <AnimatePresence>
           {hovered && (
@@ -206,6 +213,16 @@ function IconContainer({
       </motion.div>
   );
 
+  // Wrap in a stable container that doesn't animate
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent the click from bubbling and causing layout recalculations
+    e.preventDefault();
+    if (onClick) {
+      // Use setTimeout to delay the state change until after animations settle
+      setTimeout(() => onClick(), 0);
+    }
+  };
+
   if (href) {
       return (
         <Link href={href}>
@@ -215,7 +232,11 @@ function IconContainer({
   }
 
   return (
-    <button onClick={onClick} className="bg-transparent border-none cursor-pointer">
+    <button 
+      onClick={handleClick} 
+      className="bg-transparent border-none cursor-pointer outline-none"
+      type="button"
+    >
       {content}
     </button>
   );
