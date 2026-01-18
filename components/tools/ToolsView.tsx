@@ -7,39 +7,83 @@ import { AreaChart, CandlestickChart, BarChart, LineChart } from 'lucide-react';
 import { Search01Icon, TradeUpIcon, Loading01Icon, ArrowDown01Icon, AlertCircleIcon } from 'hugeicons-react';
 import { usePortfolioContext } from '@/contexts/portfolio-context';
 import { CryptoIcon } from '@/components/ui/crypto-icon';
-import {
-  AppleIconTV,
-  MicrosoftIconTV,
-  AmazonIconTV,
-  GoogleIconTV,
-  TeslaIconTV,
-  NvidiaIconTV,
-  MetaIconTV,
-  ETFIcon,
-  ChartIcon
-} from '@/lib/tradingview-icons';
+import { tickerDomains } from '@/lib/ticker-domains';
 
-// Stock Icon Component - TradingView style
-function StockIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
-  switch (symbol) {
-    case 'AAPL':
-      return <AppleIconTV className={className} />;
-    case 'MSFT':
-      return <MicrosoftIconTV className={className} />;
-    case 'AMZN':
-      return <AmazonIconTV className={className} />;
-    case 'GOOGL':
-    case 'GOOG':
-      return <GoogleIconTV className={className} />;
-    case 'TSLA':
-      return <TeslaIconTV className={className} />;
-    case 'NVDA':
-      return <NvidiaIconTV className={className} />;
-    case 'META':
-      return <MetaIconTV className={className} />;
-    default:
-      return <ETFIcon symbol={symbol} className={className} color="#3b82f6" />;
+// Generate a consistent color based on ticker
+const getTickerColor = (ticker: string): string => {
+  const colors = [
+    'from-amber-500 to-amber-700',
+    'from-orange-500 to-orange-700',
+    'from-yellow-500 to-yellow-700',
+    'from-red-500 to-red-700',
+    'from-pink-500 to-pink-700',
+    'from-purple-500 to-purple-700',
+    'from-blue-500 to-blue-700',
+    'from-cyan-500 to-cyan-700',
+  ];
+  let hash = 0;
+  for (let i = 0; i < ticker.length; i++) {
+    hash = ticker.charCodeAt(i) + ((hash << 5) - hash);
   }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Company Icon Component - Dynamic logo fetching with fallbacks (same approach as Senate Lobbying)
+function CompanyIcon({ ticker, className = "w-5 h-5", showPlaceholder = true }: { ticker: string; className?: string; showPlaceholder?: boolean }) {
+  const [imageError, setImageError] = useState(false);
+  const [fallbackIndex, setFallbackIndex] = useState(0);
+  const upperTicker = ticker.toUpperCase();
+  
+  // Build list of image sources to try
+  const imageSources = useMemo(() => {
+    const sources: string[] = [];
+    
+    // 1. Known domain from our mapping
+    if (tickerDomains[upperTicker]) {
+      sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${tickerDomains[upperTicker]}&size=128`);
+    }
+    
+    // 2. Try logo.dev API (free tier, good coverage)
+    sources.push(`https://img.logo.dev/ticker/${upperTicker}?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ`);
+    
+    // 3. Try common domain patterns
+    sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${ticker.toLowerCase()}.com&size=128`);
+    
+    return sources;
+  }, [upperTicker, ticker]);
+  
+  useEffect(() => {
+    setImageError(false);
+    setFallbackIndex(0);
+  }, [ticker]);
+  
+  const handleImageError = () => {
+    if (fallbackIndex < imageSources.length - 1) {
+      setFallbackIndex(prev => prev + 1);
+    } else {
+      setImageError(true);
+    }
+  };
+  
+  if (!imageError && imageSources.length > 0) {
+    return (
+      <img 
+        src={imageSources[fallbackIndex]}
+        alt={`${ticker} logo`} 
+        className={`${className} rounded-lg object-contain bg-white p-1`}
+        onError={handleImageError}
+        loading="lazy"
+      />
+    );
+  }
+
+  if (!showPlaceholder) return null;
+
+  return (
+    <div className={`${className} rounded-lg bg-gradient-to-br ${getTickerColor(ticker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
+      {ticker.slice(0, 2)}
+    </div>
+  );
 }
 
 type TimeRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
@@ -222,7 +266,7 @@ export function ToolsView() {
                                         {selectedAsset.type === 'crypto' ? (
                                             <CryptoIcon symbol={selectedAsset.symbol} iconUrl={selectedAsset.iconUrl} className="w-6 h-6" />
                                         ) : (
-                                            <StockIcon symbol={selectedAsset.symbol} className="w-6 h-6" />
+                                            <CompanyIcon ticker={selectedAsset.symbol} className="w-6 h-6" />
                                         )}
                                     </div>
                                     <div className="flex-1 text-left">
@@ -279,7 +323,7 @@ export function ToolsView() {
                                                             )}
                                                         >
                                                             <div className="w-8 h-8 flex items-center justify-center">
-                                                                <StockIcon symbol={asset.symbol} className="w-8 h-8" />
+                                                                <CompanyIcon ticker={asset.symbol} className="w-8 h-8" />
                                                             </div>
                                                             <div className="flex-1 text-left">
                                                                 <p className="font-medium text-white">{asset.symbol}</p>
@@ -384,7 +428,7 @@ export function ToolsView() {
                                     {selectedAsset.type === 'crypto' ? (
                                         <CryptoIcon symbol={selectedAsset.symbol} iconUrl={selectedAsset.iconUrl} className="w-10 h-10" />
                                     ) : (
-                                        <StockIcon symbol={selectedAsset.symbol} className="w-10 h-10" />
+                                        <CompanyIcon ticker={selectedAsset.symbol} className="w-10 h-10" />
                                     )}
                                 </div>
                                 <div>

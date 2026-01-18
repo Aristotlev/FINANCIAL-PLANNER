@@ -1,157 +1,91 @@
-import React, { useState } from "react";
-import { Coins, ChartColumn as ChartIcon } from "lucide-react";
-import {
-  SiBitcoin,
-  SiEthereum,
-  SiCardano,
-  SiPolkadot,
-  SiSolana,
-  SiChainlink,
-  SiPolygon,
-  SiLitecoin,
-  SiMonero,
-  SiTether,
-  SiBinance
-} from "react-icons/si";
-import {
-  BTCIconTV,
-  ETHIconTV,
-  BNBIconTV,
-  SOLIconTV,
-  USDTIcon,
-  USDCIcon,
-  XRPIcon,
-  DOGEIcon,
-  TRXIcon,
-  ADAIcon,
-  AVAXIcon,
-  SHIBIcon,
-  LINKIcon,
-  DOTIcon,
-  MATICIcon,
-  LTCIcon,
-  UNIIcon,
-  ATOMIcon,
-  XLMIcon,
-  XMRIcon,
-  HBARIcon,
-  NEARIcon,
-  APTIcon,
-  ARBIcon,
-  OPIcon,
-  FILIcon,
-  ALGOIcon,
-  VETIcon,
-  AAVEIcon,
-  ICPIcon,
-  INJIcon,
-  SUIIcon,
-  GRTIcon,
-  RUNEIcon,
-  FTMIcon,
-  SANDIcon,
-  MANAIcon,
-  PEPEIcon
-} from "../../lib/tradingview-icons";
+import React, { useState, useMemo, useEffect } from "react";
+import { Coins } from "lucide-react";
 
-// Crypto Icon Component - Binance style
+// Generate a consistent color based on symbol
+const getCryptoColor = (symbol: string): string => {
+  const colors = [
+    'from-orange-500 to-orange-700',
+    'from-blue-500 to-blue-700',
+    'from-purple-500 to-purple-700',
+    'from-green-500 to-green-700',
+    'from-pink-500 to-pink-700',
+    'from-cyan-500 to-cyan-700',
+    'from-yellow-500 to-yellow-700',
+    'from-red-500 to-red-700',
+  ];
+  let hash = 0;
+  for (let i = 0; i < symbol.length; i++) {
+    hash = symbol.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+// Crypto Icon Component - Dynamic icon fetching with multiple fallbacks
 export function CryptoIcon({ symbol, className = "w-5 h-5", iconUrl }: { symbol: string; className?: string; iconUrl?: string }) {
   const [imageError, setImageError] = useState(false);
-
+  const [fallbackIndex, setFallbackIndex] = useState(0);
+  
   if (!symbol) return <Coins className={className} />;
-
-  switch (symbol.toUpperCase()) {
-    case 'BTC':
-    case 'BTCUSD':
-      return <BTCIconTV className={className} />;
-    case 'ETH':
-    case 'ETHUSD':
-      return <ETHIconTV className={className} />;
-    case 'BNB':
-      return <BNBIconTV className={className} />;
-    case 'SOL':
-      return <SOLIconTV className={className} />;
-    case 'USDT':
-      return <USDTIcon className={className} />;
-    case 'USDC':
-      return <USDCIcon className={className} />;
-    case 'XRP':
-      return <XRPIcon className={className} />;
-    case 'DOGE':
-      return <DOGEIcon className={className} />;
-    case 'TRX':
-      return <TRXIcon className={className} />;
-    case 'ADA':
-    case 'ADAUSD':
-      return <ADAIcon className={className} />;
-    case 'AVAX':
-      return <AVAXIcon className={className} />;
-    case 'SHIB':
-      return <SHIBIcon className={className} />;
-    case 'LINK':
-      return <LINKIcon className={className} />;
-    case 'DOT':
-      return <DOTIcon className={className} />;
-    case 'MATIC':
-    case 'POL':
-      return <MATICIcon className={className} />;
-    case 'LTC':
-      return <LTCIcon className={className} />;
-    case 'UNI':
-      return <UNIIcon className={className} />;
-    case 'ATOM':
-      return <ATOMIcon className={className} />;
-    case 'XLM':
-      return <XLMIcon className={className} />;
-    case 'XMR':
-      return <XMRIcon className={className} />;
-    case 'HBAR':
-      return <HBARIcon className={className} />;
-    case 'NEAR':
-      return <NEARIcon className={className} />;
-    case 'APT':
-      return <APTIcon className={className} />;
-    case 'ARB':
-      return <ARBIcon className={className} />;
-    case 'OP':
-      return <OPIcon className={className} />;
-    case 'FIL':
-      return <FILIcon className={className} />;
-    case 'ALGO':
-      return <ALGOIcon className={className} />;
-    case 'VET':
-      return <VETIcon className={className} />;
-    case 'AAVE':
-      return <AAVEIcon className={className} />;
-    case 'ICP':
-      return <ICPIcon className={className} />;
-    case 'INJ':
-      return <INJIcon className={className} />;
-    case 'SUI':
-      return <SUIIcon className={className} />;
-    case 'GRT':
-      return <GRTIcon className={className} />;
-    case 'RUNE':
-      return <RUNEIcon className={className} />;
-    case 'FTM':
-      return <FTMIcon className={className} />;
-    case 'SAND':
-      return <SANDIcon className={className} />;
-    case 'MANA':
-      return <MANAIcon className={className} />;
-    case 'PEPE':
-      return <PEPEIcon className={className} />;
-    default:
-      if (!imageError) {
-        return (
-          <img 
-            src={iconUrl || `https://assets.coincap.io/assets/icons/${symbol.toLowerCase()}@2x.png`}
-            alt={symbol}
-            className={`${className} rounded-full`}
-            onError={() => setImageError(true)}
-          />
-        );
-      }
-      return <ChartIcon className={className} color="#F59E0B" />;
+  
+  const upperSymbol = symbol.toUpperCase();
+  const lowerSymbol = symbol.toLowerCase();
+  
+  // Build list of image sources to try (most reliable first)
+  const imageSources = useMemo(() => {
+    const sources: string[] = [];
+    
+    // 0. If iconUrl is provided (e.g., from CoinGecko API), try it first
+    if (iconUrl) {
+      sources.push(iconUrl);
+    }
+    
+    // 1. CoinCap - Very reliable and comprehensive
+    sources.push(`https://assets.coincap.io/assets/icons/${lowerSymbol}@2x.png`);
+    
+    // 2. CryptoCompare - Another reliable source
+    sources.push(`https://www.cryptocompare.com/media/37746251/${lowerSymbol}.png`);
+    
+    // 3. CoinGecko small images (works well)
+    sources.push(`https://assets.coingecko.com/coins/images/1/small/${lowerSymbol}.png`);
+    
+    // 4. Binance static CDN (for trading pairs)
+    sources.push(`https://bin.bnbstatic.com/image/admin_mgs_image_upload/20201110/${lowerSymbol}.png`);
+    
+    // 5. Trust Wallet GitHub assets
+    sources.push(`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${lowerSymbol}.png`);
+    
+    return sources;
+  }, [upperSymbol, lowerSymbol, iconUrl]);
+  
+  useEffect(() => {
+    setImageError(false);
+    setFallbackIndex(0);
+  }, [symbol]);
+  
+  const handleImageError = () => {
+    if (fallbackIndex < imageSources.length - 1) {
+      setFallbackIndex(prev => prev + 1);
+    } else {
+      setImageError(true);
+    }
+  };
+  
+  if (!imageError && imageSources.length > 0) {
+    return (
+      <img 
+        src={imageSources[fallbackIndex]}
+        alt={`${symbol} logo`}
+        className={`${className} rounded-full object-contain`}
+        onError={handleImageError}
+        loading="lazy"
+      />
+    );
   }
+
+  // Final fallback: colorful gradient placeholder
+  return (
+    <div className={`${className} rounded-full bg-gradient-to-br ${getCryptoColor(symbol)} flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
+      {symbol.slice(0, 2)}
+    </div>
+  );
 }
