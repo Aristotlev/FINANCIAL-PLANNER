@@ -101,8 +101,8 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
   const lastMonth = data[data.length - 1];
   const mspr = lastMonth?.mspr || 0;
   const sentiment = mspr > 20 ? 'Very Positive' : mspr > 0 ? 'Positive' : mspr < -20 ? 'Very Negative' : mspr < 0 ? 'Negative' : 'Neutral';
-  const sentimentColor = mspr > 0 ? 'text-green-400' : mspr < 0 ? 'text-red-400' : 'text-gray-400';
-  const sentimentBg = mspr > 0 ? 'bg-green-400/10 border-green-400/20' : mspr < 0 ? 'bg-red-400/10 border-red-400/20' : 'bg-gray-400/10 border-gray-400/20';
+  const sentimentColor = mspr > 0 ? 'text-blue-400' : mspr < 0 ? 'text-red-400' : 'text-gray-400';
+  const sentimentBg = mspr > 0 ? 'bg-blue-400/10 border-blue-400/20' : mspr < 0 ? 'bg-red-400/10 border-red-400/20' : 'bg-gray-400/10 border-gray-400/20';
 
   // Format data for chart
   const chartData = data.map(item => ({
@@ -133,7 +133,7 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
           <div className="text-right hidden sm:block">
             <div className="text-sm text-gray-400">Latest Activity</div>
             <div className="text-lg font-semibold text-white">{lastMonth.year}-{String(lastMonth.month).padStart(2, '0')}</div>
-            <div className={`font-mono text-sm ${lastMonth.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <div className={`font-mono text-sm ${lastMonth.change > 0 ? 'text-blue-400' : 'text-red-400'}`}>
               Net Change: {lastMonth.change > 0 ? '+' : ''}{lastMonth.change.toLocaleString()} shares
             </div>
           </div>
@@ -147,19 +147,64 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
           <h3 className="text-lg font-semibold text-white mb-6">Monthly Share Purchase Ratio (MSPR)</h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="date" stroke="#666" fontSize={12} tickFormatter={(val) => val.substring(2)} />
-                <YAxis stroke="#666" fontSize={12} domain={[-100, 100]} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', color: '#fff' }}
-                  itemStyle={{ color: '#fff' }}
-                  cursor={{ fill: '#333', opacity: 0.2 }}
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <defs>
+                   <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                    </linearGradient>
+                    <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.2}/>
+                    </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                <XAxis 
+                    dataKey="date" 
+                    stroke="#525252" 
+                    fontSize={12} 
+                    tickFormatter={(val) => val.substring(2)} 
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
                 />
-                <ReferenceLine y={0} stroke="#666" />
-                <Bar dataKey="mspr" name="MSPR Score">
+                <YAxis 
+                    stroke="#525252" 
+                    fontSize={12} 
+                    domain={[-100, 100]} 
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#3b82f6', opacity: 0.1 }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                    return (
+                        <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-4 shadow-xl backdrop-blur-md">
+                            <p className="text-gray-400 text-xs mb-2">{label} (Sentiment)</p>
+                            {payload.map((entry: any, index: number) => (
+                                <div key={index} className="flex items-center gap-3 mb-1 min-w-[120px]">
+                                    <div 
+                                        className="w-2 h-2 rounded-full" 
+                                        style={{ backgroundColor: entry.value > 0 ? '#3b82f6' : '#ef4444' }}
+                                    />
+                                    <span className="text-gray-300 text-sm flex-1">{entry.name}:</span>
+                                    <span className={`font-mono font-bold text-sm ${entry.value > 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                        {Number(entry.value).toFixed(2)}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    );
+                    }
+                    return null;
+                  }}
+                />
+                <ReferenceLine y={0} stroke="#333" />
+                <Bar dataKey="mspr" name="MSPR Score" animationDuration={1500} maxBarSize={60}>
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.mspr > 0 ? '#4ade80' : '#f87171'} />
+                    <Cell key={`cell-${index}`} fill={entry.mspr > 0 ? 'url(#positiveGradient)' : 'url(#negativeGradient)'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -172,20 +217,64 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
           <h3 className="text-lg font-semibold text-white mb-6">Net Insider Transactions (Shares)</h3>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                <XAxis dataKey="date" stroke="#666" fontSize={12} tickFormatter={(val) => val.substring(2)} />
-                <YAxis stroke="#666" fontSize={12} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', color: '#fff' }}
-                  itemStyle={{ color: '#fff' }}
-                  cursor={{ fill: '#333', opacity: 0.2 }}
-                  formatter={(value: any) => [Number(value).toLocaleString(), 'Shares']}
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                 <defs>
+                   <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                    </linearGradient>
+                    <linearGradient id="redGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.2}/>
+                    </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                <XAxis 
+                    dataKey="date" 
+                    stroke="#525252" 
+                    fontSize={12} 
+                    tickFormatter={(val) => val.substring(2)}
+                    tickLine={false}
+                    axisLine={false} 
+                    dy={10}
                 />
-                <ReferenceLine y={0} stroke="#666" />
-                <Bar dataKey="change" name="Net Share Change">
+                <YAxis 
+                    stroke="#525252" 
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    dx={-10} 
+                    tickFormatter={(value) => value >= 1000000 ? `${(value/1000000).toFixed(0)}M` : value >= 1000 ? `${(value/1000).toFixed(0)}K` : value}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#3b82f6', opacity: 0.1 }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                    return (
+                        <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-4 shadow-xl backdrop-blur-md">
+                            <p className="text-gray-400 text-xs mb-2">{label} (Net Volume)</p>
+                            {payload.map((entry: any, index: number) => (
+                                <div key={index} className="flex items-center gap-3 mb-1 min-w-[120px]">
+                                    <div 
+                                        className="w-2 h-2 rounded-full" 
+                                        style={{ backgroundColor: entry.value > 0 ? '#3b82f6' : '#ef4444' }}
+                                    />
+                                    <span className="text-gray-300 text-sm flex-1">{entry.name}:</span>
+                                    <span className={`font-mono font-bold text-sm ${entry.value > 0 ? 'text-blue-400' : 'text-red-400'}`}>
+                                        {Number(entry.value).toLocaleString()}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    );
+                    }
+                    return null;
+                  }}
+                />
+                <ReferenceLine y={0} stroke="#333" />
+                <Bar dataKey="change" name="Net Share Change" animationDuration={1500} maxBarSize={60}>
                   {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.change > 0 ? '#3b82f6' : '#ef4444'} />
+                    <Cell key={`cell-${index}`} fill={entry.change > 0 ? 'url(#blueGradient)' : 'url(#redGradient)'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -201,7 +290,7 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-[#111] text-gray-400 font-medium">
+            <thead className="bg-[#141414] text-xs uppercase tracking-wider text-gray-400 font-medium">
               <tr>
                 <th className="px-6 py-3">Period</th>
                 <th className="px-6 py-3 text-right">MSPR Score</th>
@@ -215,7 +304,7 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
                   <td className="px-6 py-4 text-white font-medium">
                     {item.year}-{String(item.month).padStart(2, '0')}
                   </td>
-                  <td className={`px-6 py-4 text-right font-mono ${item.mspr > 0 ? 'text-green-400' : item.mspr < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                  <td className={`px-6 py-4 text-right font-mono ${item.mspr > 0 ? 'text-blue-400' : item.mspr < 0 ? 'text-red-400' : 'text-gray-400'}`}>
                     {item.mspr.toFixed(2)}
                   </td>
                   <td className={`px-6 py-4 text-right font-mono ${item.change > 0 ? 'text-blue-400' : item.change < 0 ? 'text-red-400' : 'text-gray-400'}`}>
@@ -223,8 +312,8 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className={`px-2 py-1 rounded text-xs border ${
-                      item.mspr > 20 ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                      item.mspr > 0 ? 'bg-green-500/5 text-green-300 border-green-500/10' :
+                      item.mspr > 20 ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                      item.mspr > 0 ? 'bg-blue-500/5 text-blue-300 border-blue-500/10' :
                       item.mspr < -20 ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                       item.mspr < 0 ? 'bg-red-500/5 text-red-300 border-red-500/10' :
                       'bg-gray-500/10 text-gray-400 border-gray-500/20'

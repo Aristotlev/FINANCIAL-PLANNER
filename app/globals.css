@@ -146,14 +146,6 @@ iframe[allow*="fullscreen"] {
     body {
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      /* Ensure content is visible on mobile */
-      min-height: 100dvh;
-      min-height: -webkit-fill-available;
-    }
-    
-    /* Fix for mobile viewport height */
-    html {
-      height: -webkit-fill-available;
     }
   }
   

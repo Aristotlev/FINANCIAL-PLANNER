@@ -116,13 +116,13 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-14 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-100 dark:bg-black w-full border-b border-neutral-200 dark:border-neutral-800 sticky top-0 z-40"
+          "h-10 px-4 py-4 flex flex-row md:hidden  items-center justify-between bg-neutral-100 dark:bg-black w-full border-b border-neutral-200 dark:border-neutral-800"
         )}
         {...props}
       >
         <div className="flex justify-end z-20 w-full">
           <Menu
-            className="text-neutral-800 dark:text-neutral-200 w-6 h-6"
+            className="text-neutral-800 dark:text-neutral-200"
             onClick={() => setOpen(!open)}
           />
         </div>
@@ -137,15 +137,15 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed inset-0 h-[100dvh] w-full bg-white dark:bg-neutral-900 p-6 sm:p-10 z-[100] flex flex-col justify-between overflow-y-auto",
+                "fixed h-full w-full inset-0 bg-white dark:bg-neutral-900 p-10 z-[100] flex flex-col justify-between",
                 className
               )}
             >
               <div
-                className="absolute right-6 top-6 sm:right-10 sm:top-10 z-50 text-neutral-800 dark:text-neutral-200 p-2"
+                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200"
                 onClick={() => setOpen(!open)}
               >
-                <X className="w-6 h-6" />
+                <X />
               </div>
               {children}
             </motion.div>

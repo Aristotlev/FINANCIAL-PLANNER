@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { Search, TrendingUp, TrendingDown, Users, DollarSign, Loader2, RefreshCw, ChevronLeft, ChevronRight, Database, Filter, ArrowUpRight, ArrowDownRight, Minus, Building2 } from 'lucide-react';
+import { Search, Users, Loader2, RefreshCw, ChevronLeft, ChevronRight, Database, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tickerDomains } from '@/lib/ticker-domains';
+import { cn } from '@/lib/utils';
 
 // Generate a consistent color based on ticker
 const getTickerColor = (ticker: string): string => {
@@ -24,7 +25,7 @@ const getTickerColor = (ticker: string): string => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Company Icon Component - Same approach as SEC EDGAR page
+// Company Icon Component
 const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: { ticker: string, className?: string, showPlaceholder?: boolean }) => {
   const [imageError, setImageError] = useState(false);
   const [fallbackIndex, setFallbackIndex] = useState(0);
@@ -66,7 +67,7 @@ const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: 
       <img 
         src={imageSources[fallbackIndex]}
         alt={`${ticker} logo`} 
-        className={`${className} rounded-lg object-contain bg-white p-1`}
+        className={cn(className, "rounded-lg object-contain bg-white p-0.5")}
         onError={handleImageError}
         loading="lazy"
       />
@@ -76,7 +77,7 @@ const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: 
   if (!showPlaceholder) return null;
 
   return (
-    <div className={`${className} rounded-lg bg-gradient-to-br ${getTickerColor(ticker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
+    <div className={cn(className, `rounded-lg bg-gradient-to-br ${getTickerColor(ticker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`)}>
       {ticker.slice(0, 2)}
     </div>
   );
@@ -133,19 +134,13 @@ const TRANSACTION_CODES: Record<string, { label: string; type: 'buy' | 'sell' | 
   'U': { label: 'Tender', type: 'other' },
 };
 
-// Popular stocks to track - diversified across sectors
+// Popular stocks to track
 const DEFAULT_SYMBOLS = [
-  // Tech Giants
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA',
-  // Finance
   'JPM', 'BAC', 'GS', 'BRK.B', 'V', 'MA',
-  // Healthcare
   'JNJ', 'UNH', 'PFE', 'ABBV', 'MRK',
-  // Consumer
   'WMT', 'HD', 'NKE', 'SBUX', 'MCD', 'DIS',
-  // Energy
   'XOM', 'CVX', 'COP',
-  // Industrial
   'BA', 'CAT', 'GE', 'HON',
 ];
 
@@ -212,7 +207,6 @@ export function InsiderTransactionsView() {
         setTransactions(prev => {
           const existing = prev.filter(t => t.symbol !== customSymbol);
           const merged = [...existing, ...(data.data || [])];
-          // Sort by transaction date
           return merged.sort((a, b) => 
             new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
           );
@@ -226,11 +220,9 @@ export function InsiderTransactionsView() {
       return;
     }
 
-    // Try cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = loadFromCache();
       if (cached) {
-        console.log(`Insider Transactions: Loaded ${cached.transactions.length} from cache`);
         setTransactions(cached.transactions);
         setFromCache(true);
         setLastUpdated(new Date(cached.timestamp));
@@ -247,31 +239,20 @@ export function InsiderTransactionsView() {
     try {
       const allTransactions: InsiderTransaction[] = [];
       const symbols = DEFAULT_SYMBOLS;
-      
-      // Batch fetch - 3 symbols at a time with delays to respect rate limits
       const batchSize = 3;
+
       for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
         setFetchProgress(`Fetching ${i + 1}-${Math.min(i + batchSize, symbols.length)} of ${symbols.length} symbols...`);
         
         const results = await Promise.all(
           batch.map(async (symbol, idx) => {
-            // Small stagger between requests
             await new Promise(resolve => setTimeout(resolve, idx * 150));
-            
             try {
               const response = await fetch(`/api/finnhub/insider-transactions?symbol=${symbol}&limit=100`);
-              if (!response.ok) {
-                if (response.status === 429) {
-                  console.warn(`Rate limited on ${symbol}, skipping...`);
-                  return [];
-                }
-                return [];
-              }
+              if (!response.ok) return [];
               const data: InsiderTransactionsResponse = await response.json();
-              if (data.source === 'cache') {
-                setFromCache(true);
-              }
+              if (data.source === 'cache') setFromCache(true);
               return data.data || [];
             } catch {
               return [];
@@ -281,30 +262,21 @@ export function InsiderTransactionsView() {
         
         results.flat().forEach(t => allTransactions.push(t));
         
-        // Pause between batches to avoid rate limits
         if (i + batchSize < symbols.length) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
 
-      // Sort by transaction date (newest first)
       const sortedTransactions = allTransactions.sort((a, b) => 
         new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
       );
-
-      console.log(`Insider Transactions: Fetched ${sortedTransactions.length} transactions from ${symbols.length} symbols`);
       
-      // Cache results
       saveToCache(sortedTransactions, symbols);
-      
       setTransactions(sortedTransactions);
       setLastUpdated(new Date());
-      setFetchProgress('');
     } catch (err) {
-      console.error('Error fetching insider transactions:', err);
+      console.error(err);
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
-      
-      // Try stale cache on error
       const cached = loadFromCache();
       if (cached) {
         setTransactions(cached.transactions);
@@ -388,7 +360,6 @@ export function InsiderTransactionsView() {
     return typeMatch && symbolMatch;
   });
 
-  // Calculate stats
   const buyCount = transactions.filter(t => getTransactionType(t.transactionCode) === 'buy').length;
   const sellCount = transactions.filter(t => getTransactionType(t.transactionCode) === 'sell').length;
   const totalValue = transactions.reduce((sum, t) => {
@@ -402,320 +373,258 @@ export function InsiderTransactionsView() {
     currentPage * itemsPerPage
   );
 
-  // Get unique symbols for quick filter
   const uniqueSymbols = [...new Set(transactions.map(t => t.symbol))].sort();
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
+    <div className="space-y-6 h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-          <Users className="w-5 h-5 text-blue-400" />
-          Insider Transactions
-        </h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-white">
+            <Users className="w-6 h-6 text-blue-400" />
+            Insider Transactions
+          </h2>
+          <div className="flex gap-3 text-sm mt-1 text-gray-400">
+             Track buying and selling activity by corporate insiders
+          </div>
+        </div>
+        
+        {/* Controls */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500">Buys:</span>
-            <span className="text-green-400 font-semibold">{buyCount}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-500">Sells:</span>
-            <span className="text-red-400 font-semibold">{sellCount}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-500">Total Value:</span>
-            <span className="text-blue-400 font-semibold">{formatCurrency(totalValue)}</span>
-          </div>
-          <button
-            onClick={() => fetchInsiderTransactions(true)}
-            disabled={loading}
-            className="p-2 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+             <div className="hidden md:flex items-center gap-4 mr-4 text-xs font-medium bg-[#1A1A1A] p-2 rounded-lg border border-gray-800">
+                <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span className="text-gray-400">Buys:</span>
+                    <span className="text-white">{buyCount}</span>
+                </div>
+                <div className="w-px h-3 bg-gray-700"></div>
+                <div className="flex items-center gap-2">
+                     <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span className="text-gray-400">Sells:</span>
+                    <span className="text-white">{sellCount}</span>
+                </div>
+                <div className="w-px h-3 bg-gray-700"></div>
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-400">Volume:</span>
+                    <span className="text-blue-400">{formatCurrency(totalValue)}</span>
+                </div>
+             </div>
+
+            <button
+                onClick={() => fetchInsiderTransactions(true)}
+                disabled={loading}
+                className="p-2.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-50 border border-gray-800 hover:border-gray-700"
+                title="Refresh data"
+            >
+                <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
+            </button>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
-        <form onSubmit={handleSearch} className="flex gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by ticker (e.g., TSLA, AAPL, NVDA)..."
-              className="w-full bg-[#0D0D0D] border border-gray-800 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800 transition-colors disabled:opacity-50"
-          >
-            Search
-          </button>
-        </form>
-        
-        {/* Quick Symbol Filters */}
-        {uniqueSymbols.length > 0 && (
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs text-gray-500 py-1 whitespace-nowrap">Quick filter:</span>
-            <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-              {symbolFilter && (
-                <button
-                  onClick={clearSymbolFilter}
-                  className="px-2 py-1 text-xs rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-colors whitespace-nowrap flex-shrink-0"
-                >
-                  Clear: {symbolFilter} ×
-                </button>
+      {/* Search & Filters Bar */}
+      <div className="bg-[#0D0D0D] border border-gray-800 rounded-xl p-3 space-y-3">
+        <form onSubmit={handleSearch} className="flex gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search ticker (e.g. NVDA)..."
+                className="w-full pl-10 pr-4 py-2 bg-transparent border-none text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-0"
+              />
+            </div>
+             <button
+              type="submit"
+              disabled={loading}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                loading || !searchInput.trim()
+                  ? "bg-[#1A1A1A] text-gray-500 border border-gray-800 cursor-not-allowed"
+                  : "bg-blue-600/10 text-blue-400 border border-blue-600/20 hover:bg-blue-600/20"
               )}
-              {uniqueSymbols.map(sym => (
-                <button
-                  key={sym}
-                  onClick={() => setSymbolFilter(symbolFilter === sym ? '' : sym)}
-                  className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                    symbolFilter === sym
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
-                  }`}
-                >
-                  {sym}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Filter Tabs + Pagination */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-2">
-          {(['all', 'buy', 'sell', 'other'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilter(type)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize flex items-center gap-1.5 ${
-                filter === type 
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                  : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
-              }`}
             >
-              {type === 'buy' && <ArrowUpRight className="w-3 h-3" />}
-              {type === 'sell' && <ArrowDownRight className="w-3 h-3" />}
-              {type}
+               Search
             </button>
-          ))}
-        </div>
-        
-        {/* Pagination at top */}
-        <div className="flex items-center gap-2">
-          {fromCache && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-400/80 mr-2">
-              <Database className="w-3 h-3" />
-              <span>Cached</span>
+        </form>
+
+        {/* Categories */}
+        <div className="flex items-center justify-between border-t border-gray-800 pt-3">
+            <div className="flex gap-2">
+                {(['all', 'buy', 'sell', 'other'] as const).map((type) => (
+                    <button
+                    key={type}
+                    onClick={() => setFilter(type)}
+                    className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize flex items-center gap-1.5",
+                        filter === type 
+                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
+                        : 'bg-[#1A1A1A] text-gray-500 hover:text-gray-300 border border-transparent hover:bg-[#222]'
+                    )}
+                    >
+                        {filter === type && (
+                             type === 'buy' ? <ArrowUpRight className="w-3 h-3" /> :
+                             type === 'sell' ? <ArrowDownRight className="w-3 h-3" /> :
+                             <div className="w-1 h-1 rounded-full bg-current" />
+                        )}
+                        {type}
+                    </button>
+                ))}
             </div>
-          )}
-          {lastUpdated && (
-            <span className="text-xs text-gray-500 mr-2">
-              Updated: {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-          <span className="text-xs text-gray-500">
-            {filteredTransactions.length} transactions
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          </button>
-          <span className="text-xs text-gray-400 min-w-[60px] text-center">
-            {currentPage} / {Math.max(1, totalPages)}
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
+
+            {uniqueSymbols.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto max-w-[400px] no-scrollbar">
+                    {symbolFilter && (
+                         <button
+                         onClick={clearSymbolFilter}
+                         className="px-2 py-1 text-[10px] rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 whitespace-nowrap"
+                        >
+                            Clear {symbolFilter}
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto bg-[#1A1A1A] rounded-xl border border-gray-800">
-        {loading && transactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-            <span className="text-gray-400 text-sm">{fetchProgress || 'Loading insider transactions...'}</span>
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden bg-[#1A1A1A] rounded-xl border border-gray-800 flex flex-col">
+          {/* Table Header */}
+          <div className="border-b border-gray-800">
+             <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <div className="col-span-2">Symbol</div>
+                <div className="col-span-3">Insider Name</div>
+                <div className="col-span-2">Type</div>
+                <div className="col-span-2 text-right">Shares</div>
+                <div className="col-span-1 text-right">Value</div>
+                <div className="col-span-2 text-right">Date</div>
+             </div>
           </div>
-        ) : error && transactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <span className="text-red-400">{error}</span>
-            <button
-              onClick={() => fetchInsiderTransactions(true)}
-              className="px-4 py-2 bg-blue-600 rounded-lg text-sm hover:bg-blue-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : filteredTransactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <Users className="w-12 h-12 mb-3 opacity-30" />
-            <p>No insider transactions found</p>
-            {symbolFilter && (
-              <button
-                onClick={clearSymbolFilter}
-                className="mt-2 text-blue-400 text-sm hover:underline"
-              >
-                Clear filter
-              </button>
+
+          {/* Table Body */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {loading && transactions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-12">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+                    <p className="text-gray-400 text-sm">{fetchProgress || 'Loading insider data...'}</p>
+                </div>
+            ) : filteredTransactions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
+                    <Users className="w-12 h-12 mb-3 opacity-20" />
+                    <p>No transactions found matching your criteria</p>
+                </div>
+            ) : (
+                <div className="divide-y divide-gray-800/50">
+                    <AnimatePresence mode="popLayout">
+                        {paginatedTransactions.map((transaction, idx) => {
+                             const transactionValue = Math.abs(transaction.change) * (transaction.transactionPrice || 0);
+                             const type = getTransactionType(transaction.transactionCode);
+
+                             return (
+                                <motion.div
+                                    key={`${transaction.symbol}-${transaction.name}-${transaction.transactionDate}-${idx}`}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ delay: idx * 0.01 }} // faster stagger
+                                    className="grid grid-cols-12 gap-4 px-6 py-3 items-center hover:bg-[#222] transition-colors text-sm border-l-2 border-l-transparent hover:border-l-blue-500"
+                                >
+                                    <div className="col-span-2 flex items-center gap-3">
+                                        <div className="w-8 h-8 flex-shrink-0">
+                                            <CompanyIcon ticker={transaction.symbol} className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <button 
+                                                onClick={() => setSymbolFilter(transaction.symbol)} 
+                                                className="font-bold text-white hover:text-blue-400 transition-colors"
+                                            >
+                                                {transaction.symbol}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-3">
+                                        <div className="font-medium text-gray-300 truncate pr-2" title={transaction.name}>
+                                            {transaction.name}
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-2">
+                                        <div className={`
+                                            inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border
+                                            ${getTransactionColor(transaction.transactionCode)}
+                                        `}>
+                                            {getTransactionIcon(transaction.transactionCode)}
+                                            {getTransactionLabel(transaction.transactionCode)}
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-2 text-right">
+                                        <div className={`font-mono ${type === 'buy' ? 'text-green-400' : type === 'sell' ? 'text-red-400' : 'text-gray-400'}`}>
+                                             {type === 'buy' ? '+' : type === 'sell' ? '-' : ''}
+                                             {formatShares(Math.abs(transaction.change))}
+                                        </div>
+                                        <div className="text-xs text-gray-600 font-mono mt-0.5">
+                                            @{transaction.transactionPrice ? `$${transaction.transactionPrice.toFixed(2)}` : '-'}
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-1 text-right">
+                                         <div className="text-white font-medium">
+                                            {transactionValue > 0 ? formatCurrency(transactionValue) : '-'}
+                                         </div>
+                                    </div>
+
+                                    <div className="col-span-2 text-right">
+                                        <div className="text-gray-400 text-xs">
+                                            {new Date(transaction.transactionDate).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                             );
+                        })}
+                    </AnimatePresence>
+                </div>
             )}
           </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-[#212121] sticky top-0 z-10">
-              <tr className="text-gray-400 text-xs uppercase">
-                <th className="px-4 py-3 text-left">Symbol</th>
-                <th className="px-4 py-3 text-left">Insider Name</th>
-                <th className="px-4 py-3 text-left">Type</th>
-                <th className="px-4 py-3 text-right">Shares</th>
-                <th className="px-4 py-3 text-right">Price</th>
-                <th className="px-4 py-3 text-right">Value</th>
-                <th className="px-4 py-3 text-right">Transaction Date</th>
-                <th className="px-4 py-3 text-right">Filing Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence mode="popLayout">
-                {paginatedTransactions.map((transaction, idx) => {
-                  const transactionValue = Math.abs(transaction.change) * (transaction.transactionPrice || 0);
-                  const type = getTransactionType(transaction.transactionCode);
-                  
-                  return (
-                    <motion.tr
-                      key={`${transaction.symbol}-${transaction.name}-${transaction.transactionDate}-${idx}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: idx * 0.02 }}
-                      className="border-b border-gray-800/50 hover:bg-[#212121]/50 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => setSymbolFilter(transaction.symbol)}
-                          className="flex items-center gap-2 hover:text-blue-400 transition-colors"
-                        >
-                          <CompanyIcon ticker={transaction.symbol} className="h-8 w-8" />
-                          <span className="font-semibold text-white">{transaction.symbol}</span>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-gray-300 truncate max-w-[200px] block" title={transaction.name}>
-                          {transaction.name}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${getTransactionColor(transaction.transactionCode)}`}>
-                          {getTransactionIcon(transaction.transactionCode)}
-                          {getTransactionLabel(transaction.transactionCode)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={type === 'buy' ? 'text-green-400' : type === 'sell' ? 'text-red-400' : 'text-gray-400'}>
-                          {type === 'buy' ? '+' : type === 'sell' ? '-' : ''}
-                          {formatShares(Math.abs(transaction.change))}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-300">
-                        {transaction.transactionPrice ? `$${transaction.transactionPrice.toFixed(2)}` : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={type === 'buy' ? 'text-green-400' : type === 'sell' ? 'text-red-400' : 'text-gray-400'}>
-                          {transactionValue > 0 ? formatCurrency(transactionValue) : '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-400">
-                        {new Date(transaction.transactionDate).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-500 text-xs">
-                        {new Date(transaction.filingDate).toLocaleDateString()}
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        )}
-      </div>
 
-      {/* Bottom Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 py-2">
-          <button
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            First
-          </button>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          </button>
-          
-          {/* Page numbers */}
-          <div className="flex gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum: number;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                    currentPage === pageNum
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a]'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+          {/* Pagination Footer */}
+          <div className="border-t border-gray-800 bg-[#1A1A1A] p-2 flex justify-between items-center">
+             <div className="text-xs text-gray-500 pl-4">
+                 Page {currentPage} of {Math.max(1, totalPages)}
+             </div>
+             <div className="flex gap-1 pr-2">
+                 <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <span className="text-xs text-gray-400">First</span>
+                 </button>
+                 <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <ChevronLeft className="w-4 h-4 text-gray-400" />
+                 </button>
+                 <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage >= totalPages}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                 </button>
+                 <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage >= totalPages}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <span className="text-xs text-gray-400">Last</span>
+                 </button>
+             </div>
           </div>
-          
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            Last
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

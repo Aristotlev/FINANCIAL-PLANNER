@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { 
   BarChart, 
   Bar, 
@@ -173,28 +174,38 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
 
   return (
     <div className="space-y-6">
-       <div className="flex items-center justifying-between">
-        <h2 className="text-2xl font-bold text-white">Earnings Surprises</h2>
+       <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold flex items-center gap-2 text-white">
+          <Target className="w-6 h-6 text-blue-400" />
+          Earnings Surprises
+        </h2>
       </div>
 
        {/* Search Bar */}
-      <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
-        <form onSubmit={handleSearch} className="flex gap-4">
+      <div className="bg-[#0D0D0D] border border-gray-800 rounded-xl p-3">
+        <form onSubmit={handleSearch} className="flex gap-4 items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by ticker (e.g., TSLA, AAPL, MSFT)..."
-              className="w-full bg-[#0D0D0D] border border-gray-800 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5"
+              className="w-full pl-10 pr-4 py-2 bg-transparent border-none text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-0"
             />
           </div>
           <button
             type="submit"
-            className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800 transition-colors"
+            disabled={loading || !searchInput.trim()}
+            className={cn(
+              "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
+              loading || !searchInput.trim()
+                ? "bg-[#1A1A1A] text-gray-500 border border-gray-800 cursor-not-allowed"
+                : "bg-blue-600/10 text-blue-400 border border-blue-600/20 hover:bg-blue-600/20"
+            )}
           >
-            Analyze
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            <span>Analyze</span>
           </button>
         </form>
       </div>
@@ -213,7 +224,7 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
              <div className="flex items-center gap-4 bg-[#212121] px-4 py-2 rounded-lg border border-gray-700">
                 <div className="text-right">
                     <p className="text-xs text-gray-400">Avg Surprise</p>
-                    <p className={`font-mono font-bold ${avgSurprise >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <p className={`font-mono font-bold ${avgSurprise >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
                         {avgSurprise > 0 ? '+' : ''}{avgSurprise.toFixed(2)}%
                     </p>
                 </div>
@@ -250,27 +261,97 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
             <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                  <defs>
+                    <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                    </linearGradient>
+                    <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.2}/>
+                    </linearGradient>
+                    <linearGradient id="estimateGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#334155" stopOpacity={0.8}/>
+                      <stop offset="100%" stopColor="#334155" stopOpacity={0.3}/>
+                    </linearGradient>
+                  </defs>
+                  
+                  <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                  
                   <XAxis 
                     dataKey="period" 
-                    stroke="#666" 
+                    stroke="#525252" 
                     fontSize={12} 
+                    tickLine={false}
+                    axisLine={false}
                     tickFormatter={(val) => {
                         const date = new Date(val);
                         return `${date.getFullYear()}-${date.getMonth() + 1}`;
                     }}
+                    dy={10}
                   />
-                  <YAxis stroke="#666" fontSize={12} />
+                  
+                  <YAxis 
+                    stroke="#525252" 
+                    fontSize={12} 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `$${value}`}
+                    dx={-10}
+                  />
+                  
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', color: '#fff' }}
-                    itemStyle={{ color: '#fff' }}
-                    cursor={{ fill: '#333', opacity: 0.2 }}
+                    cursor={{ fill: '#3b82f6', opacity: 0.1 }}
+                    content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                        return (
+                            <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-4 shadow-xl backdrop-blur-md">
+                                <p className="text-gray-400 text-xs mb-2">{label} (EPS)</p>
+                                {payload.map((entry: any, index: number) => (
+                                    <div key={index} className="flex items-center gap-3 mb-1 min-w-[120px]">
+                                        <div 
+                                            className="w-2 h-2 rounded-full" 
+                                            style={{ backgroundColor: entry.color || entry.fill }}
+                                        />
+                                        <span className="text-gray-300 text-sm flex-1">{entry.name}:</span>
+                                        <span className="text-white font-mono font-bold text-sm">
+                                            ${Number(entry.value).toFixed(2)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                        }
+                        return null;
+                    }}
                   />
-                  <Legend />
-                  <Bar dataKey="estimate" name="EPS Estimate" fill="#64748b" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="actual" name="EPS Actual" radius={[4, 4, 0, 0]}>
+                  
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '20px' }} 
+                    iconType="circle"
+                  />
+                  
+                  <Bar 
+                    dataKey="estimate" 
+                    name="EPS Estimate" 
+                    fill="url(#estimateGradient)" 
+                    radius={[4, 4, 0, 0]} 
+                    animationDuration={1500}
+                    maxBarSize={60}
+                  />
+                  
+                  <Bar 
+                    dataKey="actual" 
+                    name="EPS Actual" 
+                    radius={[4, 4, 0, 0]}
+                    animationDuration={1500}
+                    maxBarSize={60}
+                  >
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.actual >= entry.estimate ? '#4ade80' : '#f87171'} />
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.actual >= entry.estimate ? 'url(#positiveGradient)' : 'url(#negativeGradient)'} 
+                      />
                     ))}
                   </Bar>
                 </BarChart>
@@ -304,13 +385,13 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
                       <td className="px-6 py-4 text-right font-mono text-white">
                         {item.actual?.toFixed(2)}
                       </td>
-                      <td className={`px-6 py-4 text-right font-mono ${item.surprise > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <td className={`px-6 py-4 text-right font-mono ${item.surprise > 0 ? 'text-blue-400' : 'text-red-400'}`}>
                         {item.surprise > 0 ? '+' : ''}{item.surprise.toFixed(4)}
                       </td>
                       <td className="px-6 py-4 text-right">
                          <span className={`px-2 py-1 rounded text-xs border ${
                               item.surprisePercent > 0 
-                                  ? 'bg-green-500/10 text-green-400 border-green-500/20' 
+                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
                                   : 'bg-red-500/10 text-red-400 border-red-500/20'
                           }`}>
                               {item.surprisePercent > 0 ? '+' : ''}{item.surprisePercent.toFixed(2)}%

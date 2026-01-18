@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { Calendar, TrendingUp, Building2, DollarSign, Hash, AlertCircle, Loader2, RefreshCw, ChevronLeft, ChevronRight, Database, Search, Filter, ExternalLink } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Calendar, TrendingUp, Building2, DollarSign, Hash, AlertCircle, Loader2, RefreshCw, ChevronLeft, ChevronRight, Database, Search, Filter, ExternalLink, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '../../lib/utils';
 
 interface IPOEvent {
   date: string;
@@ -126,7 +127,7 @@ export function IPOCalendar() {
         toDate.setMonth(today.getMonth() + ((i + 1) * 3));
         dateRanges.push({ 
           from: fromDate, 
-          to: toDate,
+          to: toDate, 
           label: `${fromDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })} - ${toDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}`
         });
       }
@@ -296,302 +297,226 @@ export function IPOCalendar() {
     currentPage * itemsPerPage
   );
 
+  const groupedEvents = useMemo(() => {
+     const groups: Record<string, IPOEvent[]> = {};
+     paginatedEvents.forEach(e => {
+         if (!groups[e.date]) groups[e.date] = [];
+         groups[e.date].push(e);
+     });
+     return groups;
+  }, [paginatedEvents]);
+
+  const uniqueDatesInPage = useMemo(() => {
+    // Determine order from paginatedEvents to preserve sorting
+    const dates = new Set<string>();
+    paginatedEvents.forEach(e => dates.add(e.date));
+    return Array.from(dates);
+  }, [paginatedEvents]);
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  };
+
   return (
-    <div className="space-y-4 h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-          <Calendar className="w-5 h-5 text-purple-400" />
-          IPO Calendar
-        </h2>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500">Upcoming:</span>
-            <span className="text-blue-400 font-semibold">{upcomingCount}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-500">Priced:</span>
-            <span className="text-green-400 font-semibold">{pricedCount}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-500">Filed:</span>
-            <span className="text-yellow-400 font-semibold">{filedCount}</span>
+    <div className="space-y-6 h-full flex flex-col">
+      {/* Header & Controls */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Calendar className="w-6 h-6 text-purple-400" />
+                  IPO Calendar
+              </h2>
+              <div className="flex gap-3 text-sm mt-1">
+                <span className="text-gray-400">Upcoming: <span className="text-blue-400 font-semibold">{upcomingCount}</span></span>
+                <span className="text-gray-600">|</span>
+                <span className="text-gray-400">Priced: <span className="text-green-400 font-semibold">{pricedCount}</span></span>
+              </div>
           </div>
-          <button
-            onClick={() => fetchIPOCalendar(true)}
-            disabled={loading}
-            className="p-2 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
+          
+          <div className="flex items-center gap-2 bg-[#0D0D0D] p-1 rounded-lg border border-gray-800 flex-wrap">
+              {(['all', 'expected', 'priced', 'filed', 'withdrawn'] as const).map((status) => (
+                <button 
+                    key={status}
+                    onClick={() => setFilter(status)}
+                    className={cn(
+                        "px-3 py-1.5 text-xs font-medium rounded-md transition-all capitalize", 
+                        filter === status 
+                            ? "bg-purple-500/20 text-purple-400 border border-purple-500/20 shadow-sm"
+                            : 'text-gray-400 hover:text-white'
+                    )}
+                >
+                    {status}
+                </button>
+              ))}
+              <button
+                onClick={() => fetchIPOCalendar(true)}
+                disabled={loading}
+                className="p-1.5 ml-2 text-gray-400 hover:text-white transition-colors"
+                title="Refresh"
+              >
+                 <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+              </button>
+          </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+       {/* Search Bar */}
+       <div className="bg-[#0D0D0D] border border-gray-800 rounded-xl p-3 flex gap-4 items-center">
+            <Search className="w-4 h-4 text-gray-500 ml-2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by company name, symbol, or exchange..."
-              className="w-full bg-[#0D0D0D] border border-gray-800 text-white text-sm rounded-lg focus:ring-0 focus:border-gray-700 focus:outline-none block pl-10 p-2.5"
+              placeholder="Search companies, symbols..."
+              className="bg-transparent border-none text-sm text-white focus:ring-0 flex-1 placeholder:text-gray-600 focus:outline-none"
             />
-          </div>
-        </div>
-        
-        {/* Stats Row */}
-        <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <DollarSign className="w-3 h-3 text-purple-400" />
-            Total Raise: <span className="text-purple-400 font-medium">{formatCurrency(totalValue)}</span>
-          </span>
-          <span>•</span>
-          <span>{ipoEvents.length} IPOs tracked</span>
-        </div>
-      </div>
-
-      {/* Filter Tabs + Pagination */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-2">
-          {(['all', 'expected', 'priced', 'filed', 'withdrawn'] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize ${
-                filter === status 
-                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
-                  : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
-              }`}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-        
-        {/* Pagination Controls */}
-        <div className="flex items-center gap-3">
-          {fromCache && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-400/80" title={lastUpdated ? `Last updated: ${lastUpdated.toLocaleString()}` : ''}>
-              <Database className="w-3 h-3" />
-              <span>Cached</span>
+            <div className="text-xs text-gray-500 whitespace-nowrap hidden sm:block pr-2">
+                 Total Raise: <span className="text-purple-400 font-medium">{formatCurrency(totalValue)}</span>
             </div>
-          )}
-          {lastUpdated && (
-            <span className="text-xs text-gray-500">
-              Updated: {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-          <span className="text-xs text-gray-500">
-            {filteredEvents.length} events
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1 || loading}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          </button>
-          <span className="text-xs text-gray-400 min-w-[60px] text-center">
-            {currentPage} / {totalPages || 1}
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages || loading || totalPages === 0}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
-      </div>
+       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto bg-[#1A1A1A] rounded-xl border border-gray-800">
-        {loading && ipoEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-            <span className="text-gray-400 text-sm">{fetchProgress || 'Loading IPO calendar...'}</span>
-          </div>
-        ) : error && ipoEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <AlertCircle className="w-8 h-8 opacity-50 text-red-400" />
-            <span className="text-red-400">{error}</span>
-            <button 
-              onClick={() => fetchIPOCalendar(true)}
-              className="px-4 py-2 bg-purple-600 rounded-lg text-sm hover:bg-purple-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <Calendar className="w-12 h-12 mb-3 opacity-30" />
-            <p>No IPO events found</p>
-            {(filter !== 'all' || searchQuery) && (
-              <button
-                onClick={() => { setFilter('all'); setSearchQuery(''); }}
-                className="mt-2 text-purple-400 text-sm hover:underline"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-[#212121] sticky top-0 z-10">
-              <tr className="text-gray-400 text-xs uppercase">
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Company</th>
-                <th className="px-4 py-3 text-left">Symbol</th>
-                <th className="px-4 py-3 text-center">Exchange</th>
-                <th className="px-4 py-3 text-right">Price Range</th>
-                <th className="px-4 py-3 text-right">Value</th>
-                <th className="px-4 py-3 text-right">Shares</th>
-                <th className="px-4 py-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence mode="popLayout">
-                {paginatedEvents.map((ipo, idx) => {
-                  const upcoming = isUpcoming(ipo.date);
-                  
-                  return (
-                    <motion.tr
-                      key={`${ipo.symbol || ipo.name}-${ipo.date}-${idx}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: idx * 0.02 }}
-                      className={`border-b border-gray-800/50 hover:bg-[#212121]/50 transition-colors ${
-                        !upcoming ? 'opacity-60' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col">
-                          <span className={`font-medium ${upcoming ? 'text-white' : 'text-gray-400'}`}>
-                            {new Date(ipo.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                          <span className="text-xs text-gray-600">
-                            {new Date(ipo.date).getFullYear()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-white font-medium truncate max-w-[200px] block" title={ipo.name}>
-                          {ipo.name}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-cyan-400 font-semibold">
-                          {ipo.symbol || '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="text-gray-400 text-xs">
-                          {ipo.exchange || '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-white font-mono">
-                          {ipo.price ? `$${ipo.price}` : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-purple-400 font-medium">
-                          {ipo.totalSharesValue ? formatCurrency(ipo.totalSharesValue) : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-gray-400 text-xs">
-                          {ipo.numberOfShares ? formatShares(ipo.numberOfShares) : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-1 rounded text-xs font-medium border capitalize ${getStatusColor(ipo.status)}`}>
-                          {ipo.status}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        )}
-      </div>
+      <div className="flex-1 overflow-auto space-y-8 pr-2 custom-scrollbar">
+          {loading && ipoEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
+                <p className="text-gray-400 text-sm">{fetchProgress || 'Loading IPO Calendar...'}</p>
+            </div>
+          ) : uniqueDatesInPage.map(date => (
+              <div key={date} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex items-center gap-3 mb-4">
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-800 to-transparent"></div>
+                      <span className="text-sm font-medium text-gray-400 border border-gray-800 rounded-full px-4 py-1 bg-[#0D0D0D]">
+                          {formatDate(date)}
+                      </span>
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-800 to-transparent"></div>
+                  </div>
 
-      {/* Bottom Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 py-2">
-          <button
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            First
-          </button>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          </button>
+                  <div className="bg-[#0D0D0D] border border-gray-800 rounded-xl overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-[#141414] border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-3 font-medium">Company</th>
+                                    <th className="px-6 py-3 font-medium text-center">Status</th>
+                                    <th className="px-6 py-3 font-medium text-center">Exchange</th>
+                                    <th className="px-6 py-3 font-medium text-right">Price</th>
+                                    <th className="px-6 py-3 font-medium text-right">Shares</th>
+                                    <th className="px-6 py-3 font-medium text-right">Valuation</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800/50">
+                                {groupedEvents[date].map((event, idx) => (
+                                    <tr key={idx} className="group hover:bg-[#1A1A1A] transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-gray-200 group-hover:text-white transition-colors">
+                                                    {event.name}
+                                                </span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-xs font-mono text-cyan-400 bg-cyan-950/30 px-1.5 py-0.5 rounded border border-cyan-900/50">
+                                                        {event.symbol || 'N/A'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium border capitalize inline-block", getStatusColor(event.status))}>
+                                                {event.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-sm text-gray-400">
+                                            {event.exchange || '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="text-sm font-medium text-gray-300">
+                                                 {event.price ? `$${event.price}` : 'TBD'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-sm text-gray-500">
+                                            {event.numberOfShares ? formatShares(event.numberOfShares) : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className="text-sm font-medium text-purple-400">
+                                                {event.totalSharesValue ? formatCurrency(event.totalSharesValue) : '-'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                      </div>
+                  </div>
+              </div>
+          ))}
           
-          {/* Page numbers */}
-          <div className="flex gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum: number;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
+          {/* Empty State */}
+          {!loading && filteredEvents.length === 0 && (
+             <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+                 <Calendar className="w-12 h-12 mb-4 opacity-30" />
+                 <p className="text-lg">No IPO events found</p>
+                 <button 
+                    onClick={() => { setFilter('all'); setSearchQuery(''); }}
+                    className="mt-4 text-sm text-blue-400 hover:text-blue-300 underline"
+                 >
+                     Clear filters
+                 </button>
+             </div>
+          )}
+
+          {/* Pagination Footer */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 py-4 pt-8">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg bg-[#0D0D0D] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="First Page"
+              >
+                <ChevronLeft className="w-4 h-4 rotate-180 transform-none" /> <span className="text-xs">First</span>
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg bg-[#0D0D0D] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
               
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                    currentPage === pageNum
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a]'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-          </div>
+              <div className="flex gap-1">
+                <span className="px-4 py-2 bg-[#1A1A1A] border border-gray-800 rounded-lg text-sm text-white">
+                    Page {currentPage} of {totalPages}
+                </span>
+              </div>
+              
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="p-2 rounded-lg bg-[#0D0D0D] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+               <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage >= totalPages}
+                className="p-2 rounded-lg bg-[#0D0D0D] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <span className="text-xs">Last</span>
+              </button>
+            </div>
+          )}
           
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            Last
-          </button>
-        </div>
-      )}
-      
-      {/* Footer */}
-      <div className="flex items-center justify-between px-2 text-xs text-gray-600">
-        <span>
-          Showing {paginatedEvents.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredEvents.length)} of {filteredEvents.length} events
-        </span>
-        <span>IPO data by Finnhub • Dates subject to change</span>
+          <div className="flex items-center justify-between px-2 text-xs text-gray-600 pb-4">
+             <div className="flex items-center gap-2">
+                {fromCache && (
+                    <span className="flex items-center gap-1 text-amber-500/50">
+                        <Database className="w-3 h-3" /> Cached
+                    </span>
+                )}
+                <span>Updated: {lastUpdated?.toLocaleTimeString()}</span>
+             </div>
+             <span>IPO data by Finnhub</span>
+          </div>
       </div>
     </div>
   );

@@ -52,18 +52,18 @@ export function LandingPage() {
   const trustedCompanies = ["Gemini", "Google Cloud", "Yahoo Finance", "CoinGecko", "CoinMarketCap", "Finnhub", "TradingView", "Binance", "FMP", "SEC EDGAR® Data"];
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[#0B0C10] text-gray-300 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 relative">
+    <div className="min-h-screen bg-[#0B0C10] text-gray-300 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
         {/* Abstract Background Gradients - Adjusted for Dark Cyan Theme */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-cyan-950/20 rounded-full blur-[150px]" />
           <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-teal-900/10 rounded-full blur-[150px]" />
           <div className="absolute bottom-[-10%] left-[20%] w-[60%] h-[40%] bg-emerald-900/10 rounded-full blur-[150px]" />
         </div>
 
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0B0C10]/80 backdrop-blur-xl safe-top">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0B0C10]/80 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex justify-between items-center h-16">
               <div className="flex items-center gap-2">
                 <OmnifolioLogo size="sm" />
               </div>
@@ -89,28 +89,26 @@ export function LandingPage() {
           </div>
         </header>
 
-        <main className="relative z-10 pt-20 sm:pt-32">
+        <main className="relative z-10 pt-32">
           {/* Hero Section */}
-          <section className="px-4 sm:px-6 lg:px-8 mb-16 sm:mb-32">
+          <section className="px-4 sm:px-6 lg:px-8 mb-32">
             <div className="max-w-7xl mx-auto text-center">
-              <div className="inline-flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-2 rounded-full bg-cyan-950/30 border border-cyan-500/20 text-[10px] sm:text-xs font-semibold text-cyan-400 mb-6 sm:mb-8 flex-wrap justify-center">
-                 <div className="flex items-center gap-1"><CommandIcon size={14} className="animate-pulse" /> Open Source</div>
-                 <div className="w-1 h-1 rounded-full bg-cyan-500/50 hidden sm:block" />
+              <div className="inline-flex items-center gap-4 px-4 py-2 rounded-full bg-cyan-950/30 border border-cyan-500/20 text-xs font-semibold text-cyan-400 mb-8 animate-fade-in-out">
+                 <div className="flex items-center gap-1"><CommandIcon size={14} className="animate-pulse" /> 100% Open Source</div>
+                 <div className="w-1 h-1 rounded-full bg-cyan-500/50" />
                  <div className="flex items-center gap-1"><Blockchain02Icon size={14} /> Decentralized</div>
-                 <div className="w-1 h-1 rounded-full bg-cyan-500/50 hidden sm:block" />
+                 <div className="w-1 h-1 rounded-full bg-cyan-500/50" />
                  <div className="flex items-center gap-1"><LockKeyIcon size={14} /> Encrypted</div>
               </div>
               
-              <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white mb-6 sm:mb-8">
-                Master your{' '}
-                <span className="sm:block">
-                  <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-                    Digital Worth
-                  </span>
+              <h1 className="text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tight text-white mb-8">
+                Master your <br />
+                <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
+                  Digital Worth
                 </span>
               </h1>
 
-              <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8 sm:mb-12 leading-relaxed px-2">
+              <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
                 The all-in-one platform for tracking cash, crypto, stocks, and valuables. 
                 Experience financial clarity with real-time analytics and Omni Gemini AI.
               </p>
@@ -143,74 +141,61 @@ export function LandingPage() {
                 </div>
 
                 {/* Main Dashboard Placeholder / Screenshot */}
-                <div className="aspect-[16/10] sm:aspect-[16/10] bg-[#0F1014] relative overflow-hidden flex items-center justify-center group-hover:scale-[1.01] transition-transform duration-700">
+                <div className="aspect-[16/10] bg-[#0F1014] relative overflow-hidden flex items-center justify-center group-hover:scale-[1.01] transition-transform duration-700">
                   {/* Replace this div with an actual Image component when you have the screenshot */}
                   {/* <Image src="/images/dashboard-hero.png" alt="Dashboard" fill className="object-cover" /> */}
                   
                   {/* Placeholder UI for now */}
-                   <div className="absolute inset-0 bg-gradient-to-br from-[#121318] to-black p-4 sm:p-8 flex flex-col">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 sm:mb-8 gap-2">
+                   <div className="absolute inset-0 bg-gradient-to-br from-[#121318] to-black p-8 flex flex-col">
+                      <div className="flex justify-between items-end mb-8">
                         <div>
-                           <p className="text-xs sm:text-sm text-gray-500 mb-1">Total Net Worth</p>
-                           <h2 className="text-2xl sm:text-5xl font-bold text-white tracking-tight">$1,247,892.45</h2>
+                           <p className="text-sm text-gray-500 mb-1">Total Net Worth</p>
+                           <h2 className="text-5xl font-bold text-white tracking-tight">$1,247,892.45</h2>
                         </div>
-                        <div className="flex gap-2 text-cyan-400 bg-cyan-400/10 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium w-fit">
-                          <ChartIncreaseIcon className="w-3 h-3 sm:w-4 sm:h-4" /> +12.4%
+                        <div className="flex gap-2 text-cyan-400 bg-cyan-400/10 px-3 py-1 rounded-full text-sm font-medium">
+                          <ChartIncreaseIcon className="w-4 h-4" /> +12.4%
                         </div>
                       </div>
                       
-                      {/* Grid representation - hidden on very small screens */}
-                      <div className="hidden sm:grid grid-cols-12 gap-4 sm:gap-6 h-full">
-                        <div className="col-span-12 md:col-span-8 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4 sm:p-6 relative overflow-hidden">
-                           <div className="flex justify-between mb-4 sm:mb-6">
-                              <h3 className="text-white font-medium text-sm sm:text-base">Portfolio Performance</h3>
-                              <div className="flex gap-1 sm:gap-2">
-                                <span className="px-2 sm:px-3 py-1 rounded-full bg-white/5 text-[10px] sm:text-xs text-gray-400">1D</span>
-                                <span className="px-2 sm:px-3 py-1 rounded-full bg-white/10 text-[10px] sm:text-xs text-white">1W</span>
-                                <span className="px-2 sm:px-3 py-1 rounded-full bg-white/5 text-[10px] sm:text-xs text-gray-400">1M</span>
+                      {/* Grid representation */}
+                      <div className="grid grid-cols-12 gap-6 h-full">
+                        <div className="col-span-8 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-6 relative overflow-hidden">
+                           <div className="flex justify-between mb-6">
+                              <h3 className="text-white font-medium">Portfolio Performance</h3>
+                              <div className="flex gap-2">
+                                <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-gray-400">1D</span>
+                                <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-white">1W</span>
+                                <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-gray-400">1M</span>
                               </div>
                            </div>
                            {/* Chart placeholder */}
-                           <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-48 bg-gradient-to-t from-cyan-500/10 to-transparent" />
-                           <svg className="w-full h-24 sm:h-48 stroke-cyan-500 stroke-2 fill-none" viewBox="0 0 400 100" preserveAspectRatio="none">
+                           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-cyan-500/10 to-transparent" />
+                           <svg className="w-full h-48 stroke-cyan-500 stroke-2 fill-none" viewBox="0 0 400 100" preserveAspectRatio="none">
                               <path d="M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,10 300,20 C350,30 350,0 400,10" />
                            </svg>
                         </div>
-                        <div className="hidden md:flex col-span-4 flex-col gap-2 sm:gap-4">
-                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-3 sm:p-4">
-                              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                                 <div className="p-1.5 sm:p-2 bg-cyan-500/10 rounded-md"><Building02Icon className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400"/></div>
-                                 <span className="text-xs sm:text-sm text-gray-300">Real Estate</span>
+                        <div className="col-span-4 flex flex-col gap-4">
+                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4">
+                              <div className="flex items-center gap-3 mb-2">
+                                 <div className="p-2 bg-cyan-500/10 rounded-md"><Building02Icon className="w-4 h-4 text-cyan-400"/></div>
+                                 <span className="text-sm text-gray-300">Real Estate</span>
                               </div>
-                              <p className="text-lg sm:text-2xl font-semibold text-white">$650,000</p>
+                              <p className="text-2xl font-semibold text-white">$650,000</p>
                            </div>
-                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-3 sm:p-4">
-                              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                                 <div className="p-1.5 sm:p-2 bg-purple-500/10 rounded-md"><Coins01Icon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400"/></div>
-                                 <span className="text-xs sm:text-sm text-gray-300">Crypto</span>
+                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4">
+                              <div className="flex items-center gap-3 mb-2">
+                                 <div className="p-2 bg-purple-500/10 rounded-md"><Coins01Icon className="w-4 h-4 text-purple-400"/></div>
+                                 <span className="text-sm text-gray-300">Crypto</span>
                               </div>
-                              <p className="text-lg sm:text-2xl font-semibold text-white">$89,340</p>
+                              <p className="text-2xl font-semibold text-white">$89,340</p>
                            </div>
-                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-3 sm:p-4">
-                              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                                 <div className="p-1.5 sm:p-2 bg-green-500/10 rounded-md"><ChartLineData01Icon className="w-3 h-3 sm:w-4 sm:h-4 text-green-400"/></div>
-                                 <span className="text-xs sm:text-sm text-gray-300">Stocks</span>
+                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4">
+                              <div className="flex items-center gap-3 mb-2">
+                                 <div className="p-2 bg-green-500/10 rounded-md"><ChartLineData01Icon className="w-4 h-4 text-green-400"/></div>
+                                 <span className="text-sm text-gray-300">Stocks</span>
                               </div>
-                              <p className="text-lg sm:text-2xl font-semibold text-white">$456,780</p>
+                              <p className="text-2xl font-semibold text-white">$456,780</p>
                            </div>
-                        </div>
-                      </div>
-                      
-                      {/* Mobile simplified view */}
-                      <div className="flex sm:hidden flex-1 items-center justify-center">
-                        <div className="w-full bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4 relative overflow-hidden">
-                           <div className="flex justify-between mb-2">
-                              <h3 className="text-white font-medium text-xs">Portfolio Performance</h3>
-                           </div>
-                           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-cyan-500/10 to-transparent" />
-                           <svg className="w-full h-16 stroke-cyan-500 stroke-2 fill-none" viewBox="0 0 400 100" preserveAspectRatio="none">
-                              <path d="M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,10 300,20 C350,30 350,0 400,10" />
-                           </svg>
                         </div>
                       </div>
                    </div>

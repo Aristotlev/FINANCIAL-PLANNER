@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { Search, Loader2, RefreshCw, ChevronLeft, ChevronRight, Database, FileText, DollarSign, ExternalLink, Landmark, Calendar, Globe } from 'lucide-react';
+import { Search, Loader2, RefreshCw, ChevronLeft, ChevronRight, Database, FileText, ExternalLink, Landmark, Calendar, Globe, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tickerDomains } from '@/lib/ticker-domains';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 // Generate a consistent color based on ticker
 const getTickerColor = (ticker: string): string => {
@@ -24,7 +26,7 @@ const getTickerColor = (ticker: string): string => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Company Icon Component - Same approach as SEC EDGAR page
+// Company Icon Component
 const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: { ticker: string, className?: string, showPlaceholder?: boolean }) => {
   const [imageError, setImageError] = useState(false);
   const [fallbackIndex, setFallbackIndex] = useState(0);
@@ -66,7 +68,7 @@ const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: 
       <img 
         src={imageSources[fallbackIndex]}
         alt={`${ticker} logo`} 
-        className={`${className} rounded-lg object-contain bg-white p-1`}
+        className={cn(className, "rounded-lg object-contain bg-white p-0.5")}
         onError={handleImageError}
         loading="lazy"
       />
@@ -76,7 +78,7 @@ const CompanyIcon = ({ ticker, className = "h-8 w-8", showPlaceholder = true }: 
   if (!showPlaceholder) return null;
 
   return (
-    <div className={`${className} rounded-lg bg-gradient-to-br ${getTickerColor(ticker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
+    <div className={cn(className, `rounded-lg bg-gradient-to-br ${getTickerColor(ticker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`)}>
       {ticker.slice(0, 2)}
     </div>
   );
@@ -122,17 +124,11 @@ const CACHE_VERSION = 1;
 
 // Popular stocks to track lobbying activities
 const DEFAULT_SYMBOLS = [
-  // Tech Giants (heavy lobbyists)
   'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA',
-  // Pharma (major lobbying)
   'JNJ', 'PFE', 'ABBV', 'MRK', 'LLY', 'BMY',
-  // Defense (government contracts)
   'LMT', 'RTX', 'BA', 'NOC', 'GD',
-  // Energy
   'XOM', 'CVX', 'COP', 'OXY',
-  // Finance
   'JPM', 'BAC', 'GS', 'MS', 'WFC',
-  // Telecom
   'T', 'VZ', 'TMUS',
 ];
 
@@ -235,7 +231,6 @@ export function SenateLobbyingView() {
       const allActivities: LobbyingActivity[] = [];
       const symbols = DEFAULT_SYMBOLS;
       
-      // Batch fetch - 3 symbols at a time with delays to respect rate limits
       const batchSize = 3;
       for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
@@ -243,22 +238,12 @@ export function SenateLobbyingView() {
         
         const results = await Promise.all(
           batch.map(async (symbol, idx) => {
-            // Small stagger between requests
             await new Promise(resolve => setTimeout(resolve, idx * 150));
-            
             try {
               const response = await fetch(`/api/finnhub/lobbying?symbol=${symbol}`);
-              if (!response.ok) {
-                if (response.status === 429) {
-                  console.warn(`Rate limited on ${symbol}, skipping...`);
-                  return [];
-                }
-                return [];
-              }
+              if (!response.ok) return [];
               const data: LobbyingResponse = await response.json();
-              if (data.source === 'cache') {
-                setFromCache(true);
-              }
+              if (data.source === 'cache') setFromCache(true);
               return data.data || [];
             } catch {
               return [];
@@ -268,31 +253,22 @@ export function SenateLobbyingView() {
         
         results.flat().forEach(a => allActivities.push(a));
         
-        // Pause between batches to avoid rate limits
         if (i + batchSize < symbols.length) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
 
-      // Sort by year and period (newest first)
       const sortedActivities = allActivities.sort((a, b) => {
         if (b.year !== a.year) return b.year - a.year;
         return (b.period || '').localeCompare(a.period || '');
       });
-
-      console.log(`Lobbying: Fetched ${sortedActivities.length} activities from ${symbols.length} symbols`);
       
-      // Cache results
       saveToCache(sortedActivities, symbols);
-      
       setActivities(sortedActivities);
       setLastUpdated(new Date());
-      setFetchProgress('');
     } catch (err) {
-      console.error('Error fetching lobbying activities:', err);
+      console.error(err);
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
-      
-      // Try stale cache on error
       const cached = loadFromCache();
       if (cached) {
         setActivities(cached.activities);
@@ -335,13 +311,11 @@ export function SenateLobbyingView() {
     return `$${value.toLocaleString()}`;
   };
 
-  // Filter activities
   const filteredActivities = activities.filter(a => {
     const symbolMatch = !symbolFilter || a.symbol === symbolFilter;
     return symbolMatch;
   });
 
-  // Calculate stats
   const totalExpenses = activities.reduce((sum, a) => sum + (a.expenses || 0), 0);
   const totalIncome = activities.reduce((sum, a) => sum + (a.income || 0), 0);
   const uniqueCompanies = new Set(activities.map(a => a.name)).size;
@@ -352,329 +326,261 @@ export function SenateLobbyingView() {
     currentPage * itemsPerPage
   );
 
-  // Get unique symbols for quick filter
   const uniqueSymbols = [...new Set(activities.map(a => a.symbol))].sort();
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
+    <div className="space-y-6 h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-          <Landmark className="w-5 h-5 text-amber-400" />
-          Senate Lobbying
-        </h2>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500">Companies:</span>
-            <span className="text-blue-400 font-semibold">{uniqueCompanies}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-500">Expenses:</span>
-            <span className="text-red-400 font-semibold">{formatCurrency(totalExpenses)}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-500">Income:</span>
-            <span className="text-green-400 font-semibold">{formatCurrency(totalIncome)}</span>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+           <h2 className="text-2xl font-bold flex items-center gap-2 text-white">
+            <Landmark className="w-6 h-6 text-amber-500" />
+            Senate Lobbying
+           </h2>
+            <div className="flex gap-3 text-sm mt-1 text-gray-400">
+             Track Congressional lobbying activities and expenditures
           </div>
-          <button
-            onClick={() => fetchLobbyingActivities(true)}
-            disabled={loading}
-            className="p-2 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+        </div>
+
+        {/* Stats Controls */}
+        <div className="flex items-center gap-3">
+             <div className="hidden md:flex items-center gap-4 mr-4 text-xs font-medium bg-[#1A1A1A] p-2 rounded-lg border border-gray-800">
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-400">Companies:</span>
+                    <span className="text-white">{uniqueCompanies}</span>
+                </div>
+                <div className="w-px h-3 bg-gray-700"></div>
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-400">Expenses:</span>
+                    <span className="text-red-400">{formatCurrency(totalExpenses)}</span>
+                </div>
+                <div className="w-px h-3 bg-gray-700"></div>
+                <div className="flex items-center gap-2">
+                    <span className="text-gray-400">Income:</span>
+                    <span className="text-green-400">{formatCurrency(totalIncome)}</span>
+                </div>
+             </div>
+
+            <button
+                onClick={() => fetchLobbyingActivities(true)}
+                disabled={loading}
+                className="p-2.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-50 border border-gray-800 hover:border-gray-700"
+                title="Refresh data"
+            >
+                <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
+            </button>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
-        <form onSubmit={handleSearch} className="flex gap-4">
+      <div className="bg-[#0D0D0D] border border-gray-800 rounded-xl p-3 space-y-3">
+        <form onSubmit={handleSearch} className="flex gap-4 items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by ticker (e.g., AAPL, LMT, PFE)..."
-              className="w-full bg-[#0D0D0D] border border-gray-800 text-white text-sm rounded-lg focus:ring-0 focus:border-gray-700 focus:outline-none block pl-10 p-2.5"
+              className="w-full pl-10 pr-4 py-2 bg-transparent border-none text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-0"
             />
           </div>
           <button
             type="submit"
-            disabled={loading}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 focus:ring-0 focus:outline-none transition-colors disabled:opacity-50"
+            disabled={loading || !searchInput.trim()}
+             className={cn(
+                "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                loading || !searchInput.trim()
+                  ? "bg-[#1A1A1A] text-gray-500 border border-gray-800 cursor-not-allowed"
+                  : "bg-amber-600/10 text-amber-400 border border-amber-600/20 hover:bg-amber-600/20"
+              )}
           >
             Search
           </button>
         </form>
         
-        {/* Quick Symbol Filters */}
+        {/* Quick Filters */}
         {uniqueSymbols.length > 0 && (
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs text-gray-500 py-1 whitespace-nowrap">Quick filter:</span>
-            <div className="flex-1 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+           <div className="flex items-center gap-2 overflow-x-auto max-w-full no-scrollbar border-t border-gray-800 pt-3">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold shrink-0">Recent:</span>
               {symbolFilter && (
                 <button
                   onClick={clearSymbolFilter}
-                  className="px-2 py-1 text-xs rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors whitespace-nowrap flex-shrink-0"
+                   className="px-2 py-1 text-[10px] rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 whitespace-nowrap"
                 >
-                  Clear: {symbolFilter} ×
+                  Clear: {symbolFilter}
                 </button>
               )}
-              {uniqueSymbols.map(sym => (
+              {uniqueSymbols.slice(0, 15).map(sym => (
                 <button
                   key={sym}
                   onClick={() => setSymbolFilter(symbolFilter === sym ? '' : sym)}
-                  className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
-                    symbolFilter === sym
-                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
-                  }`}
+                  className={cn(
+                      "px-2 py-1 text-[10px] rounded-md transition-colors whitespace-nowrap flex-shrink-0 border",
+                       symbolFilter === sym
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      : 'bg-[#1A1A1A] text-gray-500 border-gray-800 hover:border-gray-700 hover:text-gray-300'
+                  )}
                 >
                   {sym}
                 </button>
               ))}
             </div>
-          </div>
         )}
       </div>
 
-      {/* Pagination + Info */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Landmark className="w-3.5 h-3.5 text-amber-400" />
-          <span>Congressional lobbying activities reported to the Senate and House</span>
-        </div>
-        
-        {/* Pagination at top */}
-        <div className="flex items-center gap-2">
-          {fromCache && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-400/80 mr-2">
-              <Database className="w-3 h-3" />
-              <span>Cached</span>
-            </div>
-          )}
-          {lastUpdated && (
-            <span className="text-xs text-gray-500 mr-2">
-              Updated: {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-          <span className="text-xs text-gray-500">
-            {filteredActivities.length} activities
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          </button>
-          <span className="text-xs text-gray-400 min-w-[60px] text-center">
-            {currentPage} / {Math.max(1, totalPages)}
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
-      </div>
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden bg-[#1A1A1A] rounded-xl border border-gray-800 flex flex-col">
+          {/* Grid Header */}
+          <div className="border-b border-gray-800">
+             <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <div className="col-span-2">Symbol</div>
+                <div className="col-span-3">Entity Name</div>
+                <div className="col-span-3">Description</div>
+                <div className="col-span-1 text-center">Period</div>
+                <div className="col-span-2 text-right">Income / Expenses</div>
+                <div className="col-span-1 text-center">Doc</div>
+             </div>
+          </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto bg-[#1A1A1A] rounded-xl border border-gray-800">
-        {loading && activities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
-            <span className="text-gray-400 text-sm">{fetchProgress || 'Loading lobbying activities...'}</span>
-          </div>
-        ) : error && activities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <span className="text-red-400">{error}</span>
-            <button
-              onClick={() => fetchLobbyingActivities(true)}
-              className="px-4 py-2 bg-amber-600 rounded-lg text-sm hover:bg-amber-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : filteredActivities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-            <Landmark className="w-12 h-12 mb-3 opacity-30" />
-            <p>No lobbying activities found</p>
-            {symbolFilter && (
-              <button
-                onClick={clearSymbolFilter}
-                className="mt-2 text-amber-400 text-sm hover:underline"
-              >
-                Clear filter
-              </button>
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {loading && activities.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-12">
+                     <Loader2 className="w-8 h-8 text-amber-500 animate-spin mb-4" />
+                    <p className="text-gray-400 text-sm">{fetchProgress || 'Loading lobbying activities...'}</p>
+                 </div>
+            ) : filteredActivities.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
+                    <Landmark className="w-12 h-12 mb-3 opacity-20" />
+                    <p>No lobbying activities matched your search.</p>
+                </div>
+            ) : (
+                <div className="divide-y divide-gray-800/50">
+                    <AnimatePresence mode="popLayout">
+                        {paginatedActivities.map((activity, idx) => (
+                           <motion.div
+                             key={`${activity.symbol}-${activity.senateId || activity.registrantId}-${activity.year}-${activity.period}-${idx}`}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ delay: idx * 0.01 }}
+                              className="grid grid-cols-12 gap-4 px-6 py-3 items-center hover:bg-[#222] transition-colors text-sm border-l-2 border-l-transparent hover:border-l-amber-500 group"
+                           >
+                                <div className="col-span-2 flex items-center gap-3">
+                                    <div className="w-8 h-8 flex-shrink-0">
+                                        <CompanyIcon ticker={activity.symbol} className="w-8 h-8" />
+                                    </div>
+                                    <div>
+                                        <button 
+                                            onClick={() => setSymbolFilter(activity.symbol)} 
+                                            className="font-bold text-white hover:text-amber-400 transition-colors"
+                                        >
+                                            {activity.symbol}
+                                        </button>
+                                        <span className="block text-[10px] text-gray-600">{activity.country || 'USA'}</span>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-3">
+                                     <div className="font-medium text-gray-300 truncate pr-2" title={activity.name}>
+                                        {activity.name}
+                                     </div>
+                                      {activity.postedName && activity.postedName !== activity.name && (
+                                        <div className="text-[10px] text-gray-500 truncate" title={activity.postedName}>
+                                            Posted: {activity.postedName}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="col-span-3">
+                                     <div className="text-gray-400 text-xs line-clamp-2" title={activity.description}>
+                                        {activity.description || '-'}
+                                     </div>
+                                </div>
+
+                                <div className="col-span-1 text-center">
+                                    <div className="inline-flex flex-col items-center justify-center text-[10px] font-mono bg-[#111] px-2 py-1 rounded border border-gray-800/50">
+                                         <span className="text-gray-300">{activity.period}</span>
+                                         <span className="text-gray-500">{activity.year}</span>
+                                    </div>
+                                </div>
+
+                                <div className="col-span-2 text-right">
+                                    {activity.expenses ? (
+                                        <div className="text-red-400 font-mono font-medium">
+                                            {formatCurrency(activity.expenses)}
+                                            <div className="text-[10px] text-gray-600 uppercase">Expense</div>
+                                        </div>
+                                    ) : activity.income ? (
+                                        <div className="text-green-400 font-mono font-medium">
+                                            {formatCurrency(activity.income)}
+                                             <div className="text-[10px] text-gray-600 uppercase">Income</div>
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-600">-</span>
+                                    )}
+                                </div>
+
+                                <div className="col-span-1 text-center">
+                                     {activity.documentUrl ? (
+                                        <a
+                                            href={activity.documentUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 text-gray-400 hover:bg-amber-500/10 hover:text-amber-400 transition-colors border border-gray-700 hover:border-amber-500/30"
+                                            title="View Filing"
+                                        >
+                                            <FileText className="w-4 h-4" />
+                                        </a>
+                                        ) : (
+                                        <span className="text-gray-700">-</span>
+                                        )}
+                                </div>
+                           </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </div>
             )}
           </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-[#212121] sticky top-0 z-10">
-              <tr className="text-gray-400 text-xs uppercase">
-                <th className="px-4 py-3 text-left">Symbol</th>
-                <th className="px-4 py-3 text-left">Company</th>
-                <th className="px-4 py-3 text-left">Description</th>
-                <th className="px-4 py-3 text-center">Period</th>
-                <th className="px-4 py-3 text-right">Expenses</th>
-                <th className="px-4 py-3 text-right">Income</th>
-                <th className="px-4 py-3 text-center">Country</th>
-                <th className="px-4 py-3 text-center">Document</th>
-              </tr>
-            </thead>
-            <tbody>
-              <AnimatePresence mode="popLayout">
-                {paginatedActivities.map((activity, idx) => {
-                  return (
-                    <motion.tr
-                      key={`${activity.symbol}-${activity.senateId || activity.registrantId}-${activity.year}-${activity.period}-${idx}`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: idx * 0.02 }}
-                      className="border-b border-gray-800/50 hover:bg-[#212121]/50 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => setSymbolFilter(activity.symbol)}
-                          className="flex items-center gap-2 hover:text-amber-400 transition-colors"
-                        >
-                          <CompanyIcon ticker={activity.symbol} className="h-8 w-8" />
-                          <span className="font-semibold text-white">{activity.symbol}</span>
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-gray-300 truncate max-w-[180px] block" title={activity.name}>
-                          {activity.name}
-                        </span>
-                        {activity.postedName && activity.postedName !== activity.name && (
-                          <span className="text-xs text-gray-500 truncate block" title={activity.postedName}>
-                            {activity.postedName}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-gray-400 truncate max-w-[250px] block text-xs" title={activity.description}>
-                          {activity.description || '-'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <Calendar className="w-3 h-3 text-gray-500" />
-                          <span className="text-gray-300">
-                            {activity.period} {activity.year}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-red-400 font-medium">
-                          {formatCurrency(activity.expenses)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-green-400 font-medium">
-                          {formatCurrency(activity.income)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Globe className="w-3 h-3 text-gray-500" />
-                          <span className="text-gray-400 text-xs">
-                            {activity.country || 'USA'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {activity.documentUrl ? (
-                          <a
-                            href={activity.documentUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
-                          >
-                            <FileText className="w-3 h-3" />
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          <span className="text-gray-600">-</span>
-                        )}
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Bottom Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 py-2">
-          <button
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            First
-          </button>
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          </button>
           
-          {/* Page numbers */}
-          <div className="flex gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum: number;
-              if (totalPages <= 5) {
-                pageNum = i + 1;
-              } else if (currentPage <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 2) {
-                pageNum = totalPages - 4 + i;
-              } else {
-                pageNum = currentPage - 2 + i;
-              }
-              
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                    currentPage === pageNum
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                      : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a]'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+           {/* Pagination Footer */}
+          <div className="border-t border-gray-800 bg-[#1A1A1A] p-2 flex justify-between items-center">
+             <div className="text-xs text-gray-500 pl-4 flex items-center gap-2">
+                 <span>Page {currentPage} of {Math.max(1, totalPages)}</span>
+                 {fromCache && <span className="text-amber-700 px-1.5 py-0.5 bg-amber-900/10 rounded border border-amber-900/20 text-[10px]">Cached</span>}
+             </div>
+             <div className="flex gap-1 pr-2">
+                 <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <span className="text-xs text-gray-400">First</span>
+                 </button>
+                 <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <ChevronLeft className="w-4 h-4 text-gray-400" />
+                 </button>
+                 <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage >= totalPages}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                 </button>
+                 <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage >= totalPages}
+                    className="p-1.5 rounded hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                 >
+                    <span className="text-xs text-gray-400">Last</span>
+                 </button>
+             </div>
           </div>
-          
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage >= totalPages}
-            className="p-1.5 rounded-lg bg-[#212121] hover:bg-[#2a2a2a] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            Last
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -238,20 +238,20 @@ export function USASpending() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
-          <DollarSign className="w-6 h-6 text-green-400" />
+          <DollarSign className="w-6 h-6 text-blue-400" />
           USA Government Spending
         </h2>
       </div>
 
       {/* Info Banner */}
-      <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-xl border border-green-500/20 p-4">
+      <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl border border-blue-500/20 p-4">
         <div className="flex items-start gap-3">
-          <Award className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+          <Award className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm text-gray-300">
               Track government contract awards from the USASpending dataset. This data is especially valuable for analyzing 
-              <span className="text-green-400 font-medium"> Defense</span>, 
-              <span className="text-blue-400 font-medium"> Aerospace</span>, and 
+              <span className="text-blue-400 font-medium"> Defense</span>, 
+              <span className="text-indigo-400 font-medium"> Aerospace</span>, and 
               <span className="text-purple-400 font-medium"> Education</span> sector companies.
             </p>
             <p className="text-xs text-gray-500 mt-1">Only recent data is available via API. Historical data (pre-2024) available at usaspending.gov</p>
@@ -270,13 +270,13 @@ export function USASpending() {
                 value={searchSymbol}
                 onChange={(e) => setSearchSymbol(e.target.value.toUpperCase())}
                 placeholder="Enter stock symbol (e.g., LMT, BA, RTX)"
-                className="w-full pl-10 pr-4 py-3 bg-[#212121] border border-[#333] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
+                className="w-full pl-10 pr-4 py-3 bg-[#212121] border border-[#333] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
             <button
               type="submit"
               disabled={loading || !searchSymbol.trim()}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -294,14 +294,14 @@ export function USASpending() {
               type="date"
               value={dateRange.from}
               onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
-              className="px-3 py-1.5 bg-[#212121] border border-[#333] rounded-lg text-white focus:outline-none focus:border-green-500"
+              className="px-3 py-1.5 bg-[#212121] border border-[#333] rounded-lg text-white focus:outline-none focus:border-blue-500"
             />
             <span className="text-gray-500">to</span>
             <input
               type="date"
               value={dateRange.to}
               onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
-              className="px-3 py-1.5 bg-[#212121] border border-[#333] rounded-lg text-white focus:outline-none focus:border-green-500"
+              className="px-3 py-1.5 bg-[#212121] border border-[#333] rounded-lg text-white focus:outline-none focus:border-blue-500"
             />
           </div>
 
@@ -315,7 +315,7 @@ export function USASpending() {
                 onClick={() => handleQuickSelect(symbol)}
                 className={`px-3 py-1 text-sm rounded-full border transition-colors ${
                   selectedSymbol === symbol
-                    ? 'bg-green-600 border-green-600 text-white'
+                    ? 'bg-blue-600 border-blue-600 text-white'
                     : 'bg-[#212121] border-[#333] text-gray-400 hover:border-gray-500 hover:text-white'
                 }`}
               >
@@ -331,8 +331,8 @@ export function USASpending() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <FileText className="w-5 h-5 text-green-400" />
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <FileText className="w-5 h-5 text-blue-400" />
               </div>
               <div>
                 <p className="text-sm text-gray-400">Total Contracts</p>
@@ -347,7 +347,7 @@ export function USASpending() {
               </div>
               <div>
                 <p className="text-sm text-gray-400">Total Contract Value</p>
-                <p className="text-xl font-bold text-green-400">{formatCurrency(totalContractValue)}</p>
+                <p className="text-xl font-bold text-blue-400">{formatCurrency(totalContractValue)}</p>
               </div>
             </div>
           </div>
@@ -380,7 +380,7 @@ export function USASpending() {
         <div className="divide-y divide-[#2A2A2A] max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
           {loading ? (
             <div className="p-12 text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-green-400 mx-auto mb-4" />
+              <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-4" />
               <p className="text-gray-400">Loading government spending data for {selectedSymbol}...</p>
             </div>
           ) : error ? (
@@ -389,7 +389,7 @@ export function USASpending() {
               <p className="text-red-400 mb-2">{error}</p>
               <button
                 onClick={() => selectedSymbol && fetchUSASpendingData(selectedSymbol)}
-                className="text-green-400 hover:text-green-300 flex items-center gap-2 mx-auto"
+                className="text-blue-400 hover:text-blue-300 flex items-center gap-2 mx-auto"
               >
                 <RefreshCw className="w-4 h-4" />
                 Try Again
@@ -452,7 +452,7 @@ export function USASpending() {
                     </div>
                   </div>
                   <div className="col-span-2 text-right">
-                    <p className="text-green-400 font-mono font-bold">
+                    <p className="text-blue-400 font-mono font-bold">
                       {formatCurrency(activity.totalValue)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
@@ -465,7 +465,7 @@ export function USASpending() {
                         href={activity.permalink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors text-xs"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors text-xs"
                       >
                         <ExternalLink className="w-3 h-3" />
                         USASpending

@@ -313,7 +313,7 @@ export function USASpendingView() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-xl font-bold flex items-center gap-2 text-white">
-          <DollarSign className="w-5 h-5 text-emerald-400" />
+          <DollarSign className="w-5 h-5 text-blue-400" />
           USA Government Spending
         </h2>
         <div className="flex items-center gap-3">
@@ -325,7 +325,7 @@ export function USASpendingView() {
             <span className="text-purple-400 font-semibold">{uniqueAgencies}</span>
             <span className="text-gray-600">|</span>
             <span className="text-gray-500">Total Value:</span>
-            <span className="text-emerald-400 font-semibold">{formatCurrency(totalContractValue)}</span>
+            <span className="text-blue-400 font-semibold">{formatCurrency(totalContractValue)}</span>
           </div>
           <button
             onClick={() => fetchUSASpending(true)}
@@ -354,7 +354,7 @@ export function USASpendingView() {
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 focus:ring-0 focus:outline-none transition-colors disabled:opacity-50"
+            className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-0 focus:outline-none transition-colors disabled:opacity-50"
           >
             Search
           </button>
@@ -379,7 +379,7 @@ export function USASpendingView() {
                   onClick={() => setSymbolFilter(symbolFilter === sym ? '' : sym)}
                   className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap flex-shrink-0 ${
                     symbolFilter === sym
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                       : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a] border border-transparent'
                   }`}
                 >
@@ -417,7 +417,7 @@ export function USASpendingView() {
       {/* Info + Pagination */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <Globe className="w-3.5 h-3.5 text-emerald-400" />
+          <Globe className="w-3.5 h-3.5 text-blue-400" />
           <span>Federal contracts from USASpending.gov - Defense, Aerospace, Education & more</span>
         </div>
         
@@ -461,7 +461,7 @@ export function USASpendingView() {
       <div className="flex-1 overflow-auto bg-[#1A1A1A] rounded-xl border border-gray-800">
         {loading && activities.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
             <span className="text-gray-400 text-sm">{fetchProgress || 'Loading government contracts...'}</span>
           </div>
         ) : error && activities.length === 0 ? (
@@ -469,7 +469,7 @@ export function USASpendingView() {
             <span className="text-red-400">{error}</span>
             <button
               onClick={() => fetchUSASpending(true)}
-              className="px-4 py-2 bg-emerald-600 rounded-lg text-sm hover:bg-emerald-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 rounded-lg text-sm hover:bg-blue-700 transition-colors"
             >
               Try Again
             </button>
@@ -481,7 +481,7 @@ export function USASpendingView() {
             {(symbolFilter || agencyFilter) && (
               <button
                 onClick={clearFilters}
-                className="mt-2 text-emerald-400 text-sm hover:underline"
+                className="mt-2 text-blue-400 text-sm hover:underline"
               >
                 Clear filters
               </button>
@@ -517,10 +517,10 @@ export function USASpendingView() {
                       <td className="px-4 py-3">
                         <button
                           onClick={() => setSymbolFilter(activity.symbol)}
-                          className="flex items-center gap-2 hover:text-emerald-400 transition-colors"
+                          className="flex items-center gap-2 hover:text-blue-400 transition-colors"
                         >
-                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
-                            <Building2 className="w-4 h-4 text-emerald-400" />
+                          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+                            <Building2 className="w-4 h-4 text-blue-400" />
                           </div>
                           <div className="text-left">
                             <span className="font-semibold text-white block">{activity.symbol}</span>
@@ -557,7 +557,7 @@ export function USASpendingView() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <span className={`font-semibold ${activity.totalValue > 0 ? 'text-emerald-400' : 'text-gray-400'}`}>
+                        <span className={`font-semibold ${activity.totalValue > 0 ? 'text-blue-400' : 'text-gray-400'}`}>
                           {formatCurrency(activity.totalValue)}
                         </span>
                       </td>
@@ -592,7 +592,7 @@ export function USASpendingView() {
                             href={activity.permalink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
                           >
                             <FileText className="w-3 h-3" />
                             <ExternalLink className="w-3 h-3" />
@@ -648,7 +648,7 @@ export function USASpendingView() {
                   onClick={() => setCurrentPage(pageNum)}
                   className={`w-8 h-8 text-xs rounded-lg transition-colors ${
                     currentPage === pageNum
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                       : 'bg-[#212121] text-gray-400 hover:bg-[#2a2a2a]'
                   }`}
                 >

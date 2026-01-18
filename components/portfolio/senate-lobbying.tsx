@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Landmark, Search, ExternalLink, DollarSign, FileText, Calendar, Building2, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface LobbyingActivity {
   clientId: string;
@@ -27,7 +28,7 @@ interface LobbyingActivity {
 
 const POPULAR_SYMBOLS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'JPM', 'BAC', 'XOM'];
 
-// Initialize date range outside component to avoid hydration issues
+// Initialize date range outside component
 const getInitialDateRange = () => {
   const to = new Date();
   const from = new Date();
@@ -126,71 +127,71 @@ export function SenateLobbying() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
-          <Landmark className="w-6 h-6 text-blue-400" />
+        <h2 className="text-xl font-bold flex items-center gap-3 text-white">
+          <Landmark className="w-5 h-5 text-blue-400" />
           Senate Lobbying
         </h2>
       </div>
 
       {/* Search Section */}
-      <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6">
+      <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
                 type="text"
                 value={searchSymbol}
                 onChange={(e) => setSearchSymbol(e.target.value.toUpperCase())}
                 placeholder="Enter stock symbol (e.g., AAPL)"
-                className="w-full pl-10 pr-4 py-3 bg-[#212121] border border-[#333] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2 bg-transparent border border-gray-800 rounded-lg text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
+             <div className="flex items-center gap-2 text-sm bg-[#1A1A1A] px-3 py-1.5 rounded-lg border border-gray-800">
+                <span className="text-gray-500 text-xs">Range:</span>
+                <input
+                type="date"
+                value={dateRange.from}
+                onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
+                className="bg-transparent text-white focus:outline-none text-xs w-24"
+                />
+                <span className="text-gray-600">-</span>
+                <input
+                type="date"
+                value={dateRange.to}
+                onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
+                className="bg-transparent text-white focus:outline-none text-xs w-24"
+                />
+            </div>
+
             <button
               type="submit"
               disabled={loading || !searchSymbol.trim()}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600/10 border border-blue-600/20 text-blue-400 hover:bg-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded-lg transition-colors flex items-center gap-2 text-sm whitespace-nowrap"
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Search className="w-5 h-5" />
+                <Search className="w-4 h-4" />
               )}
               Search
             </button>
           </div>
 
-          {/* Date Range */}
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-gray-400">Date Range:</span>
-            <input
-              type="date"
-              value={dateRange.from}
-              onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
-              className="px-3 py-1.5 bg-[#212121] border border-[#333] rounded-lg text-white focus:outline-none focus:border-blue-500"
-            />
-            <span className="text-gray-500">to</span>
-            <input
-              type="date"
-              value={dateRange.to}
-              onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
-              className="px-3 py-1.5 bg-[#212121] border border-[#333] rounded-lg text-white focus:outline-none focus:border-blue-500"
-            />
-          </div>
-
           {/* Quick Select */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-400">Popular:</span>
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-2 border-t border-gray-800">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold shrink-0">Popular:</span>
             {POPULAR_SYMBOLS.map((symbol) => (
               <button
                 key={symbol}
                 type="button"
                 onClick={() => handleQuickSelect(symbol)}
-                className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                  selectedSymbol === symbol
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-[#212121] border-[#333] text-gray-400 hover:border-gray-500 hover:text-white'
-                }`}
+                className={cn(
+                    "px-2 py-1 text-[10px] rounded-md border transition-colors whitespace-nowrap",
+                   selectedSymbol === symbol
+                    ? 'bg-blue-600/20 border-blue-600/30 text-blue-400'
+                    : 'bg-[#1A1A1A] border-gray-800 text-gray-500 hover:border-gray-700 hover:text-gray-300'
+                )}
               >
                 {symbol}
               </button>
@@ -202,36 +203,36 @@ export function SenateLobbying() {
       {/* Summary Stats */}
       {selectedSymbol && activities.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-4">
+          <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <FileText className="w-5 h-5 text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total Filings</p>
-                <p className="text-xl font-bold text-white">{activities.length}</p>
+                <p className="text-[10px] uppercase text-gray-500 font-bold">Total Filings</p>
+                <p className="text-xl font-bold text-white font-mono">{activities.length}</p>
               </div>
             </div>
           </div>
-          <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-4">
+          <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-500/10 rounded-lg">
                 <DollarSign className="w-5 h-5 text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total Income (Lobbying Firms)</p>
-                <p className="text-xl font-bold text-green-400">{formatCurrency(totalIncome)}</p>
+                 <p className="text-[10px] uppercase text-gray-500 font-bold">Total Income (Firms)</p>
+                <p className="text-xl font-bold text-green-400 font-mono">{formatCurrency(totalIncome)}</p>
               </div>
             </div>
           </div>
-          <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-4">
+          <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-500/10 rounded-lg">
                 <DollarSign className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Total Expenses (Company)</p>
-                <p className="text-xl font-bold text-red-400">{formatCurrency(totalExpenses)}</p>
+                 <p className="text-[10px] uppercase text-gray-500 font-bold">Total Expenses (Co)</p>
+                <p className="text-xl font-bold text-red-400 font-mono">{formatCurrency(totalExpenses)}</p>
               </div>
             </div>
           </div>
@@ -239,114 +240,105 @@ export function SenateLobbying() {
       )}
 
       {/* Results */}
-      <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] overflow-hidden">
+      <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 overflow-hidden">
         {/* Table Header */}
-        <div className="grid grid-cols-12 p-4 border-b border-[#2A2A2A] text-sm font-medium text-gray-400 bg-[#212121]">
+        <div className="grid grid-cols-12 p-3 border-b border-gray-800 bg-[#1A1A1A] text-xs font-medium text-gray-400 uppercase tracking-wider">
           <div className="col-span-3">Company</div>
           <div className="col-span-3">Description</div>
           <div className="col-span-2 text-center">Period</div>
-          <div className="col-span-2 text-right">Income / Expenses</div>
+          <div className="col-span-2 text-right">Amount</div>
           <div className="col-span-2 text-right">Document</div>
         </div>
 
         {/* Content */}
-        <div className="divide-y divide-[#2A2A2A] max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+        <div className="divide-y divide-gray-800 max-h-[500px] overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="p-12 text-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-400 mx-auto mb-4" />
-              <p className="text-gray-400">Loading lobbying data for {selectedSymbol}...</p>
+              <p className="text-gray-400 text-sm">Loading lobbying data...</p>
             </div>
           ) : error ? (
             <div className="p-12 text-center">
               <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-4" />
-              <p className="text-red-400 mb-2">{error}</p>
+              <p className="text-red-400 mb-2 text-sm">{error}</p>
               <button
                 onClick={() => selectedSymbol && fetchLobbyingData(selectedSymbol)}
-                className="text-blue-400 hover:text-blue-300 flex items-center gap-2 mx-auto"
+                className="text-blue-400 hover:text-blue-300 flex items-center gap-2 mx-auto text-sm"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-3 h-3" />
                 Try Again
               </button>
             </div>
           ) : !selectedSymbol ? (
             <div className="p-12 text-center">
               <Landmark className="w-8 h-8 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">Search for a stock symbol to view lobbying activities</p>
-              <p className="text-sm text-gray-500 mt-2">
-                See reported lobbying activities in the Senate and the House
-              </p>
+              <p className="text-gray-400 text-sm">Search for a stock symbol to view lobbying activities</p>
             </div>
           ) : activities.length === 0 ? (
             <div className="p-12 text-center">
               <FileText className="w-8 h-8 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">No lobbying activities found for {selectedSymbol}</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Try adjusting the date range or searching for a different symbol
-              </p>
+              <p className="text-gray-400 text-sm">No lobbying activities found.</p>
             </div>
           ) : (
             <AnimatePresence initial={false}>
               {activities.map((activity, index) => (
                 <motion.div
                   key={`${activity.senateId}-${activity.year}-${activity.period}-${index}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.2, delay: index * 0.02 }}
-                  className="grid grid-cols-12 p-4 hover:bg-[#252525] transition-colors text-sm items-center"
+                  className="grid grid-cols-12 p-3 hover:bg-[#212121] transition-colors text-sm items-center border-l-2 border-l-transparent hover:border-l-blue-500"
                 >
                   <div className="col-span-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-[#252525] rounded-lg">
+                      <div className="p-1.5 bg-[#252525] rounded-lg">
                         <Building2 className="w-4 h-4 text-gray-400" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-white truncate">{activity.name}</p>
-                        <p className="text-xs text-gray-500">{activity.symbol} • {activity.country}</p>
+                        <p className="font-semibold text-white truncate text-xs">{activity.name}</p>
+                        <p className="text-[10px] text-gray-500">{activity.country}</p>
                       </div>
                     </div>
                   </div>
                   <div className="col-span-3">
-                    <p className="text-gray-300 line-clamp-2">
-                      {activity.description || 'No description available'}
+                    <p className="text-gray-400 text-xs line-clamp-2" title={activity.description}>
+                      {activity.description || '-'}
                     </p>
                   </div>
                   <div className="col-span-2 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span className="text-white">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Calendar className="w-3 h-3 text-gray-600" />
+                      <span className="text-gray-300 text-xs">
                         {formatPeriod(activity.period)} {activity.year}
                       </span>
                     </div>
                   </div>
                   <div className="col-span-2 text-right">
                     {activity.income !== null ? (
-                      <p className="text-green-400 font-mono">
+                      <p className="text-green-400 font-mono text-xs font-medium">
                         +{formatCurrency(activity.income)}
                       </p>
                     ) : activity.expenses !== null ? (
-                      <p className="text-red-400 font-mono">
+                      <p className="text-red-400 font-mono text-xs font-medium">
                         -{formatCurrency(activity.expenses)}
                       </p>
                     ) : (
-                      <p className="text-gray-500">N/A</p>
+                      <p className="text-gray-600 text-xs">-</p>
                     )}
-                    <p className="text-xs text-gray-500">
-                      {activity.income !== null ? 'Income' : activity.expenses !== null ? 'Expenses' : ''}
-                    </p>
                   </div>
-                  <div className="col-span-2 text-right">
+                  <div className="col-span-2 text-right flex justify-end">
                     {activity.documentUrl ? (
                       <a
                         href={activity.documentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors text-xs"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/10 text-blue-400 rounded hover:bg-blue-500/20 transition-colors text-[10px]"
                       >
                         <ExternalLink className="w-3 h-3" />
-                        View Filing
+                        Filing
                       </a>
                     ) : (
-                      <span className="text-gray-500 text-xs">No document</span>
+                      <span className="text-gray-600 text-[10px]">-</span>
                     )}
                   </div>
                 </motion.div>
@@ -357,9 +349,8 @@ export function SenateLobbying() {
       </div>
 
       {/* Footer Note */}
-      <div className="text-xs text-gray-600 px-1">
-        <p>* Data sourced from Senate and House lobbying disclosure reports via Finnhub.</p>
-        <p>* Income is reported by lobbying firms, expenses are reported by the company.</p>
+      <div className="text-[10px] text-gray-600 px-2 text-center">
+        Data sourced from Senate and House lobbying disclosure reports via Finnhub.
       </div>
     </div>
   );
