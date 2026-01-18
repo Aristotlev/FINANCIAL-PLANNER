@@ -31,14 +31,19 @@ export async function GET(request: NextRequest) {
 
     // 1. Try to get from cache first if no specific dates are requested
     if (useCache && !from && !to) {
-      const cachedData = await toolsCacheService.getUSASpending({ symbol });
+      try {
+        const cachedData = await toolsCacheService.getUSASpending({ symbol });
 
-      if (cachedData && cachedData.length > 0) {
-        const needsRefresh = await toolsCacheService.needsRefresh('usa_spending');
-        if (!needsRefresh) {
-          console.log(`[Cache] Returning cached USA spending data for ${symbol}`);
-          return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
+        if (cachedData && cachedData.length > 0) {
+          const needsRefresh = await toolsCacheService.needsRefresh('usa_spending');
+          if (!needsRefresh) {
+            console.log(`[Cache] Returning cached USA spending data for ${symbol}`);
+            return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
+          }
         }
+      } catch (cacheErr) {
+        // Cache unavailable, continue to API
+        console.warn('[USA Spending] Cache unavailable, fetching from API:', cacheErr);
       }
     }
 

@@ -136,8 +136,8 @@ class ToolsCacheService {
         name: t.name,
         share: t.share,
         change: t.change,
-        filing_date: t.filingDate,
-        transaction_date: t.transactionDate,
+        filing_date: t.filingDate || null, // Convert empty string to null for DATE column
+        transaction_date: t.transactionDate || null,
         transaction_code: t.transactionCode,
         transaction_price: t.transactionPrice,
         raw_data: t,
@@ -225,7 +225,7 @@ class ToolsCacheService {
         description: a.description,
         document_url: a.documentUrl,
         posted_name: a.postedName,
-        date: a.date,
+        date: a.date || null, // Convert empty string to null for DATE column
         raw_data: a,
         updated_at: new Date().toISOString()
       }));
@@ -297,9 +297,9 @@ class ToolsCacheService {
         symbol: a.symbol,
         recipient_name: a.recipientName,
         total_value: a.totalValue,
-        action_date: a.actionDate,
-        performance_start_date: a.performanceStartDate,
-        performance_end_date: a.performanceEndDate,
+        action_date: a.actionDate || null, // Convert empty string to null for DATE column
+        performance_start_date: a.performanceStartDate || null,
+        performance_end_date: a.performanceEndDate || null,
         awarding_agency_name: a.awardingAgencyName,
         award_description: a.awardDescription,
         permalink: a.permalink,

@@ -19,14 +19,19 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Try to get from cache first if no specific dates are requested
     if (useCache && !from && !to) {
-      const cachedData = await toolsCacheService.getSenateLobbying({ symbol });
+      try {
+        const cachedData = await toolsCacheService.getSenateLobbying({ symbol });
 
-      if (cachedData && cachedData.length > 0) {
-        const needsRefresh = await toolsCacheService.needsRefresh('senate_lobbying');
-        if (!needsRefresh) {
-          console.log(`[Cache] Returning cached lobbying data for ${symbol}`);
-          return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
+        if (cachedData && cachedData.length > 0) {
+          const needsRefresh = await toolsCacheService.needsRefresh('senate_lobbying');
+          if (!needsRefresh) {
+            console.log(`[Cache] Returning cached lobbying data for ${symbol}`);
+            return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
+          }
         }
+      } catch (cacheErr) {
+        // Cache unavailable, continue to API
+        console.warn('[Lobbying] Cache unavailable, fetching from API:', cacheErr);
       }
     }
 

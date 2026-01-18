@@ -15,18 +15,23 @@ export async function GET(request: NextRequest) {
 
     // 1. Try to get from cache first if no specific dates are requested
     if (useCache && symbol && !from && !to) {
-      const cachedData = await toolsCacheService.getInsiderTransactions({
-        symbol,
-        limit: limitNum
-      });
+      try {
+        const cachedData = await toolsCacheService.getInsiderTransactions({
+          symbol,
+          limit: limitNum
+        });
 
-      if (cachedData && cachedData.length > 0) {
-        // Only return if cache is fresh enough (checked via needsRefresh)
-        const needsRefresh = await toolsCacheService.needsRefresh('insider_transactions');
-        if (!needsRefresh) {
-          console.log(`[Cache] Returning cached insider transactions for ${symbol}`);
-          return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
+        if (cachedData && cachedData.length > 0) {
+          // Only return if cache is fresh enough (checked via needsRefresh)
+          const needsRefresh = await toolsCacheService.needsRefresh('insider_transactions');
+          if (!needsRefresh) {
+            console.log(`[Cache] Returning cached insider transactions for ${symbol}`);
+            return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
+          }
         }
+      } catch (cacheErr) {
+        // Cache unavailable, continue to API
+        console.warn('[Insider Transactions] Cache unavailable, fetching from API:', cacheErr);
       }
     }
 

@@ -111,3 +111,45 @@ DROP TRIGGER IF EXISTS update_usa_spending_cache_timestamp ON public.usa_spendin
 CREATE TRIGGER update_usa_spending_cache_timestamp
 BEFORE UPDATE ON public.usa_spending_cache
 FOR EACH ROW EXECUTE FUNCTION update_cache_timestamp();
+
+-- ==================== ROW LEVEL SECURITY ====================
+-- CRITICAL: Without these policies, tables are inaccessible when RLS is enabled
+
+-- Enable RLS
+ALTER TABLE public.insider_transactions_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.senate_lobbying_cache ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.usa_spending_cache ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies (prevents errors on re-run)
+DROP POLICY IF EXISTS "Public read access for insider_transactions_cache" ON public.insider_transactions_cache;
+DROP POLICY IF EXISTS "Service role full access for insider_transactions_cache" ON public.insider_transactions_cache;
+DROP POLICY IF EXISTS "Public read access for senate_lobbying_cache" ON public.senate_lobbying_cache;
+DROP POLICY IF EXISTS "Service role full access for senate_lobbying_cache" ON public.senate_lobbying_cache;
+DROP POLICY IF EXISTS "Public read access for usa_spending_cache" ON public.usa_spending_cache;
+DROP POLICY IF EXISTS "Service role full access for usa_spending_cache" ON public.usa_spending_cache;
+
+-- Public read access (anyone can read cached data - this is public government data)
+CREATE POLICY "Public read access for insider_transactions_cache"
+ON public.insider_transactions_cache FOR SELECT
+USING (true);
+
+CREATE POLICY "Public read access for senate_lobbying_cache"
+ON public.senate_lobbying_cache FOR SELECT
+USING (true);
+
+CREATE POLICY "Public read access for usa_spending_cache"
+ON public.usa_spending_cache FOR SELECT
+USING (true);
+
+-- Service role can do everything (for background refresh jobs)
+CREATE POLICY "Service role full access for insider_transactions_cache"
+ON public.insider_transactions_cache FOR ALL
+USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access for senate_lobbying_cache"
+ON public.senate_lobbying_cache FOR ALL
+USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role full access for usa_spending_cache"
+ON public.usa_spending_cache FOR ALL
+USING (auth.role() = 'service_role');
