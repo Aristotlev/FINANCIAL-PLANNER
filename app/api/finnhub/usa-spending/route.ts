@@ -17,19 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Check if Finnhub API key is configured
-    const apiKey = process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
-    if (!apiKey) {
-      console.warn('[USA Spending API] Finnhub API key not configured - returning empty response');
-      return NextResponse.json({ 
-        data: [], 
-        symbol, 
-        source: 'none',
-        message: 'Finnhub API not configured - feature disabled' 
-      });
-    }
-
-    // 1. Try to get from cache first if no specific dates are requested
+    // 1. Try to get from cache FIRST (before checking API key)
     if (useCache && !from && !to) {
       try {
         const cachedData = await toolsCacheService.getUSASpending({ symbol });
@@ -45,6 +33,18 @@ export async function GET(request: NextRequest) {
         // Cache unavailable, continue to API
         console.warn('[USA Spending] Cache unavailable, fetching from API:', cacheErr);
       }
+    }
+
+    // 2. Check if Finnhub API key is configured (only if cache miss)
+    const apiKey = process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+    if (!apiKey) {
+      console.warn('[USA Spending API] Finnhub API key not configured - returning empty response');
+      return NextResponse.json({ 
+        data: [], 
+        symbol, 
+        source: 'none',
+        message: 'Finnhub API not configured - feature disabled' 
+      });
     }
 
     const finnhub = createFinnhubClient();
