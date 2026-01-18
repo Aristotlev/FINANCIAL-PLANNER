@@ -5,7 +5,7 @@
  * to reduce API calls and improve performance.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { 
   FinnhubInsiderTransaction, 
   FinnhubLobbyingActivity, 
@@ -30,23 +30,41 @@ export interface CacheStatus {
 type ToolCacheName = 'insider_transactions' | 'senate_lobbying' | 'usa_spending';
 
 class ToolsCacheService {
-  private supabase;
-  private supabaseAdmin;
+  private _supabase: SupabaseClient | null = null;
+  private _supabaseAdmin: SupabaseClient | null = null;
+
+  // Lazy initialization of Supabase client to avoid build-time errors
+  private get supabase(): SupabaseClient {
+    if (!this._supabase) {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!url || !key) {
+        throw new Error('Supabase environment variables not configured');
+      }
+      
+      this._supabase = createClient(url, key);
+    }
+    return this._supabase;
+  }
+
+  // Lazy initialization of admin client
+  private get supabaseAdmin(): SupabaseClient | null {
+    if (typeof window !== 'undefined') {
+      return null;
+    }
+    
+    if (!this._supabaseAdmin && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (url) {
+        this._supabaseAdmin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY);
+      }
+    }
+    return this._supabaseAdmin;
+  }
 
   constructor() {
-    // Client-side Supabase (for reading)
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    // Admin client for write operations (only on server)
-    if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      this.supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
-    }
+    // Lazy initialization - clients will be created on first use
   }
 
   // ==================== CACHE STATUS ====================
