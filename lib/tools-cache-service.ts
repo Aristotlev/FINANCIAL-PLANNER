@@ -130,23 +130,44 @@ class ToolsCacheService {
     try {
       await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'insider_transactions' });
 
-      // Map to table structure
-      const upsertData = transactions.map(t => ({
-        symbol: t.symbol,
-        name: t.name,
-        share: t.share,
-        change: t.change,
-        filing_date: t.filingDate || null, // Convert empty string to null for DATE column
-        transaction_date: t.transactionDate || null,
-        transaction_code: t.transactionCode,
-        transaction_price: t.transactionPrice,
-        raw_data: t,
-        updated_at: new Date().toISOString()
-      }));
+      // Map to table structure with sanitized dates
+      const upsertData = transactions
+        .filter(t => t.filingDate && t.transactionDate) // Must have valid dates for unique constraint
+        .map(t => ({
+          symbol: t.symbol || symbol,
+          name: t.name || 'Unknown',
+          share: t.share,
+          change: t.change,
+          filing_date: t.filingDate, // Already filtered for non-empty
+          transaction_date: t.transactionDate, // Already filtered for non-empty
+          transaction_code: t.transactionCode,
+          transaction_price: t.transactionPrice,
+          raw_data: t,
+          updated_at: new Date().toISOString()
+        }));
+
+      // Deduplicate by unique constraint key before upserting
+      const seen = new Set<string>();
+      const dedupedData = upsertData.filter(d => {
+        const key = `${d.symbol}|${d.name}|${d.filing_date}|${d.transaction_date}|${d.change}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (dedupedData.length === 0) {
+        await this.supabaseAdmin.rpc('cache_refresh_completed', {
+          p_cache_name: 'insider_transactions',
+          p_status: 'success',
+          p_error: null,
+          p_items_count: 0
+        });
+        return { success: true, count: 0 };
+      }
 
       const { error } = await this.supabaseAdmin
         .from('insider_transactions_cache')
-        .upsert(upsertData, { 
+        .upsert(dedupedData, { 
           onConflict: 'symbol,name,filing_date,transaction_date,change' 
         });
 
@@ -211,28 +232,49 @@ class ToolsCacheService {
     try {
       await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'senate_lobbying' });
 
+      // Map to table structure with sanitized data
       const upsertData = activities.map(a => ({
-        symbol: a.symbol,
-        name: a.name,
-        client_id: a.clientId,
-        registrant_id: a.registrantId,
-        senate_id: a.senateId,
-        house_registrant_id: a.houseRegistrantId,
+        symbol: a.symbol || symbol,
+        name: a.name || 'Unknown',
+        client_id: a.clientId || null,
+        registrant_id: a.registrantId || null,
+        senate_id: a.senateId || '',  // NOT NULL DEFAULT '' in DB
+        house_registrant_id: a.houseRegistrantId || '',  // NOT NULL DEFAULT '' in DB
         year: a.year,
-        period: a.period,
+        period: a.period || null,
         income: a.income,
         expenses: a.expenses,
-        description: a.description,
-        document_url: a.documentUrl,
-        posted_name: a.postedName,
-        date: a.date || null, // Convert empty string to null for DATE column
+        description: a.description || null,
+        document_url: a.documentUrl || null,
+        posted_name: a.postedName || null,
+        // Date handling: undefined, empty string, or invalid -> null
+        date: (a.date && a.date.trim() !== '') ? a.date : null,
         raw_data: a,
         updated_at: new Date().toISOString()
       }));
 
+      // Deduplicate by unique constraint key (symbol, senate_id, house_registrant_id)
+      const seen = new Set<string>();
+      const dedupedData = upsertData.filter(d => {
+        const key = `${d.symbol}|${d.senate_id}|${d.house_registrant_id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (dedupedData.length === 0) {
+        await this.supabaseAdmin.rpc('cache_refresh_completed', {
+          p_cache_name: 'senate_lobbying',
+          p_status: 'success',
+          p_error: null,
+          p_items_count: 0
+        });
+        return { success: true, count: 0 };
+      }
+
       const { error } = await this.supabaseAdmin
         .from('senate_lobbying_cache')
-        .upsert(upsertData, { 
+        .upsert(dedupedData, { 
           onConflict: 'symbol,senate_id,house_registrant_id' 
         });
 
@@ -293,23 +335,46 @@ class ToolsCacheService {
     try {
       await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'usa_spending' });
 
-      const upsertData = activities.map(a => ({
-        symbol: a.symbol,
-        recipient_name: a.recipientName,
-        total_value: a.totalValue,
-        action_date: a.actionDate || null, // Convert empty string to null for DATE column
-        performance_start_date: a.performanceStartDate || null,
-        performance_end_date: a.performanceEndDate || null,
-        awarding_agency_name: a.awardingAgencyName,
-        award_description: a.awardDescription,
-        permalink: a.permalink,
-        raw_data: a,
-        updated_at: new Date().toISOString()
-      }));
+      // Map to table structure with sanitized data
+      const upsertData = activities
+        .filter(a => a.permalink) // Must have permalink for unique constraint
+        .map(a => ({
+          symbol: a.symbol || symbol,
+          recipient_name: a.recipientName || null,
+          total_value: a.totalValue,
+          // Date handling: undefined, empty string, or invalid -> null
+          action_date: (a.actionDate && a.actionDate.trim() !== '') ? a.actionDate : null,
+          performance_start_date: (a.performanceStartDate && a.performanceStartDate.trim() !== '') ? a.performanceStartDate : null,
+          performance_end_date: (a.performanceEndDate && a.performanceEndDate.trim() !== '') ? a.performanceEndDate : null,
+          awarding_agency_name: a.awardingAgencyName || null,
+          award_description: a.awardDescription || null,
+          permalink: a.permalink,
+          raw_data: a,
+          updated_at: new Date().toISOString()
+        }));
+
+      // Deduplicate by unique constraint key (symbol, permalink) - CRITICAL to avoid ON CONFLICT error
+      const seen = new Set<string>();
+      const dedupedData = upsertData.filter(d => {
+        const key = `${d.symbol}|${d.permalink}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (dedupedData.length === 0) {
+        await this.supabaseAdmin.rpc('cache_refresh_completed', {
+          p_cache_name: 'usa_spending',
+          p_status: 'success',
+          p_error: null,
+          p_items_count: 0
+        });
+        return { success: true, count: 0 };
+      }
 
       const { error } = await this.supabaseAdmin
         .from('usa_spending_cache')
-        .upsert(upsertData, { 
+        .upsert(dedupedData, { 
           onConflict: 'symbol,permalink' 
         });
 
