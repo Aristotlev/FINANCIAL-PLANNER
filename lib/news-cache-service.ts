@@ -9,7 +9,31 @@
  *   - Backend/Cron: Use refresh functions to update cache
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+// Helper to safely create Supabase client (handles missing env vars during build)
+function createSupabaseClient(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!url || !anonKey) {
+    console.warn('Supabase environment variables not available - news cache service will be disabled');
+    return null;
+  }
+  
+  return createClient(url, anonKey);
+}
+
+function createSupabaseAdminClient(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (typeof window !== 'undefined' || !url || !serviceKey) {
+    return null;
+  }
+  
+  return createClient(url, serviceKey);
+}
 
 // Types
 export interface IPOData {
@@ -93,29 +117,38 @@ export interface CacheStatus {
 type CacheName = 'ipo_calendar' | 'earnings_calendar' | 'twitter_feed';
 
 class NewsCacheService {
-  private supabase;
-  private supabaseAdmin;
+  private supabase: SupabaseClient | null;
+  private supabaseAdmin: SupabaseClient | null;
 
   constructor() {
-    // Client-side Supabase (for reading)
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    // Client-side Supabase (for reading) - may be null during build
+    this.supabase = createSupabaseClient();
 
     // Admin client for write operations (only on server)
-    if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      this.supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
+    this.supabaseAdmin = createSupabaseAdminClient();
+  }
+
+  // Helper to get supabase client or throw
+  private getClient(): SupabaseClient {
+    if (!this.supabase) {
+      throw new Error('Supabase client not available - missing environment variables');
     }
+    return this.supabase;
+  }
+
+  // Helper to get admin client or throw
+  private getAdminClient(): SupabaseClient {
+    if (!this.supabaseAdmin) {
+      throw new Error('Admin client not available - this must be called from server with SUPABASE_SERVICE_ROLE_KEY');
+    }
+    return this.supabaseAdmin;
   }
 
   // ==================== CACHE STATUS ====================
 
   async getCacheStatus(): Promise<CacheStatus[]> {
-    const { data, error } = await this.supabase.rpc('get_cache_status');
+    const client = this.getClient();
+    const { data, error } = await client.rpc('get_cache_status');
     if (error) {
       console.error('Error getting cache status:', error);
       return [];
@@ -124,7 +157,8 @@ class NewsCacheService {
   }
 
   async needsRefresh(cacheName: CacheName): Promise<boolean> {
-    const { data, error } = await this.supabase.rpc('cache_needs_refresh', {
+    const client = this.getClient();
+    const { data, error } = await client.rpc('cache_needs_refresh', {
       p_cache_name: cacheName
     });
     if (error) {
@@ -137,7 +171,8 @@ class NewsCacheService {
   // ==================== IPO CALENDAR ====================
 
   async getUpcomingIPOs(limit = 20): Promise<IPOData[]> {
-    const { data, error } = await this.supabase
+    const client = this.getClient();
+    const { data, error } = await client
       .from('upcoming_ipos')
       .select('*')
       .limit(limit);
@@ -155,7 +190,8 @@ class NewsCacheService {
     toDate?: string;
     limit?: number;
   }): Promise<IPOData[]> {
-    let query = this.supabase
+    const client = this.getClient();
+    let query = client
       .from('ipo_calendar_cache')
       .select('*')
       .order('ipo_date', { ascending: true });
@@ -182,16 +218,14 @@ class NewsCacheService {
   }
 
   async refreshIPOCalendar(ipoData: IPOData[]): Promise<{ success: boolean; count: number }> {
-    if (!this.supabaseAdmin) {
-      throw new Error('Admin client not available - this must be called from server');
-    }
+    const admin = this.getAdminClient();
 
     try {
       // Mark refresh started
-      await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'ipo_calendar' });
+      await admin.rpc('cache_refresh_started', { p_cache_name: 'ipo_calendar' });
 
       // Upsert IPO data
-      const { error } = await this.supabaseAdmin
+      const { error } = await admin
         .from('ipo_calendar_cache')
         .upsert(
           ipoData.map(ipo => ({
@@ -204,7 +238,7 @@ class NewsCacheService {
       if (error) throw error;
 
       // Mark refresh completed
-      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+      await admin.rpc('cache_refresh_completed', {
         p_cache_name: 'ipo_calendar',
         p_status: 'success',
         p_error: null,
@@ -214,7 +248,7 @@ class NewsCacheService {
       return { success: true, count: ipoData.length };
     } catch (error: any) {
       // Mark refresh failed
-      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+      await admin.rpc('cache_refresh_completed', {
         p_cache_name: 'ipo_calendar',
         p_status: 'failed',
         p_error: error.message,
@@ -227,7 +261,8 @@ class NewsCacheService {
   // ==================== EARNINGS CALENDAR ====================
 
   async getWeeklyEarnings(): Promise<EarningsData[]> {
-    const { data, error } = await this.supabase
+    const client = this.getClient();
+    const { data, error } = await client
       .from('weekly_earnings')
       .select('*');
 
@@ -244,7 +279,8 @@ class NewsCacheService {
     symbol?: string;
     limit?: number;
   }): Promise<EarningsData[]> {
-    let query = this.supabase
+    const client = this.getClient();
+    let query = client
       .from('earnings_calendar_cache')
       .select('*')
       .order('report_date', { ascending: true });
@@ -271,14 +307,12 @@ class NewsCacheService {
   }
 
   async refreshEarningsCalendar(earningsData: EarningsData[]): Promise<{ success: boolean; count: number }> {
-    if (!this.supabaseAdmin) {
-      throw new Error('Admin client not available - this must be called from server');
-    }
+    const admin = this.getAdminClient();
 
     try {
-      await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'earnings_calendar' });
+      await admin.rpc('cache_refresh_started', { p_cache_name: 'earnings_calendar' });
 
-      const { error } = await this.supabaseAdmin
+      const { error } = await admin
         .from('earnings_calendar_cache')
         .upsert(
           earningsData.map(e => ({
@@ -290,7 +324,7 @@ class NewsCacheService {
 
       if (error) throw error;
 
-      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+      await admin.rpc('cache_refresh_completed', {
         p_cache_name: 'earnings_calendar',
         p_status: 'success',
         p_error: null,
@@ -299,7 +333,7 @@ class NewsCacheService {
 
       return { success: true, count: earningsData.length };
     } catch (error: any) {
-      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+      await admin.rpc('cache_refresh_completed', {
         p_cache_name: 'earnings_calendar',
         p_status: 'failed',
         p_error: error.message,
@@ -312,7 +346,8 @@ class NewsCacheService {
   // ==================== TWITTER FEED ====================
 
   async getRecentTweets(limit = 50): Promise<TweetData[]> {
-    const { data, error } = await this.supabase
+    const client = this.getClient();
+    const { data, error } = await client
       .from('recent_fintwit')
       .select('*')
       .limit(limit);
@@ -332,7 +367,8 @@ class NewsCacheService {
     limit?: number;
     hoursAgo?: number;
   }): Promise<TweetData[]> {
-    let query = this.supabase
+    const client = this.getClient();
+    let query = client
       .from('twitter_feed_cache')
       .select('*')
       .order('published_at', { ascending: false });
@@ -366,14 +402,12 @@ class NewsCacheService {
   }
 
   async refreshTwitterFeed(tweets: TweetData[]): Promise<{ success: boolean; count: number }> {
-    if (!this.supabaseAdmin) {
-      throw new Error('Admin client not available - this must be called from server');
-    }
+    const admin = this.getAdminClient();
 
     try {
-      await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'twitter_feed' });
+      await admin.rpc('cache_refresh_started', { p_cache_name: 'twitter_feed' });
 
-      const { error } = await this.supabaseAdmin
+      const { error } = await admin
         .from('twitter_feed_cache')
         .upsert(
           tweets.map(t => ({
@@ -385,7 +419,7 @@ class NewsCacheService {
 
       if (error) throw error;
 
-      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+      await admin.rpc('cache_refresh_completed', {
         p_cache_name: 'twitter_feed',
         p_status: 'success',
         p_error: null,
@@ -394,7 +428,7 @@ class NewsCacheService {
 
       return { success: true, count: tweets.length };
     } catch (error: any) {
-      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+      await admin.rpc('cache_refresh_completed', {
         p_cache_name: 'twitter_feed',
         p_status: 'failed',
         p_error: error.message,
@@ -407,11 +441,9 @@ class NewsCacheService {
   // ==================== CLEANUP ====================
 
   async cleanOldData(daysToKeep = 30): Promise<{ table: string; deleted: number }[]> {
-    if (!this.supabaseAdmin) {
-      throw new Error('Admin client not available - this must be called from server');
-    }
+    const admin = this.getAdminClient();
 
-    const { data, error } = await this.supabaseAdmin.rpc('clean_old_cache_data', {
+    const { data, error } = await admin.rpc('clean_old_cache_data', {
       p_days_to_keep: daysToKeep
     });
 
