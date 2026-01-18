@@ -19,6 +19,7 @@ import {
   File01Icon,
   CheckmarkCircle01Icon,
   FingerPrintIcon,
+  Globe02Icon,
 } from 'hugeicons-react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -51,18 +52,18 @@ export function LandingPage() {
   const trustedCompanies = ["Gemini", "Google Cloud", "Yahoo Finance", "CoinGecko", "CoinMarketCap", "Finnhub", "TradingView", "Binance", "FMP", "SEC EDGAR® Data"];
 
   return (
-    <div className="min-h-screen bg-[#0B0C10] text-gray-300 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen min-h-[100dvh] bg-[#0B0C10] text-gray-300 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 relative">
         {/* Abstract Background Gradients - Adjusted for Dark Cyan Theme */}
-        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-cyan-950/20 rounded-full blur-[150px]" />
           <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-teal-900/10 rounded-full blur-[150px]" />
           <div className="absolute bottom-[-10%] left-[20%] w-[60%] h-[40%] bg-emerald-900/10 rounded-full blur-[150px]" />
         </div>
 
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0B0C10]/80 backdrop-blur-xl">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0B0C10]/80 backdrop-blur-xl safe-top">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+            <div className="flex justify-between items-center h-14 sm:h-16">
               <div className="flex items-center gap-2">
                 <OmnifolioLogo size="sm" />
               </div>
@@ -88,26 +89,28 @@ export function LandingPage() {
           </div>
         </header>
 
-        <main className="relative z-10 pt-32">
+        <main className="relative z-10 pt-20 sm:pt-32">
           {/* Hero Section */}
-          <section className="px-4 sm:px-6 lg:px-8 mb-32">
+          <section className="px-4 sm:px-6 lg:px-8 mb-16 sm:mb-32">
             <div className="max-w-7xl mx-auto text-center">
-              <div className="inline-flex items-center gap-4 px-4 py-2 rounded-full bg-cyan-950/30 border border-cyan-500/20 text-xs font-semibold text-cyan-400 mb-8 animate-fade-in-out">
-                 <div className="flex items-center gap-1"><CommandIcon size={14} className="animate-pulse" /> 100% Open Source</div>
-                 <div className="w-1 h-1 rounded-full bg-cyan-500/50" />
+              <div className="inline-flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-2 rounded-full bg-cyan-950/30 border border-cyan-500/20 text-[10px] sm:text-xs font-semibold text-cyan-400 mb-6 sm:mb-8 flex-wrap justify-center">
+                 <div className="flex items-center gap-1"><CommandIcon size={14} className="animate-pulse" /> Open Source</div>
+                 <div className="w-1 h-1 rounded-full bg-cyan-500/50 hidden sm:block" />
                  <div className="flex items-center gap-1"><Blockchain02Icon size={14} /> Decentralized</div>
-                 <div className="w-1 h-1 rounded-full bg-cyan-500/50" />
+                 <div className="w-1 h-1 rounded-full bg-cyan-500/50 hidden sm:block" />
                  <div className="flex items-center gap-1"><LockKeyIcon size={14} /> Encrypted</div>
               </div>
               
-              <h1 className="text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tight text-white mb-8">
-                Master your <br />
-                <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-                  Digital Worth
+              <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white mb-6 sm:mb-8">
+                Master your{' '}
+                <span className="sm:block">
+                  <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
+                    Digital Worth
+                  </span>
                 </span>
               </h1>
 
-              <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-8 sm:mb-12 leading-relaxed px-2">
                 The all-in-one platform for tracking cash, crypto, stocks, and valuables. 
                 Experience financial clarity with real-time analytics and Omni Gemini AI.
               </p>
@@ -140,61 +143,74 @@ export function LandingPage() {
                 </div>
 
                 {/* Main Dashboard Placeholder / Screenshot */}
-                <div className="aspect-[16/10] bg-[#0F1014] relative overflow-hidden flex items-center justify-center group-hover:scale-[1.01] transition-transform duration-700">
+                <div className="aspect-[16/10] sm:aspect-[16/10] bg-[#0F1014] relative overflow-hidden flex items-center justify-center group-hover:scale-[1.01] transition-transform duration-700">
                   {/* Replace this div with an actual Image component when you have the screenshot */}
                   {/* <Image src="/images/dashboard-hero.png" alt="Dashboard" fill className="object-cover" /> */}
                   
                   {/* Placeholder UI for now */}
-                   <div className="absolute inset-0 bg-gradient-to-br from-[#121318] to-black p-8 flex flex-col">
-                      <div className="flex justify-between items-end mb-8">
+                   <div className="absolute inset-0 bg-gradient-to-br from-[#121318] to-black p-4 sm:p-8 flex flex-col">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-4 sm:mb-8 gap-2">
                         <div>
-                           <p className="text-sm text-gray-500 mb-1">Total Net Worth</p>
-                           <h2 className="text-5xl font-bold text-white tracking-tight">$1,247,892.45</h2>
+                           <p className="text-xs sm:text-sm text-gray-500 mb-1">Total Net Worth</p>
+                           <h2 className="text-2xl sm:text-5xl font-bold text-white tracking-tight">$1,247,892.45</h2>
                         </div>
-                        <div className="flex gap-2 text-cyan-400 bg-cyan-400/10 px-3 py-1 rounded-full text-sm font-medium">
-                          <ChartIncreaseIcon className="w-4 h-4" /> +12.4%
+                        <div className="flex gap-2 text-cyan-400 bg-cyan-400/10 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium w-fit">
+                          <ChartIncreaseIcon className="w-3 h-3 sm:w-4 sm:h-4" /> +12.4%
                         </div>
                       </div>
                       
-                      {/* Grid representation */}
-                      <div className="grid grid-cols-12 gap-6 h-full">
-                        <div className="col-span-8 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-6 relative overflow-hidden">
-                           <div className="flex justify-between mb-6">
-                              <h3 className="text-white font-medium">Portfolio Performance</h3>
-                              <div className="flex gap-2">
-                                <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-gray-400">1D</span>
-                                <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-white">1W</span>
-                                <span className="px-3 py-1 rounded-full bg-white/5 text-xs text-gray-400">1M</span>
+                      {/* Grid representation - hidden on very small screens */}
+                      <div className="hidden sm:grid grid-cols-12 gap-4 sm:gap-6 h-full">
+                        <div className="col-span-12 md:col-span-8 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4 sm:p-6 relative overflow-hidden">
+                           <div className="flex justify-between mb-4 sm:mb-6">
+                              <h3 className="text-white font-medium text-sm sm:text-base">Portfolio Performance</h3>
+                              <div className="flex gap-1 sm:gap-2">
+                                <span className="px-2 sm:px-3 py-1 rounded-full bg-white/5 text-[10px] sm:text-xs text-gray-400">1D</span>
+                                <span className="px-2 sm:px-3 py-1 rounded-full bg-white/10 text-[10px] sm:text-xs text-white">1W</span>
+                                <span className="px-2 sm:px-3 py-1 rounded-full bg-white/5 text-[10px] sm:text-xs text-gray-400">1M</span>
                               </div>
                            </div>
                            {/* Chart placeholder */}
-                           <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-cyan-500/10 to-transparent" />
-                           <svg className="w-full h-48 stroke-cyan-500 stroke-2 fill-none" viewBox="0 0 400 100" preserveAspectRatio="none">
+                           <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-48 bg-gradient-to-t from-cyan-500/10 to-transparent" />
+                           <svg className="w-full h-24 sm:h-48 stroke-cyan-500 stroke-2 fill-none" viewBox="0 0 400 100" preserveAspectRatio="none">
                               <path d="M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,10 300,20 C350,30 350,0 400,10" />
                            </svg>
                         </div>
-                        <div className="col-span-4 flex flex-col gap-4">
-                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4">
-                              <div className="flex items-center gap-3 mb-2">
-                                 <div className="p-2 bg-cyan-500/10 rounded-md"><Building02Icon className="w-4 h-4 text-cyan-400"/></div>
-                                 <span className="text-sm text-gray-300">Real Estate</span>
+                        <div className="hidden md:flex col-span-4 flex-col gap-2 sm:gap-4">
+                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-3 sm:p-4">
+                              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                 <div className="p-1.5 sm:p-2 bg-cyan-500/10 rounded-md"><Building02Icon className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-400"/></div>
+                                 <span className="text-xs sm:text-sm text-gray-300">Real Estate</span>
                               </div>
-                              <p className="text-2xl font-semibold text-white">$650,000</p>
+                              <p className="text-lg sm:text-2xl font-semibold text-white">$650,000</p>
                            </div>
-                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4">
-                              <div className="flex items-center gap-3 mb-2">
-                                 <div className="p-2 bg-purple-500/10 rounded-md"><Coins01Icon className="w-4 h-4 text-purple-400"/></div>
-                                 <span className="text-sm text-gray-300">Crypto</span>
+                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-3 sm:p-4">
+                              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                 <div className="p-1.5 sm:p-2 bg-purple-500/10 rounded-md"><Coins01Icon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400"/></div>
+                                 <span className="text-xs sm:text-sm text-gray-300">Crypto</span>
                               </div>
-                              <p className="text-2xl font-semibold text-white">$89,340</p>
+                              <p className="text-lg sm:text-2xl font-semibold text-white">$89,340</p>
                            </div>
-                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4">
-                              <div className="flex items-center gap-3 mb-2">
-                                 <div className="p-2 bg-green-500/10 rounded-md"><ChartLineData01Icon className="w-4 h-4 text-green-400"/></div>
-                                 <span className="text-sm text-gray-300">Stocks</span>
+                           <div className="flex-1 bg-[#1A1B20]/50 rounded-lg border border-white/5 p-3 sm:p-4">
+                              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                 <div className="p-1.5 sm:p-2 bg-green-500/10 rounded-md"><ChartLineData01Icon className="w-3 h-3 sm:w-4 sm:h-4 text-green-400"/></div>
+                                 <span className="text-xs sm:text-sm text-gray-300">Stocks</span>
                               </div>
-                              <p className="text-2xl font-semibold text-white">$456,780</p>
+                              <p className="text-lg sm:text-2xl font-semibold text-white">$456,780</p>
                            </div>
+                        </div>
+                      </div>
+                      
+                      {/* Mobile simplified view */}
+                      <div className="flex sm:hidden flex-1 items-center justify-center">
+                        <div className="w-full bg-[#1A1B20]/50 rounded-lg border border-white/5 p-4 relative overflow-hidden">
+                           <div className="flex justify-between mb-2">
+                              <h3 className="text-white font-medium text-xs">Portfolio Performance</h3>
+                           </div>
+                           <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-cyan-500/10 to-transparent" />
+                           <svg className="w-full h-16 stroke-cyan-500 stroke-2 fill-none" viewBox="0 0 400 100" preserveAspectRatio="none">
+                              <path d="M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,10 300,20 C350,30 350,0 400,10" />
+                           </svg>
                         </div>
                       </div>
                    </div>
@@ -234,73 +250,112 @@ export function LandingPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-6">
                 
-                {/* Huge Feature: Unified Asset Tracking */}
-                <div className="md:col-span-2 row-span-2 bg-[#15161A] border border-white/5 rounded-3xl p-8 md:p-12 relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="relative z-10 h-full flex flex-col justify-between">
-                    <div>
-                        <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-6">
-                           <Coins01Icon className="w-6 h-6 text-emerald-400" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-white mb-4">Unified Asset Tracking</h3>
-                        <p className="text-gray-400 text-lg leading-relaxed mb-8">
-                             Connect accounts & wallets. Track Cash, Crypto, Stocks, Real Estate, and Valuables in real-time.
-                        </p>
-                    </div>
-                    {/* Abstract UI Assets */}
-                    <div className="space-y-3">
-                         <div className="bg-[#0B0C10] p-4 rounded-xl border border-white/10 flex justify-between items-center group-hover:border-emerald-500/20 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                                    <Coins01Icon className="w-4 h-4 text-yellow-500" />
-                                </div>
-                                <div>
-                                    <span className="text-white text-sm font-medium block">Crypto</span>
-                                    <span className="text-gray-500 text-xs">Binance, Coinbase</span>
-                                </div>
-                            </div>
-                            <div className="text-white font-medium">$42,500</div>
-                         </div>
-                         <div className="bg-[#0B0C10] p-4 rounded-xl border border-white/10 flex justify-between items-center group-hover:border-emerald-500/20 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                    <ChartLineData01Icon className="w-4 h-4 text-green-500" />
-                                </div>
-                                <div>
-                                    <span className="text-white text-sm font-medium block">Stocks</span>
-                                    <span className="text-gray-500 text-xs">Robinhood, Fidelity</span>
-                                </div>
-                            </div>
-                            <div className="text-white font-medium">$128,400</div>
-                         </div>
-                    </div>
+                {/* Live Market Intelligence */}
+                <div className="md:col-span-2 row-span-1 bg-[#15161A] border border-white/5 rounded-3xl p-6 relative overflow-hidden group flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                     <div className="w-12 h-12 bg-cyan-500/10 rounded-xl flex items-center justify-center mb-4">
+                        <Globe02Icon className="w-6 h-6 text-cyan-400" />
+                     </div>
+                     <h3 className="text-xl font-bold text-white mb-2">Market Intelligence</h3>
+                     <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                        Real-time news & sentiment analysis.
+                     </p>
+                  </div>
+                  
+                  <div className="flex-1 relative h-[250px] md:h-auto flex items-center">
+                       <div className="absolute right-0 w-[120%] h-auto aspect-video bg-[#0B0C10] rounded-xl border border-white/10 shadow-2xl overflow-hidden transform rotate-6 hover:rotate-2 transition-all duration-500 origin-center translate-x-12 hover:translate-x-8 group-hover:scale-105">
+                          <Image 
+                            src="/images/newsfeed.png" 
+                            alt="Live Market News Feed" 
+                            fill 
+                            className="object-cover object-top-left"
+                            priority
+                          />
+                      </div>
                   </div>
                 </div>
 
-                {/* Omni Gemini AI */}
+                {/* Unified Asset Tracking - Re-added below */}
+                <div className="md:col-span-2 row-span-1 bg-[#15161A] border border-white/5 rounded-3xl p-8 relative overflow-hidden group">
+                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                   <div className="relative z-10 flex flex-col h-full justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                              <Coins01Icon className="w-5 h-5 text-emerald-400" />
+                            </div>
+                            <span className="text-xs font-semibold px-2 py-1 rounded bg-white/5 text-emerald-400 border border-emerald-500/20">Unified Dashboard</span>
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">Asset Segmentation</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed">
+                             Track Cash, Crypto, Stocks, and Real Estate in one view.
+                        </p>
+                      </div>
+                      
+                      <div className="mt-6 flex gap-3">
+                          <div className="bg-[#0B0C10] px-3 py-2 rounded-lg border border-white/5 flex items-center gap-2 flex-1">
+                              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                              <div>
+                                  <div className="text-[10px] text-gray-500 uppercase">Crypto</div>
+                                  <div className="text-xs text-white font-mono">$42.5k</div>
+                              </div>
+                          </div>
+                          <div className="bg-[#0B0C10] px-3 py-2 rounded-lg border border-white/5 flex items-center gap-2 flex-1">
+                              <div className="w-2 h-2 rounded-full bg-green-500" />
+                              <div>
+                                  <div className="text-[10px] text-gray-500 uppercase">Stocks</div>
+                                  <div className="text-xs text-white font-mono">$128k</div>
+                              </div>
+                          </div>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Curated Social Feed - Promoted to 2 cols */}
                 <div className="md:col-span-2 bg-[#15161A] border border-white/5 rounded-3xl p-8 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-red-500/10 rounded-full blur-3xl group-hover:bg-red-500/20 transition-colors" />
+                    
+                    <div className="relative z-10 flex flex-col md:flex-row h-full gap-8">
+                         <div className="flex-1 flex flex-col justify-center">
+                            <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center mb-6">
+                                <PlayCircle02Icon className="w-6 h-6 text-red-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-4">Social Intelligence</h3>
+                            <p className="text-gray-400 text-base leading-relaxed mb-6">
+                                Access "Viral Finance" YouTube feed, filtered Twitter insights, and market news in one place.
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-300 flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-red-500 rounded-full"/> YouTube Feed</span>
+                                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-gray-300 flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-blue-400 rounded-full"/> X (Twitter)</span>
+                            </div>
+                         </div>
+                         <div className="flex-1 relative flex items-center min-h-[250px]">
+                            <div className="absolute right-0 w-[120%] h-auto aspect-video bg-[#0B0C10] rounded-xl border border-white/10 shadow-2xl overflow-hidden transform rotate-6 hover:rotate-2 transition-all duration-500 origin-center translate-x-12 hover:translate-x-8 group-hover:scale-105">
+                                <Image 
+                                    src="/images/viral-finance-feed.png" 
+                                    alt="Viral Finance YouTube Feed" 
+                                    fill 
+                                    className="object-cover object-top"
+                                    priority
+                                />
+                            </div>
+                         </div>
+                    </div>
+                </div>
+
+                {/* Omni Gemini AI - Demoted to 1 col */}
+                <div className="bg-[#15161A] border border-white/5 rounded-3xl p-6 relative overflow-hidden group">
                   <div className="relative z-10 flex flex-col h-full justify-between">
                      <div>
-                        <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-6">
-                            <BotIcon className="w-6 h-6 text-purple-400" />
+                        <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mb-4">
+                            <BotIcon className="w-5 h-5 text-purple-400" />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Omni Gemini Assistant</h3>
-                        <p className="text-gray-400 text-sm">
-                            Powered by Google's Gemini, our AI assistant analyzes your portfolio providing deep insights and projections.
+                        <h3 className="text-lg font-bold text-white mb-2">Omni Gemini AI</h3>
+                        <p className="text-gray-400 text-xs leading-relaxed">
+                            Powered by Google's Gemini 2.0. Analyze portfolio health and get projections.
                         </p>
                      </div>
                   </div>
-                </div>
-
-                {/* Curated Social Feed */}
-                <div className="bg-[#15161A] border border-white/5 rounded-3xl p-6 relative overflow-hidden group">
-                   <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center mb-4">
-                      <UserGroupIcon className="w-5 h-5 text-red-500" />
-                   </div>
-                   <h3 className="text-lg font-bold text-white mb-2">Community & Social</h3>
-                   <p className="text-gray-400 text-xs leading-relaxed">
-                      Join the movement. Access curated Finance YouTube feed, filtered Twitter insights, and connect with other investors.
-                   </p>
                 </div>
 
                 {/* Gov & Deep Data */}
@@ -308,126 +363,12 @@ export function LandingPage() {
                    <div className="w-10 h-10 bg-cyan-500/10 rounded-lg flex items-center justify-center mb-4">
                       <BankIcon className="w-5 h-5 text-cyan-400" />
                    </div>
-                   <h3 className="text-lg font-bold text-white mb-2">Deep Government Data</h3>
+                   <h3 className="text-lg font-bold text-white mb-2">Gov Contracts</h3>
                    <p className="text-gray-400 text-xs leading-relaxed">
-                      Access USA GOV Contracts, Insider Transactions, Senate Lobbying, and SEC Edgar scraping.
+                      Track Senate Lobbying, Insider Transactions, and Government Spending in real-time.
                    </p>
                 </div>
               </div>
-            </div>
-          </section>
-
-          {/* Market Intelligence / News Section */}
-          <section className="py-32 px-4 sm:px-6 lg:px-8 border-t border-white/5 bg-[#0B0C10]">
-            <div className="max-w-7xl mx-auto">
-                <div className="mb-16 text-center">
-                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Live Market Intelligence</h2>
-                    <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                        Stay updated with real-time news, economic events, and social sentiment analysis.
-                    </p>
-                </div>
-
-                {/* Browser/App Window Container */}
-                <div className="rounded-2xl border border-white/10 bg-[#15161A] shadow-2xl overflow-hidden flex flex-col md:flex-row h-[600px] md:h-[800px]">
-                    {/* Sidebar */}
-                    <div className="w-full md:w-64 bg-[#0F1014] border-r border-white/5 p-4 flex flex-col gap-1 hidden md:flex">
-                        <div className="flex items-center mb-8 px-2">
-                            <div className="relative drop-shadow-lg" style={{ width: '32px', height: '32px' }}>
-                                <Image
-                                    alt="OmniFolio Logo"
-                                    width={32}
-                                    height={32}
-                                    className="object-contain"
-                                    src="/images/logo.png"
-                                />
-                            </div>
-                            <span className="ml-2 font-bold bg-gradient-to-r from-green-500 via-cyan-500 to-blue-500 bg-clip-text text-transparent text-lg">OmniFolio</span>
-                        </div>
-                        
-                        <div className="space-y-1">
-                            {["My Holdings", "Stocks", "Crypto", "Indices", "Forex"].map((item) => (
-                                <div key={item} className="px-3 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer text-sm font-medium transition-colors flex items-center gap-3">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-600" /> {item}
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="mt-8 space-y-1">
-                            <div className="px-2 text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Calendars</div>
-                            {["Economic Calendar", "IPO Calendar", "Earnings Calendar"].map((item) => (
-                                <div key={item} className={`px-3 py-2 rounded-lg cursor-pointer text-sm font-medium transition-colors flex items-center gap-3 ${item === "Economic Calendar" ? "bg-cyan-500/10 text-cyan-400" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${item === "Economic Calendar" ? "bg-cyan-400" : "bg-gray-600"}`} /> {item}
-                                </div>
-                            ))}
-                        </div>
-                        
-                        <div className="mt-8 space-y-1">
-                            <div className="px-2 text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Social</div>
-                            {["Twitter (X)", "Youtube Feed"].map((item) => (
-                                <div key={item} className="px-3 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer text-sm font-medium transition-colors flex items-center gap-3">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-gray-600" /> {item}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1 bg-[#15161A] p-6 md:p-8">
-                        <div className="flex justify-between items-center mb-8">
-                            <div className="flex items-center gap-4">
-                                <h3 className="text-2xl font-bold text-white">General News</h3>
-                                <span className="px-3 py-1 bg-white/5 rounded-full text-xs text-gray-400 border border-white/5">7 articles</span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="relative hidden sm:block">
-                                    <input type="text" placeholder="Search..." className="bg-[#0B0C10] border border-white/10 rounded-full px-4 py-2 text-sm text-gray-300 w-64 focus:outline-none focus:border-cyan-500/50" />
-                                </div>
-                                <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400 transition-colors">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {[
-                                { title: "Trump threatens to sue JPMorgan Chase for 'debanking' him", source: "CNBC", time: "3 hours ago", sentiment: "Neutral" },
-                                { title: "Smaller companies are rising quickly to challenge Big Tech as AI's best trade", source: "Bloomberg", time: "4 hours ago", sentiment: "Bullish" },
-                                { title: "Week in review: Stocks battled a flood of news and we booked some profits", source: "Reuters", time: "6 hours ago", sentiment: "Neutral" },
-                                { title: "More employers worry about their workers' financial well-being, research shows", source: "WSJ", time: "1 day ago", sentiment: "Bearish" },
-                                { title: "Cramer's week ahead: Earnings from Netflix, Intel, Capital One, McCormick", source: "CNBC", time: "1 day ago", sentiment: "Neutral" },
-                                { title: "Republicans want to end the 'marriage penalty' for this childcare tax credit", source: "Fox News", time: "1 day ago", sentiment: "Neutral" },
-                            ].map((news, i) => (
-                                <div key={i} className="bg-[#0B0C10] border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-colors group cursor-pointer flex flex-col justify-between h-64">
-                                    <div>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase rounded">{news.source}</span>
-                                            <span className="text-xs text-gray-500 flex items-center gap-1">
-                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                {news.time}
-                                            </span>
-                                        </div>
-                                        <h4 className="text-lg font-semibold text-white leading-snug mb-3 group-hover:text-cyan-400 transition-colors line-clamp-3">
-                                            {news.title}
-                                        </h4>
-                                    </div>
-                                    
-                                    <div className="flex justify-between items-center mt-auto">
-                                        <span className={`px-3 py-1 rounded-full text-xs border ${
-                                            news.sentiment === 'Bullish' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                            news.sentiment === 'Bearish' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                            'bg-gray-500/10 text-gray-400 border-gray-500/20'
-                                        }`}>
-                                            {news.sentiment}
-                                        </span>
-                                        <span className="text-xs text-cyan-500 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Read <ArrowRight01Icon className="w-3 h-3" />
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
             </div>
           </section>
 

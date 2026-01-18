@@ -597,12 +597,12 @@ export default function PortfolioPage() {
   };
 
   return (
-    <div className="flex h-screen bg-black text-white overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-screen min-h-[100dvh] bg-black text-white md:h-screen md:overflow-hidden">
       {/* Sidebar - Fixed width, sticky or fixed behavior handled by flex layout */}
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} selectedCategory={selectedCategory} />
 
       {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col min-w-0 h-full">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         {/* Top Header */}
         <TopBar 
             onOpenSettings={() => setIsSettingsModalOpen(true)} 
@@ -610,10 +610,10 @@ export default function PortfolioPage() {
         />
 
         {/* Scrollable Content Area */}
-        <main className="flex-1 p-8 overflow-y-auto scrollbar-hide">
-            <div className="max-w-7xl mx-auto space-y-8 pb-20">
+        <main className="flex-1 p-4 sm:p-8 overflow-y-auto scrollbar-hide">
+            <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 pb-24 sm:pb-20">
                 {/* Global Dashboard Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4 sm:mt-8">
                     <div className="space-y-4 flex-1 min-w-0">
                         <div className="flex items-center gap-2 pb-2">
                              <FloatingDock 

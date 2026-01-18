@@ -41,63 +41,43 @@ const FloatingDockMobile = ({
   items: { title: string; icon: React.ReactNode; href?: string; onClick?: () => void }[];
   className?: string;
 }) => {
-  const [open, setOpen] = useState(false);
   return (
-    <div className={cn("relative block md:hidden", className)}>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            layoutId="nav"
-            className="absolute bottom-full mb-2 inset-x-0 flex flex-col gap-2"
-          >
-            {items.map((item, idx) => (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                exit={{
-                  opacity: 0,
-                  y: 10,
-                  transition: {
-                    delay: idx * 0.05,
-                  },
-                }}
-                transition={{ delay: (items.length - 1 - idx) * 0.05 }}
-              >
-                  {item.href ? (
-                    <Link
-                    href={item.href}
-                    key={item.title}
-                    className="h-10 w-10 rounded-full bg-gray-50 dark:bg-neutral-900 flex items-center justify-center border border-gray-200 dark:border-neutral-800"
-                    >
-                    <div className="h-4 w-4">{item.icon}</div>
-                    </Link>
-                  ) : (
-                    <button
-                        onClick={() => {
-                            if (item.onClick) item.onClick();
-                            setOpen(false);
-                        }}
-                        className="h-10 w-10 rounded-full bg-gray-50 dark:bg-neutral-900 flex items-center justify-center border border-gray-200 dark:border-neutral-800"
-                    >
-                        <div className="h-4 w-4">{item.icon}</div>
-                    </button>
-                  )}
-                
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <button
-        onClick={() => setOpen(!open)}
-        className="h-10 w-10 rounded-full bg-gray-50 dark:bg-neutral-800 flex items-center justify-center border border-gray-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400"
+    <div className={cn("block md:hidden w-full", className)}>
+      {/* Horizontal scrollable container */}
+      <div 
+        className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 touch-pan-x"
+        style={{ 
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
       >
-        <PanelBottomClose className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
-      </button>
+        {items.map((item) => (
+          item.href ? (
+            <Link
+              href={item.href}
+              key={item.title}
+              className="flex flex-col items-center gap-1 flex-shrink-0"
+            >
+              <div className="h-12 w-12 rounded-xl bg-neutral-900 flex items-center justify-center border border-neutral-800 active:scale-95 transition-transform">
+                <div className="h-5 w-5">{item.icon}</div>
+              </div>
+              <span className="text-[10px] text-neutral-400 whitespace-nowrap">{item.title}</span>
+            </Link>
+          ) : (
+            <button
+              key={item.title}
+              onClick={item.onClick}
+              className="flex flex-col items-center gap-1 flex-shrink-0"
+            >
+              <div className="h-12 w-12 rounded-xl bg-neutral-900 flex items-center justify-center border border-neutral-800 active:scale-95 transition-transform">
+                <div className="h-5 w-5">{item.icon}</div>
+              </div>
+              <span className="text-[10px] text-neutral-400 whitespace-nowrap">{item.title}</span>
+            </button>
+          )
+        ))}
+      </div>
     </div>
   );
 };

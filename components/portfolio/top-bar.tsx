@@ -91,22 +91,22 @@ export function TopBar({ onOpenSettings, onNavigate }: TopBarProps) {
   };
 
   return (
-    <div className="flex h-16 items-center justify-between px-8 bg-black border-b border-gray-800 relative z-[100]">
+    <div className="flex h-14 sm:h-16 items-center justify-between px-4 sm:px-8 bg-black border-b border-gray-800 relative z-[100]">
         
-      <div className="flex items-center gap-4">
-         <div className="h-8 w-8 rounded-full overflow-hidden border border-gray-700">
+      <div className="flex items-center gap-2 sm:gap-4">
+         <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full overflow-hidden border border-gray-700 flex-shrink-0">
             <img 
                 src={user?.avatarUrl || "/api/auth/avatar"} 
                 alt="User" 
                 className="h-full w-full object-cover"
             />
          </div>
-         <span className="text-white font-medium">{user?.name || "User"}</span>
+         <span className="text-white font-medium text-sm sm:text-base truncate max-w-[100px] sm:max-w-none">{user?.name || "User"}</span>
       </div>
 
 
       {/* Center - Search */}
-      <div className="flex-1 max-w-xl mx-8 relative z-50">
+      <div className="flex-1 max-w-xl mx-2 sm:mx-8 relative z-50 hidden sm:block">
         <FancySearchBar
             placeholder="Search..."
             value={searchQuery}
