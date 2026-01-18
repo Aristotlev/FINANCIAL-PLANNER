@@ -82,11 +82,32 @@ export async function GET(request: NextRequest) {
       profile = await fmp.getProfileByCIK(cik);
     } else if (symbol) {
       profile = await fmp.getProfile(symbol.toUpperCase());
+      
+      // If not found by symbol, try searching by name (in case user passed company name)
+      if (!profile) {
+        const searchResults = await fmp.searchCompanies(symbol, 1);
+        if (searchResults.length > 0) {
+          // Try to get the profile for the first search result
+          profile = await fmp.getProfile(searchResults[0].symbol);
+          
+          // If still not found, provide helpful suggestion
+          if (!profile) {
+            return NextResponse.json(
+              { 
+                error: `Company not found for symbol: ${symbol}`,
+                suggestion: `Did you mean "${searchResults[0].symbol}" (${searchResults[0].name})?`,
+                searchResult: searchResults[0]
+              },
+              { status: 404 }
+            );
+          }
+        }
+      }
     }
 
     if (!profile) {
       return NextResponse.json(
-        { error: `Company not found for ${cik ? `CIK: ${cik}` : `symbol: ${symbol}`}` },
+        { error: `Company not found for ${cik ? `CIK: ${cik}` : `symbol: ${symbol}`}. Use ticker symbols (e.g., AAPL for Apple, TSLA for Tesla).` },
         { status: 404 }
       );
     }
