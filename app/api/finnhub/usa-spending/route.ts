@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createFinnhubClient } from '../../../../lib/api/finnhub-api';
+import { toolsCacheService } from '../../../../lib/tools-cache-service';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const symbol = searchParams.get('symbol');
   const from = searchParams.get('from');
   const to = searchParams.get('to');
+  const useCache = searchParams.get('cache') !== 'false';
 
   if (!symbol) {
     return NextResponse.json(
@@ -15,6 +17,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // 1. Try to get from cache first if no specific dates are requested
+    if (useCache && !from && !to) {
+      const cachedData = await toolsCacheService.getUSASpending({ symbol });
+
+      if (cachedData && cachedData.length > 0) {
+        const needsRefresh = await toolsCacheService.needsRefresh('usa_spending');
+        if (!needsRefresh) {
+          console.log(`[Cache] Returning cached USA spending data for ${symbol}`);
+          return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
+        }
+      }
+    }
+
     const finnhub = createFinnhubClient();
     
     // Default to last 2 years if dates not provided
@@ -32,7 +47,13 @@ export async function GET(request: NextRequest) {
     
     const data = await finnhub.getUSASpending(symbol, fromDate, toDate);
     
-    return NextResponse.json(data);
+    // 2. Update cache if standard request
+    if (!from && !to && data.data && data.data.length > 0) {
+      toolsCacheService.refreshUSASpending(data.data, symbol)
+        .catch(err => console.error('Failed to update USA spending cache:', err));
+    }
+    
+    return NextResponse.json({ ...data, source: 'api' });
   } catch (error: any) {
     console.error('Error fetching USA spending data:', error);
     return NextResponse.json(

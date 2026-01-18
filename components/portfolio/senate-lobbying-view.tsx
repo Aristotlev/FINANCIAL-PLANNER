@@ -106,6 +106,7 @@ interface LobbyingActivity {
 interface LobbyingResponse {
   data: LobbyingActivity[];
   symbol: string;
+  source?: 'api' | 'cache';
 }
 
 interface CachedLobbyingData {
@@ -189,6 +190,10 @@ export function SenateLobbyingView() {
         if (!response.ok) throw new Error('Failed to fetch');
         const data: LobbyingResponse = await response.json();
         
+        if (data.source === 'cache') {
+          setFromCache(true);
+        }
+
         // Merge with existing activities, deduplicate
         setActivities(prev => {
           const existing = prev.filter(a => a.symbol !== customSymbol);
@@ -251,6 +256,9 @@ export function SenateLobbyingView() {
                 return [];
               }
               const data: LobbyingResponse = await response.json();
+              if (data.source === 'cache') {
+                setFromCache(true);
+              }
               return data.data || [];
             } catch {
               return [];

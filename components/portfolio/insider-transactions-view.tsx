@@ -96,6 +96,7 @@ interface InsiderTransaction {
 interface InsiderTransactionsResponse {
   data: InsiderTransaction[];
   symbol: string;
+  source?: 'api' | 'cache';
 }
 
 interface CachedInsiderData {
@@ -203,6 +204,10 @@ export function InsiderTransactionsView() {
         if (!response.ok) throw new Error('Failed to fetch');
         const data: InsiderTransactionsResponse = await response.json();
         
+        if (data.source === 'cache') {
+          setFromCache(true);
+        }
+
         // Merge with existing transactions, deduplicate
         setTransactions(prev => {
           const existing = prev.filter(t => t.symbol !== customSymbol);
@@ -264,6 +269,9 @@ export function InsiderTransactionsView() {
                 return [];
               }
               const data: InsiderTransactionsResponse = await response.json();
+              if (data.source === 'cache') {
+                setFromCache(true);
+              }
               return data.data || [];
             } catch {
               return [];

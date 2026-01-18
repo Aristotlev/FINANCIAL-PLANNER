@@ -1,0 +1,322 @@
+/**
+ * Tools Cache Service
+ * 
+ * Handles caching of Insider Transactions, Senate Lobbying, and USA Spending data
+ * to reduce API calls and improve performance.
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import { 
+  FinnhubInsiderTransaction, 
+  FinnhubLobbyingActivity, 
+  FinnhubUSASpendingActivity 
+} from './api/finnhub-api';
+
+// Types derived from Finnhub API types
+export type InsiderTransaction = FinnhubInsiderTransaction;
+export type LobbyingActivity = FinnhubLobbyingActivity;
+export type USASpendingActivity = FinnhubUSASpendingActivity;
+
+export interface CacheStatus {
+  cache_name: string;
+  last_refresh_at: string | null;
+  next_refresh_at: string | null;
+  needs_refresh: boolean;
+  is_refreshing: boolean;
+  items_count: number;
+  status: string | null;
+}
+
+type ToolCacheName = 'insider_transactions' | 'senate_lobbying' | 'usa_spending';
+
+class ToolsCacheService {
+  private supabase;
+  private supabaseAdmin;
+
+  constructor() {
+    // Client-side Supabase (for reading)
+    this.supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // Admin client for write operations (only on server)
+    if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      this.supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+    }
+  }
+
+  // ==================== CACHE STATUS ====================
+
+  async getCacheStatus(): Promise<CacheStatus[]> {
+    const { data, error } = await this.supabase.rpc('get_cache_status');
+    if (error) {
+      console.error('Error getting cache status:', error);
+      return [];
+    }
+    // Filter for only tools-related caches if needed, but for now returned by name
+    return data || [];
+  }
+
+  async needsRefresh(cacheName: ToolCacheName): Promise<boolean> {
+    const { data, error } = await this.supabase.rpc('cache_needs_refresh', {
+      p_cache_name: cacheName
+    });
+    if (error) {
+      console.error('Error checking cache refresh:', error);
+      return true; // Assume needs refresh on error
+    }
+    return data;
+  }
+
+  // ==================== INSIDER TRANSACTIONS ====================
+
+  async getInsiderTransactions(options?: {
+    symbol?: string;
+    limit?: number;
+    daysAgo?: number;
+  }): Promise<InsiderTransaction[]> {
+    let query = this.supabase
+      .from('insider_transactions_cache')
+      .select('*')
+      .order('transaction_date', { ascending: false });
+
+    if (options?.symbol) {
+      query = query.eq('symbol', options.symbol.toUpperCase());
+    }
+    if (options?.daysAgo) {
+      const since = new Date();
+      since.setDate(since.getDate() - options.daysAgo);
+      query = query.gte('transaction_date', since.toISOString().split('T')[0]);
+    }
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching insider transactions from cache:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  async refreshInsiderTransactions(transactions: InsiderTransaction[], symbol: string): Promise<{ success: boolean; count: number }> {
+    if (!this.supabaseAdmin) {
+      throw new Error('Admin client not available - this must be called from server');
+    }
+
+    try {
+      await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'insider_transactions' });
+
+      // Map to table structure
+      const upsertData = transactions.map(t => ({
+        symbol: t.symbol,
+        name: t.name,
+        share: t.share,
+        change: t.change,
+        filing_date: t.filingDate,
+        transaction_date: t.transactionDate,
+        transaction_code: t.transactionCode,
+        transaction_price: t.transactionPrice,
+        raw_data: t,
+        updated_at: new Date().toISOString()
+      }));
+
+      const { error } = await this.supabaseAdmin
+        .from('insider_transactions_cache')
+        .upsert(upsertData, { 
+          onConflict: 'symbol,name,filing_date,transaction_date,change' 
+        });
+
+      if (error) throw error;
+
+      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+        p_cache_name: 'insider_transactions',
+        p_status: 'success',
+        p_error: null,
+        p_items_count: transactions.length
+      });
+
+      return { success: true, count: transactions.length };
+    } catch (error: any) {
+      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+        p_cache_name: 'insider_transactions',
+        p_status: 'failed',
+        p_error: error.message,
+        p_items_count: 0
+      });
+      throw error;
+    }
+  }
+
+  // ==================== SENATE LOBBYING ====================
+
+  async getSenateLobbying(options?: {
+    symbol?: string;
+    limit?: number;
+    year?: number;
+  }): Promise<LobbyingActivity[]> {
+    let query = this.supabase
+      .from('senate_lobbying_cache')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (options?.symbol) {
+      query = query.eq('symbol', options.symbol.toUpperCase());
+    }
+    if (options?.year) {
+      query = query.eq('year', options.year);
+    }
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching senate lobbying from cache:', error);
+      return [];
+    }
+    
+    // Map back to API format
+    return (data || []).map(d => d.raw_data);
+  }
+
+  async refreshSenateLobbying(activities: LobbyingActivity[], symbol: string): Promise<{ success: boolean; count: number }> {
+    if (!this.supabaseAdmin) {
+      throw new Error('Admin client not available - this must be called from server');
+    }
+
+    try {
+      await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'senate_lobbying' });
+
+      const upsertData = activities.map(a => ({
+        symbol: a.symbol,
+        name: a.name,
+        client_id: a.clientId,
+        registrant_id: a.registrantId,
+        senate_id: a.senateId,
+        house_registrant_id: a.houseRegistrantId,
+        year: a.year,
+        period: a.period,
+        income: a.income,
+        expenses: a.expenses,
+        description: a.description,
+        document_url: a.documentUrl,
+        posted_name: a.postedName,
+        date: a.date,
+        raw_data: a,
+        updated_at: new Date().toISOString()
+      }));
+
+      const { error } = await this.supabaseAdmin
+        .from('senate_lobbying_cache')
+        .upsert(upsertData, { 
+          onConflict: 'symbol,senate_id,house_registrant_id' 
+        });
+
+      if (error) throw error;
+
+      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+        p_cache_name: 'senate_lobbying',
+        p_status: 'success',
+        p_error: null,
+        p_items_count: activities.length
+      });
+
+      return { success: true, count: activities.length };
+    } catch (error: any) {
+      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+        p_cache_name: 'senate_lobbying',
+        p_status: 'failed',
+        p_error: error.message,
+        p_items_count: 0
+      });
+      throw error;
+    }
+  }
+
+  // ==================== USA SPENDING ====================
+
+  async getUSASpending(options?: {
+    symbol?: string;
+    limit?: number;
+  }): Promise<USASpendingActivity[]> {
+    let query = this.supabase
+      .from('usa_spending_cache')
+      .select('*')
+      .order('action_date', { ascending: false });
+
+    if (options?.symbol) {
+      query = query.eq('symbol', options.symbol.toUpperCase());
+    }
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching USA spending from cache:', error);
+      return [];
+    }
+    
+    // Map back to API format
+    return (data || []).map(d => d.raw_data);
+  }
+
+  async refreshUSASpending(activities: USASpendingActivity[], symbol: string): Promise<{ success: boolean; count: number }> {
+    if (!this.supabaseAdmin) {
+      throw new Error('Admin client not available - this must be called from server');
+    }
+
+    try {
+      await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'usa_spending' });
+
+      const upsertData = activities.map(a => ({
+        symbol: a.symbol,
+        recipient_name: a.recipientName,
+        total_value: a.totalValue,
+        action_date: a.actionDate,
+        performance_start_date: a.performanceStartDate,
+        performance_end_date: a.performanceEndDate,
+        awarding_agency_name: a.awardingAgencyName,
+        award_description: a.awardDescription,
+        permalink: a.permalink,
+        raw_data: a,
+        updated_at: new Date().toISOString()
+      }));
+
+      const { error } = await this.supabaseAdmin
+        .from('usa_spending_cache')
+        .upsert(upsertData, { 
+          onConflict: 'symbol,permalink' 
+        });
+
+      if (error) throw error;
+
+      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+        p_cache_name: 'usa_spending',
+        p_status: 'success',
+        p_error: null,
+        p_items_count: activities.length
+      });
+
+      return { success: true, count: activities.length };
+    } catch (error: any) {
+      await this.supabaseAdmin.rpc('cache_refresh_completed', {
+        p_cache_name: 'usa_spending',
+        p_status: 'failed',
+        p_error: error.message,
+        p_items_count: 0
+      });
+      throw error;
+    }
+  }
+}
+
+// Export singleton instance
+export const toolsCacheService = new ToolsCacheService();
+export default toolsCacheService;

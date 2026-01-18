@@ -30,6 +30,7 @@ interface USASpendingActivity {
 interface USASpendingResponse {
   data: USASpendingActivity[];
   symbol: string;
+  source?: 'api' | 'cache';
 }
 
 interface CachedUSASpendingData {
@@ -128,6 +129,10 @@ export function USASpendingView() {
         if (!response.ok) throw new Error('Failed to fetch');
         const data: USASpendingResponse = await response.json();
         
+        if (data.source === 'cache') {
+          setFromCache(true);
+        }
+
         // Merge with existing activities, deduplicate
         setActivities(prev => {
           const existing = prev.filter(a => a.symbol !== customSymbol);
@@ -189,6 +194,9 @@ export function USASpendingView() {
                 return [];
               }
               const data: USASpendingResponse = await response.json();
+              if (data.source === 'cache') {
+                setFromCache(true);
+              }
               return data.data || [];
             } catch {
               return [];
