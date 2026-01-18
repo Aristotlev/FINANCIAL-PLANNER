@@ -336,22 +336,20 @@ class ToolsCacheService {
       await this.supabaseAdmin.rpc('cache_refresh_started', { p_cache_name: 'usa_spending' });
 
       // Map to table structure with sanitized data
-      const upsertData = activities
-        .filter(a => a.permalink) // Must have permalink for unique constraint
-        .map(a => ({
-          symbol: a.symbol || symbol,
-          recipient_name: a.recipientName || null,
-          total_value: a.totalValue,
-          // Date handling: undefined, empty string, or invalid -> null
-          action_date: (a.actionDate && a.actionDate.trim() !== '') ? a.actionDate : null,
-          performance_start_date: (a.performanceStartDate && a.performanceStartDate.trim() !== '') ? a.performanceStartDate : null,
-          performance_end_date: (a.performanceEndDate && a.performanceEndDate.trim() !== '') ? a.performanceEndDate : null,
-          awarding_agency_name: a.awardingAgencyName || null,
-          award_description: a.awardDescription || null,
-          permalink: a.permalink,
-          raw_data: a,
-          updated_at: new Date().toISOString()
-        }));
+      const upsertData = activities.map(a => ({
+        symbol: a.symbol || symbol,
+        recipient_name: a.recipientName || null,
+        total_value: a.totalValue,
+        // Date handling: undefined, empty string, or invalid -> null
+        action_date: (a.actionDate && a.actionDate.trim() !== '') ? a.actionDate : null,
+        performance_start_date: (a.performanceStartDate && a.performanceStartDate.trim() !== '') ? a.performanceStartDate : null,
+        performance_end_date: (a.performanceEndDate && a.performanceEndDate.trim() !== '') ? a.performanceEndDate : null,
+        awarding_agency_name: a.awardingAgencyName || null,
+        award_description: a.awardDescription || null,
+        permalink: a.permalink || '',  // NOT NULL DEFAULT '' in DB
+        raw_data: a,
+        updated_at: new Date().toISOString()
+      }));
 
       // Deduplicate by unique constraint key (symbol, permalink) - CRITICAL to avoid ON CONFLICT error
       const seen = new Set<string>();

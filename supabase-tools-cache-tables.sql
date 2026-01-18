@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public.usa_spending_cache (
   performance_end_date DATE,
   awarding_agency_name TEXT,
   award_description TEXT,
-  permalink TEXT,
+  permalink TEXT NOT NULL DEFAULT '',
   raw_data JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),

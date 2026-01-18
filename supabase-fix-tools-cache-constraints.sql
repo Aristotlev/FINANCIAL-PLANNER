@@ -39,6 +39,26 @@ UNIQUE (symbol, senate_id, house_registrant_id);
 DELETE FROM public.insider_transactions_cache 
 WHERE filing_date IS NULL OR transaction_date IS NULL;
 
+-- ==================== FIX USA SPENDING CACHE ====================
+
+-- Step 1: Update existing NULL values to empty strings
+UPDATE public.usa_spending_cache 
+SET permalink = '' WHERE permalink IS NULL;
+
+-- Step 2: Drop the old constraint
+ALTER TABLE public.usa_spending_cache 
+DROP CONSTRAINT IF EXISTS usa_spending_cache_symbol_permalink_key;
+
+-- Step 3: Alter column to NOT NULL with default
+ALTER TABLE public.usa_spending_cache 
+ALTER COLUMN permalink SET NOT NULL,
+ALTER COLUMN permalink SET DEFAULT '';
+
+-- Step 4: Add the constraint back
+ALTER TABLE public.usa_spending_cache 
+ADD CONSTRAINT usa_spending_cache_symbol_permalink_key 
+UNIQUE (symbol, permalink);
+
 -- ==================== VERIFY ====================
 
 SELECT 'senate_lobbying_cache constraints:' as info;
