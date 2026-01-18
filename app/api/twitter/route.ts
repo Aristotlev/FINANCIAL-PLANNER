@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { newsCacheService } from '@/lib/news-cache-service';
 
 // Twitter API v2 configuration
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY || '';
@@ -200,16 +201,68 @@ async function getUserIdByUsername(bearerToken: string, username: string): Promi
 
 export async function GET(request: NextRequest) {
   try {
-    // Check for API credentials
-    if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
-      return NextResponse.json({
-        success: false,
-        error: 'Twitter API credentials not configured',
-        tweets: [],
-      }, { status: 500 });
+    const searchParams = request.nextUrl.searchParams;
+    const useCache = searchParams.get('cache') !== 'false';
+
+    // 1. Try to get from cache first
+    if (useCache) {
+      try {
+        const needsRefresh = await newsCacheService.needsRefresh('twitter_feed');
+        
+        if (!needsRefresh) {
+          const cachedTweets = await newsCacheService.getRecentTweets(100);
+          
+          if (cachedTweets && cachedTweets.length > 0) {
+            console.log(`[Cache] Returning ${cachedTweets.length} cached tweets`);
+            // Transform to expected format
+            const tweets = cachedTweets.map(t => ({
+              id: t.tweet_id,
+              text: t.content,
+              created_at: t.published_at,
+              author_id: t.author_username,
+              author_name: t.author_name || t.author_username,
+              author_username: t.author_username,
+              author_profile_image: t.author_profile_image,
+              public_metrics: {
+                like_count: t.likes_count || 0,
+                retweet_count: t.retweets_count || 0,
+                reply_count: t.replies_count || 0,
+                quote_count: t.quote_count || 0,
+              },
+              is_relevant: true,
+              matched_keywords: t.hashtags || [],
+            }));
+            
+            return NextResponse.json({
+              success: true,
+              count: tweets.length,
+              total_fetched: tweets.length,
+              tweets,
+              last_updated: new Date().toISOString(),
+              source: 'cache'
+            });
+          }
+        }
+      } catch (cacheError) {
+        console.warn('[Cache] Twitter cache read failed, falling back to API:', cacheError);
+      }
     }
 
-    // Get bearer token
+    // 2. Check for API credentials
+    if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
+      // Return empty data instead of error - graceful degradation
+      console.warn('[Twitter API] Credentials not configured - returning empty response');
+      return NextResponse.json({
+        success: true,
+        count: 0,
+        total_fetched: 0,
+        tweets: [],
+        last_updated: new Date().toISOString(),
+        message: 'Twitter API not configured - feature disabled',
+      });
+    }
+
+    // 3. Get bearer token
     const bearerToken = await getBearerToken();
     if (!bearerToken) {
       return NextResponse.json({
@@ -283,16 +336,74 @@ export async function GET(request: NextRequest) {
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
+    // 4. Update cache in background
+    if (relevantTweets.length > 0) {
+      const tweetsToCache = relevantTweets.map(t => ({
+        tweet_id: t.id,
+        author_username: t.author_username,
+        author_name: t.author_name,
+        author_profile_image: t.author_profile_image,
+        content: t.text,
+        likes_count: t.public_metrics?.like_count || 0,
+        retweets_count: t.public_metrics?.retweet_count || 0,
+        replies_count: t.public_metrics?.reply_count || 0,
+        quote_count: t.public_metrics?.quote_count || 0,
+        hashtags: t.matched_keywords,
+        published_at: t.created_at,
+        category: 'market_news' as const,
+        sentiment: 'neutral' as const,
+      }));
+      
+      newsCacheService.refreshTwitterFeed(tweetsToCache)
+        .catch(err => console.error('Failed to update Twitter cache:', err));
+    }
+
     return NextResponse.json({
       success: true,
       count: relevantTweets.length,
       total_fetched: allTweets.length,
       tweets: relevantTweets,
       last_updated: new Date().toISOString(),
+      source: 'api'
     });
     
   } catch (error) {
     console.error('Twitter API error:', error);
+    
+    // Try to return stale cache on error
+    try {
+      const staleCache = await newsCacheService.getRecentTweets(100);
+      if (staleCache && staleCache.length > 0) {
+        console.log('[Cache] Returning stale Twitter cache due to API error');
+        const tweets = staleCache.map(t => ({
+          id: t.tweet_id,
+          text: t.content,
+          created_at: t.published_at,
+          author_id: t.author_username,
+          author_name: t.author_name || t.author_username,
+          author_username: t.author_username,
+          author_profile_image: t.author_profile_image,
+          public_metrics: {
+            like_count: t.likes_count || 0,
+            retweet_count: t.retweets_count || 0,
+            reply_count: t.replies_count || 0,
+            quote_count: t.quote_count || 0,
+          },
+          is_relevant: true,
+          matched_keywords: t.hashtags || [],
+        }));
+        
+        return NextResponse.json({
+          success: true,
+          count: tweets.length,
+          total_fetched: tweets.length,
+          tweets,
+          last_updated: new Date().toISOString(),
+          source: 'stale-cache'
+        });
+      }
+    } catch {}
+    
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

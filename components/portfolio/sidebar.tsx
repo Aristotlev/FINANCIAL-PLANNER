@@ -23,7 +23,6 @@ import {
   NewTwitterIcon, 
   YoutubeIcon, 
   ChartLineData01Icon, 
-  TradeUpIcon, 
   HappyIcon, 
   UserMultiple02Icon, 
   BankIcon, 
@@ -91,7 +90,6 @@ const newsNavigation = [
 const toolsNavigation = [
   { name: "Live Charts", id: "charts", icon: ChartLineData01Icon },
   { name: "Company Lookup", id: "company-lookup", icon: Building02Icon },
-  { name: "Trades", id: "trades", icon: TradeUpIcon },
   { name: "Insider Sentiment", id: "insider-sentiment", icon: HappyIcon },
   { name: "Insider Transactions", id: "insider-transactions", icon: UserMultiple02Icon },
   { name: "Senate Lobbying", id: "senate-lobbying", icon: BankIcon },
@@ -119,7 +117,7 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
   };
  
   const isNewsSection = ['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar'].includes(activeTab);
-  const isToolsSection = ['charts', 'company-lookup', 'trades', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
+  const isToolsSection = ['charts', 'company-lookup', 'insider-sentiment', 'insider-transactions', 'earnings-surprises', 'senate-lobbying', 'usa-spending'].includes(activeTab);
   
   // Define restricted tabs for News section
   const restrictedNewsTabs = ['ipo-calendar', 'earnings-calendar', 'twitter-x', 'youtube-feed'];

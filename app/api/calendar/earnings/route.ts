@@ -1,10 +1,12 @@
 /**
  * Earnings Calendar API Route Handler
  * Fetches upcoming and historical earnings releases from Finnhub
+ * Uses database cache to reduce API calls
  * API Documentation: https://finnhub.io/docs/api/earnings-calendar
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { newsCacheService } from '@/lib/news-cache-service';
 
 interface EarningsEvent {
   date: string;
@@ -48,8 +50,50 @@ export async function GET(request: NextRequest) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
     const international = searchParams.get('international') === 'true';
+    const useCache = searchParams.get('cache') !== 'false';
 
-    // Check both environment variable names for the API key
+    // 1. Try to get from cache first (unless explicitly disabled)
+    if (useCache) {
+      try {
+        const needsRefresh = await newsCacheService.needsRefresh('earnings_calendar');
+        
+        if (!needsRefresh) {
+          const cachedData = await newsCacheService.getEarnings({
+            fromDate: from || undefined,
+            toDate: to || undefined,
+            symbol: symbol || undefined,
+            limit: 500
+          });
+
+          if (cachedData && cachedData.length > 0) {
+            console.log(`[Cache] Returning ${cachedData.length} cached earnings events`);
+            // Transform to match expected format
+            const earnings = cachedData.map(e => ({
+              date: e.report_date,
+              epsActual: e.eps_actual,
+              epsEstimate: e.eps_estimate,
+              hour: e.report_time || 'dmh',
+              quarter: parseInt(e.fiscal_quarter?.replace('Q', '') || '0') || 0,
+              revenueActual: e.revenue_actual,
+              revenueEstimate: e.revenue_estimate,
+              symbol: e.symbol,
+              year: e.fiscal_year || new Date(e.report_date).getFullYear()
+            }));
+            
+            return NextResponse.json({
+              success: true,
+              data: earnings,
+              source: 'cache',
+              isMock: false
+            });
+          }
+        }
+      } catch (cacheError) {
+        console.warn('[Cache] Earnings cache read failed, falling back to API:', cacheError);
+      }
+    }
+
+    // 2. Check for API key
     const apiKey = process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
     
     if (!apiKey || apiKey === 'your_finnhub_api_key_here') {
@@ -62,24 +106,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Build the Finnhub URL
+    // 3. Build the Finnhub URL
     const finnhubUrl = new URL('https://finnhub.io/api/v1/calendar/earnings');
     finnhubUrl.searchParams.append('token', apiKey);
     
     // Use provided dates or default to 30 days back and forward
-    if (from) {
-      finnhubUrl.searchParams.append('from', from);
-    } else {
-      const { from: defaultFrom } = getDateRange();
-      finnhubUrl.searchParams.append('from', defaultFrom);
-    }
+    const fromDate = from || getDateRange().from;
+    const toDate = to || getDateRange().to;
     
-    if (to) {
-      finnhubUrl.searchParams.append('to', to);
-    } else {
-      const { to: defaultTo } = getDateRange();
-      finnhubUrl.searchParams.append('to', defaultTo);
-    }
+    finnhubUrl.searchParams.append('from', fromDate);
+    finnhubUrl.searchParams.append('to', toDate);
     
     if (symbol) {
       finnhubUrl.searchParams.append('symbol', symbol.toUpperCase());
@@ -100,11 +136,37 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       
-      // Handle 403 - could be rate limiting or premium access
+      // Handle 403 - try to return stale cache
       if (response.status === 403) {
         console.warn('Finnhub returned 403:', errorText);
-        // Return empty data with a warning instead of an error
-        // This prevents the UI from breaking due to rate limiting
+        
+        // Try to return stale cache
+        try {
+          const staleCache = await newsCacheService.getEarnings({ limit: 500 });
+          if (staleCache && staleCache.length > 0) {
+            console.log('[Cache] Returning stale earnings cache due to API 403');
+            const earnings = staleCache.map(e => ({
+              date: e.report_date,
+              epsActual: e.eps_actual,
+              epsEstimate: e.eps_estimate,
+              hour: e.report_time || 'dmh',
+              quarter: parseInt(e.fiscal_quarter?.replace('Q', '') || '0') || 0,
+              revenueActual: e.revenue_actual,
+              revenueEstimate: e.revenue_estimate,
+              symbol: e.symbol,
+              year: e.fiscal_year || new Date(e.report_date).getFullYear()
+            }));
+            
+            return NextResponse.json({
+              success: true,
+              data: earnings,
+              source: 'stale-cache',
+              isMock: false,
+              warning: 'Finnhub API rate limited. Showing cached results.'
+            });
+          }
+        } catch {}
+        
         return NextResponse.json({
           success: true,
           data: [],
@@ -118,21 +180,67 @@ export async function GET(request: NextRequest) {
 
     const data: EarningsCalendarResponse = await response.json();
 
-    // Sort by date (most recent first for past, soonest first for future)
+    // Sort by date
     const sortedData = data.earningsCalendar?.sort((a, b) => {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     }) || [];
 
+    // 4. Update cache in background
+    if (sortedData.length > 0) {
+      const earningsData = sortedData.map(e => ({
+        symbol: e.symbol,
+        company_name: e.symbol, // Will be enriched later
+        report_date: e.date,
+        report_time: e.hour as any,
+        fiscal_quarter: `Q${e.quarter}`,
+        fiscal_year: e.year,
+        eps_estimate: e.epsEstimate ?? undefined,
+        eps_actual: e.epsActual ?? undefined,
+        revenue_estimate: e.revenueEstimate ?? undefined,
+        revenue_actual: e.revenueActual ?? undefined,
+        raw_data: e
+      }));
+      
+      newsCacheService.refreshEarningsCalendar(earningsData)
+        .catch(err => console.error('Failed to update earnings cache:', err));
+    }
+
     return NextResponse.json({
       success: true,
       data: sortedData,
+      source: 'api',
       isMock: false
     });
 
   } catch (error: any) {
     console.error('Earnings Calendar API error:', error);
     
-    // Return error instead of falling back to mock data
+    // Try to return stale cache on error
+    try {
+      const staleCache = await newsCacheService.getEarnings({ limit: 500 });
+      if (staleCache && staleCache.length > 0) {
+        console.log('[Cache] Returning stale earnings cache due to API error');
+        const earnings = staleCache.map(e => ({
+          date: e.report_date,
+          epsActual: e.eps_actual,
+          epsEstimate: e.eps_estimate,
+          hour: e.report_time || 'dmh',
+          quarter: parseInt(e.fiscal_quarter?.replace('Q', '') || '0') || 0,
+          revenueActual: e.revenue_actual,
+          revenueEstimate: e.revenue_estimate,
+          symbol: e.symbol,
+          year: e.fiscal_year || new Date(e.report_date).getFullYear()
+        }));
+        
+        return NextResponse.json({
+          success: true,
+          data: earnings,
+          source: 'stale-cache',
+          isMock: false
+        });
+      }
+    } catch {}
+    
     return NextResponse.json({
       success: false,
       data: [],

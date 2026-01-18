@@ -295,22 +295,35 @@ export const waitForSupabase = async (): Promise<boolean> => {
     return true;
   }
 
-  // Polling as backup
+  // Listen for env-loaded event from layout.tsx async fallback
   return new Promise((resolve) => {
     let attempts = 0;
     const maxAttempts = 100; // 10 seconds max
+    
+    // Listen for the custom event from layout.tsx
+    const handleEnvLoaded = () => {
+      window.removeEventListener('env-loaded', handleEnvLoaded);
+      if (isSupabaseConfigured()) {
+        supabaseInstance = null;
+        initializationAttempted = false;
+        resolve(true);
+      }
+    };
+    window.addEventListener('env-loaded', handleEnvLoaded);
     
     const checkInterval = setInterval(async () => {
       attempts++;
       
       if (isSupabaseConfigured()) {
         clearInterval(checkInterval);
+        window.removeEventListener('env-loaded', handleEnvLoaded);
         // Reset instance to force re-initialization with new credentials
         supabaseInstance = null;
         initializationAttempted = false;
         resolve(true);
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
+        window.removeEventListener('env-loaded', handleEnvLoaded);
         console.warn('[SUPABASE] Timeout waiting for credentials');
         
         const windowEnv = typeof window !== 'undefined' ? window.__ENV__ : undefined;

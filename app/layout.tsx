@@ -110,47 +110,62 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${inter.variable} ${playfair.variable} ${dancing.variable}`}>
       <head>
         {/* Runtime environment variables - MUST be FIRST to ensure availability before any code runs */}
-        {/* Uses synchronous XHR to block until env vars are loaded - critical for production */}
+        {/* Server-side rendered env vars - no XHR needed, values are inlined at render time */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Try to get build-time values first (works in dev, may be empty in prod)
-                var buildTimeUrl = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')};
-                var buildTimeKey = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')};
-                var buildTimeMapsKey = ${JSON.stringify(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')};
-                var buildTimeAppUrl = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_URL || '')};
+                // Server-rendered values (available at runtime in production via SSR)
+                var serverUrl = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL || '')};
+                var serverKey = ${JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')};
+                var serverMapsKey = ${JSON.stringify(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '')};
+                var serverAppUrl = ${JSON.stringify(process.env.NEXT_PUBLIC_APP_URL || 'https://www.omnifolio.app')};
                 
-                // Initialize with build-time values
+                // Initialize window.__ENV__ with server-rendered values
                 window.__ENV__ = {
-                  NEXT_PUBLIC_SUPABASE_URL: buildTimeUrl,
-                  NEXT_PUBLIC_SUPABASE_ANON_KEY: buildTimeKey,
-                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: buildTimeMapsKey,
-                  NEXT_PUBLIC_APP_URL: buildTimeAppUrl,
+                  NEXT_PUBLIC_SUPABASE_URL: serverUrl,
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY: serverKey,
+                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: serverMapsKey,
+                  NEXT_PUBLIC_APP_URL: serverAppUrl,
                 };
                 
-                // If Supabase URL is missing, fetch from API synchronously (production scenario)
-                if (!buildTimeUrl) {
-                  try {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', '/api/env', false); // false = synchronous
-                    xhr.send(null);
-                    if (xhr.status === 200) {
-                      // Execute the returned script
-                      eval(xhr.responseText);
-                      console.log('[ENV] Loaded from API:', { 
-                        hasUrl: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL,
-                        hasKey: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY 
-                      });
-                    } else {
-                      console.error('[ENV] Failed to fetch env vars:', xhr.status);
-                    }
-                  } catch (e) {
-                    console.error('[ENV] Error fetching env vars:', e);
-                  }
-                }
-                
                 window.__ENV_LOADED__ = true;
+                
+                // Log status for debugging (will be visible in production)
+                console.log('[ENV] Initialized:', { 
+                  hasUrl: !!serverUrl,
+                  hasKey: !!serverKey,
+                  hasMapsKey: !!serverMapsKey,
+                  appUrl: serverAppUrl
+                });
+                
+                // If values are still missing after SSR, schedule async fetch as fallback
+                if (!serverUrl || !serverKey) {
+                  console.warn('[ENV] Missing Supabase credentials - scheduling async fetch');
+                  window.__ENV_PENDING__ = true;
+                  
+                  // Use async fetch (non-blocking) as fallback
+                  fetch('/api/env')
+                    .then(function(res) { return res.text(); })
+                    .then(function(script) {
+                      try {
+                        // Execute the script to update window.__ENV__
+                        new Function(script)();
+                        window.__ENV_PENDING__ = false;
+                        console.log('[ENV] Async fallback loaded:', { 
+                          hasUrl: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_URL,
+                          hasKey: !!window.__ENV__.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+                        });
+                        // Dispatch event so listeners can reinitialize
+                        window.dispatchEvent(new CustomEvent('env-loaded'));
+                      } catch (e) {
+                        console.error('[ENV] Failed to execute env script:', e);
+                      }
+                    })
+                    .catch(function(e) {
+                      console.error('[ENV] Async fetch failed:', e);
+                    });
+                }
               })();
             `,
           }}

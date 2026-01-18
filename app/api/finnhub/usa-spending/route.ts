@@ -17,6 +17,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Check if Finnhub API key is configured
+    const apiKey = process.env.FINNHUB_API_KEY || process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
+    if (!apiKey) {
+      console.warn('[USA Spending API] Finnhub API key not configured - returning empty response');
+      return NextResponse.json({ 
+        data: [], 
+        symbol, 
+        source: 'none',
+        message: 'Finnhub API not configured - feature disabled' 
+      });
+    }
+
     // 1. Try to get from cache first if no specific dates are requested
     if (useCache && !from && !to) {
       const cachedData = await toolsCacheService.getUSASpending({ symbol });
@@ -56,9 +68,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ...data, source: 'api' });
   } catch (error: any) {
     console.error('Error fetching USA spending data:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch USA spending data' },
-      { status: 500 }
-    );
+    // Return empty data instead of error for graceful degradation
+    return NextResponse.json({ 
+      data: [], 
+      symbol, 
+      source: 'error',
+      error: error.message || 'Failed to fetch USA spending data' 
+    });
   }
 }

@@ -13,7 +13,6 @@ import { Plus, ArrowUpRight, ShoppingCart, Repeat, Newspaper, ChartColumn, Walle
 import { FloatingDock } from '../../components/ui/floating-dock';
 
 import { NewsFeed } from '../../components/portfolio/news-feed';
-import { TradesFeed } from '../../components/portfolio/trades-feed';
 import { IPOCalendar } from '../../components/portfolio/ipo-calendar';
 import { EarningsCalendar } from '../../components/portfolio/earnings-calendar';
 import { TwitterFeed } from '../../components/portfolio/twitter-feed-curated';
@@ -543,8 +542,6 @@ export default function PortfolioPage() {
         return <TwitterFeed />;
       case 'youtube-feed':
         return <YoutubeFeed />;
-      case 'trades':
-        return <TradesFeed />;
       case 'ipo-calendar':
         return <IPOCalendar />;
       case 'earnings-calendar':
@@ -626,7 +623,7 @@ export default function PortfolioPage() {
                         </div>
                     </div>
 
-                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'trades', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending', 'company-lookup'].includes(activeTab) && selectedCategory !== "Networth" && (
+                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending', 'company-lookup'].includes(activeTab) && selectedCategory !== "Networth" && (
                         <div className="flex items-center gap-3">
                             {selectedCategory === "Real Estate" ? (
                                 <button 
