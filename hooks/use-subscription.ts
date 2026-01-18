@@ -32,6 +32,72 @@ async function getCurrentUser() {
   }
 }
 
+// Admin emails cache
+let adminCheckCache: { email: string; isAdmin: boolean; timestamp: number } | null = null;
+const ADMIN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// ==================== useAdminStatus ====================
+
+/**
+ * Hook to check if current user is an admin
+ * Admins bypass all subscription limits and paywalls
+ */
+export function useAdminStatus() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkAdminStatus() {
+      try {
+        const user = await getCurrentUser();
+        if (!user?.email) {
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        // Check cache
+        if (adminCheckCache && 
+            adminCheckCache.email === user.email && 
+            Date.now() - adminCheckCache.timestamp < ADMIN_CACHE_TTL) {
+          setIsAdmin(adminCheckCache.isAdmin);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch from API
+        const response = await fetch('/api/data?table=users', {
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const userData = result.data;
+          const adminStatus = userData?.role === 'admin';
+          
+          // Update cache
+          adminCheckCache = { email: user.email, isAdmin: adminStatus, timestamp: Date.now() };
+          setIsAdmin(adminStatus);
+        } else {
+          // On error, set admin to false - admin status must come from database
+          adminCheckCache = { email: user.email, isAdmin: false, timestamp: Date.now() };
+          setIsAdmin(false);
+        }
+      } catch (err) {
+        console.error('Error checking admin status:', err);
+        // On error, set admin to false - admin status must come from database
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, []);
+
+  return { isAdmin, loading };
+}
+
 // ==================== useSubscription ====================
 
 /**

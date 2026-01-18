@@ -1,10 +1,10 @@
 /**
- * Optimized system prompt for LISA voice assistant
+ * Optimized system prompt for Omni voice assistant
  * Focused on: Speed, brevity, real-time data
  */
 
 export function getVoiceAssistantPrompt(financialData: any): string {
-  let prompt = `You are Lisa, a fast AI voice assistant. Keep responses under 3 sentences.
+  let prompt = `You are Omni, a fast AI voice assistant. Keep responses under 3 sentences.
 
 **Portfolio Data (LIVE):`;
 

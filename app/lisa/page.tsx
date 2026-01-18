@@ -21,7 +21,7 @@ import { Mic, MicOff, Loader2, Volume2, Sparkles, Activity, Lock } from 'lucide-
 import { AgentStateMachine, AgentState } from '@/lib/agent/state';
 import { VoiceActivityDetector, VADState } from '@/lib/audio/vad';
 import { AudioPlayer } from '@/lib/audio/player';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useSubscription, useAdminStatus } from '@/hooks/use-subscription';
 import { getEffectivePlanLimits } from '@/types/subscription';
 import { useRouter } from 'next/navigation';
 
@@ -45,6 +45,7 @@ export default function LisaPage() {
   const accumulatedAudioRef = useRef<Int16Array[]>([]);
   
   const { subscription, loading: isSubscriptionLoading } = useSubscription();
+  const { isAdmin } = useAdminStatus();
   const router = useRouter();
   
   const planLimits = subscription ? getEffectivePlanLimits(subscription) : null;
@@ -454,8 +455,8 @@ export default function LisaPage() {
     }
   };
 
-  // If AI is not allowed for this plan, show upgrade prompt
-  if (!isSubscriptionLoading && !isAiAllowed) {
+  // If AI is not allowed for this plan (and not admin), show upgrade prompt
+  if (!isSubscriptionLoading && !isAiAllowed && !isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 text-center">

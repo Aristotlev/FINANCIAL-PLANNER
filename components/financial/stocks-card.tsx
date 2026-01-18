@@ -49,7 +49,6 @@ import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, LargeDualCurrency } from "../ui/dual-currency-display";
 import { lttb } from "../../lib/chart-utils";
 import { getBrandColor } from "../../lib/brand-colors";
-import { useTranslation } from "../../contexts/translation-context";
 
 // Stock Icon Component - TradingView style
 function StockIcon({ symbol, className = "w-5 h-5" }: { symbol: string; className?: string }) {
@@ -1727,7 +1726,6 @@ function StocksHoverContent() {
 import { SharePortfolioModal } from "./share-portfolio-modal";
 
 function StocksCardWithPrices({ userName }: { userName?: string }) {
-  const { t } = useTranslation();
   const [stockHoldings, setStockHoldings] = useState<StockHolding[]>([]);
   const { convertToMain, formatMain, mainCurrency } = useCurrencyConversion();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -1837,8 +1835,8 @@ function StocksCardWithPrices({ userName }: { userName?: string }) {
   return (
     <>
       <EnhancedFinancialCard
-        title={t('stocks.title')}
-        description={t('stocks.totalValue')}
+        title="Stocks"
+        description="Total Value"
         amount={displayAmount}
         change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
         changeType={changeTypeCalc}
@@ -1848,12 +1846,12 @@ function StocksCardWithPrices({ userName }: { userName?: string }) {
         stats={[
           { 
             label: "AAPL", 
-            value: loading || !aaplHolding ? t('common.loading') : formatMain(convertToMain(aaplHolding.value, 'USD')), 
+            value: loading || !aaplHolding ? "Loading..." : formatMain(convertToMain(aaplHolding.value, 'USD')), 
             color: "#8b5cf6" 
           },
           { 
             label: "VOO", 
-            value: loading || !vooHolding ? t('common.loading') : formatMain(convertToMain(vooHolding.value, 'USD')), 
+            value: loading || !vooHolding ? "Loading..." : formatMain(convertToMain(vooHolding.value, 'USD')), 
             color: "#a78bfa" 
           }
         ]}
@@ -1869,7 +1867,7 @@ function StocksCardWithPrices({ userName }: { userName?: string }) {
       <SharePortfolioModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        title={t('stocks.title')}
+        title="Stocks"
         totalValue={convertedValue}
         currencySymbol={mainCurrency.symbol}
         userName={userName || "User"}

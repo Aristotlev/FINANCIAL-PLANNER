@@ -35,7 +35,7 @@ import { Lock } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
 import { Sidebar as SidebarContainer, SidebarBody, SidebarLink } from "../ui/sidebar";
-import { useSubscription } from "@/hooks/use-subscription";
+import { useSubscription, useAdminStatus } from "@/hooks/use-subscription";
 import { isTrialActive } from "@/types/subscription";
 import UpgradeModal from "../pricing/upgrade-modal";
 
@@ -105,12 +105,13 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
   const [upgradeReason, setUpgradeReason] = useState("");
   
   const { subscription, startCheckout } = useSubscription();
+  const { isAdmin } = useAdminStatus();
 
-  // Helper to check access - Tools are restricted to INVESTOR and WHALE plans
-  const hasToolsAccess = subscription ? (
+  // Helper to check access - Tools are restricted to INVESTOR and WHALE plans (or admin)
+  const hasToolsAccess = isAdmin || (subscription ? (
       ['INVESTOR', 'WHALE'].includes(subscription.plan) || 
       isTrialActive(subscription)
-  ) : false;
+  ) : false);
 
   const handleRestrictedClick = (featureName: string) => {
       setUpgradeReason(`The ${featureName} feature is available on Investor and Whale plans only.`);

@@ -7,7 +7,6 @@ import { APIConnectionProvider } from "../contexts/api-connection-context";
 import { PortfolioProvider } from "../contexts/portfolio-context";
 import { FinancialDataProvider } from "../contexts/financial-data-context";
 import { CurrencyProvider } from "../contexts/currency-context";
-import { TranslationProvider } from "../contexts/translation-context";
 import { HybridDataProvider } from "../contexts/hybrid-data-context";
 import { ZoomHandler } from "../components/ui/zoom-handler";
 import { ReduxWarningsSuppressor } from "../components/ui/redux-warnings-suppressor";
@@ -239,7 +238,6 @@ export default function RootLayout({
           <ThemeProvider>
             <BetterAuthProvider>
               <SecurityKeyModal />
-              <TranslationProvider>
                 <CurrencyProvider>
                   <HybridDataProvider>
                     <APIConnectionProvider>
@@ -252,7 +250,6 @@ export default function RootLayout({
                     </APIConnectionProvider>
                   </HybridDataProvider>
                 </CurrencyProvider>
-              </TranslationProvider>
             </BetterAuthProvider>
           </ThemeProvider>
         </ExtensionErrorBoundary>

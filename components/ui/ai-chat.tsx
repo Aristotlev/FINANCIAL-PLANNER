@@ -26,7 +26,7 @@ import {
 import { GeminiService } from "@/lib/gemini-service";
 import { TTSPreprocessor } from "@/lib/tts-preprocessor";
 import { smartVoiceService, selectVoiceService } from "@/lib/smart-voice-service";
-import { useSubscription, useAILimit } from "@/hooks/use-subscription";
+import { useSubscription, useAILimit, useAdminStatus } from "@/hooks/use-subscription";
 import { getEffectivePlanLimits } from "@/types/subscription";
 import { useRouter } from "next/navigation";
 import { useBetterAuth } from "@/contexts/better-auth-context";
@@ -91,6 +91,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
   const [isMinimized, setIsMinimized] = useState(false);
   const { subscription, loading: isSubscriptionLoading } = useSubscription();
   const { checkLimit, recordCall, callsRemaining, limitInfo } = useAILimit();
+  const { isAdmin } = useAdminStatus();
   const router = useRouter();
   const { user } = useBetterAuth();
   
@@ -114,7 +115,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
   
   const planLimits = subscription ? getEffectivePlanLimits(subscription) : null;
   const isAiAllowed = planLimits?.ai_assistant ?? false;
-  const isAdmin = user?.email === 'ariscsc@gmail.com';
+  // isAdmin comes from useAdminStatus() hook above
   const [adminBypass, setAdminBypass] = useState(false);
 
   const [messages, setMessages] = useState<Message[]>([
@@ -122,7 +123,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       id: "welcome",
       role: "assistant",
       content:
-        "👋 Hi! I'm **Lisa**, your intelligent AI financial assistant powered by Google Gemini.\n\n**What I Can Do:**\n• 🧠 Understand natural language - talk to me normally\n• 💡 Provide smart insights and suggestions\n• ⚡ Execute actions automatically\n• 📊 Analyze your complete financial picture\n• 🎯 Answer complex finance questions\n• 📈 Fetch real-time market data & charts\n• 🔍 Analyze any asset with live prices\n• 📊 Compare assets side-by-side\n• 🌍 Track market sentiment & trends\n\n**🎤 Voice Controls:**\n• 🎙️ **Microphone button** - Click to dictate your message (speech-to-text)\n• 🔊 **Speaker button** - Toggle voice responses ON/OFF\n• **When OFF**: Text-only chat (no voice, no API calls)\n• **When ON**: Premium AI voice responses (ElevenLabs + Gemini)\n• 🗣️ Say \"Hey Lisa\" to activate voice input\n\n**Try These:**\n• \"Analyze BTC\" - Detailed crypto insights\n• \"Compare AAPL vs MSFT\" - Asset comparison\n• \"How's the crypto market?\" - Market sentiment\n• \"Analyze my portfolio\" - Performance review\n\n**No rigid commands needed** - I understand context!",
+        "👋 **I'm Omni**, your AI financial expert.\n\n**I can help you with:**\n• 📊 Deep Portfolio Analysis\n• 📈 Real-time Market Data\n• � Smart Investment Insights\n• 🌍 Global Market Sentiment\n\n**�️ Voice Mode:**\nTap 🎙️ to speak or 🔊 to hear me.\n\n**Try asking:**\n\"Analyze BTC\", \"Compare AAPL vs MSFT\", or \"Check my portfolio status\".",
       timestamp: new Date(),
     },
   ]);
@@ -153,7 +154,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
   // Load financial context when chat opens
   // Also refresh data periodically (every 2 minutes)
   useEffect(() => {
-    if (isOpen && isAiAllowed) {
+    if (isOpen && (isAiAllowed || isAdmin)) {
       // Initial load
       geminiService.loadFinancialContext().catch(console.error);
       
@@ -1028,7 +1029,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
     }
 
     // Check AI usage limits
-    const canProceed = await checkLimit();
+    const canProceed = isAdmin || await checkLimit();
     if (!canProceed) {
       const limitMessage: Message = {
         id: crypto.randomUUID(),
@@ -1199,7 +1200,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
 
   // If AI is not allowed for this plan, show upgrade prompt inside the chat with blurred background
   // For admins, show the restriction initially but allow bypass
-  if (!isSubscriptionLoading && (!isAiAllowed || (isAdmin && !adminBypass))) {
+  if (!isSubscriptionLoading && !isAiAllowed && !(isAdmin && adminBypass)) {
     return (
       <>
       <style dangerouslySetInnerHTML={{ __html: `
@@ -1215,14 +1216,14 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
           font-size: 0.9em;
         }
       `}} />
-      <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-[450px] h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header - Normal style */}
         <div className={`flex items-center justify-between p-4 ${currentTheme.header} text-white rounded-t-2xl`}>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
             <div>
               <h3 className="font-semibold flex items-center gap-2">
-                Lisa AI Assistant
+                Omni AI Assistant
               </h3>
               <p className="text-xs text-purple-100">🔇 Voice: OFF</p>
             </div>
@@ -1262,7 +1263,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
           {/* Blurred Background Content - Real Welcome Message */}
           <div className="absolute inset-0 p-4 space-y-4 blur-[4px] opacity-60 pointer-events-none select-none overflow-y-auto">
              <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm">
+                <div className="w-full rounded-2xl px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
                         <Sparkles className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                         <span className="text-xs font-medium text-purple-600 dark:text-purple-400">AI Assistant</span>
@@ -1287,7 +1288,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
               <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-7 h-7 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-2">Upgrade to Chat with Lisa</h3>
+              <h3 className="text-gray-900 dark:text-white font-bold text-lg mb-2">Upgrade to Chat with Omni</h3>
               <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 leading-relaxed">
                 Unlock AI-powered financial insights, market analysis, and voice interaction.
               </p>
@@ -1358,14 +1359,14 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
         }
       `}} />
       
-    <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-96 h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
+    <div className="fixed bottom-6 right-6 z-[1000000] flex flex-col w-[450px] h-[600px] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700">
       {/* Header */}
       <div className={`flex items-center justify-between p-4 ${currentTheme.header} text-white rounded-t-2xl`}>
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5" />
           <div>
             <h3 className="font-semibold flex items-center gap-2">
-              Lisa AI Assistant
+              Omni AI Assistant
               {isListening && (
                 <span className="inline-flex items-center gap-1 text-xs bg-green-500/30 px-2 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
@@ -1436,7 +1437,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
             }`}
           >
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+              className={`w-full rounded-2xl px-4 py-3 ${
                 message.role === "user"
                   ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
                   : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm"
@@ -1570,7 +1571,7 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
         )}
         {pendingAction && !isProcessing && (
           <div className="flex justify-center">
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 max-w-[80%]">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 w-full">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 <span className="text-sm font-medium text-amber-900 dark:text-amber-100">

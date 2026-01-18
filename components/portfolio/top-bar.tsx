@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Search, Settings, Bell, LogOut, ChevronDown, User, CreditCard, Shield, Users, FileText, Building, Gem, Banknote, Bitcoin, TrendingUp } from "lucide-react";
 import { useBetterAuth } from "../../contexts/better-auth-context";
 import { PortfolioCurrencySelector } from "./currency-selector";
-import { LanguageSelector } from "../ui/language-selector";
 import { usePortfolioContext } from "../../contexts/portfolio-context";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { FancySearchBar, type SearchResult } from "../ui/fancy-search-bar";
@@ -147,11 +146,6 @@ export function TopBar({ onOpenSettings, onNavigate }: TopBarProps) {
                      </div>
                 </DockIcon>
                 <DockIcon>
-                    <div className="h-full w-full flex items-center justify-center rounded-full bg-black border border-gray-800">
-                        <LanguageSelector iconOnly />
-                    </div>
-                </DockIcon>
-                <DockIcon>
                     <div className="relative h-full w-full">
                         <button 
                             ref={settingsButtonRef}
@@ -240,7 +234,6 @@ export function TopBar({ onOpenSettings, onNavigate }: TopBarProps) {
         {/* Mobile View - Fallback to regular buttons */}
         <div className="flex items-center gap-4 xl:hidden">
             <PortfolioCurrencySelector />
-            <LanguageSelector />
              <div className="relative">
                 <button 
                     className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-gray-300 hover:text-white rounded-md hover:bg-gray-800 transition-colors min-h-touch ${isSettingsOpen ? 'bg-gray-800 text-white' : ''}`}

@@ -6,14 +6,21 @@ import { NextRequest, NextResponse } from 'next/server';
  * Uses Binance for crypto and Yahoo Finance for stocks (same as live prices)
  */
 
-// In-memory cache
+// In-memory cache with shorter duration for intraday
 const cache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 300000; // 5 minutes
 
-function getCachedData(key: string) {
+function getCacheDuration(range: string): number {
+  // Shorter cache for intraday data
+  if (range === '1D') return 60000;  // 1 minute for 1D
+  if (range === '1W') return 120000; // 2 minutes for 1W
+  return 300000; // 5 minutes for longer ranges
+}
+
+function getCachedData(key: string, range: string) {
   const cached = cache.get(key);
   if (!cached) return null;
-  if (Date.now() - cached.timestamp < CACHE_DURATION) {
+  const duration = getCacheDuration(range);
+  if (Date.now() - cached.timestamp < duration) {
     return cached.data;
   }
   return null;
@@ -41,7 +48,7 @@ export async function GET(request: NextRequest) {
     const cacheKey = `chart:${upperSymbol}:${type}:${range}`;
 
     // Check cache
-    const cachedData = getCachedData(cacheKey);
+    const cachedData = getCachedData(cacheKey, range);
     if (cachedData) {
       return NextResponse.json(cachedData, {
         headers: { 'X-Cache': 'HIT' },
@@ -122,8 +129,9 @@ async function fetchBinanceKlines(symbol: string, range: string) {
     const data = await response.json();
 
     // Binance kline format: [openTime, open, high, low, close, volume, closeTime, ...]
+    // Use Unix timestamp (seconds) for TradingView lightweight-charts
     return data.map((kline: any[]) => ({
-      time: new Date(kline[0]).toISOString().split('T')[0],
+      time: Math.floor(kline[0] / 1000), // Convert ms to seconds
       open: parseFloat(kline[1]),
       high: parseFloat(kline[2]),
       low: parseFloat(kline[3]),
@@ -158,9 +166,9 @@ function generateUSDTData(range: string) {
                24 * 60 * 60 * 1000;
 
   for (let i = count - 1; i >= 0; i--) {
-    const timestamp = new Date(now - i * step);
+    const timestamp = now - i * step;
     data.push({
-      time: timestamp.toISOString().split('T')[0],
+      time: Math.floor(timestamp / 1000), // Unix timestamp in seconds
       open: 1,
       high: 1,
       low: 1,
@@ -223,7 +231,7 @@ async function fetchYahooChart(symbol: string, range: string) {
           continue;
         }
 
-        // Build chart data
+        // Build chart data - use Unix timestamps for TradingView
         const chartData = [];
         for (let i = 0; i < timestamp.length; i++) {
           const ts = timestamp[i];
@@ -237,7 +245,7 @@ async function fetchYahooChart(symbol: string, range: string) {
           if (close === null || close === undefined) continue;
           
           chartData.push({
-            time: new Date(ts * 1000).toISOString().split('T')[0],
+            time: ts, // Already Unix timestamp in seconds from Yahoo
             open: open ?? close,
             high: high ?? close,
             low: low ?? close,

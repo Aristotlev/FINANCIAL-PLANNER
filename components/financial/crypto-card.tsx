@@ -17,7 +17,6 @@ import { SellPositionModal } from "../ui/sell-position-modal";
 import { useCurrencyConversion } from "../../hooks/use-currency-conversion";
 import { DualCurrencyDisplay, LargeDualCurrency } from "../ui/dual-currency-display";
 import { CRYPTO_WALLETS, getDeFiWallets, getCeFiWallets, getWalletById } from "../../lib/crypto-wallets-database";
-import { useTranslation } from "../../contexts/translation-context";
 import { PortfolioWalletPieChartV2 } from "../ui/portfolio-wallet-pie-chart-v2";
 import { CryptoAPYCalculator } from "../ui/crypto-apy-calculator";
 import { Wallet } from "lucide-react";
@@ -243,7 +242,6 @@ interface CryptoTransaction {
 }
 
 function CryptoModalContent() {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'portfolio' | 'transactions' | 'analysis' | 'apy'>('portfolio');
   const { cryptoHoldings, setCryptoHoldings } = usePortfolioContext();
   const { formatMain } = useCurrencyConversion();
@@ -1211,7 +1209,6 @@ function CryptoHoverContent() {
 import { SharePortfolioModal } from "./share-portfolio-modal";
 
 function CryptoCardWithPrices({ userName }: { userName?: string }) {
-  const { t } = useTranslation();
   const [cryptoHoldings, setCryptoHoldings] = useState<CryptoHolding[]>([]);
   const { convertToMain, formatMain, mainCurrency } = useCurrencyConversion();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -1324,14 +1321,14 @@ function CryptoCardWithPrices({ userName }: { userName?: string }) {
   const convertedValue = convertToMain(totalValue, 'USD');
   // Show value immediately if we have any prices or if loading takes too long (fallback to entry points)
   // Only show "Loading..." if we are loading AND have no prices yet
-  const displayAmount = (loading && Object.keys(prices).length === 0) ? t('common.loading') : formatMain(convertedValue);
+  const displayAmount = (loading && Object.keys(prices).length === 0) ? "Loading..." : formatMain(convertedValue);
   const originalAmount = (loading && Object.keys(prices).length === 0) || mainCurrency.code === 'USD' ? undefined : `$${formatNumber(totalValue)}`;
 
   return (
     <>
       <EnhancedFinancialCard
-        title={t('crypto.title')}
-        description={t('crypto.totalValue')}
+        title="Crypto"
+        description="Total Value"
         amount={displayAmount}
         change={loading && Object.keys(prices).length === 0 ? "..." : changeDisplay}
         changeType={changeTypeCalc}
@@ -1341,12 +1338,12 @@ function CryptoCardWithPrices({ userName }: { userName?: string }) {
         stats={[
           {
             label: "BTC",
-            value: loading || !btcHolding ? t('common.loading') : formatMain(convertToMain(btcHolding.value, 'USD')),
+            value: loading || !btcHolding ? "Loading..." : formatMain(convertToMain(btcHolding.value, 'USD')),
             color: "#f59e0b"
           },
           {
             label: "ETH",
-            value: loading || !ethHolding ? t('common.loading') : formatMain(convertToMain(ethHolding.value, 'USD')),
+            value: loading || !ethHolding ? "Loading..." : formatMain(convertToMain(ethHolding.value, 'USD')),
             color: "#fbbf24"
           }
         ]}

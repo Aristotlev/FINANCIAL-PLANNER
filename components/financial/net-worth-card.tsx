@@ -11,7 +11,6 @@ import { useFinancialData } from "../../contexts/financial-data-context";
 import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { useCurrency } from "../../contexts/currency-context";
 import { ShareNetWorthModal } from "./share-net-worth-modal";
-import { useTranslation } from "../../contexts/translation-context";
 
 function NetWorthHoverContent() {
   const portfolio = usePortfolioValues();
@@ -1518,7 +1517,6 @@ function NetWorthGoals({ goals }: { goals: any[] }) {
 }
 
 export function NetWorthCard({ userName }: { userName?: string }) {
-  const { t } = useTranslation();
   const portfolio = usePortfolioValues();
   const financialData = useFinancialData();
   const [realEstateProperties, setRealEstateProperties] = useState<any[]>([]);
@@ -1616,8 +1614,8 @@ export function NetWorthCard({ userName }: { userName?: string }) {
   return (
     <>
       <EnhancedFinancialCard
-        title={t('netWorth.title')}
-        description={t('netWorth.total')}
+        title="Net Worth"
+        description="Total"
         amount={displayAmount}
         convertedAmount={mainCurrency.code !== 'USD' ? `$${formatNumber(netWorthUSD)}` : undefined}
         sourceCurrency={mainCurrency.code !== 'USD' ? 'USD' : undefined}
@@ -1628,12 +1626,12 @@ export function NetWorthCard({ userName }: { userName?: string }) {
         gridColor="#d946ef15"
         stats={[
           { 
-            label: t('netWorth.assets'), 
+            label: "Assets", 
             value: `${mainCurrency.symbol}${formatNumber(totalAssetsConverted)}`, 
             color: "#7c3aed" 
           },
           { 
-            label: t('netWorth.liabilities'), 
+            label: "Liabilities", 
             value: `${mainCurrency.symbol}${formatNumber(totalLiabilitiesConverted)}`, 
             color: "#ef4444" 
           }

@@ -5,9 +5,17 @@ import { auth } from "../../lib/auth";
 import { getSupabaseAdmin } from "../../lib/supabase/server";
 
 async function checkCommunityPermission(userId: string, supabase: any, userEmail?: string) {
-  // Admin bypass
-  if (userEmail === 'ariscsc@gmail.com') {
-    return true;
+  // Check if user is admin from database
+  if (userEmail) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', userEmail)
+      .single();
+    
+    if (userData?.role === 'admin') {
+      return true;
+    }
   }
 
   const { data, error } = await supabase.rpc('can_interact_with_community', { p_user_id: userId });

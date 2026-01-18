@@ -50,6 +50,8 @@ import { USASpendingView } from '../../components/portfolio/usa-spending-view';
 import { ToolsView } from '../../components/tools/ToolsView';
 import { CompanyLookup } from '../../components/tools/CompanyLookup';
 
+import { NetworthOverview } from '../../components/portfolio/networth-overview';
+
 interface CryptoTransaction {
   id: string;
   type: 'buy' | 'sell';
@@ -63,16 +65,13 @@ interface CryptoTransaction {
 }
 
 const OverviewView = ({ selectedCategory }: { selectedCategory: string }) => {
-    // If we are in the Crypto section, we might want to pass specific props or 
-    // rely on the component to detect the context. 
-    // TotalWorthCard already access usePortfolioValues() hook which contains crypto,
-    // but lets make it explicit if needed or just rely on the component logic.
-    // However, the user specifically asked "this <div class='grid...'... " 
-    // AND "for the crypto section should showcase users real crypto data".
-    // The TotalWorthCard is fetching data from useFinancialData and usePortfolioValues.
-    // If selectedCategory is "Crypto", we should probably instruct TotalWorthCard to display ONLY crypto data.
+    // If selectedCategory is "Networth", use the new NetworthOverview component
+    if (selectedCategory === "Networth") {
+        return <NetworthOverview />;
+    }
 
-    const showAllocation = ["Networth", "Crypto", "Stocks"].includes(selectedCategory);
+    // Default layout for other categories
+    const showAllocation = ["Crypto", "Stocks"].includes(selectedCategory);
 
     return (
     <div className="space-y-8">

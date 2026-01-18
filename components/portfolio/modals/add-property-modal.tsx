@@ -10,7 +10,7 @@ import {
   Map,
   Lock
 } from "lucide-react";
-import { useSubscription } from "@/hooks/use-subscription";
+import { useSubscription, useAdminStatus } from "@/hooks/use-subscription";
 import { PLAN_CONFIG, getEffectivePlanLimits } from "@/types/subscription";
 
 export interface RealEstateProperty {
@@ -219,8 +219,9 @@ function MapPickerModal({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { subscription } = useSubscription();
+  const { isAdmin } = useAdminStatus();
   const planLimits = subscription ? getEffectivePlanLimits(subscription) : PLAN_CONFIG.STARTER;
-  const isMapAllowed = planLimits.paid_apis_allowed;
+  const isMapAllowed = planLimits.paid_apis_allowed || isAdmin;
 
   useEffect(() => {
     if (!isMapAllowed || !searchInputRef.current || typeof google === 'undefined' || !google.maps?.places) {

@@ -13,8 +13,6 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
     const { cryptoHoldings, stockHoldings, portfolioValues } = usePortfolioContext();
     const { cash, savings, valuableItems, realEstate } = useFinancialData();
 
-    console.log('AllocationCard category:', selectedCategory); // Debug
-
     let chartData: { name: string; value: number; color: string; amount: number }[] = [];
     let totalValue = 0;
 
@@ -93,12 +91,12 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
 
 
 	return (
-		<div className="rounded-3xl bg-black border border-gray-800 p-8 w-full">
+		<div className="rounded-3xl bg-[#0D0D0D] border border-white/10 p-8 w-full flex flex-col justify-between h-full">
 			<h3 className="text-lg font-bold text-white mb-6">
                 {selectedCategory === "Stocks" ? "Stock Allocation" : selectedCategory === "Networth" ? "Net Worth Allocation" : "Coin Allocation"}
             </h3>
 
-			<div className="flex flex-col lg:flex-row items-center gap-8">
+			<div className="flex flex-col lg:flex-row items-center gap-8 h-full">
 				{/* Chart */}
 				<div className="relative h-64 w-64 flex-shrink-0">
 					<ResponsiveContainer width="100%" height="100%">
@@ -109,9 +107,10 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
 								cy="50%"
 								innerRadius={80}
 								outerRadius={100}
-								paddingAngle={0}
+								paddingAngle={2}
 								dataKey="value"
 								stroke="none"
+                                cornerRadius={4}
 							>
 								{chartData.map((entry, index) => (
 									<Cell key={`cell-${index}`} fill={entry.color} />
@@ -122,48 +121,55 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
 
 					{/* Centered Text */}
 					<div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-						<div className="flex items-center gap-1.5 text-white font-bold mb-1">
+						<div className="flex items-center gap-1.5 text-white font-bold mb-1 bg-white/5 px-2 py-1 rounded-full backdrop-blur-sm">
 							<div
 								className="w-2 h-2 rounded-full"
 								style={{ backgroundColor: primaryItem.color }}
 							/>
-							{primaryItem.name}
+							<span className="text-xs">{primaryItem.name}</span>
 						</div>
-						<div className="text-xl font-bold text-white">
-							${primaryItem.amount.toLocaleString()}
+						<div className="text-xl font-bold text-white tracking-tight">
+                            {primaryItem.amount >= 1000000000 
+                                ? `$${(primaryItem.amount / 1000000000).toLocaleString(undefined, { maximumFractionDigits: 2 })}B`
+                                : primaryItem.amount >= 1000000 
+                                    ? `$${(primaryItem.amount / 1000000).toLocaleString(undefined, { maximumFractionDigits: 1 })}M`
+                                    : `$${primaryItem.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                            }
 						</div>
-						<div className="text-sm text-gray-500">
+						<div className="text-sm text-gray-400 font-medium">
 							{primaryItem.value}%
 						</div>
 					</div>
 				</div>
 
 				{/* Legend */}
-				<div className="flex-1 w-full space-y-4">
+				<div className="flex-1 w-full space-y-3">
 					{chartData.map((item) => (
 						<div
 							key={item.name}
-							className="flex items-center justify-between group"
+							className="flex items-center justify-between group p-2 rounded-xl hover:bg-white/5 transition-colors cursor-default"
 						>
 							<div className="flex items-center gap-3">
 								<div
-									className="h-8 w-8 rounded-full flex items-center justify-center bg-gray-900 border border-gray-800"
+									className="h-8 w-8 rounded-full flex items-center justify-center bg-[#151515] border border-white/5 shadow-inner"
 									style={{ color: item.color }}
 								>
-									{/* Placeholder for coin icon */}
+									{/* Placeholder for coin icon - using first letter */}
 									<span className="text-[10px] font-bold">
 										{item.name[0]}
 									</span>
 								</div>
-								<span className="font-bold text-white">{item.name}</span>
+								<span className="font-bold text-white text-sm">{item.name}</span>
 							</div>
 
-							<div className="flex items-center gap-2">
-								<span className="text-white font-bold">{item.value}%</span>
-								<div
-									className="w-2 h-2 rounded-sm"
-									style={{ backgroundColor: item.color }}
-								/>
+							<div className="flex items-center gap-3">
+								<span className="text-white font-bold text-sm">{item.value}%</span>
+								<div className="h-1.5 w-16 bg-white/5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full rounded-full" 
+                                        style={{ backgroundColor: item.color, width: `${item.value}%` }} 
+                                    />
+                                </div>
 							</div>
 						</div>
 					))}

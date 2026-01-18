@@ -87,51 +87,53 @@ export function TotalWorthCard({
   }
 
   return (
-    <div className="rounded-3xl bg-[#0D0D0D] border border-gray-800 p-8 w-full relative overflow-hidden">
-      <div className="space-y-1">
-        <h3 className="text-sm font-medium text-gray-400">
-            {selectedCategory === "Crypto" ? "Total Crypto Balance" : selectedCategory === "Stocks" ? "Total Stock Holdings" : selectedCategory === "Real Estate" ? "Total Real Estate Value" : selectedCategory === "Valuables" ? "Total Valuables Worth" : selectedCategory === "Expenses" ? "Monthly Expenses" : selectedCategory === "Liquid Assets" ? "Total Liquid Assets" : "Total Worth"}
+    <div className="rounded-3xl bg-[#0D0D0D] border border-white/10 p-8 w-full relative overflow-hidden flex flex-col justify-between h-full">
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+            {selectedCategory === "Crypto" ? "Crypto Balance" : selectedCategory === "Stocks" ? "Stock Holdings" : selectedCategory === "Real Estate" ? "Real Estate Value" : selectedCategory === "Valuables" ? "Valuables Worth" : selectedCategory === "Expenses" ? "Monthly Expenses" : selectedCategory === "Liquid Assets" ? "Liquid Assets" : "Total Net Worth"}
         </h3>
-        <div className="text-4xl font-bold text-white tracking-tight">
+        <div className="text-5xl font-bold text-white tracking-tight">
           {format(displayTotalWorth)}
         </div>
-        <div className="flex items-center gap-2 text-sm pt-1">
+        <div className="flex items-center gap-3 text-sm pt-2">
           <span className={cn(
-            "font-medium", 
-            isPositive ? "text-green-500" : "text-red-500"
+            "font-semibold text-lg", 
+            isPositive ? "text-emerald-500" : "text-rose-500"
           )}>
-            {format(Math.abs(displayChange24h))}
+            {isPositive ? "+" : "-"}{format(Math.abs(displayChange24h))}
           </span>
-          <span className={cn(
-            "flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-medium",
-             isPositive ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
+          <div className={cn(
+            "flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold",
+             isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
           )}>
-            {isPositive ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+            {isPositive ? <ArrowUp className="h-3 w-3 stroke-[3]" /> : <ArrowDown className="h-3 w-3 stroke-[3]" />}
             {Math.abs(change24hPercent).toFixed(2)}%
-          </span>
-          <span className="text-gray-500">24H</span>
+          </div>
+          <span className="text-gray-500 font-medium">Past 24h</span>
         </div>
       </div>
 
-      <div className="mt-12">
-        <div className="flex items-center justify-between mb-2">
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 text-gray-400">
-                <Wallet className="w-4 h-4" />
+                <div className="p-1.5 rounded-full bg-white/5">
+                  <Wallet className="w-4 h-4 text-white" />
+                </div>
                 <span className="text-sm font-medium">
-                  {selectedCategory === "Crypto" ? "Crypto Portfolio" : selectedCategory === "Stocks" ? "Stock Portfolio" : selectedCategory === "Real Estate" ? "Real Estate Portfolio" : selectedCategory === "Valuables" ? "Valuables Collection" : selectedCategory === "Expenses" ? "Monthly Outflow" : selectedCategory === "Liquid Assets" ? "Cash & Savings" : "Main Wallet"}
+                  {selectedCategory === "Crypto" ? "Crypto Portfolio" : selectedCategory === "Stocks" ? "Stock Portfolio" : selectedCategory === "Real Estate" ? "Real Estate Portfolio" : selectedCategory === "Valuables" ? "Valuables Collection" : selectedCategory === "Expenses" ? "Monthly Outflow" : selectedCategory === "Liquid Assets" ? "Cash & Savings" : "Main Portfolio"}
                 </span>
             </div>
-            <span className="text-white font-bold">{format(displayTotalWorth)}</span>
+            <span className="text-white font-bold tracking-tight">{format(displayTotalWorth)}</span>
         </div>
-        <div className="h-2 w-full rounded-full bg-gray-800 overflow-hidden">
+        <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden">
           <div 
-            className="h-full rounded-full bg-cyan-500" 
+            className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500" 
             style={{ width: '100%' }}
           />
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-teal-400" />
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 opacity-50" />
     </div>
   );
 }

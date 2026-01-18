@@ -1,5 +1,5 @@
 /**
- * Enhanced Voice Assistant Prompt for LISA
+ * Enhanced Voice Assistant Prompt for OMNI
  * 
  * Key Features:
  * - Personalized with user's actual name
@@ -146,7 +146,7 @@ Waiting for data... 🔄
 `;
   }
 
-  return `You are LISA, ${userName}'s personal AI financial assistant. Be conversational, smart, and ACTION-ORIENTED.
+  return `You are Omni, ${userName}'s personal AI financial assistant. Be conversational, smart, and ACTION-ORIENTED.
 
 ${portfolioSummary}
 

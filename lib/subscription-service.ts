@@ -65,6 +65,48 @@ function clearCsrfToken(): void {
 
 export class SubscriptionService {
   private static isConfigured = isSupabaseConfigured();
+  
+  // Cache admin status to avoid repeated DB calls
+  private static adminCache: { email: string; isAdmin: boolean; timestamp: number } | null = null;
+  private static ADMIN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  // ==================== ADMIN CHECK ====================
+
+  /**
+   * Check if user is an admin (from database role column)
+   * Cached for 5 minutes to reduce DB calls
+   */
+  private static async isUserAdmin(): Promise<boolean> {
+    const email = await this.getUserEmail();
+    if (!email) return false;
+
+    // Check cache first
+    if (this.adminCache && 
+        this.adminCache.email === email && 
+        Date.now() - this.adminCache.timestamp < this.ADMIN_CACHE_TTL) {
+      return this.adminCache.isAdmin;
+    }
+
+    // Query database for admin role
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('email', email)
+        .single();
+
+      const isAdmin = !error && (data as any)?.role === 'admin';
+      
+      // Update cache
+      this.adminCache = { email, isAdmin, timestamp: Date.now() };
+      
+      return isAdmin;
+    } catch (e) {
+      console.warn('Failed to check admin status:', e);
+      // On error, return false - admin status must come from database
+      return false;
+    }
+  }
 
   // ==================== API HELPERS ====================
 
@@ -443,8 +485,7 @@ export class SubscriptionService {
    */
   static async canAddEntry(cardType: CardType): Promise<LimitCheckResult> {
     // Check for admin bypass
-    const userEmail = await this.getUserEmail();
-    if (userEmail === 'ariscsc@gmail.com') {
+    if (await this.isUserAdmin()) {
       return { canProceed: true };
     }
 
@@ -585,8 +626,7 @@ export class SubscriptionService {
    */
   static async canMakeAICall(): Promise<LimitCheckResult> {
     // Check for admin bypass
-    const userEmail = await this.getUserEmail();
-    if (userEmail === 'ariscsc@gmail.com') {
+    if (await this.isUserAdmin()) {
       return { canProceed: true };
     }
 
@@ -724,8 +764,7 @@ export class SubscriptionService {
    */
   static async canUseImportExport(): Promise<LimitCheckResult> {
     // Check for admin bypass
-    const userEmail = await this.getUserEmail();
-    if (userEmail === 'ariscsc@gmail.com') {
+    if (await this.isUserAdmin()) {
       return { canProceed: true };
     }
 
@@ -759,8 +798,7 @@ export class SubscriptionService {
    */
   static async canUseAIAssistant(): Promise<LimitCheckResult> {
     // Check for admin bypass
-    const userEmail = await this.getUserEmail();
-    if (userEmail === 'ariscsc@gmail.com') {
+    if (await this.isUserAdmin()) {
       return { canProceed: true };
     }
 

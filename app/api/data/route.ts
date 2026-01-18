@@ -39,7 +39,8 @@ type DataTable =
   | 'user_subscriptions'
   | 'user_usage'
   | 'crypto_transactions'
-  | 'stock_transactions';
+  | 'stock_transactions'
+  | 'users';
 
 const ALLOWED_TABLES: DataTable[] = [
   'cash_accounts',
@@ -60,6 +61,7 @@ const ALLOWED_TABLES: DataTable[] = [
   'user_usage',
   'crypto_transactions',
   'stock_transactions',
+  'users',
 ];
 
 // Fields that should be encrypted in the database
@@ -230,6 +232,33 @@ export const GET = withAuth(async ({ user, request }: AuthenticatedRequest) => {
       // Log data access
       dataAudit.access(user.id, table, data ? 1 : 0, request);
       logApiResponse(request, 200, requestId, user.id);
+      return NextResponse.json({ data: decryptedData });
+    }
+
+    // Special handling for users table (uses id as primary key)
+    if (table === 'users') {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      // Decrypt sensitive data before returning to client
+      const decryptedData = data ? decryptSensitiveData(data) : null;
+
+      // Log data access
+      dataAudit.access(user.id, table, data ? 1 : 0, request);
+      logApiResponse(request, 200, requestId, user.id);
+      // Return as array to match expected format for generic tables if client expects array
+      // But based on user_preferences, it might expect object. 
+      // apiGet<T> usually expects array. SubscriptionService handles it.
+      // Let's return array for users to be safe with apiGet<T> which seems to handle array response mostly.
+      // Actually user_preferences returns object, and apiGet returns it.
+      // We will return object here too.
       return NextResponse.json({ data: decryptedData });
     }
 

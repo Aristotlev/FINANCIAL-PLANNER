@@ -123,9 +123,19 @@ export default function CommunityPage() {
     const checkPermission = async () => {
       if (!user) return;
       
-      // Admin check
-      if (user.email === 'ariscsc@gmail.com') {
-        setIsAdmin(true);
+      // Admin check from database
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('email', user.email)
+          .single();
+        
+        if ((userData as any)?.role === 'admin') {
+          setIsAdmin(true);
+        }
+      } catch (err) {
+        console.error('Error checking admin status:', err);
       }
 
       const { data, error } = await supabase.rpc('can_interact_with_community', { p_user_id: user.id } as any);
@@ -632,7 +642,7 @@ export default function CommunityPage() {
                 <div className="mb-4">
                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
                     {userProfile?.name || user?.name || 'User Name'}
-                    {user?.email === 'ariscsc@gmail.com' && (
+                    {isAdmin && (
                       <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full border border-blue-500/30 font-medium">
                         Admin
                       </span>

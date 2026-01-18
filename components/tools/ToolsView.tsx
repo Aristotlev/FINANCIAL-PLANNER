@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { TradingViewChart, ChartType } from '@/components/tools/TradingViewChart';
 import { cn } from '@/lib/utils';
-import { AreaChart, CandlestickChart, BarChart, LineChart, Bitcoin } from 'lucide-react';
+import { AreaChart, CandlestickChart, BarChart, LineChart } from 'lucide-react';
 import { Search01Icon, TradeUpIcon, Loading01Icon, ArrowDown01Icon, AlertCircleIcon } from 'hugeicons-react';
 import { usePortfolioContext } from '@/contexts/portfolio-context';
 import { CryptoIcon } from '@/components/ui/crypto-icon';
@@ -53,7 +53,7 @@ interface AssetItem {
 }
 
 interface ChartData {
-    time: string;
+    time: number;
     value?: number;
     open?: number;
     high?: number;
@@ -162,14 +162,18 @@ export function ToolsView() {
         return chartData;
     }, [chartData, chartType]);
 
-    // Calculate price change
+    // Calculate price change from chart data (for the period)
     const priceInfo = useMemo(() => {
         if (chartData.length < 2) return null;
         const firstPrice = chartData[0]?.close || chartData[0]?.value || 0;
-        const lastPrice = chartData[chartData.length - 1]?.close || chartData[chartData.length - 1]?.value || 0;
-        const change = lastPrice - firstPrice;
+        const currentPrice = chartData[chartData.length - 1]?.close || chartData[chartData.length - 1]?.value || 0;
+        const change = currentPrice - firstPrice;
         const changePercent = firstPrice > 0 ? (change / firstPrice) * 100 : 0;
-        return { lastPrice, change, changePercent };
+        return { 
+            lastPrice: currentPrice, 
+            change, 
+            changePercent,
+        };
     }, [chartData]);
 
     return (
@@ -391,7 +395,10 @@ export function ToolsView() {
                             {priceInfo && (
                                 <div className="text-right">
                                     <p className="text-2xl font-bold text-white">
-                                        ${priceInfo.lastPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        ${priceInfo.lastPrice.toLocaleString(undefined, { 
+                                            minimumFractionDigits: 2, 
+                                            maximumFractionDigits: priceInfo.lastPrice < 1 ? 6 : 2 
+                                        })}
                                     </p>
                                     <p className={cn(
                                         "text-sm font-medium",

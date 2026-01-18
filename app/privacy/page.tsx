@@ -26,7 +26,6 @@ import {
 import { OmnifolioLogo } from '@/components/ui/omnifolio-logo';
 import { BackgroundBeams } from '@/components/ui/background-beams';
 import { CardContainer, CardItem } from '@/components/ui/3d-card';
-import { useTranslation } from '@/contexts/translation-context';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -46,7 +45,6 @@ export default function PrivacyPolicyPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const lastUpdated = "December 19, 2025";
-  const { t } = useTranslation();
 
   useEffect(() => {
     setMounted(true);
@@ -303,7 +301,7 @@ export default function PrivacyPolicyPage() {
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-all font-medium py-2 px-4 rounded-full hover:bg-white/5"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>{t('privacy.backToHome')}</span>
+                <span>Back to Home</span>
               </motion.button>
             </div>
           </div>
@@ -320,7 +318,7 @@ export default function PrivacyPolicyPage() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-purple-400 text-sm font-medium mb-8"
           >
             <Shield className="w-4 h-4" />
-            <span>{t('privacy.badge')}</span>
+            <span>Legal</span>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -328,7 +326,7 @@ export default function PrivacyPolicyPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-8"
           >
-            {t('privacy.title')} <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">{t('privacy.titleHighlight')}</span> Commitment
+            Privacy <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">Policy</span> Commitment
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -336,7 +334,7 @@ export default function PrivacyPolicyPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto"
           >
-            {t('privacy.subtitle')}
+            Your privacy is our priority. Learn how we protect your data.
           </motion.p>
           <motion.p
             initial={{ opacity: 0 }}
@@ -344,7 +342,7 @@ export default function PrivacyPolicyPage() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="mt-6 text-gray-500 text-sm font-medium"
           >
-            {t('privacy.lastUpdated')}: {lastUpdated}
+            Last Updated: {lastUpdated}
           </motion.p>
         </div>
       </section>
