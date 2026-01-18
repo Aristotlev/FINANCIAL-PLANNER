@@ -8,6 +8,7 @@ import { Search01Icon, TradeUpIcon, Loading01Icon, ArrowDown01Icon, AlertCircleI
 import { usePortfolioContext } from '@/contexts/portfolio-context';
 import { CryptoIcon } from '@/components/ui/crypto-icon';
 import { tickerDomains } from '@/lib/ticker-domains';
+import { useAssetPrice } from '@/hooks/use-price';
 
 // Generate a consistent color based on ticker
 const getTickerColor = (ticker: string): string => {
@@ -117,6 +118,12 @@ export function ToolsView() {
     const [error, setError] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Real-time price subscription for the selected asset
+    const { price: realtimePrice, loading: priceLoading } = useAssetPrice(
+        selectedAsset?.symbol || '',
+        selectedAsset?.type
+    );
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -206,19 +213,24 @@ export function ToolsView() {
         return chartData;
     }, [chartData, chartType]);
 
-    // Calculate price change from chart data (for the period)
+    // Calculate price change from chart data (for the period), using real-time price if available
     const priceInfo = useMemo(() => {
         if (chartData.length < 2) return null;
         const firstPrice = chartData[0]?.close || chartData[0]?.value || 0;
-        const currentPrice = chartData[chartData.length - 1]?.close || chartData[chartData.length - 1]?.value || 0;
+        // Use real-time price if available, otherwise fall back to chart data
+        const currentPrice = realtimePrice?.price || chartData[chartData.length - 1]?.close || chartData[chartData.length - 1]?.value || 0;
         const change = currentPrice - firstPrice;
         const changePercent = firstPrice > 0 ? (change / firstPrice) * 100 : 0;
         return { 
             lastPrice: currentPrice, 
             change, 
             changePercent,
+            // Also include 24h change from real-time data if available
+            change24h: realtimePrice?.change24h,
+            changePercent24h: realtimePrice?.changePercent24h,
+            isRealtime: !!realtimePrice?.price,
         };
-    }, [chartData]);
+    }, [chartData, realtimePrice]);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -438,18 +450,36 @@ export function ToolsView() {
                             </div>
                             {priceInfo && (
                                 <div className="text-right">
-                                    <p className="text-2xl font-bold text-white">
-                                        ${priceInfo.lastPrice.toLocaleString(undefined, { 
-                                            minimumFractionDigits: 2, 
-                                            maximumFractionDigits: priceInfo.lastPrice < 1 ? 6 : 2 
-                                        })}
-                                    </p>
-                                    <p className={cn(
-                                        "text-sm font-medium",
-                                        priceInfo.changePercent >= 0 ? "text-green-500" : "text-red-500"
-                                    )}>
-                                        {priceInfo.changePercent >= 0 ? '+' : ''}{priceInfo.changePercent.toFixed(2)}% ({timeRange})
-                                    </p>
+                                    <div className="flex items-center justify-end gap-2 mb-1">
+                                        {priceInfo.isRealtime && (
+                                            <span className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
+                                                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                                                LIVE
+                                            </span>
+                                        )}
+                                        <p className="text-2xl font-bold text-white">
+                                            ${priceInfo.lastPrice.toLocaleString(undefined, { 
+                                                minimumFractionDigits: 2, 
+                                                maximumFractionDigits: priceInfo.lastPrice < 1 ? 6 : 2 
+                                            })}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className={cn(
+                                            "text-sm font-medium",
+                                            priceInfo.changePercent >= 0 ? "text-green-500" : "text-red-500"
+                                        )}>
+                                            {priceInfo.changePercent >= 0 ? '+' : ''}{priceInfo.changePercent.toFixed(2)}% ({timeRange})
+                                        </p>
+                                        {priceInfo.isRealtime && priceInfo.changePercent24h !== undefined && (
+                                            <p className={cn(
+                                                "text-xs",
+                                                (priceInfo.changePercent24h || 0) >= 0 ? "text-green-500/70" : "text-red-500/70"
+                                            )}>
+                                                24h: {(priceInfo.changePercent24h || 0) >= 0 ? '+' : ''}{(priceInfo.changePercent24h || 0).toFixed(2)}%
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
