@@ -163,8 +163,12 @@ export class SupabaseDataService {
       async () => {
         // Use secure API endpoint
         const data = await fetchData<any[]>('cash_accounts');
-        // Return data as-is (even if empty) - no defaults
-        return data || [];
+        
+        // Map database fields to application fields
+        return (data || []).map((account: any) => ({
+          ...account,
+          targetAmount: account.target_amount,
+        }));
       },
       () => DataService.loadCashAccounts(defaultAccounts)
     );
@@ -209,6 +213,7 @@ export class SupabaseDataService {
         type: account.type || 'checking',
         apy: typeof account.apy === 'number' && !isNaN(account.apy) ? account.apy : 0,
         color: account.color || '#10b981',
+        target_amount: typeof account.targetAmount === 'number' && !isNaN(account.targetAmount) ? account.targetAmount : null,
       };
 
       // Use secure API endpoint

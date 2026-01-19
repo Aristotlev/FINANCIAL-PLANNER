@@ -171,7 +171,12 @@ export function USASpendingView() {
         const response = await fetch('/api/finnhub/bulk-cache?type=spending&limit=1000');
         if (response.ok) {
           const data = await response.json();
-          if (data.spending && data.spending.length > 0) {
+          
+          // Check for errors in the response
+          if (data.errors?.spending) {
+            console.warn('Database cache error:', data.errors.spending);
+            // Continue to API fallback
+          } else if (data.spending && data.spending.length > 0) {
             console.log(`USA Spending: Loaded ${data.spending.length} from database cache`);
             const sortedActivities = data.spending.sort((a: USASpendingActivity, b: USASpendingActivity) => 
               new Date(b.actionDate).getTime() - new Date(a.actionDate).getTime()
@@ -186,7 +191,7 @@ export function USASpendingView() {
           }
         }
       } catch (err) {
-        console.warn('Bulk cache unavailable, falling back to individual fetches');
+        console.warn('Bulk cache unavailable, falling back to individual fetches:', err);
       }
     }
 

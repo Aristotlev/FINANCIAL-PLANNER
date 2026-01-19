@@ -33,6 +33,7 @@ import { StockTransactionsView } from '../../components/portfolio/stock-transact
 import { CryptoAIAnalyticsView } from '../../components/portfolio/crypto-ai-analytics-view';
 import { StockAIAnalyticsView } from '../../components/portfolio/stock-ai-analytics-view';
 import { NetworthAIAnalyticsView } from '../../components/portfolio/networth/networth-ai-analytics-view';
+import { LiquidAssetsAnalyticsView } from '../../components/portfolio/liquid-assets/liquid-assets-analytics-view';
 import { CryptoProjectionsView } from '../../components/portfolio/crypto-projections-view';
 import { StockProjectionsView } from '../../components/portfolio/stock-projections-view';
 import { usePortfolioContext, CryptoHolding, StockHolding } from '../../contexts/portfolio-context';
@@ -431,7 +432,7 @@ export default function PortfolioPage() {
           icon: <Landmark className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
           onClick: () => {
               setSelectedCategory("Liquid Assets");
-              setActiveTab("overview");
+              setActiveTab("analytics");
           }
       },
       {
@@ -528,6 +529,8 @@ export default function PortfolioPage() {
             return <StockAIAnalyticsView />;
         } else if (selectedCategory === "Networth") {
             return <NetworthAIAnalyticsView />;
+        } else if (selectedCategory === "Liquid Assets") {
+            return <LiquidAssetsAnalyticsView />;
         }
         return <OverviewView selectedCategory={selectedCategory} />;
       case 'projections':
@@ -591,7 +594,11 @@ export default function PortfolioPage() {
       const category = typeToCategory[type];
       if (category) {
           setSelectedCategory(category);
-          setActiveTab('overview');
+          if (category === "Liquid Assets") {
+              setActiveTab('analytics');
+          } else {
+              setActiveTab('overview');
+          }
           
           // If we had a way to scroll to the specific item or open a modal, handle it here
           // For now, just switching category is the baseline requirement.
@@ -614,23 +621,25 @@ export default function PortfolioPage() {
         {/* Scrollable Content Area */}
         <main className="flex-1 p-4 sm:p-8 overflow-y-auto scrollbar-hide">
             <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 pb-24 sm:pb-20">
+
                 {/* Global Dashboard Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4 sm:mt-8">
-                    <div className="space-y-4 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 pb-2">
-                             <FloatingDock 
-                                items={floatingDockItems}
-                                desktopClassName=""
-                             />
-                        </div>
+                <div className="flex flex-col xl:grid xl:grid-cols-3 gap-6 items-start mt-4 sm:mt-8 mb-8 relative">
+                    {/* Spacer for centering logic */}
+                    <div className="hidden xl:block"></div>
+
+                    <div className="flex justify-center w-full min-w-0 z-20">
+                         <FloatingDock 
+                            items={floatingDockItems}
+                            desktopClassName=""
+                         />
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-center xl:items-end gap-3 w-full z-10 pt-2">
                         <div className="w-auto">
                            <BloombergWidget />
                         </div>
                     {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending', 'company-lookup'].includes(activeTab) && selectedCategory !== "Networth" && (
-                        <>
+                        <div className="flex items-center gap-2">
                             {selectedCategory === "Real Estate" ? (
                                 <button 
                                     onClick={() => setIsAddPropertyModalOpen(true)}
@@ -675,14 +684,6 @@ export default function PortfolioPage() {
                                         <span className="hidden sm:inline">Add Income</span>
                                         <span className="sm:hidden">Add</span>
                                     </button>
-                                    <button 
-                                        onClick={() => setIsAddGoalModalOpen(true)}
-                                        className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-[#212121] text-white rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333] flex-shrink-0"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                        <span className="hidden sm:inline">Add Goal</span>
-                                        <span className="sm:hidden">Add</span>
-                                    </button>
                                 </>
                             ) : selectedCategory === "Crypto" ? (
                                 <button 
@@ -709,7 +710,7 @@ export default function PortfolioPage() {
                                     Add Profile
                                 </button>
                             ) : null}
-                        </>
+                        </div>
                     )}
                     </div>
                 </div>

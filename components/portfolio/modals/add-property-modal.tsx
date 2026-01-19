@@ -8,7 +8,8 @@ import {
   X,
   Navigation,
   Map,
-  Lock
+  Lock,
+  DollarSign
 } from "lucide-react";
 import { useSubscription, useAdminStatus } from "@/hooks/use-subscription";
 import { PLAN_CONFIG, getEffectivePlanLimits } from "@/types/subscription";
@@ -595,16 +596,22 @@ export function AddPropertyModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000001]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[800px] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Add Real Estate Property</h3>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[1000001]" onClick={onClose}>
+      <div className="bg-[#0D0D0D] border border-white/10 p-6 rounded-3xl w-[800px] max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+           <h3 className="text-xl font-bold text-white">Add Real Estate Property</h3>
+           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="relative" style={{ zIndex: 10 }}>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Address</label>
+                <label className="block text-sm font-medium mb-2 text-gray-400">Address</label>
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
+                  <div className="relative flex-1 group">
                     <input
                       type="text"
                       value={formData.address}
@@ -616,20 +623,20 @@ export function AddPropertyModal({
                       onBlur={() => {
                         setTimeout(() => setShowSuggestions(false), 200);
                       }}
-                      className="w-full p-3 border-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:border-lime-500 dark:focus:border-lime-400 focus:ring-2 focus:ring-lime-500/20 transition-all"
+                      className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium"
                       placeholder="Start typing an address..."
                       required
                     />
                     {searchingAddress && (
                       <div className="absolute right-3 top-3.5">
-                        <div className="animate-spin h-5 w-5 border-2 border-lime-500 border-t-transparent rounded-full"></div>
+                        <div className="animate-spin h-5 w-5 border-2 border-emerald-500 border-t-transparent rounded-full"></div>
                       </div>
                     )}
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowMapPicker(true)}
-                    className="p-3 bg-lime-500 hover:bg-lime-600 text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center min-w-[44px]"
+                    className="p-3 bg-white/5 border border-white/10 hover:bg-white/10 text-emerald-500 rounded-xl transition-all flex items-center justify-center min-w-[48px]"
                     title="Pick location on map"
                   >
                     <Map className="w-5 h-5" />
@@ -637,7 +644,7 @@ export function AddPropertyModal({
                 </div>
                 
                 {showSuggestions && addressSuggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-800 border-2 border-lime-300 dark:border-lime-600 rounded-xl shadow-2xl max-h-96 overflow-y-auto" style={{ zIndex: 1000003 }}>
+                  <div className="absolute left-0 right-0 mt-2 bg-[#1A1A1A] border border-white/10 rounded-xl shadow-2xl max-h-96 overflow-y-auto" style={{ zIndex: 1000003 }}>
                     <div className="p-2">
                       {addressSuggestions.map((suggestion, index) => (
                         <button
@@ -648,21 +655,21 @@ export function AddPropertyModal({
                             selectAddress(suggestion);
                             setShowSuggestions(false);
                           }}
-                          className="w-full text-left px-4 py-3 rounded-lg hover:bg-lime-50 dark:hover:bg-gray-700/50 transition-all group"
+                          className="w-full text-left px-4 py-3 rounded-lg hover:bg-white/5 transition-all group"
                         >
                           <div className="flex items-start gap-3">
-                            <div className="mt-0.5 p-1.5 rounded-full bg-lime-100 dark:bg-lime-900/30 group-hover:bg-lime-200 dark:group-hover:bg-lime-800/50 transition-colors">
-                              <MapPin className="w-4 h-4 text-lime-600 dark:text-lime-400" />
+                            <div className="mt-0.5 p-1.5 rounded-full bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
+                              <MapPin className="w-4 h-4 text-emerald-500" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              <div className="text-sm font-medium text-white truncate">
                                 {suggestion.display_name.split(',').slice(0, 2).join(',')}
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                              <div className="text-xs text-gray-500 mt-1 truncate">
                                 {suggestion.display_name.split(',').slice(2).join(',')}
                               </div>
                               {suggestion.type && (
-                                <div className="text-xs text-lime-600 dark:text-lime-400 mt-1 font-medium">
+                                <div className="text-xs text-emerald-500 mt-1 font-medium">
                                   {suggestion.type.charAt(0).toUpperCase() + suggestion.type.slice(1)}
                                 </div>
                               )}
@@ -675,36 +682,36 @@ export function AddPropertyModal({
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">City</label>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">City</label>
                   <input
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({...formData, city: e.target.value})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium"
                     placeholder="Austin"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">State</label>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">State</label>
                   <input
                     type="text"
                     value={formData.state}
                     onChange={(e) => setFormData({...formData, state: e.target.value})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium"
                     placeholder="TX"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Zip Code</label>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Zip Code</label>
                   <input
                     type="text"
                     value={formData.zipCode}
                     onChange={(e) => setFormData({...formData, zipCode: e.target.value})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium"
                     placeholder="78751"
                     required
                   />
@@ -712,156 +719,191 @@ export function AddPropertyModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Type</label>
-                <select
-                  value={formData.propertyType}
-                  onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
-                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                >
-                  <option value="Primary Residence">Primary Residence</option>
-                  <option value="Rental Property">Rental Property</option>
-                  <option value="Investment Property">Investment Property</option>
-                  <option value="Vacation Home">Vacation Home</option>
-                  <option value="Commercial Property">Commercial Property</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Price</label>
-                  <input
-                    type="number"
-                    value={formData.purchasePrice}
-                    onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Value</label>
-                  <input
-                    type="number"
-                    value={formData.currentValue}
-                    onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    min="0"
-                    required
-                  />
+                <label className="block text-sm font-medium mb-2 text-gray-400">Property Type</label>
+                 <div className="relative">
+                  <select
+                    value={formData.propertyType}
+                    onChange={(e) => setFormData({...formData, propertyType: e.target.value})}
+                    className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white appearance-none cursor-pointer font-medium"
+                  >
+                    <option value="Primary Residence">Primary Residence</option>
+                    <option value="Rental Property">Rental Property</option>
+                    <option value="Investment Property">Investment Property</option>
+                    <option value="Vacation Home">Vacation Home</option>
+                    <option value="Commercial Property">Commercial Property</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Down Payment</label>
-                  <input
-                    type="number"
-                    value={formData.downPayment}
-                    onChange={(e) => setFormData({...formData, downPayment: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    min="0"
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Purchase Price</label>
+                    <div className="relative group">
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.purchasePrice}
+                      onChange={(e) => setFormData({...formData, purchasePrice: parseFloat(e.target.value)})}
+                      className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                      min="0"
+                      required
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Loan Amount</label>
-                  <input
-                    type="number"
-                    value={formData.loanAmount}
-                    onChange={(e) => setFormData({...formData, loanAmount: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    min="0"
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Current Value</label>
+                   <div className="relative group">
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.currentValue}
+                      onChange={(e) => setFormData({...formData, currentValue: parseFloat(e.target.value)})}
+                      className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                      min="0"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Down Payment</label>
+                  <div className="relative group">
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.downPayment}
+                      onChange={(e) => setFormData({...formData, downPayment: parseFloat(e.target.value)})}
+                      className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Loan Amount</label>
+                   <div className="relative group">
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.loanAmount}
+                      onChange={(e) => setFormData({...formData, loanAmount: parseFloat(e.target.value)})}
+                      className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                      min="0"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Payment</label>
-                  <input
-                    type="number"
-                    value={formData.monthlyPayment}
-                    onChange={(e) => setFormData({...formData, monthlyPayment: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    min="0"
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Monthly Payment</label>
+                   <div className="relative group">
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.monthlyPayment}
+                      onChange={(e) => setFormData({...formData, monthlyPayment: parseFloat(e.target.value)})}
+                     className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                      min="0"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Interest Rate (%)</label>
-                  <input
-                    type="number"
-                    value={formData.interestRate}
-                    onChange={(e) => setFormData({...formData, interestRate: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    step="0.01"
-                    min="0"
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Interest Rate (%)</label>
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      value={formData.interestRate}
+                      onChange={(e) => setFormData({...formData, interestRate: parseFloat(e.target.value)})}
+                      className="w-full px-4 py-3 pr-10 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                      step="0.01"
+                      min="0"
+                    />
+                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm group-focus-within:text-emerald-500 transition-colors">%</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Property Tax</label>
-                  <input
-                    type="number"
-                    value={formData.propertyTax}
-                    onChange={(e) => setFormData({...formData, propertyTax: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    min="0"
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Property Tax</label>
+                    <div className="relative group">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.propertyTax}
+                      onChange={(e) => setFormData({...formData, propertyTax: parseFloat(e.target.value)})}
+                      className="w-full pl-9 pr-3 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium text-sm"
+                      min="0"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Insurance</label>
-                  <input
-                    type="number"
-                    value={formData.insurance}
-                    onChange={(e) => setFormData({...formData, insurance: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    min="0"
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Insurance</label>
+                   <div className="relative group">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.insurance}
+                      onChange={(e) => setFormData({...formData, insurance: parseFloat(e.target.value)})}
+                      className="w-full pl-9 pr-3 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium text-sm"
+                      min="0"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Maintenance</label>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Maintenance</label>
+                   <div className="relative group">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                      type="number"
+                      value={formData.maintenance}
+                      onChange={(e) => setFormData({...formData, maintenance: parseFloat(e.target.value)})}
+                      className="w-full pl-9 pr-3 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium text-sm"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-400">Monthly Rental Income</label>
+                <div className="relative group">
+                  <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
                   <input
                     type="number"
-                    value={formData.maintenance}
-                    onChange={(e) => setFormData({...formData, maintenance: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    value={formData.rentalIncome}
+                    onChange={(e) => setFormData({...formData, rentalIncome: parseFloat(e.target.value)})}
+                    className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
                     min="0"
+                    placeholder="Leave 0 if not rental"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Rental Income</label>
-                <input
-                  type="number"
-                  value={formData.rentalIncome}
-                  onChange={(e) => setFormData({...formData, rentalIncome: parseFloat(e.target.value)})}
-                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                  min="0"
-                  placeholder="Leave 0 if not rental"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Purchase Date</label>
+                <label className="block text-sm font-medium mb-2 text-gray-400">Purchase Date</label>
                 <input
                   type="date"
                   value={formData.purchaseDate}
                   onChange={(e) => setFormData({...formData, purchaseDate: e.target.value})}
-                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium [color-scheme:dark]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Notes</label>
+                <label className="block text-sm font-medium mb-2 text-gray-400">Notes</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium resize-none"
                   rows={3}
                   placeholder="Additional property details"
                 />
@@ -869,19 +911,19 @@ export function AddPropertyModal({
             </div>
           </div>
 
-          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="submit"
-              className="flex items-center justify-center gap-2 flex-1 bg-[#212121] text-white px-4 py-2 rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333]"
-            >
-              Add Property
-            </button>
-            <button
+          <div className="flex gap-4 pt-4">
+             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-500 text-white dark:text-white px-4 py-2 rounded hover:bg-gray-600 dark:hover:bg-gray-700"
+              className="flex-1 px-4 py-3 border border-white/10 text-white rounded-xl hover:bg-white/5 transition-colors font-medium"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-3 bg-white text-black rounded-xl hover:bg-gray-200 transition-all font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98]"
+            >
+              Add Property
             </button>
           </div>
         </form>

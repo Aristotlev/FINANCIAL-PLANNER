@@ -75,6 +75,7 @@ export interface Database {
           type: string
           apy: number
           color: string
+          target_amount: number | null
           created_at: string
           updated_at: string
         }
@@ -87,6 +88,7 @@ export interface Database {
           type: string
           apy?: number
           color?: string
+          target_amount?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -99,6 +101,7 @@ export interface Database {
           type?: string
           apy?: number
           color?: string
+          target_amount?: number | null
           created_at?: string
           updated_at?: string
         }

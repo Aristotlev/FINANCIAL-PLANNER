@@ -7,7 +7,8 @@ import {
   Car,
   Zap,
   DollarSign,
-  ShoppingCart
+  ShoppingCart,
+  X
 } from "lucide-react";
 
 export interface ExpenseCategory {
@@ -119,15 +120,20 @@ export function AddExpenseCategoryModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000001]" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[800px] max-h-[90vh] overflow-visible" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Add Expense Category</h3>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[1000001]" onClick={onClose}>
+      <div className="bg-[#0D0D0D] border border-white/10 p-6 rounded-3xl w-[800px] max-h-[90vh] overflow-visible shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">Add Expense Category</h3>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Category Name</label>
-                <div className="relative">
+                <label className="block text-sm font-medium mb-2 text-gray-400">Category Name</label>
+                <div className="relative group">
                   <input
                     ref={inputRef}
                     type="text"
@@ -138,22 +144,22 @@ export function AddExpenseCategoryModal({
                       setShowDropdown(true);
                     }}
                     onFocus={() => setShowDropdown(true)}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                    className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium"
                     placeholder="Search or enter category name..."
                     required
                   />
                   {showDropdown && filteredCategories.length > 0 && (
                       <div 
                         ref={dropdownRef}
-                        className="absolute z-[10000] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto"
-                        style={{ boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)' }}
+                        className="absolute z-[10000] w-full mt-2 bg-[#1A1A1A] border border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto"
+                        style={{ boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)' }}
                       >
                         {filteredCategories.map((category, index) => (
                           <button
                             key={index}
                             type="button"
                             onClick={() => selectCategory(category)}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                            className="w-full px-4 py-3 text-left hover:bg-white/5 border-b border-white/5 last:border-b-0 transition-colors"
                           >
                             <div className="flex items-center gap-3">
                               <div 
@@ -165,8 +171,8 @@ export function AddExpenseCategoryModal({
                                 </div>
                               </div>
                               <div className="flex-1">
-                                <div className="font-medium text-gray-900 dark:text-white">{category.name}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">{category.description}</div>
+                                <div className="font-medium text-white">{category.name}</div>
+                                <div className="text-xs text-gray-500">{category.description}</div>
                               </div>
                             </div>
                           </button>
@@ -178,67 +184,78 @@ export function AddExpenseCategoryModal({
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Icon</label>
-                  <select
-                    value={formData.icon}
-                    onChange={(e) => setFormData({...formData, icon: e.target.value})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                  >
-                    <option value="home">Home</option>
-                    <option value="shopping">Shopping Cart</option>
-                    <option value="car">Car</option>
-                    <option value="credit-card">Credit Card</option>
-                    <option value="zap">Lightning</option>
-                  </select>
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Icon</label>
+                  <div className="relative">
+                    <select
+                        value={formData.icon}
+                        onChange={(e) => setFormData({...formData, icon: e.target.value})}
+                        className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white appearance-none cursor-pointer font-medium"
+                    >
+                        <option value="home">Home</option>
+                        <option value="shopping">Shopping Cart</option>
+                        <option value="car">Car</option>
+                        <option value="credit-card">Credit Card</option>
+                        <option value="zap">Lightning</option>
+                    </select>
+                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Color</label>
-                  <div className="flex items-center h-[42px]">
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Color</label>
+                   <div className="flex items-center gap-4 bg-[#1A1A1A] border border-white/10 p-2 rounded-xl h-[50px]">
                     <input
                       type="color"
                       value={formData.color}
                       onChange={(e) => setFormData({...formData, color: e.target.value})}
-                      className="w-full h-full p-1 border rounded bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-pointer"
+                      className="w-12 h-full rounded-lg cursor-pointer bg-transparent border-none p-0"
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Current Amount</label>
-                  <input
-                    type="number"
-                    value={isNaN(formData.amount) ? '' : formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Current Amount</label>
+                  <div className="relative group">
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                        type="number"
+                        value={isNaN(formData.amount) ? '' : formData.amount}
+                        onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value)})}
+                        className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                        step="0.01"
+                        min="0"
+                        required
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Monthly Budget</label>
-                  <input
-                    type="number"
-                    value={isNaN(formData.budget) ? '' : formData.budget}
-                    onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
-                    className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
+                  <label className="block text-sm font-medium mb-2 text-gray-400">Monthly Budget</label>
+                   <div className="relative group">
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
+                    <input
+                        type="number"
+                        value={isNaN(formData.budget) ? '' : formData.budget}
+                        onChange={(e) => setFormData({...formData, budget: parseFloat(e.target.value)})}
+                        className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                        step="0.01"
+                        min="0"
+                        required
+                    />
+                  </div>
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Description</label>
+                <label className="block text-sm font-medium mb-2 text-gray-400">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full p-2 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white placeholder-gray-600 transition-all font-medium resize-none"
                   rows={4}
                   placeholder="Brief description of this expense category"
                 />
@@ -246,19 +263,19 @@ export function AddExpenseCategoryModal({
             </div>
           </div>
 
-          <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="submit"
-              className="flex items-center justify-center gap-2 flex-1 bg-[#212121] text-white px-4 py-2 rounded-lg border border-[#212121] transition-all duration-200 active:scale-95 hover:bg-[#333]"
-            >
-              Add Category
-            </button>
-            <button
+          <div className="flex gap-4 pt-4">
+             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-500 text-white dark:text-white px-4 py-2 rounded hover:bg-gray-600 dark:hover:bg-gray-700"
+              className="flex-1 px-4 py-3 border border-white/10 text-white rounded-xl hover:bg-white/5 transition-colors font-medium"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-3 bg-white text-black rounded-xl hover:bg-gray-200 transition-all font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98]"
+            >
+              Add Category
             </button>
           </div>
         </form>

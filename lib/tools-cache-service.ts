@@ -316,26 +316,41 @@ class ToolsCacheService {
     symbol?: string;
     limit?: number;
   }): Promise<USASpendingActivity[]> {
-    let query = this.supabase
-      .from('usa_spending_cache')
-      .select('*')
-      .order('action_date', { ascending: false });
+    try {
+      let query = this.supabase
+        .from('usa_spending_cache')
+        .select('*')
+        .order('action_date', { ascending: false });
 
-    if (options?.symbol) {
-      query = query.eq('symbol', options.symbol.toUpperCase());
-    }
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
+      if (options?.symbol) {
+        query = query.eq('symbol', options.symbol.toUpperCase());
+      }
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
 
-    const { data, error } = await query;
-    if (error) {
-      console.error('Error fetching USA spending from cache:', error);
-      return [];
+      const { data, error } = await query;
+      
+      if (error) {
+        // Log detailed error for debugging RLS issues
+        console.error('Error fetching USA spending from cache:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          symbol: options?.symbol
+        });
+        // Re-throw to allow caller to handle (e.g., fallback to API)
+        throw new Error(`Database error: ${error.message} (code: ${error.code})`);
+      }
+      
+      // Map back to API format
+      return (data || []).map(d => d.raw_data);
+    } catch (err: any) {
+      // Catch any unexpected errors (network, parsing, etc.)
+      console.error('Unexpected error in getUSASpending:', err);
+      throw err;
     }
-    
-    // Map back to API format
-    return (data || []).map(d => d.raw_data);
   }
 
   async refreshUSASpending(activities: USASpendingActivity[], symbol: string): Promise<{ success: boolean; count: number }> {

@@ -100,7 +100,7 @@ const WalletLogo = ({ wallet, size = "sm" }: { wallet: WalletInfo | undefined, s
     <img 
        src={imgSrc} 
        alt={wallet.name} 
-       className={`${containerSize} rounded-full object-contain bg-white dark:bg-gray-800 shadow-sm`}
+       className={`${containerSize} rounded-full object-contain bg-[#1A1A1A] shadow-sm`}
        onError={() => {
          // If primary logo fails, try fetching favicon from website
          if (wallet.logo && imgSrc === wallet.logo && wallet.website) {
@@ -197,17 +197,17 @@ export function AddCryptoPositionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000001] overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000001] overflow-y-auto" onClick={onClose}>
       <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8 sm:py-4">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-md transform transition-all" onClick={(e) => e.stopPropagation()}>
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="bg-[#0D0D0D] border border-white/10 p-6 rounded-3xl shadow-2xl w-full max-w-md transform transition-all" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add Position</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Track a new cryptocurrency</p>
+              <h3 className="text-xl font-bold text-white">Add Position</h3>
+              <p className="text-sm text-gray-400 mt-1">Track a new cryptocurrency</p>
             </div>
             <button 
               onClick={onClose} 
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400 transition-colors"
+              className="p-2 hover:bg-white/10 rounded-full text-gray-400 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -215,16 +215,16 @@ export function AddCryptoPositionModal({
 
           {/* Search */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium mb-2 text-gray-400">
               Select Asset
             </label>
             <div className="relative group">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400 dark:text-gray-500 group-focus-within:text-cyan-500 transition-colors" />
+              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-500 group-focus-within:text-cyan-500 transition-colors" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 dark:text-white transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                className="w-full pl-10 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-white transition-all placeholder:text-gray-600"
                 placeholder="Search Bitcoin, Ethereum..."
               />
             </div>
@@ -232,7 +232,7 @@ export function AddCryptoPositionModal({
 
           {/* Search Results */}
           {searchTerm && (
-            <div className="mb-6 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 shadow-lg">
+            <div className="mb-6 max-h-48 overflow-y-auto border border-white/10 rounded-xl bg-[#1A1A1A] shadow-lg">
               {filteredCryptos.length > 0 ? (
                 filteredCryptos.map((crypto, index) => (
                   <button
@@ -243,19 +243,19 @@ export function AddCryptoPositionModal({
                       setEntryPoint(crypto.currentPrice.toString());
                       setColor(getBrandColor(crypto.symbol, 'crypto'));
                     }}
-                    className="w-full p-3 text-left hover:bg-cyan-50 dark:hover:bg-cyan-900/10 border-b border-gray-100 dark:border-gray-800 last:border-b-0 flex items-center gap-3 transition-colors"
+                    className="w-full p-3 text-left hover:bg-white/5 border-b border-white/5 last:border-b-0 flex items-center gap-3 transition-colors"
                   >
                     <CryptoIcon symbol={crypto.symbol} iconUrl={crypto.icon} />
                     <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">{crypto.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">
+                      <div className="font-semibold text-white">{crypto.name}</div>
+                      <div className="text-sm text-gray-400 font-mono">
                         {crypto.symbol}
                       </div>
                     </div>
                   </button>
                 ))
               ) : (
-                <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                <div className="p-4 text-center text-gray-500 text-sm">
                   No cryptocurrencies found
                 </div>
               )}
@@ -264,21 +264,21 @@ export function AddCryptoPositionModal({
 
           {/* Selected Crypto */}
           {selectedCrypto && (
-            <div className="mb-6 p-4 bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-100 dark:border-cyan-900/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+            <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                <div className="p-2 bg-[#1A1A1A] rounded-xl shadow-sm border border-white/5">
                   <CryptoIcon symbol={selectedCrypto.symbol} iconUrl={selectedCrypto.icon} className="w-8 h-8" />
                 </div>
                 <div>
-                  <div className="font-bold text-gray-900 dark:text-white">{selectedCrypto.name}</div>
-                  <div className="text-sm text-cyan-600 dark:text-cyan-400 font-medium">
+                  <div className="font-bold text-white">{selectedCrypto.name}</div>
+                  <div className="text-sm text-cyan-400 font-medium">
                     ${selectedCrypto.currentPrice.toLocaleString()}
                   </div>
                 </div>
               </div>
               <button 
                 onClick={() => setSelectedCrypto(null)}
-                className="text-xs text-gray-500 hover:text-red-500 dark:text-gray-400 transition-colors"
+                className="text-xs text-gray-400 hover:text-red-400 transition-colors"
               >
                 Change
               </button>
@@ -288,7 +288,7 @@ export function AddCryptoPositionModal({
           {/* Input Grid */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="col-span-1">
-              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-2 text-gray-400">
                 Amount
               </label>
               <input
@@ -296,12 +296,12 @@ export function AddCryptoPositionModal({
                 step="any"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 dark:text-white transition-all font-mono"
+                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-white transition-all font-mono placeholder:text-gray-600"
                 placeholder="0.00"
               />
             </div>
             <div className="col-span-1">
-              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-2 text-gray-400">
                 Buy Price ($)
               </label>
               <input
@@ -309,7 +309,7 @@ export function AddCryptoPositionModal({
                 step="any"
                 value={entryPoint}
                 onChange={(e) => setEntryPoint(e.target.value)}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 dark:text-white transition-all font-mono"
+                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-white transition-all font-mono placeholder:text-gray-600"
                 placeholder="0.00"
               />
             </div>
@@ -317,12 +317,12 @@ export function AddCryptoPositionModal({
 
           {/* Color Picker */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium mb-2 text-gray-400">
               Chart Color
             </label>
             <div className="flex items-center gap-3 p-1">
               <div 
-                className="w-10 h-10 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700" 
+                className="w-10 h-10 rounded-xl shadow-sm border border-white/10" 
                 style={{ backgroundColor: color }}
               />
               <input
@@ -337,14 +337,14 @@ export function AddCryptoPositionModal({
           {/* Wallet Selection */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-gray-400" />
+              <label className="block text-sm font-medium text-gray-400 flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-gray-500" />
                 Wallet Allocation
               </label>
               <button
                 type="button"
                 onClick={() => setShowWalletOptions(!showWalletOptions)}
-                className="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+                className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
               >
                 {showWalletOptions ? 'Hide Options' : 'Change Wallet'}
               </button>
@@ -352,29 +352,29 @@ export function AddCryptoPositionModal({
 
             {!showWalletOptions ? (
               <div 
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center gap-3 cursor-pointer hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors"
+                className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl flex items-center gap-3 cursor-pointer hover:border-cyan-500/50 transition-colors"
                 onClick={() => setShowWalletOptions(true)}
               >
                 <WalletLogo 
                   wallet={walletType !== 'other' ? getWalletById(walletType) : undefined} 
                   size="md" 
                 />
-                <span className="text-gray-900 dark:text-white font-medium">
+                <span className="text-white font-medium">
                   {walletType === 'other' ? 'Other Wallet' : getWalletById(walletType)?.name}
                 </span>
-                {walletName && <span className="text-gray-400 text-sm">({walletName})</span>}
+                {walletName && <span className="text-gray-500 text-sm">({walletName})</span>}
               </div>
             ) : (
               <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-800/50">
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-white/10 rounded-xl bg-[#1A1A1A]">
                   <button
                      onClick={() => setWalletType('other')}
                      className={`p-2.5 rounded-lg text-left transition-all ${walletType === 'other'
-                       ? 'bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 ring-1 ring-cyan-500/50'
-                       : 'hover:bg-white dark:hover:bg-gray-700/50 border border-transparent'
+                       ? 'bg-white/10 shadow-sm border border-white/10 ring-1 ring-cyan-500/50'
+                       : 'hover:bg-white/5 border border-transparent'
                        }`}
                   >
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">Other Wallet</span>
+                    <span className="text-sm font-medium text-white">Other Wallet</span>
                   </button>
                   {CRYPTO_WALLETS.filter(w => w.id !== 'other').map(wallet => {
                     const isSelected = walletType === wallet.id;
@@ -384,13 +384,13 @@ export function AddCryptoPositionModal({
                         type="button"
                         onClick={() => setWalletType(wallet.id)}
                         className={`p-2.5 rounded-lg text-left transition-all ${isSelected
-                          ? 'bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 ring-1 ring-cyan-500/50'
-                          : 'hover:bg-white dark:hover:bg-gray-700/50 border border-transparent'
+                          ? 'bg-white/10 shadow-sm border border-white/10 ring-1 ring-cyan-500/50'
+                          : 'hover:bg-white/5 border border-transparent'
                           }`}
                       >
                         <div className="flex items-center gap-2">
                           <WalletLogo wallet={wallet} size="sm" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          <span className="text-sm font-medium text-white truncate">
                             {wallet.name}
                           </span>
                         </div>
@@ -404,7 +404,7 @@ export function AddCryptoPositionModal({
                   value={walletName}
                   onChange={(e) => setWalletName(e.target.value)}
                   placeholder="Custom label (optional)"
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 dark:text-white transition-all text-sm"
+                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-white transition-all text-sm placeholder:text-gray-600"
                 />
               </div>
             )}
@@ -414,14 +414,14 @@ export function AddCryptoPositionModal({
           <div className="flex gap-4">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold transition-all"
+              className="flex-1 px-6 py-3 border border-white/10 rounded-xl hover:bg-white/5 text-white font-semibold transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleAdd}
               disabled={!selectedCrypto || !amount || !entryPoint}
-              className="flex-1 px-6 py-3 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all transform active:scale-[0.98]"
+              className="flex-1 px-6 py-3 bg-cyan-500 text-black rounded-xl hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all transform active:scale-[0.98]"
             >
               Add Position
             </button>

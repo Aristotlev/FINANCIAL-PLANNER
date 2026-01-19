@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Search, RefreshCw } from 'lucide-react';
+import { X, Search, RefreshCw, DollarSign } from 'lucide-react';
 import { getBrandColor } from '../../../lib/brand-colors';
 import {
   AppleIconTV,
@@ -193,157 +193,173 @@ export function AddStockPositionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000001] overflow-y-auto" onClick={onClose}>
-      <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8 sm:py-4">
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-[384px]" onClick={(e) => e.stopPropagation()}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Stock Position</h3>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-900 dark:text-white">
-              <X className="w-4 h-4 dark:text-white dark:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1000001] flex items-center justify-center p-4" onClick={onClose}>
+      <div 
+        className="bg-[#0D0D0D] border border-white/10 p-6 rounded-3xl w-full max-w-[480px] shadow-2xl relative overflow-visible"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-xl font-bold text-white">Add Stock Position</h3>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          {/* Search Section */}
-          <div className="mb-4 relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Search Stock</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-300" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowDropdown(true);
-                }}
-                onFocus={() => setShowDropdown(true)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-                placeholder="Search by symbol or name..."
-              />
-              {isSearching && (
-                <div className="absolute right-3 top-2.5">
-                  <RefreshCw className="w-4 h-4 animate-spin text-gray-400" />
-                </div>
-              )}
-            </div>
-
-            {/* Search Results Dropdown */}
-            {showDropdown && !selectedStock && (
-              <div className="absolute z-50 w-full mt-1 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-                {!searchTerm && <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">Popular Stocks</div>}
-                {searchResults.map((stock) => (
-                  <button
-                    key={stock.symbol}
-                    onClick={() => {
-                      setSelectedStock(stock);
-                      setSearchTerm('');
-                      setShowDropdown(false);
-                      if (stock.currentPrice) {
-                        setEntryPoint(stock.currentPrice.toString());
-                      }
-                      setColor(getBrandColor(stock.symbol, 'stock'));
-                    }}
-                    className="w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
-                  >
-                    <div className="flex-shrink-0 w-8 flex justify-center">
-                      <StockIcon symbol={stock.symbol} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-gray-900 dark:text-white truncate">{stock.symbol}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {stock.name}
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">
-                      {stock.currentPrice ? `$${stock.currentPrice}` : stock.exchange}
-                    </div>
-                  </button>
-                ))}
-                {searchResults.length === 0 && (
-                  <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                    No stocks found
-                  </div>
-                )}
+        {/* Search Section */}
+        <div className="mb-6 relative" ref={dropdownRef}>
+          <label className="block text-sm font-medium mb-2 text-gray-400">Search Stock</label>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-cyan-500 transition-colors" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white placeholder-gray-600 transition-all font-medium"
+              placeholder="Search by symbol or name..."
+            />
+            {isSearching && (
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                <RefreshCw className="w-4 h-4 animate-spin text-cyan-500" />
               </div>
             )}
           </div>
 
-            {/* Selected Stock */}
-          {selectedStock && (
-            <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-cyan-200 dark:border-cyan-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <StockIcon symbol={selectedStock.symbol} />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-900 dark:text-white truncate">{selectedStock.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {selectedStock.symbol} • {selectedStock.exchange || selectedStock.sector}
+          {/* Search Results Dropdown */}
+          {showDropdown && !selectedStock && (
+            <div className="absolute z-50 w-full mt-2 max-h-60 overflow-y-auto border border-white/10 rounded-xl bg-[#1A1A1A] shadow-2xl">
+              {!searchTerm && <div className="px-4 py-2 text-xs font-semibold text-gray-500 bg-white/5 border-b border-white/5">Popular Stocks</div>}
+              {searchResults.map((stock) => (
+                <button
+                  key={stock.symbol}
+                  onClick={() => {
+                    setSelectedStock(stock);
+                    setSearchTerm('');
+                    setShowDropdown(false);
+                    if (stock.currentPrice) {
+                      setEntryPoint(stock.currentPrice.toString());
+                    }
+                    setColor(getBrandColor(stock.symbol, 'stock'));
+                  }}
+                  className="w-full p-3 text-left hover:bg-white/5 border-b border-white/5 last:border-b-0 flex items-center gap-3 transition-colors active:bg-white/10"
+                >
+                  <div className="flex-shrink-0 w-8 flex justify-center">
+                    <StockIcon symbol={stock.symbol} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-white truncate">{stock.symbol}</div>
+                    <div className="text-sm text-gray-400 truncate">
+                      {stock.name}
                     </div>
                   </div>
-                </div>
-                <button 
-                  onClick={() => setSelectedStock(null)}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
-                >
-                  <X className="w-4 h-4 text-gray-500" />
+                  <div className="text-xs text-gray-500 whitespace-nowrap font-mono">
+                    {stock.currentPrice ? `$${stock.currentPrice}` : stock.exchange}
+                  </div>
                 </button>
-              </div>
+              ))}
+              {searchResults.length === 0 && (
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  No stocks found
+                </div>
+              )}
             </div>
           )}
+        </div>
 
+          {/* Selected Stock */}
+        {selectedStock && (
+          <div className="mb-6 p-4 bg-cyan-500/10 rounded-xl border border-cyan-500/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 overflow-hidden">
+                <div className="p-2 bg-black/20 rounded-lg">
+                  <StockIcon symbol={selectedStock.symbol} className="w-6 h-6" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-white truncate text-lg">{selectedStock.name}</div>
+                  <div className="text-xs text-cyan-400 font-medium">
+                    {selectedStock.symbol} • {selectedStock.exchange || selectedStock.sector}
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedStock(null)}
+                className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
           {/* Shares Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Number of Shares</label>
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2 text-gray-400">Number of Shares</label>
             <input
               type="number"
               step="1"
               value={shares}
               onChange={(e) => setShares(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-              placeholder="Enter shares..."
+              className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+              placeholder="0"
             />
           </div>
 
           {/* Entry Point Input */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Entry Point ($)</label>
-            <input
-              type="number"
-              step="any"
-              value={entryPoint}
-              onChange={(e) => setEntryPoint(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
-              placeholder="Enter price..."
-            />
-          </div>
-
-          {/* Chart Color Picker */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-200">Chart Color</label>
-            <input
-              className="w-full p-2 border rounded h-10 cursor-pointer"
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Select a color for pie charts and visualizations</p>
+            <label className="block text-sm font-medium mb-2 text-gray-400">Entry Point</label>
+            <div className="relative group">
+              <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-cyan-500 transition-colors" />
+              <input
+                type="number"
+                step="any"
+                value={entryPoint}
+                onChange={(e) => setEntryPoint(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                placeholder="0.00"
+              />
+            </div>
           </div>
+        </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAdd}
-              disabled={!selectedStock || !shares || !entryPoint}
-              className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Add Position
-            </button>
+        {/* Chart Color Picker */}
+        <div className="mb-8">
+          <label className="block text-sm font-medium mb-2 text-gray-400">Chart Color</label>
+          <div className="flex items-center gap-3">
+             <div className="relative flex-1 h-12 rounded-xl border border-white/10 bg-[#1A1A1A] overflow-hidden">
+               <input
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+              />
+               <div className="absolute inset-0 flex items-center px-4 pointer-events-none">
+                 <div className="w-8 h-8 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: color }}></div>
+                 <span className="ml-3 text-gray-400 font-mono text-sm">{color}</span>
+               </div>
+             </div>
           </div>
+          <p className="text-xs text-gray-500 mt-2">Select a color for pie charts and visualizations</p>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-4">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 border border-white/10 text-white rounded-xl hover:bg-white/5 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAdd}
+            disabled={!selectedStock || !shares || !entryPoint}
+            className="flex-1 px-4 py-3 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-all font-bold shadow-[0_0_20px_rgba(6,182,212,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+          >
+            Add Position
+          </button>
         </div>
       </div>
     </div>
