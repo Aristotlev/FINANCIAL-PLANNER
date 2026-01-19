@@ -86,36 +86,6 @@ rotate_google_ai_key() {
     fi
 }
 
-# Function to rotate ElevenLabs API Key
-rotate_elevenlabs_key() {
-    echo ""
-    echo -e "${BLUE}🔑 Rotating ElevenLabs API Key${NC}"
-    echo "----------------------------------------"
-    echo ""
-    echo "Steps:"
-    echo "1. Go to: https://elevenlabs.io/app/settings/api-keys"
-    echo "2. Create a new API key"
-    echo "3. Copy the new API key"
-    echo ""
-    read -p "Enter new ELEVENLABS_API_KEY (or press Enter to skip): " new_key
-    
-    if [ -n "$new_key" ]; then
-        backup_env
-        update_env_key "ELEVENLABS_API_KEY" "$new_key"
-        
-        echo ""
-        echo -e "${YELLOW}📋 Next steps:${NC}"
-        echo "1. Revoke the old API key from ElevenLabs dashboard"
-        echo "2. Update Cloud Run service:"
-        echo "   gcloud run services update financial-planner \\"
-        echo "     --region=europe-west1 \\"
-        echo "     --update-secrets=ELEVENLABS_API_KEY=ELEVENLABS_API_KEY:latest"
-        echo "3. Restart your development server: npm run dev"
-    else
-        echo -e "${YELLOW}⚠️  Skipped${NC}"
-    fi
-}
-
 # Function to rotate Replicate API Token
 rotate_replicate_token() {
     echo ""
@@ -218,29 +188,26 @@ show_menu() {
     echo -e "${BLUE}Select API key(s) to rotate:${NC}"
     echo "========================================"
     echo "1) Google AI (Gemini) API Key"
-    echo "2) ElevenLabs API Key"
-    echo "3) Replicate API Token"
-    echo "4) Supabase Service Role Key"
-    echo "5) Google Maps API Key"
-    echo "6) All Keys (Complete Rotation)"
-    echo "7) Exit"
+    echo "2) Replicate API Token"
+    echo "3) Supabase Service Role Key"
+    echo "4) Google Maps API Key"
+    echo "5) All Keys (Complete Rotation)"
+    echo "6) Exit"
     echo ""
-    read -p "Enter choice [1-7]: " choice
+    read -p "Enter choice [1-6]: " choice
     
     case $choice in
         1) rotate_google_ai_key ;;
-        2) rotate_elevenlabs_key ;;
-        3) rotate_replicate_token ;;
-        4) rotate_supabase_service_key ;;
-        5) rotate_google_maps_key ;;
-        6)
+        2) rotate_replicate_token ;;
+        3) rotate_supabase_service_key ;;
+        4) rotate_google_maps_key ;;
+        5)
             rotate_google_ai_key
-            rotate_elevenlabs_key
             rotate_replicate_token
             rotate_supabase_service_key
             rotate_google_maps_key
             ;;
-        7)
+        6)
             echo -e "${GREEN}👋 Goodbye!${NC}"
             exit 0
             ;;

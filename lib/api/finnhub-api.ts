@@ -246,13 +246,19 @@ export class FinnhubAPI {
     const url = this.buildUrl(endpoint, params);
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout (Finnhub can be slow)
+      
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        cache: 'no-store',
+        signal: controller.signal,
+        next: { revalidate: 900 }, // Cache for 15 minutes
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -260,7 +266,10 @@ export class FinnhubAPI {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - Finnhub API is slow, please try again');
+      }
       console.error(`Finnhub API request failed for ${endpoint}:`, error);
       throw error;
     }

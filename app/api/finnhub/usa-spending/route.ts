@@ -17,17 +17,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 1. Try to get from cache FIRST (before checking API key)
+    // 1. Try to get from cache FIRST - return immediately if we have data
+    // Don't block on needsRefresh check - cached data is good enough for instant load
     if (useCache && !from && !to) {
       try {
         const cachedData = await toolsCacheService.getUSASpending({ symbol });
 
         if (cachedData && cachedData.length > 0) {
-          const needsRefresh = await toolsCacheService.needsRefresh('usa_spending');
-          if (!needsRefresh) {
-            console.log(`[Cache] Returning cached USA spending data for ${symbol}`);
-            return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
-          }
+          // Return cached data immediately for instant loads
+          console.log(`[Cache] Returning cached USA spending data for ${symbol} (${cachedData.length} items)`);
+          return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
         }
       } catch (cacheErr) {
         // Cache unavailable, continue to API

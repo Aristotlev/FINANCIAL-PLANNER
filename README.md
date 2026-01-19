@@ -44,10 +44,10 @@ A comprehensive financial management application built with Next.js, TypeScript,
 - **Country Comparison**: Side-by-side tax burden comparison
 
 ### 🤖 AI-Powered Features
-- **Jarvis AI Assistant**: Natural language queries for financial insights
+- **Omni AI Assistant**: Natural language queries for financial insights
 - **Expense Analysis**: AI categorization and pattern detection
 - **Tax Optimization**: Intelligent recommendations for tax strategies
-- **Voice Interaction**: ElevenLabs voice synthesis for responses
+- **Voice Interaction**: Replicate Kokoro TTS for voice responses
 
 ### 📍 Location-Based Features
 - **Google Maps Integration**: Asset location tracking with map picker
@@ -85,8 +85,8 @@ A comprehensive financial management application built with Next.js, TypeScript,
   - Google Maps API (for location features)
   - CoinGecko API (for crypto prices)
   - Finnhub API (for stock prices)
-  - Google Generative AI (for Jarvis)
-  - ElevenLabs (for voice synthesis)
+  - Google Generative AI (for Omni)
+  - Replicate API (for voice synthesis)
 
 ### Installation
 
@@ -119,7 +119,7 @@ A comprehensive financial management application built with Next.js, TypeScript,
    
    # AI Features (optional)
    GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_key
-   ELEVENLABS_API_KEY=your_elevenlabs_key
+   REPLICATE_API_TOKEN=your_replicate_token
    ```
 
 4. **Set up Supabase database**
@@ -220,7 +220,7 @@ money-hub-app/
 ├── app/                          # Next.js app directory
 │   ├── api/                      # API routes
 │   ├── auth/                     # Authentication pages
-│   ├── jarvis/                   # AI assistant
+│   ├── omni/                     # AI assistant
 │   └── test-map/                 # Google Maps demo
 ├── components/                   # React components
 │   ├── financial/                # Financial cards & calculators
@@ -343,7 +343,7 @@ Support for 150+ currencies with real-time exchange rates:
 - **Charts**: Recharts
 - **Maps**: Google Maps API / React-Google-Maps
 - **AI**: Google Generative AI (Gemini)
-- **Voice**: ElevenLabs
+- **Voice**: Replicate (Kokoro TTS)
 - **Icons**: Lucide React, React Icons
 - **Animation**: Framer Motion
 
@@ -414,7 +414,7 @@ The EU tax system provides authoritative 2025 data:
 - [x] Enhanced EU tax system (10 countries)
 - [x] Multi-currency support
 - [x] Google Maps integration
-- [x] AI assistant (Jarvis)
+- [x] AI assistant (Omni)
 - [x] Dark mode
 - [x] Expense & debt tracking
 - [x] Income management

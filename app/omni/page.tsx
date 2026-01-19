@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * LISA - Production Voice Assistant (Golden Path)
+ * Omni - Production Voice Assistant
  * 
  * Features:
  * - Finite State Machine (IDLE → WAKE → LISTENING → THINKING → SPEAKING)
@@ -10,7 +10,7 @@
  * - Barge-in support (interrupt during speech)
  * - Web Speech API for STT (ready for Gemini Realtime upgrade)
  * - Tool calling via Gemini
- * - Streaming TTS via ElevenLabs
+ * - Streaming TTS via Replicate (Kokoro-82m)
  * - Single global AudioContext
  * 
  * Target: 700-1200ms round-trip latency
@@ -25,7 +25,7 @@ import { useSubscription, useAdminStatus } from '@/hooks/use-subscription';
 import { getEffectivePlanLimits } from '@/types/subscription';
 import { useRouter } from 'next/navigation';
 
-export default function LisaPage() {
+export default function OmniPage() {
   // State
   const [state, setState] = useState<AgentState>(AgentState.IDLE);
   const [transcript, setTranscript] = useState('');
@@ -70,7 +70,7 @@ export default function LisaPage() {
 
   // Initialize
   useEffect(() => {
-    console.log('[LISA] Initializing...');
+    console.log('[OMNI] Initializing...');
     
     // Initialize FSM
     stateMachineRef.current = new AgentStateMachine(AgentState.IDLE);
@@ -138,9 +138,9 @@ export default function LisaPage() {
         };
 
         recognitionRef.current = recognition;
-        console.log('[LISA] Speech recognition ready');
+        console.log('[OMNI] Speech recognition ready');
       } else {
-        console.error('[LISA] Speech recognition not supported');
+        console.error('[OMNI] Speech recognition not supported');
       }
     }
 
@@ -176,7 +176,7 @@ export default function LisaPage() {
       return;
     }
 
-    console.log('[LISA] Starting listening mode');
+    console.log('[OMNI] Starting listening mode');
     
     try {
       // Request microphone permission
@@ -201,10 +201,10 @@ export default function LisaPage() {
       // Start recognition
       recognitionRef.current.start();
       
-      console.log('[LISA] Ready for your command...');
+      console.log('[OMNI] Ready for your command...');
       
     } catch (error) {
-      console.error('[LISA] Microphone error:', error);
+      console.error('[OMNI] Microphone error:', error);
       alert('Could not access microphone. Please check permissions.');
     }
   };
@@ -214,11 +214,11 @@ export default function LisaPage() {
    */
   const processUtterance = async (text: string) => {
     if (!text || !text.trim()) {
-      console.log('[LISA] Empty utterance, ignoring');
+      console.log('[OMNI] Empty utterance, ignoring');
       return;
     }
 
-    console.log('[LISA] Processing utterance:', text);
+    console.log('[OMNI] Processing utterance:', text);
     
     // Transition to THINKING
     if (!stateMachineRef.current?.transition(AgentState.THINKING, 'Processing utterance')) {
@@ -249,11 +249,11 @@ export default function LisaPage() {
       const { text: responseText, action, actionResult, latency } = await llmResponse.json();
       const totalLatency = Date.now() - startTime;
       
-      console.log(`[LISA] Response received (${totalLatency}ms, LLM: ${latency}ms)`);
+      console.log(`[OMNI] Response received (${totalLatency}ms, LLM: ${latency}ms)`);
       
       // If there was an action, trigger a refresh of financial data on the client
       if (action && actionResult?.success) {
-        console.log('[LISA] Action completed on server, refreshing client data...');
+        console.log('[OMNI] Action completed on server, refreshing client data...');
         // Dispatch events to refresh the UI
         window.dispatchEvent(new Event('cryptoDataChanged'));
         window.dispatchEvent(new Event('stockDataChanged'));
@@ -270,7 +270,7 @@ export default function LisaPage() {
       await speakText(cleanedText);
 
     } catch (error) {
-      console.error('[LISA] Error processing utterance:', error);
+      console.error('[OMNI] Error processing utterance:', error);
       handleError(error instanceof Error ? error.message : 'Unknown error');
     }
   };
@@ -279,7 +279,7 @@ export default function LisaPage() {
    * Speak text using TTS
    */
   const speakText = async (text: string) => {
-    console.log('[LISA] Speaking:', text);
+    console.log('[OMNI] Speaking:', text);
     
     // Transition to SPEAKING
     if (!stateMachineRef.current?.transition(AgentState.SPEAKING, 'TTS started')) {
@@ -314,7 +314,7 @@ export default function LisaPage() {
 
       await player.playFromStream(ttsResponse.body);
       
-      console.log('[LISA] Speech complete');
+      console.log('[OMNI] Speech complete');
 
       // After speaking, go back to LISTENING (conversation mode)
       setTimeout(() => {
@@ -334,7 +334,7 @@ export default function LisaPage() {
       }, 500);
 
     } catch (error) {
-      console.error('[LISA] TTS error:', error);
+      console.error('[OMNI] TTS error:', error);
       handleError(error instanceof Error ? error.message : 'TTS error');
     }
   };
@@ -347,7 +347,7 @@ export default function LisaPage() {
       return;
     }
 
-    console.log('[LISA] Barge-in detected');
+    console.log('[OMNI] Barge-in detected');
     
     // Cancel current speech
     audioPlayerRef.current?.cancel();
@@ -363,7 +363,7 @@ export default function LisaPage() {
    * Handle errors
    */
   const handleError = (error: string) => {
-    console.error('[LISA] Error:', error);
+    console.error('[OMNI] Error:', error);
     
     stateMachineRef.current?.transition(AgentState.ERROR, error);
     setState(AgentState.ERROR);
@@ -380,7 +380,7 @@ export default function LisaPage() {
    * Stop everything and return to IDLE
    */
   const stopEverything = () => {
-    console.log('[LISA] Stopping...');
+    console.log('[OMNI] Stopping...');
     
     // Stop recognition
     if (recognitionRef.current) {
@@ -467,14 +467,14 @@ export default function LisaPage() {
             </div>
           </div>
           
-          <h1 className="text-3xl font-bold text-white mb-2">Lisa AI Assistant</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Omni AI Assistant</h1>
           <div className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-sm font-medium mb-6 border border-amber-500/30">
             <Lock className="w-3 h-3" />
             Premium Feature
           </div>
           
           <p className="text-white/80 mb-8 leading-relaxed">
-            Upgrade to <span className="font-semibold text-purple-300">Trader</span> or higher to unlock the full power of Lisa AI Assistant with voice interaction and real-time financial insights.
+            Upgrade to <span className="font-semibold text-purple-300">Trader</span> or higher to unlock the full power of Omni AI Assistant with voice interaction and real-time financial insights.
           </p>
           
           <div className="space-y-3">
@@ -505,8 +505,8 @@ export default function LisaPage() {
         <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">LISA</h1>
-            <p className="text-white/70">Production Voice Assistant</p>
+            <h1 className="text-4xl font-bold text-white mb-2">OMNI</h1>
+            <p className="text-white/70">Your AI Financial Assistant</p>
           </div>
 
           {/* State Indicator */}
@@ -555,7 +555,7 @@ export default function LisaPage() {
           {/* Response Display */}
           {response && (
             <div className="mb-4 p-4 bg-green-500/20 rounded-xl border border-green-500/30">
-              <div className="text-sm text-green-300 mb-1">Lisa:</div>
+              <div className="text-sm text-green-300 mb-1">Omni:</div>
               <div className="text-white">{response}</div>
             </div>
           )}
@@ -563,7 +563,7 @@ export default function LisaPage() {
           {/* Instructions */}
           {!isEnabled && (
             <div className="text-center text-white/60 text-sm">
-              <p className="mb-2">Click the button to activate Lisa and start speaking</p>
+              <p className="mb-2">Click the button to activate Omni and start speaking</p>
             </div>
           )}
 

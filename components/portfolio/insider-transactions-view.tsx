@@ -220,14 +220,46 @@ export function InsiderTransactionsView() {
       return;
     }
 
+    // Try localStorage cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = loadFromCache();
       if (cached) {
+        console.log(`Insider Transactions: Loaded ${cached.transactions.length} from localStorage cache`);
         setTransactions(cached.transactions);
         setFromCache(true);
         setLastUpdated(new Date(cached.timestamp));
         setLoading(false);
         return;
+      }
+    }
+
+    // Try bulk database cache first (single request for all data) - FAST!
+    if (!forceRefresh) {
+      try {
+        setFetchProgress('Loading from database...');
+        const response = await fetch('/api/finnhub/bulk-cache?type=insider&limit=1000');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.insider && data.insider.length > 0) {
+            console.log(`Insider Transactions: Loaded ${data.insider.length} from database cache`);
+            // Data is already in camelCase format from the cache service
+            const validTransactions = data.insider.filter((t: any) => 
+              t.transactionDate && !isNaN(new Date(t.transactionDate).getTime())
+            );
+            const sortedTransactions = validTransactions.sort((a: InsiderTransaction, b: InsiderTransaction) => 
+              new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
+            );
+            setTransactions(sortedTransactions);
+            setFromCache(true);
+            setLastUpdated(new Date(data.timestamp));
+            saveToCache(sortedTransactions, DEFAULT_SYMBOLS);
+            setLoading(false);
+            setFetchProgress('');
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Bulk cache unavailable, falling back to individual fetches');
       }
     }
 
@@ -239,17 +271,19 @@ export function InsiderTransactionsView() {
     try {
       const allTransactions: InsiderTransaction[] = [];
       const symbols = DEFAULT_SYMBOLS;
-      const batchSize = 3;
+      // Batch fetch - 5 symbols at a time (faster since cache is now instant)
+      const batchSize = 5;
 
       for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
         setFetchProgress(`Fetching ${i + 1}-${Math.min(i + batchSize, symbols.length)} of ${symbols.length} symbols...`);
         
         const results = await Promise.all(
-          batch.map(async (symbol, idx) => {
-            await new Promise(resolve => setTimeout(resolve, idx * 150));
+          batch.map(async (symbol) => {
             try {
-              const response = await fetch(`/api/finnhub/insider-transactions?symbol=${symbol}&limit=100`);
+              // When forceRefresh is true, bypass cache
+              const cacheParam = forceRefresh ? '&cache=false' : '';
+              const response = await fetch(`/api/finnhub/insider-transactions?symbol=${symbol}&limit=100${cacheParam}`);
               if (!response.ok) return [];
               const data: InsiderTransactionsResponse = await response.json();
               if (data.source === 'cache') setFromCache(true);
@@ -262,12 +296,18 @@ export function InsiderTransactionsView() {
         
         results.flat().forEach(t => allTransactions.push(t));
         
+        // Smaller pause between batches (cache is fast now)
         if (i + batchSize < symbols.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
 
-      const sortedTransactions = allTransactions.sort((a, b) => 
+      // Filter out transactions with invalid dates
+      const validTransactions = allTransactions.filter(t => 
+        t.transactionDate && !isNaN(new Date(t.transactionDate).getTime())
+      );
+      
+      const sortedTransactions = validTransactions.sort((a, b) => 
         new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime()
       );
       
@@ -328,10 +368,12 @@ export function InsiderTransactionsView() {
   };
 
   const getTransactionType = (code: string): 'buy' | 'sell' | 'other' => {
+    if (!code) return 'other';
     return TRANSACTION_CODES[code]?.type || 'other';
   };
 
   const getTransactionLabel = (code: string): string => {
+    if (!code) return 'N/A';
     return TRANSACTION_CODES[code]?.label || code;
   };
 
@@ -577,7 +619,9 @@ export function InsiderTransactionsView() {
 
                                     <div className="col-span-2 text-right">
                                         <div className="text-gray-400 text-xs">
-                                            {new Date(transaction.transactionDate).toLocaleDateString()}
+                                            {transaction.transactionDate && !isNaN(new Date(transaction.transactionDate).getTime()) 
+                                              ? new Date(transaction.transactionDate).toLocaleDateString()
+                                              : '-'}
                                         </div>
                                     </div>
                                 </motion.div>

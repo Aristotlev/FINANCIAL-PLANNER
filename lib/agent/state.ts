@@ -1,5 +1,5 @@
 /**
- * Finite State Machine for Jarvis Voice Assistant
+ * Finite State Machine for Omni Voice Assistant
  * Manages state transitions and ensures valid state flow
  * States: IDLE → WAKE → LISTENING → THINKING → SPEAKING → (loop or IDLE)
  */

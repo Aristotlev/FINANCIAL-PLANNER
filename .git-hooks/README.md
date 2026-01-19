@@ -18,7 +18,7 @@ chmod +x .git/hooks/pre-commit
 ## Pre-commit Hook
 
 The pre-commit hook checks for:
-- Hardcoded API keys (Google, ElevenLabs, Replicate patterns)
+- Hardcoded API keys (Google, Replicate patterns)
 - JWT tokens
 - Attempts to commit `.env` or `.env.local` files
 - Security-related TODOs

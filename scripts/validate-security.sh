@@ -39,14 +39,6 @@ if grep -r "NEXT_PUBLIC_GOOGLE_AI_API_KEY" --include="*.ts" --include="*.tsx" --
 else
     echo -e "${GREEN}✅ PASS: No client-side AI API keys found${NC}"
 fi
-
-if grep -r "NEXT_PUBLIC_ELEVENLABS_API_KEY" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" app/ components/ lib/ 2>/dev/null | grep -v "// ❌\|// ✅\|/\*\|\.md"; then
-    echo -e "${RED}❌ FAIL: Found NEXT_PUBLIC_ELEVENLABS_API_KEY in source code${NC}"
-    echo -e "${YELLOW}   Action: Use server-side ELEVENLABS_API_KEY instead${NC}"
-    ISSUES_FOUND=$((ISSUES_FOUND + 1))
-else
-    echo -e "${GREEN}✅ PASS: No client-side ElevenLabs API keys found${NC}"
-fi
 echo ""
 
 # Check 3: Look for console.log with sensitive data
@@ -73,10 +65,10 @@ if [ -f ".env.local" ]; then
         WARNINGS_FOUND=$((WARNINGS_FOUND + 1))
     fi
     
-    if grep -q "^ELEVENLABS_API_KEY=" .env.local; then
-        echo -e "${GREEN}   ✅ ELEVENLABS_API_KEY found (server-side)${NC}"
+    if grep -q "^REPLICATE_API_TOKEN=" .env.local; then
+        echo -e "${GREEN}   ✅ REPLICATE_API_TOKEN found (server-side)${NC}"
     else
-        echo -e "${YELLOW}   ⚠️  ELEVENLABS_API_KEY not found${NC}"
+        echo -e "${YELLOW}   ⚠️  REPLICATE_API_TOKEN not found${NC}"
         WARNINGS_FOUND=$((WARNINGS_FOUND + 1))
     fi
     
@@ -84,12 +76,6 @@ if [ -f ".env.local" ]; then
     if grep -q "^NEXT_PUBLIC_GOOGLE_AI_API_KEY=" .env.local; then
         echo -e "${RED}   ❌ INSECURE: NEXT_PUBLIC_GOOGLE_AI_API_KEY found${NC}"
         echo -e "${YELLOW}   Action: Rename to GOOGLE_AI_API_KEY (remove NEXT_PUBLIC_)${NC}"
-        ISSUES_FOUND=$((ISSUES_FOUND + 1))
-    fi
-    
-    if grep -q "^NEXT_PUBLIC_ELEVENLABS_API_KEY=" .env.local; then
-        echo -e "${RED}   ❌ INSECURE: NEXT_PUBLIC_ELEVENLABS_API_KEY found${NC}"
-        echo -e "${YELLOW}   Action: Rename to ELEVENLABS_API_KEY (remove NEXT_PUBLIC_)${NC}"
         ISSUES_FOUND=$((ISSUES_FOUND + 1))
     fi
 else
@@ -106,12 +92,6 @@ FOUND_SECRETS=false
 # Check for API key patterns
 if grep -rE "AIza[0-9A-Za-z_-]{35}" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" app/ components/ lib/ 2>/dev/null | grep -v "\.md\|example\|test"; then
     echo -e "${RED}❌ FAIL: Found hardcoded Google API key pattern${NC}"
-    FOUND_SECRETS=true
-    ISSUES_FOUND=$((ISSUES_FOUND + 1))
-fi
-
-if grep -rE "sk_[a-f0-9]{32}" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" app/ components/ lib/ 2>/dev/null | grep -v "\.md\|example\|test"; then
-    echo -e "${RED}❌ FAIL: Found hardcoded ElevenLabs API key pattern${NC}"
     FOUND_SECRETS=true
     ISSUES_FOUND=$((ISSUES_FOUND + 1))
 fi

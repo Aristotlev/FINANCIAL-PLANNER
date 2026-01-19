@@ -112,7 +112,7 @@ const tools = {
       // Fetch the article
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; JarvisBot/1.0)'
+          'User-Agent': 'Mozilla/5.0 (compatible; OmniBot/1.0)'
         }
       });
       

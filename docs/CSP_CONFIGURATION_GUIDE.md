@@ -58,12 +58,12 @@ This document explains the Content Security Policy implementation for the Money 
 
 ### `connect-src`
 ```
-'self' https://api.elevenlabs.io https://*.supabase.co ...
+'self' https://*.supabase.co https://replicate.delivery ...
 ```
 
 **Allowed API endpoints:**
-- `api.elevenlabs.io` - Text-to-speech
 - `*.supabase.co` - Database & auth
+- `replicate.delivery` - Replicate AI
 - `api.coingecko.com` - Crypto prices
 - `finnhub.io` - Stock data
 - `query1.finance.yahoo.com` - Stock prices
@@ -86,11 +86,10 @@ This document explains the Content Security Policy implementation for the Money 
 
 ### `media-src`
 ```
-'self' blob: data: https://api.elevenlabs.io https://replicate.delivery
+'self' blob: data: https://replicate.delivery
 ```
 
 **Allowed sources:**
-- ElevenLabs audio streams
 - Replicate AI media delivery
 - Local blob audio
 - Data URIs for embedded media

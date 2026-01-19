@@ -35,7 +35,6 @@ This document outlines the security measures implemented in the Money Hub App to
 ```bash
 # ✅ SECURE - Server-side only (NO NEXT_PUBLIC_ prefix)
 GOOGLE_AI_API_KEY=AIzaSyC...
-ELEVENLABS_API_KEY=sk_...
 REPLICATE_API_TOKEN=r8_...
 CMC_API_KEY=...
 FINNHUB_API_KEY=...
@@ -90,7 +89,7 @@ All sensitive API calls go through your API routes:
 
 ```
 Client → /api/gemini → Google AI API
-Client → /api/tts → ElevenLabs API
+Client → /api/tts → Replicate API
 Client → /api/market-data → CoinMarketCap/Finnhub API
 ```
 
@@ -111,8 +110,6 @@ Client → /api/market-data → CoinMarketCap/Finnhub API
 ```bash
 # === SERVER-SIDE ONLY (NEVER use NEXT_PUBLIC_ prefix) ===
 GOOGLE_AI_API_KEY=your_key_here
-ELEVENLABS_API_KEY=your_key_here
-ELEVENLABS_VOICE_ID=your_voice_id
 REPLICATE_API_TOKEN=your_token_here
 CMC_API_KEY=your_key_here
 FINNHUB_API_KEY=your_key_here
@@ -209,7 +206,7 @@ sudo apt-get install git-secrets  # Linux
 git secrets --install
 git secrets --register-aws
 git secrets --add 'NEXT_PUBLIC_GOOGLE_AI_API_KEY'
-git secrets --add 'sk_[0-9a-zA-Z]+'  # ElevenLabs pattern
+git secrets --add 'r8_[a-zA-Z0-9]+'  # Replicate pattern
 ```
 
 ---
@@ -504,7 +501,7 @@ gcloud run deploy financial-planner \
    ```bash
    # 1. Revoke the compromised key
    # Google Cloud: console.cloud.google.com/apis/credentials
-   # ElevenLabs: elevenlabs.io/settings
+   # Replicate: replicate.com/account/api-tokens
    
    # 2. Generate new key
    # 3. Update locally

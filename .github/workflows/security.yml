@@ -56,12 +56,6 @@ jobs:
             exit 1
           fi
           
-          # Check for ElevenLabs API key pattern
-          if git grep -E "sk_[a-f0-9]{32}" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "example\|test\|\.md"; then
-            echo "❌ Found hardcoded ElevenLabs API key!"
-            exit 1
-          fi
-          
           # Check for Replicate token pattern
           if git grep -E "r8_[a-zA-Z0-9]{40}" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "example\|test\|\.md"; then
             echo "❌ Found hardcoded Replicate token!"
@@ -69,7 +63,7 @@ jobs:
           fi
           
           # Check for NEXT_PUBLIC_ API keys that should be server-side
-          if git grep "NEXT_PUBLIC_GOOGLE_AI_API_KEY\|NEXT_PUBLIC_ELEVENLABS_API_KEY" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "// ❌\|// ✅\|/\*\|\.md"; then
+          if git grep "NEXT_PUBLIC_GOOGLE_AI_API_KEY" -- "*.ts" "*.tsx" "*.js" "*.jsx" | grep -v "// ❌\|// ✅\|/\*\|\.md"; then
             echo "❌ Found client-side exposure of sensitive API keys!"
             exit 1
           fi

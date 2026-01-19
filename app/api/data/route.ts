@@ -70,7 +70,6 @@ const SENSITIVE_FIELDS = [
   'gemini_api_key',
   'finnhub_api_key',
   'alpha_vantage_api_key',
-  'elevenlabs_api_key',
   'replicate_api_token',
   'stripe_customer_id',
   'exchange_api_key',

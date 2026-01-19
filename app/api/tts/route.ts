@@ -1,31 +1,21 @@
 /**
- * TTS Streaming Proxy with Multiple Provider Support
- * Supports both ElevenLabs and Replicate (Kokoro-82m)
+ * TTS Proxy using Replicate (Kokoro-82m)
  * Protected by authentication and rate limiting
- * 
- * Provider Selection:
- * - Default: ElevenLabs (better quality, streaming)
- * - Alternative: Replicate (pass ?provider=replicate in URL)
  */
 
 import { NextRequest } from "next/server";
-import { ElevenLabsClient } from "elevenlabs";
 import Replicate from "replicate";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { rateLimit, getClientIP, RateLimitConfigs } from "@/lib/rate-limit";
 
 // ✅ SECURE: Server-side only environment variables
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
-// Arabella voice - HARDCODED - professional, clear female voice perfect for financial analysis
-const ELEVENLABS_VOICE_ID = 'Z3R5wn05IrDiVCyEkUrK'; // Arabella (HARDCODED)
-const REPLICATE_VOICE = 'af_nicole'; // Nicole voice for Replicate
+// Default voice for Replicate Kokoro model
+const REPLICATE_VOICE = 'af_nicole'; // Nicole voice - professional, clear female voice
 
-console.log('[TTS CONFIG] ElevenLabs voice:', ELEVENLABS_VOICE_ID);
-console.log('[TTS CONFIG] Voice name: Arabella (HARDCODED - Professional financial assistant)');
-console.log('[TTS CONFIG] ElevenLabs API Key configured:', ELEVENLABS_API_KEY ? 'YES ✅' : 'NO ❌');
+console.log('[TTS CONFIG] Voice: Nicole (Replicate Kokoro)');
 console.log('[TTS CONFIG] Replicate API Token configured:', REPLICATE_API_TOKEN ? 'YES ✅' : 'NO ❌');
 
 // Handle CORS preflight for Brave browser
@@ -87,12 +77,6 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Get provider from query params or use default (elevenlabs)
-    const url = new URL(req.url);
-    const provider = url.searchParams.get('provider') || 'elevenlabs';
-    
-    console.log('[TTS] Provider:', provider);
-    
     const { text, voice } = await req.json();
     
     if (!text || typeof text !== 'string') {
@@ -105,12 +89,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Route to appropriate provider
-    if (provider === 'replicate') {
-      return await handleReplicateTTS(text, voice, startTime);
-    } else {
-      return await handleElevenLabsTTS(text, startTime);
-    }
+    // Use Replicate for TTS
+    return await handleReplicateTTS(text, voice, startTime);
 
   } catch (error) {
     console.error('[TTS] Error:', error);
@@ -128,77 +108,7 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Handle TTS using ElevenLabs (streaming, high quality)
- */
-async function handleElevenLabsTTS(text: string, startTime: number) {
-  if (!ELEVENLABS_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: 'ElevenLabs API key not configured' }), 
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
-
-  console.log(`[TTS-ELEVENLABS] Synthesizing with Arabella voice: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-
-  // Initialize ElevenLabs client
-  const elevenlabs = new ElevenLabsClient({
-    apiKey: ELEVENLABS_API_KEY,
-  });
-
-  // Generate audio using official SDK with optimized settings for clarity
-  const audio = await elevenlabs.textToSpeech.convert(
-    ELEVENLABS_VOICE_ID,
-    {
-      text,
-      model_id: 'eleven_turbo_v2', // Fast model with good quality
-      output_format: 'mp3_22050_32', // Lower bitrate for faster streaming
-      optimize_streaming_latency: 3, // Balanced optimization (reduced from 4 for better quality)
-      voice_settings: {
-        stability: 0.6, // Increased for more stable, clearer speech
-        similarity_boost: 0.85, // Higher for better voice match and clarity
-        style: 0.0,
-        use_speaker_boost: true,
-      },
-    }
-  );
-
-  const latency = Date.now() - startTime;
-  console.log(`[TTS-ELEVENLABS] Audio generated (${latency}ms latency)`);
-
-  // Convert async iterable to ReadableStream
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const chunk of audio) {
-          controller.enqueue(chunk);
-        }
-        controller.close();
-      } catch (error) {
-        controller.error(error);
-      }
-    }
-  });
-
-  // Stream audio directly to client
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'audio/mpeg',
-      'Transfer-Encoding': 'chunked',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'X-Latency': `${latency}ms`,
-      'X-Provider': 'elevenlabs',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
-}
-
-/**
- * Handle TTS using Replicate Kokoro-82m (high quality, slower)
+ * Handle TTS using Replicate Kokoro-82m
  */
 async function handleReplicateTTS(text: string, voice: string | undefined, startTime: number) {
   if (!REPLICATE_API_TOKEN) {

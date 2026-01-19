@@ -10,7 +10,7 @@ declare global {
       NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
       NEXT_PUBLIC_APP_URL?: string;
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?: string;
-      // Note: AI API keys (Google AI, ElevenLabs, Replicate) are SERVER-SIDE ONLY
+      // Note: AI API keys (Google AI, Replicate) are SERVER-SIDE ONLY
       // They should NOT be in window.__ENV__ or have NEXT_PUBLIC_ prefix
       // Client-side code should call API routes instead
     };

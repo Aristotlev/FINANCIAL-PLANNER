@@ -76,54 +76,7 @@ Click **Save** and test your API key to ensure it still works.
 
 ---
 
-## 2. ElevenLabs API Key Restrictions
-
-### Step 1: Access ElevenLabs Dashboard
-1. Go to [ElevenLabs Settings](https://elevenlabs.io/app/settings/api-keys)
-2. Sign in to your account
-
-### Step 2: View Your API Keys
-1. Navigate to **Settings** → **API Keys**
-2. You'll see your current API key(s)
-
-### Step 3: Set Usage Alerts
-Unfortunately, ElevenLabs doesn't support domain restrictions, but you can:
-
-1. **Enable Usage Monitoring:**
-   - Go to **Settings** → **Usage & Billing**
-   - View your character quota and usage
-
-2. **Set Up Email Alerts:**
-   - Go to **Settings** → **Notifications**
-   - Enable email alerts for:
-     - ✓ High usage (80% of quota)
-     - ✓ Quota exceeded
-     - ✓ Billing issues
-
-3. **Monitor Usage Dashboard:**
-   - Check **Usage & Billing** weekly
-   - Review character count trends
-   - Watch for unusual spikes
-
-### Step 4: Upgrade to Pro (Optional)
-For better security and monitoring:
-- **Starter Plan:** Basic usage tracking
-- **Creator Plan:** Advanced analytics
-- **Pro Plan:** Priority support + detailed logs
-
-### Best Practices for ElevenLabs:
-```bash
-✓ Rotate keys every 90 days
-✓ Monitor usage weekly
-✓ Set calendar reminders for quota checks
-✓ Keep backup keys in secure storage
-✗ Never commit keys to git
-✗ Never share keys publicly
-```
-
----
-
-## 3. Replicate API Token Restrictions
+## 2. Replicate API Token Restrictions
 
 ### Step 1: Access Replicate Dashboard
 1. Go to [Replicate Account](https://replicate.com/account/api-tokens)
@@ -201,12 +154,6 @@ Choose based on your usage patterns.
 - [ ] Usage alerts enabled (80% threshold)
 - [ ] Test API key after restrictions
 
-### ElevenLabs API ✅
-- [ ] Usage monitoring enabled
-- [ ] Email alerts configured
-- [ ] Weekly usage review scheduled
-- [ ] API key rotation reminder set (90 days)
-
 ### Replicate API ✅
 - [ ] Spending limits configured ($10/month)
 - [ ] Alert threshold set (80% of limit)
@@ -228,7 +175,6 @@ Choose based on your usage patterns.
 - [ ] Check for unauthorized usage notifications
 
 ### Weekly Checks
-- [ ] Review ElevenLabs usage dashboard
 - [ ] Check Replicate billing summary
 - [ ] Monitor Google AI quota usage
 - [ ] Verify CoinMarketCap credits remaining
@@ -337,22 +283,14 @@ done
 ✗ Don't use Pro model for simple tasks
 ```
 
-### ElevenLabs
-```bash
-✓ Preprocess text to remove unnecessary content
-✓ Use shorter voice samples for testing
-✓ Cache frequently used audio
-✓ Compress audio output
-✗ Avoid re-generating same content
-✗ Don't use max quality for all requests
-```
-
 ### Replicate
 ```bash
 ✓ Use cheaper models when possible
 ✓ Batch requests when supported
 ✓ Set timeout limits
 ✓ Monitor per-request costs
+✓ Preprocess text to remove unnecessary content
+✓ Cache frequently used audio
 ✗ Avoid running expensive models frequently
 ✗ Don't ignore failed requests (you still pay!)
 ```
@@ -372,14 +310,6 @@ done
 - Restrictions: Domain + API restrictions
 - Quota: 1,000/day
 - Alerts: Enabled (80% threshold)
-
-## ElevenLabs API
-- Key Created: November 7, 2025
-- Last Rotated: November 7, 2025
-- Next Rotation: February 7, 2026
-- Restrictions: None available (provider limitation)
-- Usage Alerts: Enabled
-- Monthly Check: First Monday of each month
 
 ## Replicate API
 - Token Created: November 7, 2025
@@ -404,9 +334,6 @@ done
 ```
 Google Cloud Console:
 https://console.cloud.google.com/apis/credentials
-
-ElevenLabs Settings:
-https://elevenlabs.io/app/settings/api-keys
 
 Replicate Account:
 https://replicate.com/account/api-tokens

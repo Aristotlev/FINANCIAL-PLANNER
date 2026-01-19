@@ -119,7 +119,18 @@ class ToolsCacheService {
       console.error('Error fetching insider transactions from cache:', error);
       return [];
     }
-    return data || [];
+    
+    // Map database columns back to API camelCase format
+    return (data || []).map(d => ({
+      symbol: d.symbol,
+      name: d.name,
+      share: d.share,
+      change: d.change,
+      filingDate: d.filing_date,
+      transactionDate: d.transaction_date,
+      transactionCode: d.transaction_code,
+      transactionPrice: d.transaction_price,
+    }));
   }
 
   async refreshInsiderTransactions(transactions: InsiderTransaction[], symbol: string): Promise<{ success: boolean; count: number }> {

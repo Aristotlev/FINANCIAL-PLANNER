@@ -151,16 +151,42 @@ export function USASpendingView() {
       return;
     }
 
-    // Try cache first (unless force refresh)
+    // Try localStorage cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = loadFromCache();
       if (cached) {
-        console.log(`USA Spending: Loaded ${cached.activities.length} from cache`);
+        console.log(`USA Spending: Loaded ${cached.activities.length} from localStorage cache`);
         setActivities(cached.activities);
         setFromCache(true);
         setLastUpdated(new Date(cached.timestamp));
         setLoading(false);
         return;
+      }
+    }
+
+    // Try bulk database cache first (single request for all data) - FAST!
+    if (!forceRefresh) {
+      try {
+        setFetchProgress('Loading from database...');
+        const response = await fetch('/api/finnhub/bulk-cache?type=spending&limit=1000');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.spending && data.spending.length > 0) {
+            console.log(`USA Spending: Loaded ${data.spending.length} from database cache`);
+            const sortedActivities = data.spending.sort((a: USASpendingActivity, b: USASpendingActivity) => 
+              new Date(b.actionDate).getTime() - new Date(a.actionDate).getTime()
+            );
+            setActivities(sortedActivities);
+            setFromCache(true);
+            setLastUpdated(new Date(data.timestamp));
+            saveToCache(sortedActivities, DEFAULT_SYMBOLS);
+            setLoading(false);
+            setFetchProgress('');
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Bulk cache unavailable, falling back to individual fetches');
       }
     }
 
@@ -173,17 +199,14 @@ export function USASpendingView() {
       const allActivities: USASpendingActivity[] = [];
       const symbols = DEFAULT_SYMBOLS;
       
-      // Batch fetch - 3 symbols at a time with delays to respect rate limits
-      const batchSize = 3;
+      // Batch fetch - 5 symbols at a time (faster since cache is now instant)
+      const batchSize = 5;
       for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
         setFetchProgress(`Fetching ${i + 1}-${Math.min(i + batchSize, symbols.length)} of ${symbols.length} contractors...`);
         
         const results = await Promise.all(
-          batch.map(async (symbol, idx) => {
-            // Small stagger between requests
-            await new Promise(resolve => setTimeout(resolve, idx * 150));
-            
+          batch.map(async (symbol) => {
             try {
               const response = await fetch(`/api/finnhub/usa-spending?symbol=${symbol}`);
               if (!response.ok) {
@@ -206,9 +229,9 @@ export function USASpendingView() {
         
         results.flat().forEach(a => allActivities.push(a));
         
-        // Pause between batches to avoid rate limits
+        // Smaller pause between batches (cache is fast now)
         if (i + batchSize < symbols.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
 

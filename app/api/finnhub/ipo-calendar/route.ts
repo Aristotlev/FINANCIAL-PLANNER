@@ -9,33 +9,30 @@ export async function GET(request: NextRequest) {
   const useCache = searchParams.get('cache') !== 'false';
 
   try {
-    // 1. Try to get from cache first (unless explicitly disabled)
+    // 1. Try to get from cache FIRST - return immediately if we have data
+    // Don't block on needsRefresh check - cached data is good enough for instant load
     if (useCache) {
       try {
-        const needsRefresh = await newsCacheService.needsRefresh('ipo_calendar');
-        
-        if (!needsRefresh) {
-          const cachedData = await newsCacheService.getAllIPOs({
-            fromDate: from || undefined,
-            toDate: to || undefined,
-            limit: 200
-          });
+        const cachedData = await newsCacheService.getAllIPOs({
+          fromDate: from || undefined,
+          toDate: to || undefined,
+          limit: 200
+        });
 
-          if (cachedData && cachedData.length > 0) {
-            console.log(`[Cache] Returning ${cachedData.length} cached IPO events`);
-            // Transform to match Finnhub format
-            const ipoCalendar = cachedData.map(ipo => ({
-              date: ipo.ipo_date || ipo.expected_ipo_date || '',
-              exchange: ipo.exchange || '',
-              name: ipo.company_name,
-              numberOfShares: ipo.shares_offered || 0,
-              price: ipo.offer_price ? `$${ipo.offer_price}` : (ipo.price_range_low && ipo.price_range_high ? `$${ipo.price_range_low}-$${ipo.price_range_high}` : ''),
-              status: ipo.status || 'expected',
-              symbol: ipo.symbol,
-              totalSharesValue: ipo.market_cap_estimate || 0
-            }));
-            return NextResponse.json({ ipoCalendar, source: 'cache' });
-          }
+        if (cachedData && cachedData.length > 0) {
+          console.log(`[Cache] Returning ${cachedData.length} cached IPO events`);
+          // Transform to match Finnhub format
+          const ipoCalendar = cachedData.map(ipo => ({
+            date: ipo.ipo_date || ipo.expected_ipo_date || '',
+            exchange: ipo.exchange || '',
+            name: ipo.company_name,
+            numberOfShares: ipo.shares_offered || 0,
+            price: ipo.offer_price ? `$${ipo.offer_price}` : (ipo.price_range_low && ipo.price_range_high ? `$${ipo.price_range_low}-$${ipo.price_range_high}` : ''),
+            status: ipo.status || 'expected',
+            symbol: ipo.symbol,
+            totalSharesValue: ipo.market_cap_estimate || 0
+          }));
+          return NextResponse.json({ ipoCalendar, source: 'cache' });
         }
       } catch (cacheError) {
         console.warn('[Cache] IPO cache read failed, falling back to API:', cacheError);

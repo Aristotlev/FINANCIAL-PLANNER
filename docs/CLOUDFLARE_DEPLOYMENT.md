@@ -59,8 +59,6 @@ You need to set these in Cloudflare Dashboard:
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Your Google Maps API key |
 | `NEXT_PUBLIC_APP_URL` | `https://omnifolio.app` |
 | `GOOGLE_AI_API_KEY` | Your Google AI API key (server-side) |
-| `ELEVENLABS_API_KEY` | Your ElevenLabs API key |
-| `ELEVENLABS_VOICE_ID` | Your ElevenLabs voice ID |
 | `REPLICATE_API_TOKEN` | Your Replicate API token |
 | `GOOGLE_CLIENT_ID` | Your Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | Your Google OAuth client secret |

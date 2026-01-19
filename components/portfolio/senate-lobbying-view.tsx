@@ -209,16 +209,43 @@ export function SenateLobbyingView() {
       return;
     }
 
-    // Try cache first (unless force refresh)
+    // Try localStorage cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = loadFromCache();
       if (cached) {
-        console.log(`Lobbying: Loaded ${cached.activities.length} from cache`);
+        console.log(`Lobbying: Loaded ${cached.activities.length} from localStorage cache`);
         setActivities(cached.activities);
         setFromCache(true);
         setLastUpdated(new Date(cached.timestamp));
         setLoading(false);
         return;
+      }
+    }
+
+    // Try bulk database cache first (single request for all data) - FAST!
+    if (!forceRefresh) {
+      try {
+        setFetchProgress('Loading from database...');
+        const response = await fetch('/api/finnhub/bulk-cache?type=lobbying&limit=1000');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.lobbying && data.lobbying.length > 0) {
+            console.log(`Lobbying: Loaded ${data.lobbying.length} from database cache`);
+            const sortedActivities = data.lobbying.sort((a: LobbyingActivity, b: LobbyingActivity) => {
+              if (b.year !== a.year) return b.year - a.year;
+              return (b.period || '').localeCompare(a.period || '');
+            });
+            setActivities(sortedActivities);
+            setFromCache(true);
+            setLastUpdated(new Date(data.timestamp));
+            saveToCache(sortedActivities, DEFAULT_SYMBOLS);
+            setLoading(false);
+            setFetchProgress('');
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Bulk cache unavailable, falling back to individual fetches');
       }
     }
 
@@ -231,14 +258,14 @@ export function SenateLobbyingView() {
       const allActivities: LobbyingActivity[] = [];
       const symbols = DEFAULT_SYMBOLS;
       
-      const batchSize = 3;
+      // Batch fetch - 5 symbols at a time (faster since cache is now instant)
+      const batchSize = 5;
       for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
         setFetchProgress(`Fetching ${i + 1}-${Math.min(i + batchSize, symbols.length)} of ${symbols.length} symbols...`);
         
         const results = await Promise.all(
-          batch.map(async (symbol, idx) => {
-            await new Promise(resolve => setTimeout(resolve, idx * 150));
+          batch.map(async (symbol) => {
             try {
               const response = await fetch(`/api/finnhub/lobbying?symbol=${symbol}`);
               if (!response.ok) return [];
@@ -253,8 +280,9 @@ export function SenateLobbyingView() {
         
         results.flat().forEach(a => allActivities.push(a));
         
+        // Smaller pause between batches (cache is fast now)
         if (i + batchSize < symbols.length) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
 

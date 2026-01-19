@@ -1,5 +1,5 @@
 /**
- * Wake Word Detection for "Jarvis", "Hey Jarvis", "Hi Jarvis", "Hello Jarvis"
+ * Wake Word Detection for "Omni", "Hey Omni", "Hi Omni", "Hello Omni"
  * Uses simple pattern matching on audio energy + basic phoneme detection
  */
 
@@ -71,15 +71,15 @@ export class WakeWordDetector {
     }
 
     // Look for characteristic patterns
-    // "Jarvis" has 2 syllables: JAR-vis
-    // "Hey Jarvis" has 3 syllables: HEY-JAR-vis
+    // "Omni" has 2 syllables: OM-ni
+    // "Hey Omni" has 3 syllables: HEY-OM-ni
     
     const syllables = this.detectSyllables(combined);
     
-    // Accept 2-3 syllables (Jarvis, Hey/Hi/Hello Jarvis)
+    // Accept 2-3 syllables (Omni, Hey/Hi/Hello Omni)
     if (syllables >= 2 && syllables <= 4) {
-      const hasJarvisPattern = this.hasJarvisLikePattern(combined);
-      return hasJarvisPattern;
+      const hasOmniPattern = this.hasOmniLikePattern(combined);
+      return hasOmniPattern;
     }
 
     return false;
@@ -110,11 +110,11 @@ export class WakeWordDetector {
     return syllableCount;
   }
 
-  private hasJarvisLikePattern(audio: Float32Array): boolean {
-    // Simple frequency analysis for "ar" sound (emphasized in "Jarvis")
+  private hasOmniLikePattern(audio: Float32Array): boolean {
+    // Simple frequency analysis for "om" sound (emphasized in "Omni")
     // This is a very basic check - in production, use a real wake word model
     
-    // Look for mid-range frequencies typical of "ar" sound
+    // Look for mid-range frequencies typical of "om" sound
     const windowSize = 1024;
     let midFreqEnergy = 0;
     let totalEnergy = 0;
@@ -131,7 +131,7 @@ export class WakeWordDetector {
       }
     }
 
-    // "Jarvis" has strong mid-range frequencies
+    // "Omni" has strong mid-range frequencies
     const ratio = totalEnergy > 0 ? midFreqEnergy / totalEnergy : 0;
     return ratio > 0.25 && ratio < 0.6;
   }
@@ -169,11 +169,11 @@ export class WebSpeechWakeWordDetector {
 
         // Check for wake words
         if (
-          transcript.includes('jarvis') ||
-          transcript.includes('hey jarvis') ||
-          transcript.includes('hi jarvis') ||
-          transcript.includes('hello jarvis') ||
-          transcript.includes('ok jarvis')
+          transcript.includes('omni') ||
+          transcript.includes('hey omni') ||
+          transcript.includes('hi omni') ||
+          transcript.includes('hello omni') ||
+          transcript.includes('ok omni')
         ) {
           console.log('[WAKE-WORD] ✓ Wake word detected!');
           if (this.onWakeWord) {

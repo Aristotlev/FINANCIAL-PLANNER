@@ -25,7 +25,6 @@ const config: LoggerConfig = {
  */
 const SENSITIVE_PATTERNS = {
   apiKey: /AIza[0-9A-Za-z_-]{35}/gi,
-  elevenLabsKey: /sk_[a-f0-9]{32}/gi,
   replicateToken: /r8_[a-zA-Z0-9]{40}/gi,
   jwt: /eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*/gi,
   email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi,
@@ -42,11 +41,6 @@ function maskSensitiveData(data: any): any {
     
     // Mask API keys
     masked = masked.replace(SENSITIVE_PATTERNS.apiKey, (match) => 
-      `${match.substring(0, 4)}...${match.substring(match.length - 4)}`
-    );
-    
-    // Mask ElevenLabs keys
-    masked = masked.replace(SENSITIVE_PATTERNS.elevenLabsKey, (match) => 
       `${match.substring(0, 4)}...${match.substring(match.length - 4)}`
     );
     

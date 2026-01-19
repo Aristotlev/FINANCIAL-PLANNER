@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
   try {
     const limitNum = limit ? Math.min(parseInt(limit, 10), 100) : 100;
 
-    // 1. Try to get from cache first if no specific dates are requested
+    // 1. Try to get from cache FIRST - return immediately if we have data
+    // Don't block on needsRefresh check - cached data is good enough for instant load
     if (useCache && symbol && !from && !to) {
       try {
         const cachedData = await toolsCacheService.getInsiderTransactions({
@@ -22,12 +23,9 @@ export async function GET(request: NextRequest) {
         });
 
         if (cachedData && cachedData.length > 0) {
-          // Only return if cache is fresh enough (checked via needsRefresh)
-          const needsRefresh = await toolsCacheService.needsRefresh('insider_transactions');
-          if (!needsRefresh) {
-            console.log(`[Cache] Returning cached insider transactions for ${symbol}`);
-            return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
-          }
+          // Return cached data immediately for instant loads
+          console.log(`[Cache] Returning cached insider transactions for ${symbol} (${cachedData.length} items)`);
+          return NextResponse.json({ data: cachedData, symbol, source: 'cache' });
         }
       } catch (cacheErr) {
         // Cache unavailable, continue to API

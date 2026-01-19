@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { GeminiService } from "@/lib/gemini-service";
 import { TTSPreprocessor } from "@/lib/tts-preprocessor";
-import { smartVoiceService, selectVoiceService } from "@/lib/smart-voice-service";
 import { useSubscription, useAILimit, useAdminStatus } from "@/hooks/use-subscription";
 import { getEffectivePlanLimits } from "@/types/subscription";
 import { useRouter } from "next/navigation";
@@ -570,16 +569,16 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
     return normalized;
   };
 
-  // ElevenLabs API integration for premium voice using API route
-  const speakWithElevenLabs = async (text: string): Promise<void> => {
+  // Replicate TTS API integration using Kokoro model
+  const speakWithReplicate = async (text: string): Promise<void> => {
     // 🚨 CRITICAL SAFETY CHECK: Don't make TTS API call if voice is disabled
     if (!voiceEnabled) {
-      console.log('🔇 [ElevenLabs] Voice disabled - aborting TTS API call');
+      console.log('🔇 [Replicate] Voice disabled - aborting TTS API call');
       return;
     }
     
     try {
-      console.log('🎙️ [ElevenLabs] Starting TTS request...');
+      console.log('🎙️ [Replicate] Starting TTS request...');
       
       // 🚀 FAST PATH: Use quick preprocessing (text already cleaned by speakText)
       // Just do final cleanup
@@ -588,8 +587,8 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       cleanedText = cleanedText.replace(/\s+/g, ' ');
       cleanedText = cleanedText.trim();
       
-      console.log('🎙️ [ElevenLabs] Text ready for TTS (length:', cleanedText.length, ')');
-      console.log('🎙️ [ElevenLabs] Sample:', cleanedText.substring(0, 100) + '...');
+      console.log('🎙️ [Replicate] Text ready for TTS (length:', cleanedText.length, ')');
+      console.log('🎙️ [Replicate] Sample:', cleanedText.substring(0, 100) + '...');
       
       // Detect Brave browser
       const isBrave = (navigator as any).brave && await (navigator as any).brave.isBrave?.();
@@ -599,8 +598,8 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       
       setIsSpeaking(true);
       
-      // Call our API route with Replicate provider and af_nicole voice (HARDCODED)
-      const response = await fetch('/api/tts?provider=replicate', {
+      // Call our API route with Replicate and af_nicole voice (HARDCODED)
+      const response = await fetch('/api/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -608,18 +607,17 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
         body: JSON.stringify({ 
           text: cleanedText,
           voice: 'af_nicole' // Professional female voice - HARDCODED
-        }), // Use AI-cleaned text for best pronunciation
-        // Add credentials for Brave compatibility
+        }),
         credentials: 'same-origin',
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ [ElevenLabs] API error:', errorData);
+        console.error('❌ [Replicate] API error:', errorData);
         throw new Error(errorData.error || 'TTS API failed');
       }
 
-      console.log('✅ [ElevenLabs] Response received, creating audio...');
+      console.log('✅ [Replicate] Response received, creating audio...');
       
       // Get audio blob from response
       const audioBlob = await response.blob();
@@ -634,22 +632,22 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       audio.playbackRate = 1.0;
       
       audio.onloadeddata = () => {
-        console.log('✅ [ElevenLabs] Audio loaded, duration:', audio.duration, 'seconds');
+        console.log('✅ [Replicate] Audio loaded, duration:', audio.duration, 'seconds');
       };
       
       audio.onplay = () => {
-        console.log('▶️ [ElevenLabs] Audio playback started');
+        console.log('▶️ [Replicate] Audio playback started');
       };
       
       audio.onended = () => {
-        console.log('✅ [ElevenLabs] Audio playback completed');
+        console.log('✅ [Replicate] Audio playback completed');
         setIsSpeaking(false);
         URL.revokeObjectURL(audioUrl);
         audioRef.current = null;
       };
       
       audio.onerror = (e) => {
-        console.error('❌ [ElevenLabs] Audio playback error:', e);
+        console.error('❌ [Replicate] Audio playback error:', e);
         setIsSpeaking(false);
         URL.revokeObjectURL(audioUrl);
         audioRef.current = null;
@@ -659,16 +657,16 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       // Try to play, and if it fails, throw to fallback
       try {
         await audio.play();
-        console.log('✅ [ElevenLabs] Audio play() called successfully');
+        console.log('✅ [Replicate] Audio play() called successfully');
       } catch (playError: any) {
-        console.warn('⚠️ [ElevenLabs] Auto-play blocked (likely Brave):', playError.message);
+        console.warn('⚠️ [Replicate] Auto-play blocked (likely Brave):', playError.message);
         // Clean up and throw to trigger fallback
         URL.revokeObjectURL(audioUrl);
         audioRef.current = null;
         throw new Error('Audio playback blocked by browser');
       }
     } catch (error) {
-      console.error('❌ [ElevenLabs] TTS failed:', error);
+      console.error('❌ [Replicate] TTS failed:', error);
       setIsSpeaking(false);
       throw error;
     }
@@ -715,43 +713,22 @@ export function AIChatAssistant({ theme = 'default' }: AIChatAssistantProps = {}
       return;
     }
 
-    // 🎯 ALWAYS USE ARABELLA PREMIUM VOICE: Force ElevenLabs for all responses
-    const isFirstMessage = messages.length === 1;
-    const { service, reason, importance } = selectVoiceService(text, {
-      isFirstMessage,
-      isImportantUpdate: text.includes('profit') || text.includes('loss') || text.includes('portfolio'),
-      userPreference: 'always', // ALWAYS use Arabella's premium ElevenLabs voice
-    });
-
-    console.log(`🎯 [VOICE] Selected ${service} voice (importance: ${importance.toFixed(2)})`);
-    console.log(`🎯 [VOICE] Reason: ${reason}`);
-
-    // Use ElevenLabs if selected, otherwise browser TTS
-    if (service === 'elevenlabs') {
-      try {
-        console.log('🎙️ [SPEAK] Using premium ElevenLabs TTS...');
-        await speakWithElevenLabs(cleanText);
-        console.log('✅ [SPEAK] ElevenLabs speech completed successfully');
-        
-        // Log cost savings
-        const stats = smartVoiceService.getStats();
-        console.log(`💰 [SAVINGS] Premium voice: ${stats.premiumVoicePercent.toFixed(1)}% (target: 5%)`);
-        console.log(`💰 [SAVINGS] Estimated monthly savings: $${stats.estimatedCostSavings.toFixed(2)}`);
-      } catch (error) {
-        console.error('❌ [SPEAK] ElevenLabs failed, falling back to browser TTS:', error);
-        
-        // Only fallback if it's a critical error, not just audio blocked
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes('blocked') || errorMessage.includes('interaction')) {
-          setIsSpeaking(false);
-          return; // Don't fallback to browser TTS
-        }
-        
-        // Fallback to browser TTS
-        await speakWithBrowserTTS(cleanText);
+    // Use Replicate TTS (Kokoro model with Nicole voice)
+    try {
+      console.log('🎙️ [SPEAK] Using Replicate TTS...');
+      await speakWithReplicate(cleanText);
+      console.log('✅ [SPEAK] Replicate speech completed successfully');
+    } catch (error) {
+      console.error('❌ [SPEAK] Replicate failed, falling back to browser TTS:', error);
+      
+      // Only fallback if it's a critical error, not just audio blocked
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('blocked') || errorMessage.includes('interaction')) {
+        setIsSpeaking(false);
+        return; // Don't fallback to browser TTS
       }
-    } else {
-      // Use browser TTS
+      
+      // Fallback to browser TTS
       await speakWithBrowserTTS(cleanText);
     }
   };

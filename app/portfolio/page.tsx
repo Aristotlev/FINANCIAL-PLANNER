@@ -39,6 +39,7 @@ import { usePortfolioContext, CryptoHolding, StockHolding } from '../../contexts
 import { SupabaseDataService } from '../../lib/supabase/supabase-data-service';
 import { useAssetPrices } from '../../hooks/use-price';
 import { getBrandColor } from '../../lib/brand-colors';
+import { Select } from '../../components/ui/select';
 
 import { EconomicCalendar } from '../../components/portfolio/economic-calendar';
 import { InsiderSentimentView } from '../../components/portfolio/insider-sentiment-view';
@@ -48,6 +49,7 @@ import { SenateLobbyingView } from '../../components/portfolio/senate-lobbying-v
 import { USASpendingView } from '../../components/portfolio/usa-spending-view';
 import { ToolsView } from '../../components/tools/ToolsView';
 import { CompanyLookup } from '../../components/tools/CompanyLookup';
+import { BloombergWidget } from '../../components/portfolio/bloomberg-widget';
 
 import { NetworthOverview } from '../../components/portfolio/networth-overview';
 
@@ -623,8 +625,12 @@ export default function PortfolioPage() {
                         </div>
                     </div>
 
+                    <div className="flex items-center gap-3">
+                        <div className="w-auto">
+                           <BloombergWidget />
+                        </div>
                     {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending', 'company-lookup'].includes(activeTab) && selectedCategory !== "Networth" && (
-                        <div className="flex items-center gap-3">
+                        <>
                             {selectedCategory === "Real Estate" ? (
                                 <button 
                                     onClick={() => setIsAddPropertyModalOpen(true)}
@@ -703,8 +709,9 @@ export default function PortfolioPage() {
                                     Add Profile
                                 </button>
                             ) : null}
-                        </div>
+                        </>
                     )}
+                    </div>
                 </div>
 
                 {renderContent()}
