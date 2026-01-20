@@ -1,28 +1,43 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase Admin client for DB access
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // Use service role for writes
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
 export const runtime = 'edge';
 
 // Cache duration for fallback (if DB is empty or fails)
 const CACHE_DURATION = 3600; // 1 hour
 
+// Create Supabase client lazily to avoid build-time errors
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null;
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
+
 export async function GET() {
   try {
+    const supabase = getSupabaseClient();
+    let latestEntry: any = null;
+    
     // 1. Try to get fresh data from DB first (cached)
-    const { data: latestEntry, error: dbError } = await supabase
-      .from('crypto_fear_and_greed')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(1)
-      .single();
+    if (supabase) {
+      const { data, error: dbError } = await supabase
+        .from('crypto_fear_and_greed')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (!dbError && data) {
+        latestEntry = data;
+      }
+    }
 
-    if (!dbError && latestEntry) {
+    if (latestEntry) {
       const lastUpdate = new Date(latestEntry.timestamp).getTime();
       const createdAt = new Date(latestEntry.created_at).getTime();
       const now = new Date().getTime();
@@ -125,7 +140,7 @@ export async function GET() {
     const result = await response.json();
     
     // 3. Cache the new API data to Supabase
-    if (result.data) {
+    if (result.data && supabase) {
         const { error: insertError } = await supabase
             .from('crypto_fear_and_greed')
             .insert({
