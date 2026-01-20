@@ -74,7 +74,7 @@ export const metadata: Metadata = {
     description: 'Your comprehensive financial dashboard for tracking cash, savings, crypto, stocks, real estate, and expenses. Take control of your financial future with OmniFolio.',
     images: [
       {
-        url: '/api/og',
+        url: '/images/opengraph.png',
         width: 1200,
         height: 630,
         alt: 'OmniFolio - Financial Management Dashboard',
@@ -85,7 +85,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'OmniFolio - All-in-One Financial Management',
     description: 'Your comprehensive financial dashboard for tracking investments, crypto, stocks, and expenses.',
-    images: ['/api/og'],
+    images: ['/images/opengraph.png'],
     creator: '@omnifolio',
   },
   robots: {
