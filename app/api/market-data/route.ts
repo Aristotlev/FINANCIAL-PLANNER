@@ -133,8 +133,13 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Try Yahoo Finance first (FREE API - prioritize this)
-      if (type === 'stock' || type === 'forex' || type === 'index') {
+      if (type === 'stock' || type === 'forex' || type === 'index' || type === 'commodity') {
+        // Try Investing.com for Forex/Indices/Commodities first as requested
+        if (type !== 'stock') {
+             const investingData = await fetchFromInvestingCom(upperSymbol, type);
+             if (investingData) return investingData;
+        }
+
         const yahooData = await fetchFromYahooFinance(upperSymbol);
         if (yahooData) return yahooData;
       }
@@ -231,10 +236,86 @@ export async function GET(request: NextRequest) {
 async function fetchFromYahooFinance(symbol: string) {
   const hosts = ['query2.finance.yahoo.com', 'query1.finance.yahoo.com'];
   
+  // Map common symbols to Yahoo Finance format
+  const yahooSymbolMap: Record<string, string> = {
+    // Indices
+    'SPX': '^GSPC',
+    'NDX': '^NDX',
+    'DJI': '^DJI',
+    'VIX': '^VIX',
+    'RUT': '^RUT',
+    'UKX': '^FTSE',
+    'DAX': '^GDAXI',
+    'NKY': '^N225',
+    'HSI': '^HSI',
+    'SHCOMP': '000001.SS',
+    'CAC': '^FCHI',
+    'STOXX50E': '^STOXX50E',
+
+    // Commodities (Futures)
+    'GC': 'GC=F',
+    'SI': 'SI=F',
+    'PL': 'PL=F',
+    'PA': 'PA=F',
+    'CL': 'CL=F',
+    'BRN': 'BZ=F',
+    'NG': 'NG=F',
+    'RB': 'RB=F',
+    'HO': 'HO=F',
+    'HG': 'HG=F',
+    'ZC': 'ZC=F',
+    'ZS': 'ZS=F',
+    'ZW': 'ZW=F',
+    'KC': 'KC=F',
+    'SB': 'SB=F',
+    'CC': 'CC=F',
+    'CT': 'CT=F',
+  };
+
+  let querySymbol = yahooSymbolMap[symbol] || symbol;
+
+  // Handle Forex pairs suffix
+  // If it looks like a forex pair (6 chars, not in map), append =X
+  if (!yahooSymbolMap[symbol] && /^[A-Z]{3}[A-Z]{3}$/.test(symbol) && !['NVDA', 'AMZN', 'GOOG', 'MSFT', 'TSLA'].includes(symbol)) {
+     // Check if it's a known forex pair or just a 6 letter ticker (e.g. GOOGL is 5, NVDA 4)
+     // Most forex pairs are 6 chars. But there are stocks with 6 chars?
+     // Better to verify if it's requested as forex type, but here we just have symbol.
+     // However, in this function context we don't know the requested type explicitly unless we pass it.
+     // But we can enable this heuristic for symbols that look like pairs.
+     // Or rely on the caller passing 'type'.
+     // Let's rely on the explicit map or just try appending =X if the first try fails? 
+     // No, Yahoo returns empty result if not found.
+     
+     // Let's add common forex pairs to the map dynamically if needed or just handle the suffix logic if we are sure.
+     // Since this function is called for stock/index/forex, distinguishing 6-letter stock from forex is hard without 'type'.
+     // But standard forex pairs like EURUSD are distinct enough. 
+     // Let's just use the explicit map for now or updated list.
+  }
+  
+  // Explicitly handle all major forex pairs from our DB
+  const forexPairs = [
+      'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+      'EURGBP', 'EURJPY', 'GBPJPY', 'AUDCAD', 'AUDNZD', 'EURCHF',
+      'CADJPY', 'CHFJPY', 'AUDJPY', 'NZDJPY' // Add other common JPY pairs
+  ];
+  
+  // Robust Forex Detection:
+  // 1. Check if in explicit list
+  // 2. OR if it looks like a currency pair (6 chars) and ends in a major currency
+  const isForex = forexPairs.includes(symbol) || 
+                 (!yahooSymbolMap[symbol] && 
+                  symbol.length === 6 && 
+                  /^[A-Z]{6}$/.test(symbol) && 
+                  ['USD', 'EUR', 'JPY', 'GBP', 'AUD', 'CAD', 'CHF', 'NZD'].includes(symbol.slice(3)));
+
+  if (isForex) {
+      querySymbol = `${symbol}=X`;
+  }
+
   for (const host of hosts) {
     try {
       const response = await fetch(
-        `https://${host}/v7/finance/quote?symbols=${symbol}`,
+        `https://${host}/v7/finance/quote?symbols=${querySymbol}`,
         {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -447,6 +528,100 @@ async function fetchFromBinance(symbol: string) {
     // console.warn(`Binance failed for ${symbol}:`, error);
     return null;
   }
+}
+
+async function fetchFromInvestingCom(symbol: string, type: string) {
+    try {
+        // Map symbols to Investing.com pair IDs or slugs
+        // This is a simplified mapping logic.
+        const investingMap: Record<string, string> = {
+            // Forex
+            'EURUSD': 'currencies/eur-usd',
+            'GBPUSD': 'currencies/gbp-usd',
+            'USDJPY': 'currencies/usd-jpy',
+            'USDCHF': 'currencies/usd-chf',
+            'AUDUSD': 'currencies/aud-usd',
+            'USDCAD': 'currencies/usd-cad',
+            'NZDUSD': 'currencies/nzd-usd',
+            'EURGBP': 'currencies/eur-gbp',
+            'EURJPY': 'currencies/eur-jpy',
+            'GBPJPY': 'currencies/gbp-jpy',
+            'AUDCAD': 'currencies/aud-cad',
+            'AUDNZD': 'currencies/aud-nzd',
+            'EURCHF': 'currencies/eur-chf',
+            'SPX': 'indices/us-spx-500',
+            'NDX': 'indices/nq-100',
+            'DJI': 'indices/us-30',
+            'VIX': 'indices/volatility-s-p-500',
+            'UKX': 'indices/uk-100',
+            'DAX': 'indices/germany-30',
+            'CAC': 'indices/france-40',
+            
+            // Commodities
+            'GC': 'commodities/gold',
+            'SI': 'commodities/silver',
+            'CL': 'commodities/crude-oil',
+            'BRN': 'commodities/brent-oil',
+            'NG': 'commodities/natural-gas',
+            'HG': 'commodities/copper',
+            'ZC': 'commodities/corn',
+            'ZS': 'commodities/us-soybeans',
+            'ZW': 'commodities/us-wheat',
+        };
+
+        const slug = investingMap[symbol];
+        if (!slug && type !== 'forex' && type !== 'index' && type !== 'commodity') return null;
+
+        // If no slug found but type is supported, try to guess or return null
+        // For now only support explicit map + common patterns if risky
+        if (!slug) return null;
+
+        const response = await fetch(`https://www.investing.com/${slug}`, {
+             headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                // 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+             },
+             cache: 'no-store'
+        });
+
+        if (!response.ok) {
+             throw new Error(`Investing.com returned ${response.status}`);
+        }
+
+        const html = await response.text();
+        
+        // Use Regex to find price data (Looking for data-test attribute often used in investing.com)
+        // Example: <div class="text-5xl/9 font-bold text-[#232526] md:text-[42px] md:leading-[60px]" data-test="instrument-price-last">1.0345</div>
+        // Pattern: data-test="instrument-price-last">([\d,.]+)</div>
+        const priceMatch = html.match(/data-test="instrument-price-last"[^>]*>([\d,.]+)</);
+        const changeMatch = html.match(/data-test="instrument-price-change"[^>]*>([+\-]?[\d,.]+)</);
+        const changePercentMatch = html.match(/data-test="instrument-price-change-percent"[^>]*>\(([+\-]?[\d,.]+)%\)</);
+        
+        if (priceMatch && priceMatch[1]) {
+            const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+            const change = changeMatch ? parseFloat(changeMatch[1].replace(/,/g, '')) : 0;
+            const changePercent = changePercentMatch ? parseFloat(changePercentMatch[1].replace(/,/g, '')) : 0;
+            
+            return {
+                symbol: symbol,
+                name: symbol, // Could parse name too but symbol is enough
+                currentPrice: price,
+                change24h: change,
+                changePercent24h: changePercent,
+                type: type,
+                lastUpdated: Date.now(),
+                dataSource: 'Investing.com',
+            };
+        }
+        
+        // Fallback or old layout pattern?
+        // Sometimes JSON is embedded in scripts.
+        return null;
+        
+    } catch (e) {
+        // console.warn(`Investing.com fetch failed for ${symbol}:`, e);
+        return null;
+    }
 }
 
 

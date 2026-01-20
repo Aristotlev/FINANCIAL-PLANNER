@@ -184,6 +184,66 @@ function generateUSDTData(range: string) {
  */
 async function fetchYahooChart(symbol: string, range: string) {
   try {
+    // Map common symbols to Yahoo Finance format
+    const yahooSymbolMap: Record<string, string> = {
+      // Indices
+      'SPX': '^GSPC',
+      'NDX': '^NDX',
+      'DJI': '^DJI',
+      'VIX': '^VIX',
+      'RUT': '^RUT',
+      'UKX': '^FTSE',
+      'DAX': '^GDAXI',
+      'NKY': '^N225',
+      'HSI': '^HSI',
+      'SHCOMP': '000001.SS',
+      'CAC': '^FCHI',
+      'STOXX50E': '^STOXX50E',
+
+      // Commodities (Futures)
+      'GC': 'GC=F',
+      'SI': 'SI=F',
+      'PL': 'PL=F',
+      'PA': 'PA=F',
+      'CL': 'CL=F',
+      'BRN': 'BZ=F',
+      'NG': 'NG=F',
+      'RB': 'RB=F',
+      'HO': 'HO=F',
+      'HG': 'HG=F',
+      'ZC': 'ZC=F',
+      'ZS': 'ZS=F',
+      'ZW': 'ZW=F',
+      'KC': 'KC=F',
+      'SB': 'SB=F',
+      'CC': 'CC=F',
+      'CT': 'CT=F',
+    };
+
+    let querySymbol = yahooSymbolMap[symbol] || symbol;
+
+    // Handle Forex pairs
+    // Check if it matches typical forex pair format (6 chars) and not a known stock
+    if (!yahooSymbolMap[symbol]) {
+        if (/^[A-Z]{6}$/.test(symbol) && !['GOOGL'].includes(symbol)) { 
+             // Determine if it is likely a forex pair
+             const majorCurrencies = ['USD', 'EUR', 'JPY', 'GBP', 'AUD', 'CAD', 'CHF', 'NZD'];
+             const quoteCurrency = symbol.slice(3);
+             
+             // Common forex check logic.
+             // If explicit check fails, try heuristic based on quote currency
+             const forexPairs = [
+                'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+                'EURGBP', 'EURJPY', 'GBPJPY', 'AUDCAD', 'AUDNZD', 'EURCHF',
+                'CADJPY', 'CHFJPY', 'AUDJPY', 'NZDJPY' 
+            ];
+            
+            if (forexPairs.includes(symbol) || majorCurrencies.includes(quoteCurrency)) {
+                querySymbol = `${symbol}=X`;
+            }
+        }
+    }
+
     // Yahoo Finance chart ranges and intervals
     const rangeConfig: Record<string, { range: string; interval: string }> = {
       '1D': { range: '1d', interval: '5m' },
@@ -201,7 +261,7 @@ async function fetchYahooChart(symbol: string, range: string) {
     for (const host of hosts) {
       try {
         const response = await fetch(
-          `https://${host}/v8/finance/chart/${symbol}?range=${config.range}&interval=${config.interval}`,
+          `https://${host}/v8/finance/chart/${querySymbol}?range=${config.range}&interval=${config.interval}`,
           {
             cache: 'no-store',
             headers: {

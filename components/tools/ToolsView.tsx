@@ -6,95 +6,22 @@ import { cn } from '@/lib/utils';
 import { AreaChart, CandlestickChart, BarChart, LineChart } from 'lucide-react';
 import { Search01Icon, TradeUpIcon, Loading01Icon, ArrowDown01Icon, AlertCircleIcon } from 'hugeicons-react';
 import { usePortfolioContext } from '@/contexts/portfolio-context';
-import { CryptoIcon } from '@/components/ui/crypto-icon';
+import { AssetIcon } from '@/components/ui/asset-icon';
 import { tickerDomains } from '@/lib/ticker-domains';
 import { useAssetPrice } from '@/hooks/use-price';
-
-// Generate a consistent color based on ticker
-const getTickerColor = (ticker: string): string => {
-  const colors = [
-    'from-amber-500 to-amber-700',
-    'from-orange-500 to-orange-700',
-    'from-yellow-500 to-yellow-700',
-    'from-red-500 to-red-700',
-    'from-pink-500 to-pink-700',
-    'from-purple-500 to-purple-700',
-    'from-blue-500 to-blue-700',
-    'from-cyan-500 to-cyan-700',
-  ];
-  let hash = 0;
-  for (let i = 0; i < ticker.length; i++) {
-    hash = ticker.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
-
-// Company Icon Component - Dynamic logo fetching with fallbacks (same approach as Senate Lobbying)
-function CompanyIcon({ ticker, className = "w-5 h-5", showPlaceholder = true }: { ticker: string; className?: string; showPlaceholder?: boolean }) {
-  const [imageError, setImageError] = useState(false);
-  const [fallbackIndex, setFallbackIndex] = useState(0);
-  const upperTicker = ticker.toUpperCase();
-  
-  // Build list of image sources to try
-  const imageSources = useMemo(() => {
-    const sources: string[] = [];
-    
-    // 1. Known domain from our mapping
-    if (tickerDomains[upperTicker]) {
-      sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${tickerDomains[upperTicker]}&size=128`);
-    }
-    
-    // 2. Try logo.dev API (free tier, good coverage)
-    sources.push(`https://img.logo.dev/ticker/${upperTicker}?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ`);
-    
-    // 3. Try common domain patterns
-    sources.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${ticker.toLowerCase()}.com&size=128`);
-    
-    return sources;
-  }, [upperTicker, ticker]);
-  
-  useEffect(() => {
-    setImageError(false);
-    setFallbackIndex(0);
-  }, [ticker]);
-  
-  const handleImageError = () => {
-    if (fallbackIndex < imageSources.length - 1) {
-      setFallbackIndex(prev => prev + 1);
-    } else {
-      setImageError(true);
-    }
-  };
-  
-  if (!imageError && imageSources.length > 0) {
-    return (
-      <img 
-        src={imageSources[fallbackIndex]}
-        alt={`${ticker} logo`} 
-        className={`${className} rounded-lg object-contain bg-white p-1`}
-        onError={handleImageError}
-        loading="lazy"
-      />
-    );
-  }
-
-  if (!showPlaceholder) return null;
-
-  return (
-    <div className={`${className} rounded-lg bg-gradient-to-br ${getTickerColor(ticker)} flex items-center justify-center font-bold text-white shadow-lg text-xs`}>
-      {ticker.slice(0, 2)}
-    </div>
-  );
-}
+import { TRADING_DATABASE, TradingInstrument } from '@/lib/trading-database';
+import { getStockBySymbol } from '@/lib/stocks-database';
 
 type TimeRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
-type AssetType = 'stock' | 'crypto';
+// Extend AssetType to match what we might encounter or map from DB
+type AssetType = 'stock' | 'crypto' | 'forex' | 'etf' | 'index' | 'commodity';
 
 interface AssetItem {
     symbol: string;
     name: string;
     type: AssetType;
-    iconUrl?: string;
+    iconUrl?: string; // For crypto
+    website?: string; // For fetching favicons
 }
 
 interface ChartData {
@@ -110,6 +37,7 @@ export function ToolsView() {
     const { cryptoHoldings, stockHoldings } = usePortfolioContext();
     const [chartType, setChartType] = useState<ChartType>('Area');
     const [timeRange, setTimeRange] = useState<TimeRange>('1M');
+    // Initialize with a default or null, will be set in useEffect
     const [selectedAsset, setSelectedAsset] = useState<AssetItem | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -118,10 +46,18 @@ export function ToolsView() {
     const [error, setError] = useState<string | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Map the selected asset type to what useAssetPrice expects ('stock' | 'crypto' | 'forex')
+    const priceType = useMemo(() => {
+        if (!selectedAsset) return 'stock';
+        if (selectedAsset.type === 'crypto') return 'crypto';
+        if (selectedAsset.type === 'forex') return 'forex';
+        return 'stock';
+    }, [selectedAsset]);
+
     // Real-time price subscription for the selected asset
     const { price: realtimePrice, loading: priceLoading } = useAssetPrice(
         selectedAsset?.symbol || '',
-        selectedAsset?.type
+        priceType
     );
 
     // Close dropdown when clicking outside
@@ -135,27 +71,38 @@ export function ToolsView() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Combine all holdings for the asset selector
+    // Combine all assets from database
     const allAssets = useMemo<AssetItem[]>(() => {
-        const crypto = cryptoHoldings.map(h => ({ symbol: h.symbol, name: h.name, type: 'crypto' as AssetType, iconUrl: h.iconUrl }));
-        const stocks = stockHoldings.map(h => ({ symbol: h.symbol, name: h.name, type: 'stock' as AssetType, iconUrl: undefined }));
-        return [...stocks, ...crypto];
-    }, [cryptoHoldings, stockHoldings]);
+        return TRADING_DATABASE.map(item => ({
+            symbol: item.symbol,
+            name: item.name,
+            type: item.type, // This matches our expanded AssetType
+            website: item.website
+        }));
+    }, []);
 
     // Filter assets based on search
     const filteredAssets = useMemo(() => {
-        if (!searchQuery) return allAssets;
+        if (!searchQuery) {
+            // If no search, sort of "Featured" or just initial slice to avoid lag?
+            // Or just return all if it isn't too many. 
+            // Let's return a curated list of top assets if no search query to keep UI clean
+            const featuredSymbols = ['AAPL', 'BTC', 'ETH', 'TSLA', 'NVDA', 'SPY', 'MSFT', 'GOOGL', 'AMZN'];
+            return allAssets.filter(a => featuredSymbols.includes(a.symbol))
+                           .sort((a, b) => featuredSymbols.indexOf(a.symbol) - featuredSymbols.indexOf(b.symbol));
+        }
         const q = searchQuery.toLowerCase();
         return allAssets.filter(a => 
             a.symbol.toLowerCase().includes(q) || 
             a.name.toLowerCase().includes(q)
-        );
+        ).slice(0, 50); // Limit results for performance
     }, [allAssets, searchQuery]);
 
-    // Set default asset on mount
+    // Set default asset on mount to AAPL
     useEffect(() => {
-        if (!selectedAsset && allAssets.length > 0) {
-            setSelectedAsset(allAssets[0]);
+        if (!selectedAsset) {
+            const apple = allAssets.find(a => a.symbol === 'AAPL');
+            if (apple) setSelectedAsset(apple);
         }
     }, [allAssets, selectedAsset]);
 
@@ -170,7 +117,7 @@ export function ToolsView() {
 
             try {
                 const response = await fetch(
-                    `/api/chart-data?symbol=${selectedAsset.symbol}&type=${selectedAsset.type}&range=${timeRange}`
+                    `/api/chart-data?symbol=${selectedAsset.symbol}&type=${selectedAsset.type === 'crypto' ? 'crypto' : 'stock'}&range=${timeRange}`
                 );
 
                 if (!response.ok) {
@@ -275,11 +222,7 @@ export function ToolsView() {
                             {selectedAsset ? (
                                 <>
                                     <div className="w-6 h-6 flex items-center justify-center">
-                                        {selectedAsset.type === 'crypto' ? (
-                                            <CryptoIcon symbol={selectedAsset.symbol} iconUrl={selectedAsset.iconUrl} className="w-6 h-6" />
-                                        ) : (
-                                            <CompanyIcon ticker={selectedAsset.symbol} className="w-6 h-6" />
-                                        )}
+                                        <AssetIcon symbol={selectedAsset.symbol} type={selectedAsset.type} iconUrl={selectedAsset.iconUrl} website={selectedAsset.website} className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1 text-left">
                                         <p className="font-semibold text-white text-sm">{selectedAsset.symbol}</p>
@@ -313,15 +256,15 @@ export function ToolsView() {
                                 <div className="max-h-[300px] overflow-y-auto">
                                     {filteredAssets.length === 0 ? (
                                         <div className="p-4 text-center text-gray-500 text-sm">
-                                            No assets found. Add holdings to your portfolio first.
+                                            No assets found.
                                         </div>
                                     ) : (
                                         <>
-                                            {/* Stocks Section */}
-                                            {filteredAssets.filter(a => a.type === 'stock').length > 0 && (
+                                            {/* Stocks & ETFs Section */}
+                                            {filteredAssets.some(a => ['stock', 'etf', 'index'].includes(a.type)) && (
                                                 <div>
-                                                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-[#0D0D0D]">STOCKS</div>
-                                                    {filteredAssets.filter(a => a.type === 'stock').map(asset => (
+                                                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-[#0D0D0D]">STOCKS & ETFs</div>
+                                                    {filteredAssets.filter(a => ['stock', 'etf', 'index'].includes(a.type)).map(asset => (
                                                         <button
                                                             key={asset.symbol}
                                                             onClick={() => {
@@ -335,7 +278,7 @@ export function ToolsView() {
                                                             )}
                                                         >
                                                             <div className="w-8 h-8 flex items-center justify-center">
-                                                                <CompanyIcon ticker={asset.symbol} className="w-8 h-8" />
+                                                                <AssetIcon symbol={asset.symbol} type={asset.type} className="w-8 h-8" website={asset.website} />
                                                             </div>
                                                             <div className="flex-1 text-left">
                                                                 <p className="font-medium text-white">{asset.symbol}</p>
@@ -347,7 +290,7 @@ export function ToolsView() {
                                             )}
 
                                             {/* Crypto Section */}
-                                            {filteredAssets.filter(a => a.type === 'crypto').length > 0 && (
+                                            {filteredAssets.some(a => a.type === 'crypto') && (
                                                 <div>
                                                     <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-[#0D0D0D]">CRYPTO</div>
                                                     {filteredAssets.filter(a => a.type === 'crypto').map(asset => (
@@ -364,7 +307,36 @@ export function ToolsView() {
                                                             )}
                                                         >
                                                             <div className="w-8 h-8 flex items-center justify-center">
-                                                                <CryptoIcon symbol={asset.symbol} iconUrl={asset.iconUrl || undefined} className="w-8 h-8" />
+                                                                <AssetIcon symbol={asset.symbol} type={asset.type} iconUrl={asset.iconUrl || undefined} className="w-8 h-8" />
+                                                            </div>
+                                                            <div className="flex-1 text-left">
+                                                                <p className="font-medium text-white">{asset.symbol}</p>
+                                                                <p className="text-xs text-gray-400">{asset.name}</p>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                             {/* Commodities & Forex Section */}
+                                             {filteredAssets.some(a => ['commodity', 'forex'].includes(a.type)) && (
+                                                <div>
+                                                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-[#0D0D0D]">COMMODITIES & FOREX</div>
+                                                    {filteredAssets.filter(a => ['commodity', 'forex'].includes(a.type)).map(asset => (
+                                                        <button
+                                                            key={asset.symbol}
+                                                            onClick={() => {
+                                                                setSelectedAsset(asset);
+                                                                setIsDropdownOpen(false);
+                                                                setSearchQuery('');
+                                                            }}
+                                                            className={cn(
+                                                                "w-full flex items-center gap-3 px-4 py-3 hover:bg-[#222] transition-colors",
+                                                                selectedAsset?.symbol === asset.symbol && "bg-[#222]"
+                                                            )}
+                                                        >
+                                                            <div className="w-8 h-8 flex items-center justify-center">
+                                                                <AssetIcon symbol={asset.symbol} type={asset.type} className="w-8 h-8" website={asset.website} />
                                                             </div>
                                                             <div className="flex-1 text-left">
                                                                 <p className="font-medium text-white">{asset.symbol}</p>
@@ -437,11 +409,7 @@ export function ToolsView() {
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 flex items-center justify-center">
-                                    {selectedAsset.type === 'crypto' ? (
-                                        <CryptoIcon symbol={selectedAsset.symbol} iconUrl={selectedAsset.iconUrl} className="w-10 h-10" />
-                                    ) : (
-                                        <CompanyIcon ticker={selectedAsset.symbol} className="w-10 h-10" />
-                                    )}
+                                    <AssetIcon symbol={selectedAsset.symbol} type={selectedAsset.type} iconUrl={selectedAsset.iconUrl} website={selectedAsset.website} className="w-10 h-10" />
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-semibold text-white">{selectedAsset.symbol}</h3>
