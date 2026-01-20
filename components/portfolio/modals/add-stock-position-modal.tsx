@@ -356,7 +356,7 @@ export function AddStockPositionModal({
           <button
             onClick={handleAdd}
             disabled={!selectedStock || !shares || !entryPoint}
-            className="flex-1 px-4 py-3 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-all font-bold shadow-[0_0_20px_rgba(6,182,212,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            className="flex-1 px-4 py-3 bg-[#0D0D0D] border border-white/20 text-white rounded-xl hover:bg-white/10 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Add Position
           </button>

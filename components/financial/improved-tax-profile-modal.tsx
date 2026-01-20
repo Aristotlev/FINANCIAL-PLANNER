@@ -810,7 +810,7 @@ export function ImprovedTaxProfileModal({
                   }
                 }}
                 disabled={!canProceed}
-                className="px-8 py-3 bg-white text-black rounded-xl font-bold hover:bg-gray-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-8 py-3 bg-[#0D0D0D] border border-white/20 text-white rounded-xl font-bold hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
@@ -819,7 +819,7 @@ export function ImprovedTaxProfileModal({
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-[0.98] flex items-center gap-2"
+                className="px-8 py-3 bg-[#0D0D0D] border border-white/20 text-white rounded-xl font-bold hover:bg-white/10 transition-all flex items-center gap-2"
               >
                 <Check className="w-5 h-5" />
                 {profile ? 'Update Profile' : 'Create Profile'}

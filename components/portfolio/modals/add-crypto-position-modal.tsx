@@ -421,7 +421,7 @@ export function AddCryptoPositionModal({
             <button
               onClick={handleAdd}
               disabled={!selectedCrypto || !amount || !entryPoint}
-              className="flex-1 px-6 py-3 bg-cyan-500 text-black rounded-xl hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all transform active:scale-[0.98]"
+              className="flex-1 px-6 py-3 bg-[#0D0D0D] border border-white/20 text-white rounded-xl hover:bg-white/10 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Position
             </button>

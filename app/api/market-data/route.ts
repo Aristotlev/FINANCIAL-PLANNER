@@ -123,8 +123,14 @@ export async function GET(request: NextRequest) {
     const fetchPromise = (async () => {
       // If specific source is requested, use it
       if (source === 'coinmarketcap' && type === 'crypto') {
-        const cmcData = await fetchFromCoinMarketCap(upperSymbol);
-        if (cmcData) return cmcData;
+        // const cmcData = await fetchFromCoinMarketCap(upperSymbol);
+        // if (cmcData) return cmcData;
+        
+        // Stop using CoinMarketCap for live prices as requested
+        return NextResponse.json(
+          { error: 'CoinMarketCap price API is disabled' },
+          { status: 400 }
+        );
       }
 
       // Try Yahoo Finance first (FREE API - prioritize this)
@@ -134,10 +140,10 @@ export async function GET(request: NextRequest) {
       }
 
       // Try CoinMarketCap for crypto (PAID API - use if configured)
-      if (type === 'crypto') {
-        const cmcData = await fetchFromCoinMarketCap(upperSymbol);
-        if (cmcData) return cmcData;
-      }
+      // if (type === 'crypto') {
+      //   const cmcData = await fetchFromCoinMarketCap(upperSymbol);
+      //   if (cmcData) return cmcData;
+      // }
 
       // Try Binance (FREE API - high limits) - Primary source for crypto, fallback for stocks
       const binanceData = await fetchFromBinance(upperSymbol);

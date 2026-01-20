@@ -27,7 +27,6 @@ import {
   UserMultiple02Icon, 
   BankIcon, 
   Invoice01Icon, 
-  Settings02Icon,
   Building02Icon,
   Coins01Icon
 } from "hugeicons-react";
@@ -74,6 +73,7 @@ const cryptoNavigation = [
   { name: "Projections", id: "projections", icon: Telescope01Icon },
   { name: "Transactions", id: "transactions", icon: Exchange02Icon },
   { name: "Analytics", id: "analytics", icon: AnalyticsUpIcon },
+  { name: "Fear & Greed", id: "fear-and-greed", icon: ChartLineData01Icon },
 ];
 
 const stocksNavigation = [
@@ -246,17 +246,6 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
           </div>
         </div>
 
-        <div>
-            <SidebarLink
-                link={{
-                    label: "Settings",
-                    href: "/settings",
-                    icon: (
-                        <Settings02Icon className="h-5 w-5 flex-shrink-0 text-neutral-200 dark:text-neutral-200" />
-                    )
-                }}
-            />
-        </div>
       </SidebarBody>
       
       <UpgradeModal

@@ -211,17 +211,17 @@ export function AddIncomeModal({
 
           <div className="flex gap-2 pt-4">
             <button
-              type="submit"
-              className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
-            >
-              Add Income Source
-            </button>
-            <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              className="flex-1 bg-[#0D0D0D] border border-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/5 transition-colors"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-[#0D0D0D] border border-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              Add Income Source
             </button>
           </div>
         </form>

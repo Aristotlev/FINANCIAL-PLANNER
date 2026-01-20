@@ -273,7 +273,7 @@ export function AddExpenseCategoryModal({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-white text-black rounded-xl hover:bg-gray-200 transition-all font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-[0.98]"
+              className="flex-1 px-4 py-3 bg-[#0D0D0D] border border-white/20 text-white rounded-xl hover:bg-white/10 transition-all font-bold"
             >
               Add Category
             </button>

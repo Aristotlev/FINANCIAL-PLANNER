@@ -256,7 +256,7 @@ export function AddGoalModal({
           <button
             onClick={handleAdd}
             disabled={!name || !target || !current || !monthlyContribution || !apy}
-            className="flex-1 px-4 py-2 bg-[#212121] text-white rounded-lg border border-[#212121] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95"
+            className="flex-1 px-4 py-2 bg-[#0D0D0D] border border-white/20 text-white rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             Add Goal
           </button>
