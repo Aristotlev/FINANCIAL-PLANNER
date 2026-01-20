@@ -116,9 +116,6 @@ export function FearAndGreedView() {
         <div className="rounded-3xl bg-[#0D0D0D] border border-white/10 p-8 flex flex-col items-center justify-center min-h-[400px]">
            <div className="w-full flex justify-between items-start mb-4">
               <h2 className="text-xl font-bold">Fear & Greed Index</h2>
-              <button onClick={fetchData} className="p-2 hover:bg-white/5 rounded-full text-gray-400 hover:text-white transition-colors">
-                  <RefreshCw size={18} />
-              </button>
            </div>
            
            <div className="relative w-64 h-32 mt-8 mb-12">
