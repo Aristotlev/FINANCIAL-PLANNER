@@ -34,6 +34,7 @@ import { CryptoAIAnalyticsView } from '../../components/portfolio/crypto-ai-anal
 import { StockAIAnalyticsView } from '../../components/portfolio/stock-ai-analytics-view';
 import { NetworthAIAnalyticsView } from '../../components/portfolio/networth/networth-ai-analytics-view';
 import { LiquidAssetsAnalyticsView } from '../../components/portfolio/liquid-assets/liquid-assets-analytics-view';
+import { ValuablesAIAnalyticsView } from '../../components/portfolio/valuables/valuables-ai-analytics-view';
 import { CryptoProjectionsView } from '../../components/portfolio/crypto-projections-view';
 import { StockProjectionsView } from '../../components/portfolio/stock-projections-view';
 import { usePortfolioContext, CryptoHolding, StockHolding } from '../../contexts/portfolio-context';
@@ -53,6 +54,11 @@ import { CompanyLookup } from '../../components/tools/CompanyLookup';
 import { BloombergWidget } from '../../components/portfolio/bloomberg-widget';
 
 import { NetworthOverview } from '../../components/portfolio/networth-overview';
+import { ExpensesOverview } from '../../components/portfolio/expenses/expenses-overview';
+import { ValuablesOverview } from '../../components/portfolio/valuables/valuables-overview';
+import { RealEstateOverview } from '../../components/portfolio/real-estate/real-estate-overview';
+import { RealEstateAIAnalyticsView } from '../../components/portfolio/real-estate/real-estate-ai-analytics-view';
+import { ExpensesAIAnalyticsView } from '../../components/portfolio/expenses/expenses-ai-analytics-view';
 
 interface CryptoTransaction {
   id: string;
@@ -71,9 +77,24 @@ const OverviewView = ({ selectedCategory }: { selectedCategory: string }) => {
     if (selectedCategory === "Networth") {
         return <NetworthOverview />;
     }
+    
+    // If selectedCategory is "Expenses", use the new ExpensesOverview component
+    if (selectedCategory === "Expenses") {
+        return <ExpensesOverview />;
+    }
+
+    // If selectedCategory is "Valuables", use the new ValuablesOverview component
+    if (selectedCategory === "Valuables") {
+        return <ValuablesOverview />;
+    }
+
+    // If selectedCategory is "Real Estate", use the new RealEstateOverview component
+    if (selectedCategory === "Real Estate") {
+        return <RealEstateOverview />;
+    }
 
     // Default layout for other categories
-    const showAllocation = ["Crypto", "Stocks"].includes(selectedCategory);
+    const showAllocation = ["Crypto", "Stocks", "Valuables"].includes(selectedCategory);
 
     return (
     <div className="space-y-8">
@@ -109,7 +130,8 @@ const NewsView = ({ activeTab }: { activeTab: string }) => {
         'stocks': 'stocks',
         'indices': 'indices',
         'forex': 'forex',
-        'crypto': 'crypto'
+        'crypto': 'crypto',
+        'commodities': 'commodities'
     };
     
     // Default to 'general' if tab not found in map, or use the tab name itself if supported
@@ -464,7 +486,7 @@ export default function PortfolioPage() {
           icon: <Receipt className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
           onClick: () => {
               setSelectedCategory("Taxes");
-              setActiveTab("overview");
+              setActiveTab("analytics");
           }
       },
       {
@@ -517,6 +539,12 @@ export default function PortfolioPage() {
         return <GoalsView />;
       case 'ai-analysis':
         return <AIAnalyticsView />;
+      case 'activity':
+          // Placeholder for Activity/Transactions across categories if not specific view
+          if (selectedCategory === "Expenses") {
+              return <div className="text-white p-4">Expense Activity Coming Soon</div>;
+          }
+           return <div className="text-white p-4">Activity Feed</div>;
       case 'transactions':
         if (selectedCategory === "Stocks") {
             return <StockTransactionsView />;
@@ -531,6 +559,12 @@ export default function PortfolioPage() {
             return <NetworthAIAnalyticsView />;
         } else if (selectedCategory === "Liquid Assets") {
             return <LiquidAssetsAnalyticsView />;
+        } else if (selectedCategory === "Expenses") {
+            return <ExpensesAIAnalyticsView />; 
+        } else if (selectedCategory === "Valuables") {
+            return <ValuablesAIAnalyticsView />;
+        } else if (selectedCategory === "Real Estate") {
+            return <RealEstateAIAnalyticsView />;
         }
         return <OverviewView selectedCategory={selectedCategory} />;
       case 'projections':
@@ -557,6 +591,7 @@ export default function PortfolioPage() {
       case 'indices':
       case 'forex':
       case 'crypto':
+      case 'commodities':
         return <NewsView activeTab={activeTab} />;
       case 'insider-sentiment':
         return <InsiderSentimentView />;
@@ -594,10 +629,13 @@ export default function PortfolioPage() {
       const category = typeToCategory[type];
       if (category) {
           setSelectedCategory(category);
-          if (category === "Liquid Assets") {
-              setActiveTab('analytics');
-          } else {
+          
+          if (category === "Crypto" || category === "Stocks" || category === "Expenses" || category === "Valuables" || category === "Real Estate") {
               setActiveTab('overview');
+          } else {
+              // For all categories using defaultNavigation (Liquid Assets, Real Estate, Taxes)
+              // The first tab is "Analytics" (id: 'analytics')
+              setActiveTab('analytics');
           }
           
           // If we had a way to scroll to the specific item or open a modal, handle it here
@@ -638,7 +676,7 @@ export default function PortfolioPage() {
                         <div className="w-auto">
                            <BloombergWidget />
                         </div>
-                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending', 'company-lookup'].includes(activeTab) && selectedCategory !== "Networth" && (
+                    {!['news', 'stocks', 'indices', 'forex', 'crypto', 'commodities', 'holdings-news', 'calendar', 'twitter-x', 'youtube-feed', 'ipo-calendar', 'earnings-calendar', 'insider-sentiment', 'insider-transactions', 'senate-lobbying', 'usa-spending', 'company-lookup'].includes(activeTab) && selectedCategory !== "Networth" && (
                         <div className="flex items-center gap-2">
                             {selectedCategory === "Real Estate" ? (
                                 <button 

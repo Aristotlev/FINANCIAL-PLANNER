@@ -138,8 +138,8 @@ interface PricingComponentProps extends React.HTMLAttributes<HTMLDivElement> {
 /** Renders a single feature row with an icon. */
 const FeatureItem: React.FC<{ feature: Feature }> = ({ feature }) => {
   const Icon = feature.isIncluded ? Check : X;
-  // Branding: text-primary -> text-purple-400, text-muted-foreground -> text-gray-600
-  const iconColor = feature.isIncluded ? "text-purple-400" : "text-gray-600";
+  // Branding: text-primary -> text-cyan-400, text-muted-foreground -> text-gray-600
+  const iconColor = feature.isIncluded ? "text-cyan-400" : "text-gray-600";
 
   return (
     <li className="flex items-start space-x-3 py-2">
@@ -163,21 +163,6 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
 }) => {
   // Note: Removed the strict check for 3 plans to accommodate our 4 plans (Starter, Trader, Investor, Whale)
   // if (plans.length !== 3) { ... }
-
-  const annualDiscountPercent = 20; // Example: 20% discount for annual billing
-  const [expandedPlans, setExpandedPlans] = React.useState<Set<string>>(new Set());
-
-  const togglePlanFeatures = (planId: string) => {
-    setExpandedPlans(prev => {
-      const next = new Set(prev);
-      if (next.has(planId)) {
-        next.delete(planId);
-      } else {
-        next.add(planId);
-      }
-      return next;
-    });
-  };
 
   // --- 3.1. Billing Toggle ---
   const CycleToggle = (
@@ -206,8 +191,8 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
           className="px-6 py-1.5 text-sm font-medium rounded-md transition-colors relative"
         >
           Annually
-          <span className="absolute -top-3 right-0 text-[10px] font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 rounded-full whitespace-nowrap">
-            Save {annualDiscountPercent}%
+          <span className="absolute -top-3 right-0 text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 rounded-full whitespace-nowrap">
+            2 Months Free
           </span>
         </ToggleGroupItem>
       </ToggleGroup>
@@ -216,14 +201,10 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
 
   // --- 3.2. Pricing Cards & Comparison Table Data ---
 
-  // Extract all unique feature names across all plans for the comparison table header
-  const allFeatures = Array.from(new Set(plans.flatMap(p => p.features.map(f => f.name))));
-  
   // Render the list of pricing cards
   const PricingCards = (
     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 md:gap-6 lg:gap-6">
       {plans.map((plan) => {
-        const isExpanded = expandedPlans.has(plan.id);
         const isFeatured = plan.isPopular;
         const currentPrice = billingCycle === 'monthly' ? plan.priceMonthly : plan.priceAnnually;
         const originalMonthlyPrice = plan.priceMonthly;
@@ -233,15 +214,15 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
           <Card
             key={plan.id}
             className={cn(
-              "flex flex-col transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-purple-500/5",
-              isFeatured && "ring-2 ring-purple-500 shadow-xl shadow-purple-500/20 transform md:scale-[1.02] hover:scale-[1.04] z-10"
+              "flex flex-col transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-cyan-500/5",
+              isFeatured && "ring-2 ring-cyan-500 shadow-xl shadow-cyan-500/20 transform md:scale-[1.02] hover:scale-[1.04] z-10"
             )}
           >
             <CardHeader className="p-6 pb-4">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
                 {isFeatured && (
-                  <span className="text-[10px] font-bold px-2 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full uppercase tracking-wider">
+                  <span className="text-[10px] font-bold px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full uppercase tracking-wider">
                     Most Popular
                   </span>
                 )}
@@ -267,25 +248,9 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
             <CardContent className="flex-grow p-6 pt-0">
               <h4 className="text-sm font-semibold mb-2 mt-4 text-gray-300">Key Features:</h4>
               <ul className="list-none space-y-0">
-                {plan.features.slice(0, 5).map((feature) => (
+                {plan.features.map((feature) => (
                   <FeatureItem key={feature.name} feature={feature} />
                 ))}
-                
-                {isExpanded && plan.features.slice(5).map((feature) => (
-                  <FeatureItem key={feature.name} feature={feature} />
-                ))}
-
-                {plan.features.length > 5 && (
-                    <li 
-                        className="text-sm text-gray-500 mt-2 pl-7 cursor-pointer hover:text-gray-300 transition-colors select-none"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            togglePlanFeatures(plan.id);
-                        }}
-                    >
-                        {isExpanded ? "Show less" : `+ ${plan.features.length - 5} more features`}
-                    </li>
-                )}
               </ul>
             </CardContent>
             <CardFooter className="p-6 pt-0">
@@ -294,7 +259,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
                 className={cn(
                   "w-full transition-all duration-200",
                   isFeatured
-                    ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/25"
                     : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700"
                 )}
                 size="lg"
@@ -315,49 +280,294 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
       <table className="min-w-full divide-y divide-white/10">
         <thead>
           <tr className="bg-white/5">
-            <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-300 w-[200px] whitespace-nowrap">
-              Feature
-            </th>
-            {plans.map((plan) => (
-              <th
-                key={`th-${plan.id}`}
-                scope="col"
-                className={cn(
-                  "px-6 py-4 text-center text-sm font-semibold text-gray-300 whitespace-nowrap",
-                  plan.isPopular && "bg-purple-500/10 text-purple-300"
-                )}
-              >
-                {plan.name}
-              </th>
-            ))}
+            <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-300 w-[200px] whitespace-nowrap">Feature</th>
+            <th scope="col" className="px-6 py-4 text-center text-sm font-semibold text-gray-300 whitespace-nowrap">Starter</th>
+            <th scope="col" className="px-6 py-4 text-center text-sm font-semibold text-gray-300 whitespace-nowrap">Trader</th>
+            <th scope="col" className="px-6 py-4 text-center text-sm font-semibold whitespace-nowrap bg-cyan-500/10 text-cyan-300">Investor</th>
+            <th scope="col" className="px-6 py-4 text-center text-sm font-semibold text-gray-300 whitespace-nowrap">Whale</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-white/5">
-          {allFeatures.map((featureName, index) => (
-            <tr key={featureName} className={cn("transition-colors hover:bg-white/5", index % 2 === 0 ? "bg-transparent" : "bg-white/[0.02]")}>
-              <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">
-                {featureName}
-              </td>
-              {plans.map((plan) => {
-                const feature = plan.features.find(f => f.name === featureName);
-                const isIncluded = feature?.isIncluded ?? false;
-                const Icon = isIncluded ? Check : X;
-                const iconColor = isIncluded ? "text-purple-400" : "text-gray-700";
-
-                return (
-                  <td
-                    key={`${plan.id}-${featureName}`}
-                    className={cn(
-                      "px-6 py-3 text-center transition-all duration-150",
-                      plan.isPopular && "bg-purple-500/5"
-                    )}
-                  >
-                    <Icon className={cn("h-5 w-5 mx-auto", iconColor)} aria-hidden="true" />
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Multi Asset Tracking</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Real Time Updates</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Dual Currency Display</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Economic Calendar</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">10 Assets Inputs</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Charts</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Trading View Widgets</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">News Feeds &amp; Personalized Newsfeeds</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Data &amp; Analytics</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Trading Accounts</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Advanced Tax Calculator</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Bloomberg Live TV</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Community View 1 post a day</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Everything in Starter, plus:</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">20 Asset Inputs</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Advanced Charts</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Economic, IPO &amp; Earnings Calendars</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Community Access (5 posts/day)</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">1 Custom Twitter Feed</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Company Lookup</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Insider Sentiment &amp; Transactions</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Senate Lobbying &amp; Gov Contracts</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">SEC Edgar Access (Full)</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Earning Surprises</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Finance YouTube Feed</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Omni AI Assistant (10 text/voice msgs/day)</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Everything in Trader, plus:</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">50 Asset Inputs</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Community Access (10 posts/day)</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">3 Custom Twitter Feeds</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Google Maps Integration</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Priority Support</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Omni AI Assistant (50 text/voice msgs/day)</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Everything in Investor, plus:</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">100 Asset Inputs</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Community Access (20 posts/day)</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">5 Custom Twitter Feeds</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Omni AI Assistant (100 msgs/day)</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-transparent">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">VIP Support</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+          </tr>
+          <tr className="transition-colors hover:bg-white/5 bg-white/[0.02]">
+            <td className="px-6 py-3 text-left text-sm font-medium text-gray-400 whitespace-nowrap">Beta Access</td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150 bg-cyan-500/5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-5 w-5 mx-auto text-gray-700" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></td>
+            <td className="px-6 py-3 text-center transition-all duration-150"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check h-5 w-5 mx-auto text-cyan-400" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -368,7 +578,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
     <div className={cn("w-full py-12 md:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", className)} {...props}>
       <header className="text-center mb-10">
         <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-4">
-          Choose the right plan for your <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">wealth</span>.
+          Choose the right plan for your <span className="bg-gradient-to-r from-cyan-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">wealth</span>.
         </h2>
         <p className="mt-3 text-lg text-gray-400 max-w-2xl mx-auto">
           Scale as you grow.
@@ -408,14 +618,16 @@ const omniPlans: PriceTier[] = [
       { name: 'Multi Asset Tracking', isIncluded: true },
       { name: 'Real Time Updates', isIncluded: true },
       { name: 'Dual Currency Display', isIncluded: true },
+      { name: 'Economic Calendar', isIncluded: true },
+      { name: '10 Assets Inputs', isIncluded: true },
+      { name: 'Charts', isIncluded: true },
+      { name: 'Trading View Widgets', isIncluded: true },
+      { name: 'News Feeds & Personalized Newsfeeds', isIncluded: true },
+      { name: 'Data & Analytics', isIncluded: true },
       { name: 'Trading Accounts', isIncluded: true },
-      { name: 'Basic Charts', isIncluded: true },
       { name: 'Advanced Tax Calculator', isIncluded: true },
-      { name: 'Community Access', isIncluded: false },
-      { name: 'SEC Filings Access', isIncluded: false },
-      { name: 'Google Maps Integration', isIncluded: false },
-      { name: 'Omni AI Assistant', isIncluded: false },
-      { name: 'Priority Support', isIncluded: false },
+      { name: 'Bloomberg Live TV', isIncluded: true },
+      { name: 'Community View 1 post a day', isIncluded: true },
     ],
   },
   {
@@ -427,17 +639,19 @@ const omniPlans: PriceTier[] = [
     isPopular: false,
     buttonLabel: 'Choose Trader',
     features: [
-      { name: 'Multi Asset Tracking', isIncluded: true },
-      { name: 'Real Time Updates', isIncluded: true },
-      { name: 'Dual Currency Display', isIncluded: true },
-      { name: 'Trading Accounts', isIncluded: true },
+      { name: 'Everything in Starter, plus:', isIncluded: true },
+      { name: '20 Asset Inputs', isIncluded: true },
       { name: 'Advanced Charts', isIncluded: true },
-      { name: 'Advanced Tax Calculator', isIncluded: true },
-      { name: 'Community Access', isIncluded: true },
-      { name: 'SEC Filings Access', isIncluded: false },
-      { name: 'Google Maps Integration', isIncluded: true },
-      { name: 'Omni AI Assistant (10/day)', isIncluded: true },
-      { name: 'Priority Support', isIncluded: false },
+      { name: 'Economic, IPO & Earnings Calendars', isIncluded: true },
+      { name: 'Community Access (5 posts/day)', isIncluded: true },
+      { name: '1 Custom Twitter Feed', isIncluded: true },
+      { name: 'Company Lookup', isIncluded: true },
+      { name: 'Insider Sentiment & Transactions', isIncluded: true },
+      { name: 'Senate Lobbying & Gov Contracts', isIncluded: true },
+      { name: 'SEC Edgar Access (Full)', isIncluded: true },
+      { name: 'Earning Surprises', isIncluded: true },
+      { name: 'Finance YouTube Feed', isIncluded: true },
+      { name: 'Omni AI Assistant (10 text/voice msgs/day)', isIncluded: true },
     ],
   },
   {
@@ -449,17 +663,13 @@ const omniPlans: PriceTier[] = [
     isPopular: true,
     buttonLabel: 'Choose Investor',
     features: [
-      { name: 'Multi Asset Tracking', isIncluded: true },
-      { name: 'Real Time Updates', isIncluded: true },
-      { name: 'Dual Currency Display', isIncluded: true },
-      { name: 'Trading Accounts', isIncluded: true },
-      { name: 'Advanced Charts', isIncluded: true },
-      { name: 'Advanced Tax Calculator', isIncluded: true },
-      { name: 'Community Access', isIncluded: true },
-      { name: 'SEC Filings Access', isIncluded: true },
+      { name: 'Everything in Trader, plus:', isIncluded: true },
+      { name: '50 Asset Inputs', isIncluded: true },
+      { name: 'Community Access (10 posts/day)', isIncluded: true },
+      { name: '3 Custom Twitter Feeds', isIncluded: true },
       { name: 'Google Maps Integration', isIncluded: true },
-      { name: 'Omni AI Assistant (50/day)', isIncluded: true },
       { name: 'Priority Support', isIncluded: true },
+      { name: 'Omni AI Assistant (50 text/voice msgs/day)', isIncluded: true },
     ],
   },
   {
@@ -471,17 +681,11 @@ const omniPlans: PriceTier[] = [
     isPopular: false,
     buttonLabel: 'Choose Whale',
     features: [
-      { name: 'Multi Asset Tracking', isIncluded: true },
-      { name: 'Real Time Updates', isIncluded: true },
-      { name: 'Dual Currency Display', isIncluded: true },
-      { name: 'Trading Accounts', isIncluded: true },
-      { name: 'Advanced Charts', isIncluded: true },
-      { name: 'Advanced Tax Calculator', isIncluded: true },
-      { name: 'Community Access', isIncluded: true },
-      { name: 'SEC Filings Access', isIncluded: true },
-      { name: 'Google Maps Integration', isIncluded: true },
-      { name: 'Omni AI Assistant (Unlimited)', isIncluded: true },
-      { name: 'Priority Support', isIncluded: true },
+      { name: 'Everything in Investor, plus:', isIncluded: true },
+      { name: '100 Asset Inputs', isIncluded: true },
+      { name: 'Community Access (20 posts/day)', isIncluded: true },
+      { name: '5 Custom Twitter Feeds', isIncluded: true },
+      { name: 'Omni AI Assistant (100 msgs/day)', isIncluded: true },
       { name: 'VIP Support', isIncluded: true },
       { name: 'Beta Access', isIncluded: true },
     ],
@@ -524,7 +728,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-purple-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white selection:bg-cyan-500/30 overflow-x-hidden">
       <BackgroundBeams />
       
       {/* Header */}

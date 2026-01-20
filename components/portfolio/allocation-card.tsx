@@ -1,8 +1,10 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useEffect, useState } from "react";
 import { usePortfolioContext } from "../../contexts/portfolio-context";
 import { useFinancialData } from "../../contexts/financial-data-context";
+import { SupabaseDataService } from "../../lib/supabase/supabase-data-service";
 import { getBrandColor } from "../../lib/brand-colors";
 
 interface AllocationCardProps {
@@ -12,6 +14,16 @@ interface AllocationCardProps {
 export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
     const { cryptoHoldings, stockHoldings, portfolioValues } = usePortfolioContext();
     const { cash, savings, valuableItems, realEstate } = useFinancialData();
+    const [expenseCategories, setExpenseCategories] = useState<any[]>([]);
+    const [valuableItemsList, setValuableItemsList] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (selectedCategory === "Expenses") {
+             SupabaseDataService.getExpenseCategories().then(setExpenseCategories);
+        } else if (selectedCategory === "Valuables") {
+             SupabaseDataService.getValuableItems([]).then(setValuableItemsList);
+        }
+    }, [selectedCategory]);
 
     let chartData: { name: string; value: number; color: string; amount: number }[] = [];
     let totalValue = 0;
@@ -53,6 +65,30 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
         }))
         .sort((a, b) => b.value - a.value);
 
+    } else if (selectedCategory === "Valuables") {
+        totalValue = valuableItemsList.reduce((sum, item) => sum + (item.currentValue || 0), 0);
+        chartData = valuableItemsList
+            .filter(item => (item.currentValue || 0) > 0)
+            .map(item => ({
+                name: item.name,
+                value: totalValue > 0 ? parseFloat(((item.currentValue / totalValue) * 100).toFixed(2)) : 0,
+                color: item.color || '#EC4899',
+                amount: item.currentValue
+            }))
+            .sort((a, b) => b.value - a.value);
+
+    } else if (selectedCategory === "Expenses") {
+        totalValue = expenseCategories.reduce((sum, cat) => sum + cat.amount, 0);
+        chartData = expenseCategories
+            .filter(cat => cat.amount > 0)
+            .map(cat => ({
+                name: cat.name,
+                value: totalValue > 0 ? parseFloat(((cat.amount / totalValue) * 100).toFixed(2)) : 0,
+                color: cat.color || '#ef4444',
+                amount: cat.amount
+            }))
+            .sort((a, b) => b.value - a.value);
+
     } else {
         // Default to Crypto / Existing logic
         // If we want to use real crypto data:
@@ -93,7 +129,7 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
 	return (
 		<div className="rounded-3xl bg-[#0D0D0D] border border-white/10 p-8 w-full flex flex-col justify-between h-full">
 			<h3 className="text-lg font-bold text-white mb-6">
-                {selectedCategory === "Stocks" ? "Stock Allocation" : selectedCategory === "Networth" ? "Net Worth Allocation" : "Coin Allocation"}
+                {selectedCategory === "Stocks" ? "Stock Allocation" : selectedCategory === "Networth" ? "Net Worth Allocation" : selectedCategory === "Expenses" ? "Expense Allocation" : selectedCategory === "Valuables" ? "Valuables Allocation" : "Coin Allocation"}
             </h3>
 
 			<div className="flex flex-col lg:flex-row items-center gap-8 h-full">

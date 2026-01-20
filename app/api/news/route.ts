@@ -37,6 +37,14 @@ const RSS_FEEDS = {
     { name: "Google News Forex", url: "https://news.google.com/rss/search?q=forex+market&hl=en-US&gl=US&ceid=US:en", priority: 2 },
     { name: "XM Research", url: "https://www.xm.com/research/api/rss/contents/analysis", priority: 2 }
   ],
+  commodities: [
+    { name: "OilPrice.com", url: "https://oilprice.com/rss/main", priority: 1 },
+    { name: "Kitco Gold", url: "https://www.kitco.com/rss/latest/files/gold.xml", priority: 1 },
+    { name: "Investing.com Commodities", url: "https://www.investing.com/rss/commodities.rss", priority: 1 },
+    { name: "CNBC Energy", url: "https://www.cnbc.com/id/19836768/device/rss/rss.html", priority: 2 },
+    { name: "Mining.com", url: "https://www.mining.com/feed/", priority: 2 },
+    { name: "Google News Commodities", url: "https://news.google.com/rss/search?q=commodities+market&hl=en-US&gl=US&ceid=US:en", priority: 2 }
+  ],
   indices: [
     { name: "MarketWatch", url: "https://www.marketwatch.com/rss/topstories", priority: 1 },
     { name: "Investing.com", url: "https://www.investing.com/rss/news.rss", priority: 1 },
@@ -91,6 +99,12 @@ const CATEGORY_KEYWORDS = {
     'fed', 'ecb', 'boj', 'bank of england', 'interest rate', 'monetary policy',
     'currency pair', 'pip', 'spread', 'liquidity', 'volatility'
   ],
+  commodities: [
+    'gold', 'silver', 'oil', 'crude', 'brent', 'gas', 'natural gas', 'copper', 'steel', 
+    'corn', 'wheat', 'soybean', 'coffee', 'sugar', 'cocoa', 'commodity', 'commodities', 
+    'energy', 'metal', 'agriculture', 'mining', 'drill', 'futures', 'opec', 'wti',
+    'precious metal', 'bullion', 'platinum', 'palladium', 'iron ore', 'aluminum'
+  ],
   stocks: [
     'stock', 'equity', 'share', 'dividend', 'earnings', 'eps', 'revenue',
     'nasdaq', 'nyse', 'tesla', 'apple', 'microsoft', 'amazon', 'google',
@@ -140,6 +154,7 @@ function matchesCategory(item: NewsItem, targetCategory: string): boolean {
   const forexMatches = CATEGORY_KEYWORDS.forex.filter(kw => content.includes(kw)).length;
   const stocksMatches = CATEGORY_KEYWORDS.stocks.filter(kw => content.includes(kw)).length;
   const indicesMatches = CATEGORY_KEYWORDS.indices.filter(kw => content.includes(kw)).length;
+  const commoditiesMatches = CATEGORY_KEYWORDS.commodities.filter(kw => content.includes(kw)).length;
   const generalMatches = CATEGORY_KEYWORDS.general.filter(kw => content.includes(kw)).length;
   
   // Determine dominant category
@@ -148,6 +163,7 @@ function matchesCategory(item: NewsItem, targetCategory: string): boolean {
     forex: forexMatches,
     stocks: stocksMatches,
     indices: indicesMatches,
+    commodities: commoditiesMatches,
     general: generalMatches
   };
   
@@ -156,7 +172,7 @@ function matchesCategory(item: NewsItem, targetCategory: string): boolean {
   )[0];
   
   // Relaxed matching for indices/forex which can be broad
-  if (targetCategory === 'indices' || targetCategory === 'forex') {
+  if (targetCategory === 'indices' || targetCategory === 'forex' || targetCategory === 'commodities') {
       return dominantCategory === targetCategory || matchCount >= 1;
   }
 

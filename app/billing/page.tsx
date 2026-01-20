@@ -33,7 +33,7 @@ const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HT
 Button.displayName = "Button"
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-3xl border border-white/10 bg-gray-900/40 backdrop-blur-sm text-card-foreground shadow-sm", className)} {...props} />
+  <div ref={ref} className={cn("rounded-3xl border border-white/10 bg-[#0D0D0D] backdrop-blur-sm text-card-foreground shadow-sm", className)} {...props} />
 ))
 Card.displayName = "Card"
 
@@ -89,7 +89,7 @@ const ToggleGroupItem = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttr
         type="button"
         className={cn(
           "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-          "data-[state=on]:bg-gray-800 data-[state=on]:text-white data-[state=on]:shadow-sm",
+          "data-[state=on]:bg-[#212121] data-[state=on]:text-white data-[state=on]:shadow-sm",
           "text-gray-400 hover:text-gray-200",
           className
         )}
@@ -138,8 +138,8 @@ interface PricingComponentProps extends React.HTMLAttributes<HTMLDivElement> {
 /** Renders a single feature row with an icon. */
 const FeatureItem: React.FC<{ feature: Feature }> = ({ feature }) => {
   const Icon = feature.isIncluded ? Check : X;
-  // Branding: text-primary -> text-purple-400, text-muted-foreground -> text-gray-600
-  const iconColor = feature.isIncluded ? "text-purple-400" : "text-gray-600";
+  // Branding: text-primary -> text-cyan-400, text-muted-foreground -> text-gray-600
+  const iconColor = feature.isIncluded ? "text-cyan-400" : "text-neutral-600";
 
   return (
     <li className="flex items-start space-x-3 py-2">
@@ -164,21 +164,6 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
   // Note: Removed the strict check for 3 plans to accommodate our 4 plans (Starter, Trader, Investor, Whale)
   // if (plans.length !== 3) { ... }
 
-  const annualDiscountPercent = 20; // Example: 20% discount for annual billing
-  const [expandedPlans, setExpandedPlans] = React.useState<Set<string>>(new Set());
-
-  const togglePlanFeatures = (planId: string) => {
-    setExpandedPlans(prev => {
-      const next = new Set(prev);
-      if (next.has(planId)) {
-        next.delete(planId);
-      } else {
-        next.add(planId);
-      }
-      return next;
-    });
-  };
-
   // --- 3.1. Billing Toggle ---
   const CycleToggle = (
     <div className="flex justify-center mb-10 mt-2">
@@ -191,7 +176,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
           }
         }}
         aria-label="Select billing cycle"
-        className="border border-white/10 rounded-lg p-1 bg-gray-900/60"
+        className="border border-white/10 rounded-lg p-1 bg-[#0D0D0D]"
       >
         <ToggleGroupItem
           value="monthly"
@@ -206,8 +191,8 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
           className="px-6 py-1.5 text-sm font-medium rounded-md transition-colors relative"
         >
           Annually
-          <span className="absolute -top-3 right-0 text-[10px] font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 rounded-full whitespace-nowrap">
-            Save {annualDiscountPercent}%
+          <span className="absolute -top-3 right-0 text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 rounded-full whitespace-nowrap">
+            2 Months Free
           </span>
         </ToggleGroupItem>
       </ToggleGroup>
@@ -223,7 +208,6 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
   const PricingCards = (
     <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 md:gap-6 lg:gap-6">
       {plans.map((plan) => {
-        const isExpanded = expandedPlans.has(plan.id);
         const isFeatured = plan.isPopular;
         const currentPrice = billingCycle === 'monthly' ? plan.priceMonthly : plan.priceAnnually;
         const originalMonthlyPrice = plan.priceMonthly;
@@ -233,15 +217,15 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
           <Card
             key={plan.id}
             className={cn(
-              "flex flex-col transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-purple-500/5",
-              isFeatured && "ring-2 ring-purple-500 shadow-xl shadow-purple-500/20 transform md:scale-[1.02] hover:scale-[1.04] z-10"
+              "flex flex-col transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-cyan-500/5",
+              isFeatured && "ring-2 ring-cyan-500 shadow-xl shadow-cyan-500/20 transform md:scale-[1.02] hover:scale-[1.04] z-10"
             )}
           >
             <CardHeader className="p-6 pb-4">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
                 {isFeatured && (
-                  <span className="text-[10px] font-bold px-2 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full uppercase tracking-wider">
+                  <span className="text-[10px] font-bold px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full uppercase tracking-wider">
                     Most Popular
                   </span>
                 )}
@@ -267,25 +251,9 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
             <CardContent className="flex-grow p-6 pt-0">
               <h4 className="text-sm font-semibold mb-2 mt-4 text-gray-300">Key Features:</h4>
               <ul className="list-none space-y-0">
-                {plan.features.slice(0, 5).map((feature) => (
+                {plan.features.map((feature) => (
                   <FeatureItem key={feature.name} feature={feature} />
                 ))}
-                
-                {isExpanded && plan.features.slice(5).map((feature) => (
-                  <FeatureItem key={feature.name} feature={feature} />
-                ))}
-
-                {plan.features.length > 5 && (
-                    <li 
-                        className="text-sm text-gray-500 mt-2 pl-7 cursor-pointer hover:text-gray-300 transition-colors select-none"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            togglePlanFeatures(plan.id);
-                        }}
-                    >
-                        {isExpanded ? "Show less" : `+ ${plan.features.length - 5} more features`}
-                    </li>
-                )}
               </ul>
             </CardContent>
             <CardFooter className="p-6 pt-0">
@@ -294,8 +262,8 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
                 className={cn(
                   "w-full transition-all duration-200",
                   isFeatured
-                    ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25"
-                    : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/25"
+                    : "bg-[#212121] text-white hover:bg-[#333] border border-[#212121]"
                 )}
                 size="lg"
                 aria-label={`Select ${plan.name} plan for ${currentPrice} ${priceSuffix}`}
@@ -311,7 +279,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
 
   // --- 3.3. Comparison Table (Mobile hidden, Tablet/Desktop visible) ---
   const ComparisonTable = (
-    <div className="mt-16 hidden md:block border border-white/10 rounded-2xl overflow-hidden shadow-sm bg-gray-900/20 backdrop-blur-sm">
+    <div className="mt-16 hidden md:block border border-white/10 rounded-2xl overflow-hidden shadow-sm bg-[#0D0D0D] backdrop-blur-sm">
       <table className="min-w-full divide-y divide-white/10">
         <thead>
           <tr className="bg-white/5">
@@ -324,7 +292,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
                 scope="col"
                 className={cn(
                   "px-6 py-4 text-center text-sm font-semibold text-gray-300 whitespace-nowrap",
-                  plan.isPopular && "bg-purple-500/10 text-purple-300"
+                  plan.isPopular && "bg-cyan-500/10 text-cyan-300"
                 )}
               >
                 {plan.name}
@@ -342,14 +310,14 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
                 const feature = plan.features.find(f => f.name === featureName);
                 const isIncluded = feature?.isIncluded ?? false;
                 const Icon = isIncluded ? Check : X;
-                const iconColor = isIncluded ? "text-purple-400" : "text-gray-700";
+                const iconColor = isIncluded ? "text-cyan-400" : "text-gray-700";
 
                 return (
                   <td
                     key={`${plan.id}-${featureName}`}
                     className={cn(
                       "px-6 py-3 text-center transition-all duration-150",
-                      plan.isPopular && "bg-purple-500/5"
+                      plan.isPopular && "bg-cyan-500/5"
                     )}
                   >
                     <Icon className={cn("h-5 w-5 mx-auto", iconColor)} aria-hidden="true" />
@@ -368,7 +336,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({
     <div className={cn("w-full py-12 md:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", className)} {...props}>
       <header className="text-center mb-10">
         <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-4">
-          Choose the right plan for your <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">wealth</span>.
+          Choose the right plan for your <span className="bg-gradient-to-r from-cyan-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">wealth</span>.
         </h2>
         <p className="mt-3 text-lg text-gray-400 max-w-2xl mx-auto">
           Scale as you grow.
@@ -408,12 +376,16 @@ const omniPlans: PriceTier[] = [
       { name: 'Multi Asset Tracking', isIncluded: true },
       { name: 'Real Time Updates', isIncluded: true },
       { name: 'Dual Currency Display', isIncluded: true },
+      { name: 'Economic Calendar', isIncluded: true },
+      { name: '10 Assets Inputs', isIncluded: true },
+      { name: 'Charts', isIncluded: true },
+      { name: 'Trading View Widgets', isIncluded: true },
+      { name: 'News Feeds & Personalized Newsfeeds', isIncluded: true },
+      { name: 'Data & Analytics', isIncluded: true },
       { name: 'Trading Accounts', isIncluded: true },
-      { name: 'Basic Charts', isIncluded: true },
       { name: 'Advanced Tax Calculator', isIncluded: true },
-      { name: 'Google Maps Integration', isIncluded: false },
-      { name: 'Omni AI Assistant', isIncluded: false },
-      { name: 'Priority Support', isIncluded: false },
+      { name: 'Bloomberg Live TV', isIncluded: true },
+      { name: 'Community View 1 post a day', isIncluded: true },
     ],
   },
   {
@@ -425,15 +397,19 @@ const omniPlans: PriceTier[] = [
     isPopular: false,
     buttonLabel: 'Choose Trader',
     features: [
-      { name: 'Multi Asset Tracking', isIncluded: true },
-      { name: 'Real Time Updates', isIncluded: true },
-      { name: 'Dual Currency Display', isIncluded: true },
-      { name: 'Trading Accounts', isIncluded: true },
+      { name: 'Everything in Starter, plus:', isIncluded: true },
+      { name: '20 Asset Inputs', isIncluded: true },
       { name: 'Advanced Charts', isIncluded: true },
-      { name: 'Advanced Tax Calculator', isIncluded: true },
-      { name: 'Google Maps Integration', isIncluded: true },
-      { name: 'Omni AI Assistant (10/day)', isIncluded: true },
-      { name: 'Priority Support', isIncluded: false },
+      { name: 'Economic, IPO & Earnings Calendars', isIncluded: true },
+      { name: 'Community Access (5 posts/day)', isIncluded: true },
+      { name: '1 Custom Twitter Feed', isIncluded: true },
+      { name: 'Company Lookup', isIncluded: true },
+      { name: 'Insider Sentiment & Transactions', isIncluded: true },
+      { name: 'Senate Lobbying & Gov Contracts', isIncluded: true },
+      { name: 'SEC Edgar Access (Full)', isIncluded: true },
+      { name: 'Earning Surprises', isIncluded: true },
+      { name: 'Finance YouTube Feed', isIncluded: true },
+      { name: 'Omni AI Assistant (10 text/voice msgs/day)', isIncluded: true },
     ],
   },
   {
@@ -445,15 +421,13 @@ const omniPlans: PriceTier[] = [
     isPopular: true,
     buttonLabel: 'Choose Investor',
     features: [
-      { name: 'Multi Asset Tracking', isIncluded: true },
-      { name: 'Real Time Updates', isIncluded: true },
-      { name: 'Dual Currency Display', isIncluded: true },
-      { name: 'Trading Accounts', isIncluded: true },
-      { name: 'Advanced Charts', isIncluded: true },
-      { name: 'Advanced Tax Calculator', isIncluded: true },
+      { name: 'Everything in Trader, plus:', isIncluded: true },
+      { name: '50 Asset Inputs', isIncluded: true },
+      { name: 'Community Access (10 posts/day)', isIncluded: true },
+      { name: '3 Custom Twitter Feeds', isIncluded: true },
       { name: 'Google Maps Integration', isIncluded: true },
-      { name: 'Omni AI Assistant (50/day)', isIncluded: true },
       { name: 'Priority Support', isIncluded: true },
+      { name: 'Omni AI Assistant (50 text/voice msgs/day)', isIncluded: true },
     ],
   },
   {
@@ -465,15 +439,11 @@ const omniPlans: PriceTier[] = [
     isPopular: false,
     buttonLabel: 'Choose Whale',
     features: [
-      { name: 'Multi Asset Tracking', isIncluded: true },
-      { name: 'Real Time Updates', isIncluded: true },
-      { name: 'Dual Currency Display', isIncluded: true },
-      { name: 'Trading Accounts', isIncluded: true },
-      { name: 'Advanced Charts', isIncluded: true },
-      { name: 'Advanced Tax Calculator', isIncluded: true },
-      { name: 'Google Maps Integration', isIncluded: true },
-      { name: 'Omni AI Assistant (Unlimited)', isIncluded: true },
-      { name: 'Priority Support', isIncluded: true },
+      { name: 'Everything in Investor, plus:', isIncluded: true },
+      { name: '100 Asset Inputs', isIncluded: true },
+      { name: 'Community Access (20 posts/day)', isIncluded: true },
+      { name: '5 Custom Twitter Feeds', isIncluded: true },
+      { name: 'Omni AI Assistant (100 msgs/day)', isIncluded: true },
       { name: 'VIP Support', isIncluded: true },
       { name: 'Beta Access', isIncluded: true },
     ],
@@ -516,7 +486,7 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-purple-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white selection:bg-cyan-500/30 overflow-x-hidden">
       <BackgroundBeams />
       
       {/* Header */}
