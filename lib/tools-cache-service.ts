@@ -6,16 +6,47 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { 
-  FinnhubInsiderTransaction, 
-  FinnhubLobbyingActivity, 
-  FinnhubUSASpendingActivity 
-} from './api/finnhub-api';
 
-// Types derived from Finnhub API types
-export type InsiderTransaction = FinnhubInsiderTransaction;
-export type LobbyingActivity = FinnhubLobbyingActivity;
-export type USASpendingActivity = FinnhubUSASpendingActivity;
+// Proprietary types (formerly derived from third-party APIs, now standalone)
+export interface InsiderTransaction {
+  symbol: string;
+  name: string;
+  share: number;
+  change: number;
+  filingDate: string;
+  transactionDate: string;
+  transactionCode: string;
+  transactionPrice: number;
+}
+
+export interface LobbyingActivity {
+  symbol: string;
+  name: string;
+  clientId: string | null;
+  registrantId: string | null;
+  senateId: string;
+  houseRegistrantId: string;
+  year: number;
+  period: string | null;
+  income: number;
+  expenses: number;
+  description: string | null;
+  documentUrl: string | null;
+  postedName: string | null;
+  date: string | null;
+}
+
+export interface USASpendingActivity {
+  symbol: string;
+  recipientName: string;
+  totalValue: number;
+  actionDate: string;
+  performanceStartDate: string;
+  performanceEndDate: string;
+  awardingAgencyName: string;
+  awardDescription: string;
+  permalink: string;
+}
 
 export interface CacheStatus {
   cache_name: string;
@@ -40,7 +71,7 @@ class ToolsCacheService {
       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       
       if (!url || !key) {
-        throw new Error('Supabase environment variables not configured');
+        throw new Error('Supabase environment variables not configured. Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set.');
       }
       
       this._supabase = createClient(url, key);

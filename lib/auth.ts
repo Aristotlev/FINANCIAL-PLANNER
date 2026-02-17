@@ -71,8 +71,8 @@ export const auth = betterAuth({
 
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!.trim(),
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!.trim(),
+      clientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
+      clientSecret: (process.env.GOOGLE_CLIENT_SECRET || "").trim(),
       // Explicitly set redirectURI to ensure it matches exactly what Google expects
       redirectURI: process.env.NODE_ENV === "production" 
         ? "https://www.omnifolio.app/api/auth/callback/google"
