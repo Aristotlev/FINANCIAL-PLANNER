@@ -258,7 +258,7 @@ export async function deletePost(postId: string) {
   }
 }
 
-export async function createComment(postId: string, content: string) {
+export async function createComment(postId: string, content: string): Promise<{ success: true; comment: any } | { success: false; error: string }> {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
