@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:finnhub": "node test-finnhub.js",
     "build:cloudflare": "opennextjs-cloudflare build",
     "preview:cloudflare": "opennextjs-cloudflare build && wrangler pages dev",
     "deploy": "opennextjs-cloudflare build && wrangler pages deploy"

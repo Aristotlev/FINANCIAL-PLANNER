@@ -35,7 +35,6 @@
     'extension context invalidated',
     'message port closed',
     'Receiving end does not exist',
-    'Finnhub WebSocket error',
     'TypeError: a.supabase.from(...).select(...).eq is not a function',
     'TronWeb',
     'TronLink',

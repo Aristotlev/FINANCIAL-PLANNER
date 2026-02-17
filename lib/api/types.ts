@@ -118,49 +118,6 @@ export interface VantagePosition {
   comment?: string;
 }
 
-// ==================== FINNHUB TYPES ====================
-
-export interface FinnhubCredentials {
-  apiKey: string;
-  webhookSecret?: string;
-}
-
-export interface FinnhubQuote {
-  c: number;  // Current price
-  d: number;  // Change
-  dp: number; // Percent change
-  h: number;  // High price of the day
-  l: number;  // Low price of the day
-  o: number;  // Open price of the day
-  pc: number; // Previous close price
-  t: number;  // Timestamp
-}
-
-export interface FinnhubCandle {
-  c: number[];  // Close prices
-  h: number[];  // High prices
-  l: number[];  // Low prices
-  o: number[];  // Open prices
-  s: string;    // Status
-  t: number[];  // Timestamps
-  v: number[];  // Volume data
-}
-
-export interface FinnhubCompanyProfile {
-  country: string;
-  currency: string;
-  exchange: string;
-  ipo: string;
-  marketCapitalization: number;
-  name: string;
-  phone: string;
-  shareOutstanding: number;
-  ticker: string;
-  weburl: string;
-  logo: string;
-  finnhubIndustry: string;
-}
-
 // ==================== UNIFIED PORTFOLIO TYPES ====================
 
 /**
@@ -168,7 +125,7 @@ export interface FinnhubCompanyProfile {
  */
 export interface UnifiedAccount {
   id: string;
-  platform: 'binance' | 'revolut' | 'vantage' | 'finnhub';
+  platform: 'binance' | 'revolut' | 'vantage';
   type: 'crypto' | 'fiat' | 'trading' | 'stock';
   name: string;
   balance: number;
@@ -185,7 +142,7 @@ export interface UnifiedAccount {
  */
 export interface UnifiedPosition {
   id: string;
-  platform: 'binance' | 'revolut' | 'vantage' | 'finnhub';
+  platform: 'binance' | 'revolut' | 'vantage';
   symbol: string;
   name: string;
   type: 'crypto' | 'forex' | 'cfd' | 'stock' | 'commodity';
@@ -209,7 +166,7 @@ export interface UnifiedPosition {
  */
 export interface UnifiedTransaction {
   id: string;
-  platform: 'binance' | 'revolut' | 'vantage' | 'finnhub';
+  platform: 'binance' | 'revolut' | 'vantage';
   type: 'buy' | 'sell' | 'transfer' | 'deposit' | 'withdrawal' | 'exchange' | 'fee';
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
   symbol?: string;
@@ -275,7 +232,7 @@ export interface MarketPrice {
   volume24h?: number;
   marketCap?: number;
   lastUpdated: string;
-  source: 'binance' | 'revolut' | 'vantage' | 'finnhub' | 'other';
+  source: 'binance' | 'revolut' | 'vantage' | 'other';
 }
 
 // ==================== API REQUEST/RESPONSE TYPES ====================
@@ -320,10 +277,6 @@ export interface StoredCredentials {
     apiKey: string;
     accountId: string;
     environment: 'live' | 'demo';
-  };
-  finnhub?: {
-    apiKey: string;
-    webhookSecret?: string;
   };
 }
 

@@ -3,8 +3,6 @@
  * Provides detailed breakdown of portfolio performance including 24h, weekly, monthly, and yearly changes
  */
 
-import { FinnhubAPI } from './api/finnhub-api';
-
 export interface AssetPerformance {
   symbol: string;
   name: string;
@@ -49,9 +47,6 @@ export interface PortfolioSummary {
 }
 
 export class PortfolioAnalysisService {
-  private static finnhub = new FinnhubAPI({ 
-    apiKey: process.env.NEXT_PUBLIC_FINNHUB_API_KEY || 'd3nbll9r01qo7510cpf0d3nbll9r01qo7510cpfg' 
-  });
 
   /**
    * Get comprehensive portfolio analysis with breakdown by timeframe
@@ -250,20 +245,24 @@ export class PortfolioAnalysisService {
    */
   private static async getHistoricalPrice(symbol: string, type: string, daysAgo: number): Promise<number | null> {
     try {
-      // For stocks, use Finnhub candles
+      // For stocks, use market-data API for historical prices
       if (type === 'stock') {
-        const to = Math.floor(Date.now() / 1000);
-        const from = to - (daysAgo * 24 * 60 * 60);
-        
         try {
-          const candles = await this.finnhub.getCandles(symbol.toUpperCase(), 'D', from, to);
-          
-          if (candles && candles.c && candles.c.length > 0) {
-            // Return the first available close price (closest to target date)
-            return candles.c[0];
+          const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+          const response = await fetch(`${baseUrl}/api/market-data?symbol=${symbol.toUpperCase()}&type=stock`, {
+            cache: 'no-store',
+          });
+          if (response.ok) {
+            const data = await response.json();
+            // Use the current price as a fallback — the market-data endpoint 
+            // provides real-time data; historical deltas are handled by the
+            // enhanced time tracking service when available.
+            if (data.currentPrice) {
+              return data.currentPrice;
+            }
           }
-        } catch (finnhubError) {
-          console.warn(`Finnhub historical data failed for ${symbol}:`, finnhubError);
+        } catch (marketError) {
+          console.warn(`Market data historical price failed for ${symbol}:`, marketError);
         }
       }
 

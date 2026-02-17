@@ -241,7 +241,7 @@ setTimeout(() => controller.abort(), 8000); // 8 second timeout
 2. **WebSocket Updates**: Use WebSocket for real-time prices
 3. **Database Caching**: Store prices in Supabase for longer retention
 4. **Price Snapshots**: Use time tracking system for historical data
-5. **Multiple Sources**: Fallback to alternative APIs (CoinMarketCap, etc.)
+5. **Multiple Sources**: Fallback to alternative APIs (Binance, Gate.io, CoinGecko, etc.)
 
 ---
 

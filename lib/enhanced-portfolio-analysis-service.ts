@@ -5,7 +5,6 @@
  */
 
 import { EnhancedTimeTrackingService, EnhancedTimeframeChanges } from './enhanced-time-tracking-service';
-import { FinnhubAPI } from './api/finnhub-api';
 
 export interface EnhancedAssetPerformance {
   symbol: string;
@@ -43,9 +42,6 @@ export interface EnhancedPortfolioSummary {
 }
 
 export class EnhancedPortfolioAnalysisService {
-  private static finnhub = new FinnhubAPI({ 
-    apiKey: process.env.NEXT_PUBLIC_FINNHUB_API_KEY || 'd3nbll9r01qo7510cpf0d3nbll9r01qo7510cpfg' 
-  });
 
   /**
    * Get comprehensive portfolio analysis with all timeframes

@@ -68,7 +68,6 @@ const ALLOWED_TABLES: DataTable[] = [
 const SENSITIVE_FIELDS = [
   'openai_api_key',
   'gemini_api_key',
-  'finnhub_api_key',
   'alpha_vantage_api_key',
   'replicate_api_token',
   'stripe_customer_id',

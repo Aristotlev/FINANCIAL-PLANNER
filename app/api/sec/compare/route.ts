@@ -1,10 +1,14 @@
 /**
  * SEC Filing Comparison/Diff API
+ *
+ * DB-first for CIK resolution and filing lookups.
+ * Text extraction still hits SEC directly (immutable filings).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSECEdgarClient, SECFiling } from '@/lib/api/sec-edgar-api';
 import { createSECTextExtractor } from '@/lib/sec/sec-text-extractor';
+import { secCacheService } from '@/lib/sec-cache-service';
 import { withRateLimit, RateLimitPresets } from '@/lib/rate-limiter';
 
 const secApi = createSECEdgarClient();
@@ -45,7 +49,9 @@ export async function POST(request: NextRequest) {
 
       let resolvedCik = companyCik;
       if (ticker) {
-        const company = await secApi.getCIKByTicker(ticker);
+        // DB-first CIK lookup
+        const cached = await secCacheService.getCompanyByTicker(ticker);
+        const company = cached.data || await secApi.getCIKByTicker(ticker);
         if (!company) {
           return NextResponse.json(
             { error: `Company not found: ${ticker}` },
@@ -71,7 +77,12 @@ export async function POST(request: NextRequest) {
       let companyInfo = null;
 
       if (ticker) {
-        companyInfo = await secApi.getCIKByTicker(ticker);
+        // DB-first CIK lookup
+        const cached = await secCacheService.getCompanyByTicker(ticker);
+        companyInfo = cached.data;
+        if (!companyInfo) {
+          companyInfo = await secApi.getCIKByTicker(ticker);
+        }
         if (!companyInfo) {
           return NextResponse.json(
             { error: `Company not found: ${ticker}` },

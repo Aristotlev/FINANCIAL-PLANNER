@@ -1,75 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { apiGateway, CacheTTL } from '@/lib/api/external-api-gateway';
 
-// In-memory cache with request deduplication
-const cache = new Map<string, { data: any; timestamp: number }>();
-const pendingRequests = new Map<string, Promise<any>>();
-const CACHE_DURATION = 600000; // 10 minutes
-const STALE_CACHE_DURATION = 3600000; // 1 hour
+// ── Shared Yahoo Finance fetch helper (via gateway) ───────────────────
 
-function getCachedData(key: string, allowStale: boolean = false) {
-  const cached = cache.get(key);
-  if (!cached) return null;
-  
-  if (Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.data;
-  }
-  
-  if (allowStale && Date.now() - cached.timestamp < STALE_CACHE_DURATION) {
-    return cached.data;
-  }
-  
-  return null;
-}
-
-function setCachedData(key: string, data: any) {
-  cache.set(key, { data, timestamp: Date.now() });
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const symbol = searchParams.get('symbol');
-
-    if (!symbol) {
-      return NextResponse.json(
-        { error: 'Symbol parameter is required' },
-        { status: 400 }
-      );
-    }
-
-    const cacheKey = `yahoo:${symbol}`;
-    
-    // Check cache first
-    const cachedData = getCachedData(cacheKey);
-    if (cachedData) {
-      console.log(`✅ Returning cached Yahoo Finance data for ${symbol}`);
-      return NextResponse.json(cachedData, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600',
-          'X-Cache': 'HIT',
-        },
-      });
-    }
-    
-    // Check for pending request (deduplication)
-    const pendingRequest = pendingRequests.get(cacheKey);
-    if (pendingRequest) {
-      console.log(`⚡ Deduplicating Yahoo Finance request for ${symbol}`);
-      try {
-        const result = await pendingRequest;
-        return NextResponse.json(result, {
-          headers: {
-            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600',
-            'X-Cache': 'DEDUPLICATED',
-          },
-        });
-      } catch (error) {
-        console.warn('Deduplication failed, fetching normally');
-      }
-    }
-
-    // Fetch from Yahoo Finance API
-    const fetchPromise = (async () => {
+async function fetchYahooQuoteViaGateway(symbol: string): Promise<{
+  symbol: string;
+  price: number;
+  change24h: number;
+  changePercent24h: number;
+  lastUpdated: number;
+  meta: {
+    currency: string;
+    exchangeName: string;
+    instrumentType: string;
+    regularMarketTime: number;
+  };
+}> {
+  const result = await apiGateway.cachedFetch(
+    'yahoo-finance',
+    `chart:${symbol.toUpperCase()}`,
+    async () => {
       const response = await fetch(
         `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`,
         {
@@ -84,21 +34,18 @@ export async function GET(request: NextRequest) {
       }
 
       const data = await response.json();
-
-      // Validate response structure
       if (!data.chart?.result?.[0]) {
         throw new Error('Invalid response from Yahoo Finance');
       }
 
-      const result = data.chart.result[0];
-      const meta = result.meta;
-      
+      const chartResult = data.chart.result[0];
+      const meta = chartResult.meta;
+
       const currentPrice = meta.regularMarketPrice || meta.previousClose;
       const previousClose = meta.previousClose;
       const change = currentPrice - previousClose;
       const changePercent = (change / previousClose) * 100;
 
-      // Return formatted data
       return {
         symbol: symbol.toUpperCase(),
         price: currentPrice,
@@ -110,38 +57,43 @@ export async function GET(request: NextRequest) {
           exchangeName: meta.exchangeName,
           instrumentType: meta.instrumentType,
           regularMarketTime: meta.regularMarketTime,
-        }
+        },
       };
-    })();
-    
-    // Store in pending requests
-    pendingRequests.set(cacheKey, fetchPromise);
-    
-    const responseData = await fetchPromise;
-    pendingRequests.delete(cacheKey);
-    
-    // Cache the result
-    setCachedData(cacheKey, responseData);
-    
+    },
+    CacheTTL.YAHOO_QUOTE,
+  );
+
+  return result.data;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const symbol = searchParams.get('symbol');
+
+    if (!symbol) {
+      return NextResponse.json(
+        { error: 'Symbol parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    const responseData = await fetchYahooQuoteViaGateway(symbol);
+
     return NextResponse.json(responseData, {
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600',
-        'X-Cache': 'MISS',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'X-Cache': 'GATEWAY',
       },
     });
 
   } catch (error) {
     console.error('Yahoo Finance API error:', error);
-    
-    // Clean up pending request
-    const searchParams = request.nextUrl.searchParams;
-    const symbol = searchParams.get('symbol');
+
+    // Try to return stale cached data from gateway
+    const symbol = request.nextUrl.searchParams.get('symbol');
     if (symbol) {
-      const cacheKey = `yahoo:${symbol}`;
-      pendingRequests.delete(cacheKey);
-      
-      // Try to return stale cached data
-      const staleData = getCachedData(cacheKey, true);
+      const staleData = apiGateway.getCached('yahoo-finance', `chart:${symbol.toUpperCase()}`);
       if (staleData) {
         console.log(`📦 Returning stale Yahoo data for ${symbol} after error`);
         return NextResponse.json(staleData, {
@@ -152,7 +104,7 @@ export async function GET(request: NextRequest) {
         });
       }
     }
-    
+
     return NextResponse.json(
       { 
         error: 'Failed to fetch stock price',
@@ -204,7 +156,7 @@ function getStockFallbackPrice(symbol: string): { price: number; change: number;
   };
 }
 
-// Support POST for batch requests
+// Support POST for batch requests — now fully rate-limited and cached via gateway
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -217,37 +169,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch all symbols in parallel
-    const promises = symbols.map(async (symbol) => {
+    // Cap batch size to prevent abuse
+    const cappedSymbols = symbols.slice(0, 50);
+
+    // Fetch all symbols through gateway (handles rate limiting, caching, dedup)
+    // Gateway enforces 2 req/s for yahoo-finance, so large batches will
+    // be naturally throttled rather than hammering Yahoo with 50+ simultaneous calls
+    const promises = cappedSymbols.map(async (symbol) => {
       try {
-        const response = await fetch(
-          `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}`,
-          {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (compatible; PriceTracker/1.0)',
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch ${symbol}`);
-        }
-
-        const data = await response.json();
-        const result = data.chart.result[0];
-        const meta = result.meta;
-        
-        const currentPrice = meta.regularMarketPrice || meta.previousClose;
-        const previousClose = meta.previousClose;
-        const change = currentPrice - previousClose;
-        const changePercent = (change / previousClose) * 100;
-
+        const data = await fetchYahooQuoteViaGateway(symbol);
         return {
-          symbol: symbol.toUpperCase(),
-          price: currentPrice,
-          change24h: change,
-          changePercent24h: changePercent,
-          lastUpdated: Date.now(),
+          ...data,
           success: true,
         };
       } catch (error) {

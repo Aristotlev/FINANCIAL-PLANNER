@@ -98,7 +98,7 @@ class EnhancedMarketService {
   private readonly SYMBOLS_CACHE_DURATION = 86400000; // 24 hours for crypto symbols list
 
   /**
-   * Fetch all cryptocurrency symbols from CoinMarketCap API
+   * Fetch all cryptocurrency symbols from CoinGecko API
    * This provides a complete map of all available cryptocurrencies
    */
   async fetchAllCryptoSymbols(): Promise<CryptoSymbol[]> {
@@ -109,21 +109,12 @@ class EnhancedMarketService {
         return this.cryptoSymbolsCache;
       }
 
-      const apiKey = process.env.NEXT_PUBLIC_CMC_API_KEY;
-      if (!apiKey) {
-        console.warn('CoinMarketCap API key not configured');
-        return [];
-      }
-
-      console.log('🔍 Fetching cryptocurrency map from CoinMarketCap...');
+      console.log('🔍 Fetching cryptocurrency list from CoinGecko...');
       
-      // CoinMarketCap cryptocurrency/map endpoint
-      // Returns all active cryptocurrencies with their symbols and metadata
       const response = await fetch(
-        'https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?listing_status=active&limit=5000',
+        'https://api.coingecko.com/api/v3/coins/list?include_platform=true',
         {
           headers: {
-            'X-CMC_PRO_API_KEY': apiKey,
             'Accept': 'application/json'
           },
           cache: 'no-store'
@@ -131,31 +122,31 @@ class EnhancedMarketService {
       );
 
       if (!response.ok) {
-        throw new Error(`CoinMarketCap API error: ${response.status}`);
+        throw new Error(`CoinGecko API error: ${response.status}`);
       }
 
       const data = await response.json();
       
-      if (!data.data || !Array.isArray(data.data)) {
-        console.warn('Invalid response from CoinMarketCap map endpoint');
+      if (!Array.isArray(data)) {
+        console.warn('Invalid response from CoinGecko coins list');
         return [];
       }
 
-      const cryptoSymbols: CryptoSymbol[] = data.data.map((crypto: any) => ({
-        id: crypto.id,
-        symbol: crypto.symbol,
-        name: crypto.name,
-        slug: crypto.slug,
-        rank: crypto.rank,
-        isActive: crypto.is_active === 1,
-        firstHistoricalData: crypto.first_historical_data,
-        lastHistoricalData: crypto.last_historical_data,
-        platform: crypto.platform ? {
-          id: crypto.platform.id,
-          name: crypto.platform.name,
-          symbol: crypto.platform.symbol,
-          slug: crypto.platform.slug,
-          token_address: crypto.platform.token_address
+      const cryptoSymbols: CryptoSymbol[] = data.map((crypto: any, index: number) => ({
+        id: index + 1,
+        symbol: (crypto.symbol || '').toUpperCase(),
+        name: crypto.name || '',
+        slug: crypto.id || '',
+        rank: index + 1,
+        isActive: true,
+        firstHistoricalData: '',
+        lastHistoricalData: '',
+        platform: crypto.platforms && Object.keys(crypto.platforms).length > 0 ? {
+          id: 0,
+          name: Object.keys(crypto.platforms)[0] || '',
+          symbol: '',
+          slug: Object.keys(crypto.platforms)[0] || '',
+          token_address: Object.values(crypto.platforms)[0] as string || ''
         } : undefined
       }));
 
@@ -163,10 +154,10 @@ class EnhancedMarketService {
       this.cryptoSymbolsCache = cryptoSymbols;
       this.cryptoSymbolsCacheTime = Date.now();
 
-      console.log(`✅ Successfully fetched ${cryptoSymbols.length} cryptocurrency symbols from CoinMarketCap`);
+      console.log(`✅ Successfully fetched ${cryptoSymbols.length} cryptocurrency symbols from CoinGecko`);
       return cryptoSymbols;
     } catch (error) {
-      console.error('Error fetching crypto symbols from CoinMarketCap:', error);
+      console.error('Error fetching crypto symbols from CoinGecko:', error);
       return [];
     }
   }
@@ -196,58 +187,7 @@ class EnhancedMarketService {
   }
 
   /**
-   * Fetch cryptocurrency data from CoinMarketCap API via Next.js API route
-   * This avoids CORS issues by routing through our backend
-   */
-  private async fetchFromCoinMarketCap(symbol: string): Promise<MarketAssetData | null> {
-    try {
-      const upperSymbol = symbol.toUpperCase();
-      
-      // Use our API route instead of direct CoinMarketCap call
-      const response = await fetch(
-        `/api/market-data?symbol=${upperSymbol}&type=crypto&source=coinmarketcap`,
-        {
-          cache: 'no-store'
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Market Data API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data || !data.currentPrice) {
-        console.warn(`No CoinMarketCap data for ${upperSymbol}`);
-        return null;
-      }
-
-      const assetInfo = getAssetInfo(upperSymbol);
-      const assetData: MarketAssetData = {
-        symbol: upperSymbol,
-        name: assetInfo?.name || data.name || upperSymbol,
-        currentPrice: data.currentPrice,
-        change24h: data.change24h || 0,
-        changePercent24h: data.changePercent24h || 0,
-        color: getAssetColor(upperSymbol, 'crypto'),
-        type: 'crypto',
-        lastUpdated: data.lastUpdated || Date.now(),
-        marketCap: data.marketCap,
-        volume: data.volume,
-        high24h: data.high24h,
-        low24h: data.low24h,
-        dataSource: data.dataSource || 'CoinMarketCap Pro API'
-      };
-
-      return assetData;
-    } catch (error) {
-      console.warn(`CoinMarketCap failed for ${symbol}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Fetch current cryptocurrency prices from CoinGecko
+   * Fetch current cryptocurrency prices from CoinGecko (via market-data API route)
    */
   async fetchCryptoPrice(symbol: string): Promise<MarketAssetData | null> {
     try {
@@ -257,13 +197,6 @@ class EnhancedMarketService {
       return await cacheService.wrap(
         `market:price:crypto:${upperSymbol}`,
         async () => {
-          // Try CoinMarketCap first (more reliable, professional data)
-          const cmcData = await this.fetchFromCoinMarketCap(upperSymbol);
-          if (cmcData) {
-            console.log(`✅ ${upperSymbol}: Fetched from CoinMarketCap - $${cmcData.currentPrice}`);
-            return cmcData;
-          }
-
       // Map common symbols to CoinGecko IDs
       const coinId = KNOWN_CRYPTO_MAP[upperSymbol];
       if (!coinId) {
@@ -376,52 +309,6 @@ class EnhancedMarketService {
   }
 
   /**
-   * Fetch stock data from Finnhub API (Backup Source)
-   */
-  private async fetchFromFinnhub(symbol: string): Promise<MarketAssetData | null> {
-    try {
-      const upperSymbol = symbol.toUpperCase();
-      
-      // Using authenticated Finnhub API
-      const apiKey = process.env.FINNHUB_API_KEY || 'd3nbll9r01qo7510cpf0d3nbll9r01qo7510cpfg';
-      const response = await fetch(
-        `https://finnhub.io/api/v1/quote?symbol=${upperSymbol}&token=${apiKey}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) throw new Error(`Finnhub API error: ${response.status}`);
-
-      const data = await response.json();
-      
-      if (!data.c || data.c === 0) throw new Error('Invalid quote data');
-
-      const currentPrice = data.c; // Current price
-      const change = data.d; // Change
-      const changePercent = data.dp; // Percent change
-
-      const assetInfo = getAssetInfo(upperSymbol);
-      const assetData: MarketAssetData = {
-        symbol: upperSymbol,
-        name: assetInfo?.name || upperSymbol,
-        currentPrice: currentPrice,
-        change24h: change,
-        changePercent24h: changePercent,
-        color: getAssetColor(upperSymbol, 'stock'),
-        type: 'stock',
-        lastUpdated: Date.now(),
-        high24h: data.h,
-        low24h: data.l,
-        dataSource: 'Finnhub'
-      };
-
-      return assetData;
-    } catch (error) {
-      console.warn(`Finnhub failed for ${symbol}:`, error);
-      return null;
-    }
-  }
-
-  /**
    * Fetch stock data from Twelve Data API (Tertiary Source)
    */
   private async fetchFromTwelveData(symbol: string): Promise<MarketAssetData | null> {
@@ -483,14 +370,7 @@ class EnhancedMarketService {
             return assetData;
           }
 
-          // 2. Try Finnhub as backup
-          assetData = await this.fetchFromFinnhub(upperSymbol);
-          if (assetData) {
-            console.log(`✅ ${upperSymbol}: Fetched from Finnhub - $${assetData.currentPrice}`);
-            return assetData;
-          }
-
-          // 3. Try Twelve Data as last resort
+          // 2. Try Twelve Data as backup
           assetData = await this.fetchFromTwelveData(upperSymbol);
           if (assetData) {
             console.log(`✅ ${upperSymbol}: Fetched from Twelve Data - $${assetData.currentPrice}`);

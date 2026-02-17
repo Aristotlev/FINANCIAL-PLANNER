@@ -1,21 +1,29 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, TrendingUp, TrendingDown, AlertCircle, Loader2, RefreshCw, Search, ChevronLeft, ChevronRight, Star, X, Filter } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, AlertCircle, Loader2, RefreshCw, Search, ChevronLeft, ChevronRight, Star, X, Filter, ExternalLink, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFavoriteStocks } from '../../hooks/use-favorite-stocks';
 import { cn } from '../../lib/utils';
 
 interface EarningsEvent {
   date: string;
+  companyName: string;
   epsActual: number | null;
   epsEstimate: number | null;
-  hour: 'bmo' | 'amc' | 'dmh';
+  hour: string;
   quarter: number;
   revenueActual: number | null;
   revenueEstimate: number | null;
   symbol: string;
   year: number;
+  filingType: string;
+  sector: string | null;
+  industry: string | null;
+  exchange: string | null;
+  secFilingUrl: string | null;
+  country: string;
+  surprisePercent: number | null;
 }
 
 // Common company name to ticker mappings for smart search
@@ -159,10 +167,10 @@ export function EarningsCalendar() {
       const response = await fetch(url);
       const data = await response.json();
       
-      // Check for 403 / premium access error from Finnhub
+      // Check for 403 / premium access error
       if (response.status === 403) {
-        // API returned 403 - might be rate limiting or premium feature
-        console.warn('Finnhub API returned 403 - may be rate limited or premium feature');
+        // API returned 403 - might be rate limiting
+        console.warn('Earnings API returned 403 - may be rate limited');
         throw new Error('Unable to fetch earnings data. Please try again in a moment.');
       }
       
@@ -251,7 +259,20 @@ export function EarningsCalendar() {
       case 'bmo': return { label: 'Before Open', color: 'text-blue-400', bg: 'bg-blue-500/10' };
       case 'amc': return { label: 'After Close', color: 'text-purple-400', bg: 'bg-purple-500/10' };
       case 'dmh': return { label: 'During Hours', color: 'text-cyan-400', bg: 'bg-cyan-500/10' };
+      case 'unknown': return { label: 'TBD', color: 'text-gray-500', bg: 'bg-gray-500/10' };
       default: return { label: 'TBD', color: 'text-gray-400', bg: 'bg-gray-500/10' };
+    }
+  };
+
+  const getFilingTypeLabel = (filingType: string) => {
+    switch (filingType) {
+      case '8-K': return { label: '8-K', color: 'text-amber-400', bg: 'bg-amber-500/10', desc: 'Earnings Announcement' };
+      case '10-Q': return { label: '10-Q', color: 'text-green-400', bg: 'bg-green-500/10', desc: 'Quarterly Report' };
+      case '10-K': return { label: '10-K', color: 'text-blue-400', bg: 'bg-blue-500/10', desc: 'Annual Report' };
+      case '10-Q/A': return { label: '10-Q/A', color: 'text-yellow-400', bg: 'bg-yellow-500/10', desc: 'Amended Quarterly' };
+      case '10-K/A': return { label: '10-K/A', color: 'text-yellow-400', bg: 'bg-yellow-500/10', desc: 'Amended Annual' };
+      case 'estimated': return { label: 'Est.', color: 'text-gray-400', bg: 'bg-gray-500/10', desc: 'Estimated Date' };
+      default: return { label: filingType, color: 'text-gray-400', bg: 'bg-gray-500/10', desc: 'SEC Filing' };
     }
   };
 
@@ -506,11 +527,14 @@ export function EarningsCalendar() {
                                 <tr className="bg-[#141414] border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wider">
                                     <th className="px-6 py-3 font-medium w-10"></th>
                                     <th className="px-6 py-3 font-medium">Company</th>
+                                    <th className="px-4 py-3 font-medium text-center">Filing</th>
+                                    <th className="px-4 py-3 font-medium text-center">Sector</th>
                                     <th className="px-6 py-3 font-medium text-center">Time</th>
                                     <th className="px-6 py-3 font-medium text-center">Quarter</th>
                                     <th className="px-6 py-3 font-medium text-right">EPS Est</th>
                                     <th className="px-6 py-3 font-medium text-right">EPS Act</th>
                                     <th className="px-6 py-3 font-medium text-right">Revenue</th>
+                                    <th className="px-4 py-3 font-medium text-center">SEC</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800/50">
@@ -518,6 +542,7 @@ export function EarningsCalendar() {
                                     const epsSurprise = getEPSSurprise(event.epsActual, event.epsEstimate);
                                     const revenueSurprise = getRevenueSurprise(event.revenueActual, event.revenueEstimate);
                                     const hourInfo = getHourLabel(event.hour);
+                                    const filingInfo = getFilingTypeLabel(event.filingType);
                                     const upcoming = isUpcoming(event.date);
                                     const isFav = isFavorite(event.symbol);
                                     
@@ -536,10 +561,30 @@ export function EarningsCalendar() {
                                                 <span className="font-mono font-bold text-cyan-400 group-hover:text-cyan-300 transition-colors">
                                                     {event.symbol}
                                                 </span>
+                                                {event.companyName && event.companyName !== event.symbol && (
+                                                    <span className="text-[11px] text-gray-500 truncate max-w-[180px]">
+                                                        {event.companyName}
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
+                                        <td className="px-4 py-4 text-center">
+                                            <span className={cn("text-[10px] px-2 py-0.5 rounded border inline-block font-mono font-medium", filingInfo.bg, filingInfo.color, "border-transparent")}
+                                                  title={filingInfo.desc}>
+                                                {filingInfo.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            {event.sector ? (
+                                                <span className="text-[10px] text-gray-400 truncate max-w-[90px] inline-block">
+                                                    {event.sector}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] text-gray-700">—</span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-center">
-                                            {event.hour ? (
+                                            {event.hour && event.hour !== 'unknown' ? (
                                                 <span className={cn("text-xs px-2 py-0.5 rounded border inline-block", hourInfo.bg, hourInfo.color, "border-transparent bg-opacity-10")}>
                                                     {hourInfo.label}
                                                 </span>
@@ -588,6 +633,22 @@ export function EarningsCalendar() {
                                                     </span>
                                                )}
                                             </div>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            {event.secFilingUrl ? (
+                                                <a
+                                                    href={event.secFilingUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-gray-500 hover:text-blue-400 transition-colors"
+                                                    title="View SEC Filing"
+                                                >
+                                                    <FileText className="w-3.5 h-3.5" />
+                                                    <ExternalLink className="w-2.5 h-2.5" />
+                                                </a>
+                                            ) : (
+                                                <span className="text-[10px] text-gray-700">—</span>
+                                            )}
                                         </td>
                                     </tr>
                                 )})}
@@ -673,9 +734,12 @@ export function EarningsCalendar() {
           )}
           
           <div className="flex items-center justify-between px-2 text-xs text-gray-600 pb-4">
-             <p>* Non-GAAP figures. BMO = Before Open, AMC = After Close</p>
+             <p>* Non-GAAP figures. Sourced from SEC EDGAR public filings (8-K, 10-Q, 10-K).</p>
              <div className="flex items-center gap-2">
-                 <span>Earnings data by Finnhub</span>
+                 <span className="flex items-center gap-1">
+                     <FileText className="w-3 h-3" />
+                     Proprietary SEC EDGAR Data
+                 </span>
              </div>
           </div>
       </div>

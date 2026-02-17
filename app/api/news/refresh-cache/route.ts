@@ -16,8 +16,6 @@ import { newsCacheService } from '@/lib/news-cache-service';
 // Secret for cron job authentication (set in environment)
 const CRON_SECRET = process.env.CRON_SECRET;
 
-// Your existing API keys/services
-const FMP_API_KEY = process.env.FMP_API_KEY;
 const TWITTER_BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN;
 
 export async function POST(req: NextRequest) {
@@ -49,16 +47,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Refresh Earnings Calendar
+    // Refresh Earnings Calendar (now uses proprietary SEC EDGAR data via API route)
     if (type === 'earnings' || type === 'all') {
       try {
-        const needsRefresh = await newsCacheService.needsRefresh('earnings_calendar');
-        if (needsRefresh) {
-          const earningsData = await fetchEarningsCalendar();
-          const result = await newsCacheService.refreshEarningsCalendar(earningsData);
-          results.earnings = result;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000';
+        const earningsResponse = await fetch(`${baseUrl}/api/calendar/earnings?refresh=true`);
+        if (earningsResponse.ok) {
+          const earningsJson = await earningsResponse.json();
+          results.earnings = { success: true, count: earningsJson.data?.length || 0, source: 'sec-edgar' };
         } else {
-          results.earnings = { skipped: true, reason: 'Cache still fresh' };
+          results.earnings = { error: `Earnings API returned ${earningsResponse.status}` };
         }
       } catch (error: any) {
         results.earnings = { error: error.message };
@@ -110,83 +110,42 @@ export async function GET() {
 // Replace these with your actual API implementations
 
 async function fetchIPOCalendar() {
-  // Example using Financial Modeling Prep API
-  // Replace with your actual IPO data source
-  
-  if (!FMP_API_KEY) {
-    console.warn('FMP_API_KEY not set, using mock data');
-    return getMockIPOData();
-  }
-
+  // Uses proprietary SEC EDGAR-based IPO data via internal API route
   try {
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/ipo_calendar?apikey=${FMP_API_KEY}`
-    );
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/calendar/ipo?refresh=true`);
     
     if (!response.ok) {
-      throw new Error(`FMP API error: ${response.status}`);
+      throw new Error(`IPO API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    
-    // Transform to our schema
-    return data.map((ipo: any) => ({
-      symbol: ipo.symbol,
-      company_name: ipo.company,
-      exchange: ipo.exchange,
-      ipo_date: ipo.date,
-      price_range_low: ipo.priceRangeLow,
-      price_range_high: ipo.priceRangeHigh,
-      offer_price: ipo.price,
-      shares_offered: ipo.shares,
-      status: 'upcoming',
-      raw_data: ipo
-    }));
+    const json = await response.json();
+    return json.data || getMockIPOData();
   } catch (error) {
     console.error('Error fetching IPO calendar:', error);
-    return [];
+    return getMockIPOData();
   }
 }
 
 async function fetchEarningsCalendar() {
-  // Example using Financial Modeling Prep API
-  // Replace with your actual earnings data source
-  
-  if (!FMP_API_KEY) {
-    console.warn('FMP_API_KEY not set, using mock data');
-    return getMockEarningsData();
-  }
-
+  // Uses proprietary SEC EDGAR-based earnings data via internal API route
   try {
-    // Get earnings for next 7 days
-    const from = new Date().toISOString().split('T')[0];
-    const to = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
-    const response = await fetch(
-      `https://financialmodelingprep.com/api/v3/earning_calendar?from=${from}&to=${to}&apikey=${FMP_API_KEY}`
-    );
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/calendar/earnings?refresh=true`);
     
     if (!response.ok) {
-      throw new Error(`FMP API error: ${response.status}`);
+      throw new Error(`Earnings API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    
-    return data.map((e: any) => ({
-      symbol: e.symbol,
-      company_name: e.symbol, // FMP doesn't always include company name
-      report_date: e.date,
-      report_time: e.time === 'bmo' ? 'bmo' : e.time === 'amc' ? 'amc' : 'during',
-      eps_estimate: e.epsEstimated,
-      eps_actual: e.eps,
-      revenue_estimate: e.revenueEstimated,
-      revenue_actual: e.revenue,
-      fiscal_quarter: e.fiscalDateEnding ? `Q${Math.ceil(new Date(e.fiscalDateEnding).getMonth() / 3)}` : null,
-      raw_data: e
-    }));
+    const json = await response.json();
+    return json.data || getMockEarningsData();
   } catch (error) {
     console.error('Error fetching earnings calendar:', error);
-    return [];
+    return getMockEarningsData();
   }
 }
 

@@ -26,14 +26,6 @@ interface APIConnectionManagerProps {
 
 const API_SERVICE_CONFIG = [
   {
-    id: 'finnhub',
-    name: 'Finnhub',
-    description: 'Stock market data and news',
-    icon: TrendingUp,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-  },
-  {
     id: 'crypto',
     name: 'Crypto APIs',
     description: 'Cryptocurrency prices and data',
@@ -265,7 +257,6 @@ export function APIConnectionManager({ isOpen, onClose }: APIConnectionManagerPr
             💡 Getting API Keys
           </h4>
           <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
-            <li>• <strong>Finnhub:</strong> Sign up at <a href="https://finnhub.io" target="_blank" rel="noopener noreferrer" className="underline">finnhub.io</a></li>
             <li>• <strong>News API:</strong> Get your key at <a href="https://newsapi.org" target="_blank" rel="noopener noreferrer" className="underline">newsapi.org</a></li>
             <li>• <strong>Gemini AI:</strong> Create API key at <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="underline">ai.google.dev</a></li>
           </ul>

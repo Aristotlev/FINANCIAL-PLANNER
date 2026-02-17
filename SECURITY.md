@@ -36,8 +36,6 @@ This document outlines the security measures implemented in the Money Hub App to
 # ✅ SECURE - Server-side only (NO NEXT_PUBLIC_ prefix)
 GOOGLE_AI_API_KEY=AIzaSyC...
 REPLICATE_API_TOKEN=r8_...
-CMC_API_KEY=...
-FINNHUB_API_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 
 # ✅ SAFE - Client-side (NEXT_PUBLIC_ prefix - these are designed to be public)
@@ -90,7 +88,7 @@ All sensitive API calls go through your API routes:
 ```
 Client → /api/gemini → Google AI API
 Client → /api/tts → Replicate API
-Client → /api/market-data → CoinMarketCap/Finnhub API
+Client → /api/market-data → Binance/CoinGecko/Yahoo Finance API
 ```
 
 **Benefits:**
@@ -111,8 +109,6 @@ Client → /api/market-data → CoinMarketCap/Finnhub API
 # === SERVER-SIDE ONLY (NEVER use NEXT_PUBLIC_ prefix) ===
 GOOGLE_AI_API_KEY=your_key_here
 REPLICATE_API_TOKEN=your_token_here
-CMC_API_KEY=your_key_here
-FINNHUB_API_KEY=your_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # === CLIENT-SAFE (Can use NEXT_PUBLIC_ prefix) ===

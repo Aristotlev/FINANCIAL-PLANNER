@@ -71,9 +71,7 @@ You need to set these in Cloudflare Dashboard:
 ### Optional Variables:
 | Variable | Description |
 |----------|-------------|
-| `CMC_API_KEY` | CoinMarketCap API key |
 | `NEXT_PUBLIC_COINGECKO_API_KEY` | CoinGecko API key |
-| `NEXT_PUBLIC_FINNHUB_API_KEY` | Finnhub API key |
 | `NEXT_PUBLIC_NEWS_API_KEY` | News API key |
 
 ---

@@ -84,7 +84,6 @@ A comprehensive financial management application built with Next.js, TypeScript,
 - **API Keys** (optional):
   - Google Maps API (for location features)
   - CoinGecko API (for crypto prices)
-  - Finnhub API (for stock prices)
   - Google Generative AI (for Omni)
   - Replicate API (for voice synthesis)
 
@@ -115,7 +114,6 @@ A comprehensive financial management application built with Next.js, TypeScript,
    
    # APIs (optional)
    COINGECKO_API_KEY=your_coingecko_key
-   FINNHUB_API_KEY=your_finnhub_key
    
    # AI Features (optional)
    GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_key
@@ -524,7 +522,8 @@ Money Hub App works flawlessly across 95.8% of global users:
 - **OECD** - International tax statistics
 - **National Tax Authorities** - Official country-specific data
 - **CoinGecko** - Cryptocurrency price data
-- **Finnhub** - Stock market data
+- **Yahoo Finance** - Stock market data
+- **SEC EDGAR** - Financial filings and company data
 - **Google** - Maps API and Gemini AI
 - **Supabase** - Database infrastructure
 - **Vercel** - Hosting platform

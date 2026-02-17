@@ -1,7 +1,7 @@
 /**
  * API Route: /api/crypto-symbols
  * 
- * Provides access to CoinMarketCap cryptocurrency symbols
+ * Provides access to cryptocurrency symbols via CoinGecko
  * 
  * Endpoints:
  * - GET /api/crypto-symbols - Get all crypto symbols

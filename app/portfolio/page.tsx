@@ -13,8 +13,8 @@ import { Plus, ArrowUpRight, ShoppingCart, Repeat, Newspaper, ChartColumn, Walle
 import { FloatingDock } from '../../components/ui/floating-dock';
 
 import { NewsFeed } from '../../components/portfolio/news-feed';
-import { IPOCalendar } from '../../components/portfolio/ipo-calendar';
-import { EarningsCalendar } from '../../components/portfolio/earnings-calendar';
+import { ProprietaryIPOCalendar } from '../../components/portfolio/proprietary-ipo-calendar';
+import { ProprietaryEarningsCalendar } from '../../components/portfolio/proprietary-earnings-calendar';
 import { TwitterFeed } from '../../components/portfolio/twitter-feed-curated';
 import { YoutubeFeed } from '../../components/portfolio/youtube-feed';
 import { SettingsModal } from '../../components/settings/settings-modal';
@@ -46,7 +46,7 @@ import { Select } from '../../components/ui/select';
 
 import { EconomicCalendar } from '../../components/portfolio/economic-calendar';
 import { InsiderSentimentView } from '../../components/portfolio/insider-sentiment-view';
-import { InsiderTransactionsView } from '../../components/portfolio/insider-transactions-view';
+import { InsiderTransactionsProprietaryView } from '../../components/portfolio/insider-transactions-proprietary-view';
 import { EarningsSurprisesView } from '../../components/portfolio/earnings-surprises-view';
 import { SenateLobbyingView } from '../../components/portfolio/senate-lobbying-view';
 import { USASpendingView } from '../../components/portfolio/usa-spending-view';
@@ -585,9 +585,10 @@ export default function PortfolioPage() {
       case 'youtube-feed':
         return <YoutubeFeed />;
       case 'ipo-calendar':
-        return <IPOCalendar />;
+      case 'ipo-calendar-pro':
+        return <ProprietaryIPOCalendar />;
       case 'earnings-calendar':
-        return <EarningsCalendar />;
+        return <ProprietaryEarningsCalendar />;
       case 'news':
       case 'holdings-news':
       case 'stocks':
@@ -599,7 +600,7 @@ export default function PortfolioPage() {
       case 'insider-sentiment':
         return <InsiderSentimentView />;
       case 'insider-transactions':
-        return <InsiderTransactionsView />;
+        return <InsiderTransactionsProprietaryView />;
       case 'earnings-surprises':
         return <EarningsSurprisesView />;
       case 'senate-lobbying':

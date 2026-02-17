@@ -19,7 +19,6 @@ interface APIConnectionContextType {
 const APIConnectionContext = createContext<APIConnectionContextType | undefined>(undefined);
 
 const API_SERVICES = [
-  'finnhub',
   'crypto',
   'yahoo-finance',
   'news',

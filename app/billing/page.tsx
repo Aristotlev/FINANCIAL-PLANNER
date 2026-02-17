@@ -444,6 +444,7 @@ const omniPlans: PriceTier[] = [
       { name: 'Community Access (20 posts/day)', isIncluded: true },
       { name: '5 Custom Twitter Feeds', isIncluded: true },
       { name: 'Omni AI Assistant (100 msgs/day)', isIncluded: true },
+      { name: 'Ai Analytics', isIncluded: true },
       { name: 'VIP Support', isIncluded: true },
       { name: 'Beta Access', isIncluded: true },
     ],

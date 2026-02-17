@@ -13,6 +13,7 @@
  */
 
 import { XMLParser } from 'fast-xml-parser';
+import { apiGateway, CacheTTL } from './external-api-gateway';
 
 // ==================== TYPES & INTERFACES ====================
 
@@ -178,23 +179,32 @@ class SECRateLimiter {
   private queue: Array<{ resolve: () => void; timestamp: number }> = [];
   private lastRequestTime = 0;
   private readonly minInterval: number; // milliseconds between requests
+  private consecutiveErrors = 0;
 
-  constructor(requestsPerSecond: number = 8) {
-    // SEC allows ~10 req/sec, we use 8 to be safe
+  constructor(requestsPerSecond: number = 4) {
+    // SEC allows ~10 req/sec, we use 4 to be safely under the limit
+    // per SEC Fair Access Policy: https://www.sec.gov/os/webmaster-faq#code-support
     this.minInterval = 1000 / requestsPerSecond;
   }
 
   async throttle(): Promise<void> {
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
+    // Apply exponential backoff if we've been getting rate limited
+    const backoff = this.consecutiveErrors > 0
+      ? Math.min(this.minInterval * Math.pow(2, this.consecutiveErrors), 10000)
+      : this.minInterval;
     
-    if (timeSinceLastRequest < this.minInterval) {
-      const delay = this.minInterval - timeSinceLastRequest;
+    if (timeSinceLastRequest < backoff) {
+      const delay = backoff - timeSinceLastRequest;
       await new Promise(resolve => setTimeout(resolve, delay));
     }
     
     this.lastRequestTime = Date.now();
   }
+
+  onRateLimit() { this.consecutiveErrors++; }
+  onSuccess() { this.consecutiveErrors = 0; }
 }
 
 // ==================== CIK MAPPING CACHE ====================
@@ -221,7 +231,7 @@ export class SECEdgarAPI {
 
   constructor(credentials: SECCredentials) {
     this.credentials = credentials;
-    this.rateLimiter = new SECRateLimiter(8);
+    this.rateLimiter = new SECRateLimiter(4); // 4 req/sec — safely under SEC's 10/s limit
     this.xmlParser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '@_',
@@ -233,46 +243,62 @@ export class SECEdgarAPI {
 
   // ==================== CORE REQUEST METHOD ====================
 
-  private async request<T>(
+  /**
+   * Raw fetch — used internally by cachedRequest and for uncacheable calls.
+   * Rate limiting is enforced by the gateway.
+   */
+  private async rawRequest<T>(
     url: string, 
     options: { parseXML?: boolean; parseJSON?: boolean } = { parseJSON: true }
   ): Promise<T> {
-    await this.rateLimiter.throttle();
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': this.credentials.userAgent,
+        'Accept-Encoding': 'gzip, deflate',
+        'Host': new URL(url).hostname,
+      },
+      cache: 'no-store',
+    });
 
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'User-Agent': this.credentials.userAgent,
-          'Accept-Encoding': 'gzip, deflate',
-          'Host': new URL(url).hostname,
-        },
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          // Rate limited - wait and retry
-          console.warn('[SEC] Rate limited, waiting 10 seconds...');
-          await new Promise(resolve => setTimeout(resolve, 10000));
-          return this.request(url, options);
-        }
-        throw new Error(`SEC API error (${response.status}): ${response.statusText}`);
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error(`SEC API rate limit (429): ${response.statusText}`);
       }
-
-      const text = await response.text();
-
-      if (options.parseXML) {
-        return this.xmlParser.parse(text) as T;
-      } else if (options.parseJSON) {
-        return JSON.parse(text) as T;
-      }
-      
-      return text as unknown as T;
-    } catch (error) {
-      console.error(`[SEC] Request failed for ${url}:`, error);
-      throw error;
+      throw new Error(`SEC API error (${response.status}): ${response.statusText}`);
     }
+
+    const text = await response.text();
+
+    if (options.parseXML) {
+      return this.xmlParser.parse(text) as T;
+    } else if (options.parseJSON) {
+      return JSON.parse(text) as T;
+    }
+    
+    return text as unknown as T;
+  }
+
+  /**
+   * Cached request through the API gateway.
+   * Handles rate limiting, deduplication, and stale-while-revalidate automatically.
+   */
+  private async request<T>(
+    url: string, 
+    options: { parseXML?: boolean; parseJSON?: boolean; cacheTTL?: number; cacheKey?: string } = { parseJSON: true }
+  ): Promise<T> {
+    const provider = url.includes('efts.sec.gov') ? 'sec-efts' as const : 'sec-edgar' as const;
+    const ttl = options.cacheTTL || CacheTTL.SEC_FILINGS_LIST;
+    const key = options.cacheKey || url;
+
+    const result = await apiGateway.cachedFetch<T>(
+      provider,
+      key,
+      () => this.rawRequest<T>(url, options),
+      ttl,
+    );
+
+    return result.data;
   }
 
   // ==================== CIK MAPPING ====================
@@ -282,7 +308,7 @@ export class SECEdgarAPI {
    * This file maps all US public company tickers to their CIK numbers
    */
   async loadCIKMapping(): Promise<Map<string, CompanyCIKMapping>> {
-    const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+    const CACHE_DURATION = CacheTTL.SEC_CIK_MAPPING; // 24 hours
     
     if (cikCache.data.size > 0 && Date.now() - cikCache.lastUpdated < CACHE_DURATION) {
       return cikCache.data;
@@ -290,7 +316,10 @@ export class SECEdgarAPI {
 
     const url = `${this.baseUrl}/files/company_tickers.json`;
     
-    const data = await this.request<Record<string, { cik_str: number; ticker: string; title: string }>>(url);
+    const data = await this.request<Record<string, { cik_str: number; ticker: string; title: string }>>(
+      url, 
+      { parseJSON: true, cacheTTL: CacheTTL.SEC_CIK_MAPPING, cacheKey: 'sec:cik-mapping' }
+    );
     
     cikCache.data.clear();
     
@@ -427,7 +456,11 @@ export class SECEdgarAPI {
     const normalizedCIK = cik.padStart(10, '0');
     const url = `${this.dataUrl}/submissions/CIK${normalizedCIK}.json`;
     
-    const data = await this.request<any>(url);
+    const data = await this.request<any>(url, {
+      parseJSON: true,
+      cacheTTL: CacheTTL.SEC_FILINGS_LIST,
+      cacheKey: `sec:submissions:${normalizedCIK}`,
+    });
     
     const filings: SECFiling[] = [];
     const recentFilings = data.filings?.recent;
@@ -537,7 +570,11 @@ export class SECEdgarAPI {
     const normalizedCIK = cik.padStart(10, '0');
     const url = `${this.dataUrl}/api/xbrl/companyfacts/CIK${normalizedCIK}.json`;
     
-    return this.request<any>(url);
+    return this.request<any>(url, {
+      parseJSON: true,
+      cacheTTL: CacheTTL.SEC_XBRL_FINANCIALS,
+      cacheKey: `sec:xbrl:${normalizedCIK}`,
+    });
   }
 
   /**
@@ -1050,7 +1087,7 @@ export class SECEdgarAPI {
  * Create SEC EDGAR API instance with environment configuration
  */
 export function createSECEdgarClient(): SECEdgarAPI {
-  const userAgent = process.env.SEC_USER_AGENT || 'MoneyHub admin@moneyhub.app';
+  const userAgent = process.env.SEC_USER_AGENT || 'OmniFolio/1.0 (support@omnifolio.app)';
   
   return new SECEdgarAPI({ userAgent });
 }

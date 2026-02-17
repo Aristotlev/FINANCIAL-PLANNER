@@ -25,10 +25,6 @@ interface APILimits {
   yahooFinance: {
     callsPerHour: number;
   };
-  finnhub: {
-    callsPerMinute: number;
-    callsPerDay: number;
-  };
   rss: {
     noLimit: boolean;
   };
@@ -49,10 +45,6 @@ class APIUsageMonitor {
     },
     yahooFinance: {
       callsPerHour: 2000, // Unofficial - Yahoo is generally lenient
-    },
-    finnhub: {
-      callsPerMinute: 30, // Free tier: 30/min
-      callsPerDay: 10000, // Conservative estimate
     },
     rss: {
       noLimit: true, // RSS feeds have no rate limits
@@ -209,16 +201,6 @@ class APIUsageMonitor {
         console.warn(`⚠️ API ${endpoint} approaching hour limit: ${hourCalls}/${hourLimit}`);
       }
     }
-    
-    // Check daily rate
-    if ('callsPerDay' in limits) {
-      const dayCalls = this.dailyWindows.get(endpoint)?.length || 0;
-      const dayLimit = limits.callsPerDay;
-      
-      if (dayCalls >= dayLimit * 0.8) {
-        console.warn(`⚠️ API ${endpoint} approaching daily limit: ${dayCalls}/${dayLimit}`);
-      }
-    }
   }
 
   /**
@@ -230,9 +212,6 @@ class APIUsageMonitor {
     }
     if (endpoint.includes('yahoo') || endpoint.includes('stock')) {
       return 'yahooFinance';
-    }
-    if (endpoint.includes('finnhub')) {
-      return 'finnhub';
     }
     if (endpoint.includes('news') || endpoint.includes('rss')) {
       return 'rss';
@@ -262,14 +241,6 @@ class APIUsageMonitor {
     if ('callsPerHour' in limits) {
       const hourCalls = this.hourWindows.get(endpoint)?.length || 0;
       if (hourCalls >= limits.callsPerHour) {
-        return true;
-      }
-    }
-    
-    // Check daily rate
-    if ('callsPerDay' in limits) {
-      const dayCalls = this.dailyWindows.get(endpoint)?.length || 0;
-      if (dayCalls >= limits.callsPerDay) {
         return true;
       }
     }

@@ -1,10 +1,13 @@
 /**
  * SEC Watchlist API
  * Manage user's company watchlist for SEC filings
+ *
+ * DB-first for CIK resolution.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSECEdgarClient } from '@/lib/api/sec-edgar-api';
+import { secCacheService } from '@/lib/sec-cache-service';
 import { withRateLimit, RateLimitPresets } from '@/lib/rate-limiter';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@/lib/auth';
@@ -118,8 +121,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Look up company
-    const company = await secApi.getCIKByTicker(ticker);
+    // Look up company (DB-first)
+    const cached = await secCacheService.getCompanyByTicker(ticker);
+    let company = cached.data;
+    if (!company) {
+      company = await secApi.getCIKByTicker(ticker);
+      if (company) {
+        secCacheService.upsertCompanies([company]).catch(() => {});
+      }
+    }
     if (!company) {
       return NextResponse.json(
         { error: `Company not found: ${ticker}` },

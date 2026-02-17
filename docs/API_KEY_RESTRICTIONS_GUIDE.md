@@ -119,33 +119,7 @@ Spending limit: $10/month
 
 ---
 
-## 4. CoinMarketCap API Key Restrictions
-
-### Step 1: Access CoinMarketCap Dashboard
-1. Go to [CoinMarketCap Pro](https://pro.coinmarketcap.com/account)
-2. Sign in to your account
-
-### Step 2: View Your API Key
-1. Navigate to **API** → **API Keys**
-2. View your current key and usage
-
-### Step 3: Monitor Usage
-1. Check **Credits Used** (monthly limit)
-2. Review **Daily Credit Usage**
-3. Set up alerts (if available in your plan)
-
-### Step 4: Upgrade Plan (If Needed)
-```
-Free Plan:      333 credits/day   (10,000/month)
-Hobbyist:       930 credits/day   (28,000/month)
-Startup:        3,333 credits/day (100,000/month)
-```
-
-Choose based on your usage patterns.
-
----
-
-## 5. Implementation Checklist
+## 4. Implementation Checklist
 
 ### Google AI API ✅
 - [ ] Domain restrictions configured
@@ -160,15 +134,9 @@ Choose based on your usage patterns.
 - [ ] Email notifications enabled
 - [ ] Billing dashboard bookmarked
 
-### CoinMarketCap API ✅
-- [ ] Usage dashboard reviewed
-- [ ] Credit limits understood
-- [ ] Plan appropriate for usage
-- [ ] Monthly usage tracking scheduled
-
 ---
 
-## 6. Monitoring & Maintenance
+## 5. Monitoring & Maintenance
 
 ### Daily Checks
 - [ ] Review unusual activity alerts (if any)
@@ -177,7 +145,6 @@ Choose based on your usage patterns.
 ### Weekly Checks
 - [ ] Check Replicate billing summary
 - [ ] Monitor Google AI quota usage
-- [ ] Verify CoinMarketCap credits remaining
 
 ### Monthly Checks
 - [ ] Analyze usage trends across all providers
@@ -318,12 +285,6 @@ done
 - Spending Limit: $10/month
 - Alert Threshold: $8/month
 - Billing Review: Weekly
-
-## CoinMarketCap API
-- Key Created: November 7, 2025
-- Plan: Free (10,000 credits/month)
-- Usage Tracking: Monthly
-- Upgrade Needed: No (current usage < 5,000/month)
 ```
 
 ---
@@ -337,9 +298,6 @@ https://console.cloud.google.com/apis/credentials
 
 Replicate Account:
 https://replicate.com/account/api-tokens
-
-CoinMarketCap Pro:
-https://pro.coinmarketcap.com/account
 ```
 
 ### Important Dates

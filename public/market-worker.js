@@ -1,6 +1,7 @@
 /**
  * Market Data Web Worker
  * Handles WebSocket connections and polling for market data off the main thread.
+ * Features exponential backoff on API errors to prevent 429 death spirals.
  */
 
 // Cache for price calculations
@@ -9,10 +10,14 @@ const connections = new Map();
 const pollingIntervals = new Map();
 const subscribers = new Map(); // symbol -> count
 const reconnectAttempts = new Map();
+const errorCounts = new Map(); // key -> consecutive error count
 
 const CONFIG = {
   reconnectDelay: 5000,
   maxReconnectAttempts: 5,
+  basePollingInterval: 30000,  // 30 seconds base
+  maxPollingInterval: 300000,  // 5 minutes max backoff
+  maxConsecutiveErrors: 10,    // After this many errors, use max interval
 };
 
 // Handle messages from main thread
@@ -164,23 +169,50 @@ function handleBinanceMessage(key, symbol, data) {
   }
 }
 
-function useFallbackPolling(key, symbol, type, intervalMs = 60000) {
+function useFallbackPolling(key, symbol, type, intervalMs = 30000) {
   // Clear existing if any
   if (pollingIntervals.has(key)) {
     clearInterval(pollingIntervals.get(key));
   }
 
+  // Calculate interval with exponential backoff based on error count
+  function getPollingInterval() {
+    const errors = errorCounts.get(key) || 0;
+    if (errors === 0) return intervalMs;
+    // Exponential backoff: 30s, 60s, 120s, 240s, capped at 300s
+    const backoff = Math.min(
+      intervalMs * Math.pow(2, errors),
+      CONFIG.maxPollingInterval
+    );
+    return backoff;
+  }
+
   const poll = async () => {
     try {
-      // We need to fetch from the API. 
-      // Since we are in a worker, we can use fetch.
-      // Note: The relative URL /api/market-data might not work if the worker base URL is different.
-      // Usually in Next.js public folder, it should be fine relative to origin.
-      
       const response = await fetch(`/api/market-data?symbol=${symbol}&type=${type}&live=true`);
+      
+      if (!response.ok) {
+        // Track errors for backoff
+        const currentErrors = (errorCounts.get(key) || 0) + 1;
+        errorCounts.set(key, currentErrors);
+        
+        // If we're getting errors, slow down polling
+        if (currentErrors >= 2) {
+          const newInterval = getPollingInterval();
+          // console.log(`Worker: Backing off ${key} to ${newInterval/1000}s (${currentErrors} errors)`);
+          clearInterval(pollingIntervals.get(key));
+          const interval = setInterval(poll, newInterval);
+          pollingIntervals.set(key, interval);
+        }
+        return;
+      }
+
       const data = await response.json();
 
       if (data && data.currentPrice) {
+        // Reset error count on success
+        errorCounts.set(key, 0);
+        
         const update = {
           symbol,
           price: data.currentPrice,
@@ -189,9 +221,30 @@ function useFallbackPolling(key, symbol, type, intervalMs = 60000) {
           timestamp: Date.now(),
         };
         processAndNotify(key, symbol, update);
+
+        // If we were backed off, restore normal interval
+        const currentErrors = errorCounts.get(key) || 0;
+        if (currentErrors === 0) {
+          clearInterval(pollingIntervals.get(key));
+          const interval = setInterval(poll, intervalMs);
+          pollingIntervals.set(key, interval);
+        }
+      } else if (data && data.price) {
+        // Handle fallback-format responses (price instead of currentPrice)
+        errorCounts.set(key, 0);
+        const update = {
+          symbol,
+          price: data.price,
+          change: data.change24h || data.change || 0,
+          changePercent: data.changePercent24h || data.changePercent || 0,
+          timestamp: Date.now(),
+        };
+        processAndNotify(key, symbol, update);
       }
     } catch (error) {
-      // console.error(`Worker: Polling error for ${key}`, error);
+      const currentErrors = (errorCounts.get(key) || 0) + 1;
+      errorCounts.set(key, currentErrors);
+      // console.error(`Worker: Polling error for ${key} (attempt ${currentErrors})`);
     }
   };
 
@@ -200,7 +253,6 @@ function useFallbackPolling(key, symbol, type, intervalMs = 60000) {
 
   // Then continue polling at the specified interval
   const interval = setInterval(poll, intervalMs);
-
   pollingIntervals.set(key, interval);
 }
 
@@ -255,6 +307,7 @@ function disconnect(key) {
   }
   
   subscribers.delete(key);
+  errorCounts.delete(key);
 }
 
 function disconnectAll() {
@@ -267,4 +320,5 @@ function disconnectAll() {
   priceCache.clear();
   subscribers.clear();
   reconnectAttempts.clear();
+  errorCounts.clear();
 }

@@ -200,7 +200,7 @@ export function FearAndGreedView() {
                           {data.time_until_update && <span className="block mt-1">Next Update In: {Math.round(parseInt(data.time_until_update)/60)} minutes</span>}
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
-                          Source: CoinMarketCap
+                          Source: Alternative.me
                       </p>
                   </div>
               </div>

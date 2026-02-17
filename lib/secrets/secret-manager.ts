@@ -44,7 +44,6 @@ export type SecretName =
   | 'STRIPE_WEBHOOK_SECRET'
   | 'GOOGLE_AI_API_KEY'
   | 'REPLICATE_API_TOKEN'
-  | 'FINNHUB_API_KEY'
   | 'ALPHA_VANTAGE_API_KEY';
 
 /**

@@ -736,7 +736,7 @@ export const TRADING_DATABASE: TradingInstrument[] = [
     country: 'Global'
   },
 
-  // Major Cryptocurrencies - Top 50 by Market Cap (Data from CoinGecko, CoinMarketCap, TradingView)
+  // Major Cryptocurrencies - Top 50 by Market Cap (Data from CoinGecko, Binance, TradingView)
   {
     symbol: 'BTC',
     name: 'Bitcoin',

@@ -49,7 +49,7 @@ export function LandingPage() {
     setShowAuthModal(true);
   };
 
-  const trustedCompanies = ["Gemini", "Google Cloud", "Yahoo Finance", "CoinGecko", "CoinMarketCap", "Finnhub", "TradingView", "Binance", "FMP", "SEC EDGAR® Data"];
+  const trustedCompanies = ["Gemini", "Google Cloud", "Yahoo Finance", "CoinGecko", "Binance", "TradingView", "Gate.io", "SEC EDGAR® Data"];
 
   return (
     <div className="min-h-screen bg-[#0B0C10] text-gray-300 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">

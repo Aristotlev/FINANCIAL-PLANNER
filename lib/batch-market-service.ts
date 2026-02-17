@@ -31,7 +31,7 @@ interface BatchResult {
 }
 
 class BatchMarketService {
-  private readonly MAX_BATCH_SIZE = 100; // CoinMarketCap allows up to 100 symbols per request
+  private readonly MAX_BATCH_SIZE = 20; // Process in batches of 20 for parallel individual fetches
   private readonly BATCH_DELAY = 100; // Delay between batch requests (ms)
 
   /**
@@ -82,7 +82,7 @@ class BatchMarketService {
 
       for (const batch of batches) {
         try {
-          const batchData = await this.fetchCoinMarketCapBatch(batch);
+          const batchData = await this.fetchCryptoBatchFromAPIs(batch);
           
           for (const data of batchData) {
             results.push(data);
@@ -127,77 +127,109 @@ class BatchMarketService {
   }
 
   /**
-   * Fetch batch data from CoinMarketCap API
-   * Single API call for up to 100 symbols
+   * Fetch batch data using Binance API (free, high-limit)
+   * Falls back to Gate.io for symbols not on Binance
    */
-  private async fetchCoinMarketCapBatch(symbols: string[]): Promise<BatchAssetData[]> {
-    const apiKey = process.env.NEXT_PUBLIC_CMC_API_KEY;
-    if (!apiKey) {
-      throw new Error('CoinMarketCap API key not configured');
-    }
-
-    console.log(`🔄 Fetching CoinMarketCap batch: ${symbols.join(', ')}`);
-
-    // CoinMarketCap allows comma-separated symbols
-    const symbolString = symbols.join(',');
-    
-    const response = await fetch(
-      `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbolString}`,
-      {
-        headers: {
-          'X-CMC_PRO_API_KEY': apiKey,
-          'Accept': 'application/json',
-        },
-        cache: 'no-store',
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`CoinMarketCap API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (!data.data) {
-      throw new Error('Invalid response from CoinMarketCap');
-    }
+  private async fetchCryptoBatchFromAPIs(symbols: string[]): Promise<BatchAssetData[]> {
+    console.log(`🔄 Fetching crypto batch via Binance/Gate.io: ${symbols.join(', ')}`);
 
     const results: BatchAssetData[] = [];
 
-    for (const symbol of symbols) {
-      const cryptoData = data.data[symbol];
-      
-      if (!cryptoData) {
-        console.warn(`No data for ${symbol} in batch response`);
-        continue;
+    // Fetch all symbols in parallel using Binance, with Gate.io fallback
+    const fetchPromises = symbols.map(async (symbol) => {
+      // Skip stablecoins pegged to $1
+      if (symbol === 'USDT' || symbol === 'USDC') {
+        return {
+          symbol,
+          name: symbol === 'USDT' ? 'Tether' : 'USD Coin',
+          currentPrice: 1.0,
+          change24h: 0,
+          changePercent24h: 0,
+          color: getAssetColor(symbol, 'crypto'),
+          type: 'crypto' as const,
+          lastUpdated: Date.now(),
+          dataSource: 'Stablecoin',
+        };
       }
 
-      const quote = cryptoData.quote.USD;
-      const assetInfo = getAssetInfo(symbol);
+      // Try Binance first
+      try {
+        const pair = `${symbol}USDT`;
+        const response = await fetch(
+          `https://api.binance.com/api/v3/ticker/24hr?symbol=${pair}`,
+          { cache: 'no-store' }
+        );
 
-      results.push({
-        symbol,
-        name: assetInfo?.name || cryptoData.name || symbol,
-        currentPrice: quote.price,
-        change24h: quote.price - (quote.price / (1 + quote.percent_change_24h / 100)),
-        changePercent24h: quote.percent_change_24h,
-        color: getAssetColor(symbol, 'crypto'),
-        type: 'crypto',
-        lastUpdated: Date.now(),
-        marketCap: quote.market_cap ? `$${(quote.market_cap / 1e9).toFixed(2)}B` : undefined,
-        volume: quote.volume_24h ? `$${(quote.volume_24h / 1e6).toFixed(2)}M` : undefined,
-        dataSource: 'CoinMarketCap Batch API',
-      });
+        if (response.ok) {
+          const data = await response.json();
+          const assetInfo = getAssetInfo(symbol);
+          return {
+            symbol,
+            name: assetInfo?.name || symbol,
+            currentPrice: parseFloat(data.lastPrice),
+            change24h: parseFloat(data.priceChange),
+            changePercent24h: parseFloat(data.priceChangePercent),
+            color: getAssetColor(symbol, 'crypto'),
+            type: 'crypto' as const,
+            lastUpdated: Date.now(),
+            volume: data.volume ? `$${(parseFloat(data.quoteVolume) / 1e6).toFixed(2)}M` : undefined,
+            dataSource: 'Binance',
+          };
+        }
+      } catch {
+        // Binance failed, try Gate.io
+      }
+
+      // Fallback to Gate.io
+      try {
+        const pair = `${symbol}_USDT`;
+        const response = await fetch(
+          `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${pair}`,
+          { cache: 'no-store' }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const ticker = data[0];
+          if (ticker) {
+            const assetInfo = getAssetInfo(symbol);
+            return {
+              symbol,
+              name: assetInfo?.name || symbol,
+              currentPrice: parseFloat(ticker.last),
+              change24h: parseFloat(ticker.last) * (parseFloat(ticker.change_percentage) / 100),
+              changePercent24h: parseFloat(ticker.change_percentage),
+              color: getAssetColor(symbol, 'crypto'),
+              type: 'crypto' as const,
+              lastUpdated: Date.now(),
+              volume: ticker.base_volume ? `$${(parseFloat(ticker.quote_volume) / 1e6).toFixed(2)}M` : undefined,
+              dataSource: 'Gate.io',
+            };
+          }
+        }
+      } catch {
+        // Gate.io also failed
+      }
+
+      console.warn(`No data for ${symbol} from Binance or Gate.io`);
+      return null;
+    });
+
+    const fetchResults = await Promise.allSettled(fetchPromises);
+
+    for (const result of fetchResults) {
+      if (result.status === 'fulfilled' && result.value) {
+        results.push(result.value);
+      }
     }
 
-    console.log(`✅ CoinMarketCap batch: ${results.length}/${symbols.length} symbols fetched`);
-
+    console.log(`✅ Crypto batch: ${results.length}/${symbols.length} symbols fetched`);
     return results;
   }
 
   /**
    * Fetch multiple stock prices in optimized batches
-   * Uses Finnhub batch quote endpoint or falls back to parallel fetching
+   * Uses parallel fetching via market-data API
    */
   async fetchStockBatch(symbols: string[]): Promise<BatchResult> {
     const upperSymbols = symbols.map(s => s.toUpperCase());
@@ -234,7 +266,7 @@ class BatchMarketService {
 
       console.log(`📊 Batch stock: ${cached} cached, ${uncachedSymbols.length} to fetch`);
 
-      // Fetch uncached symbols in parallel (Finnhub doesn't have batch endpoint, but parallel is still faster)
+      // Fetch uncached symbols in parallel (parallel fetching is fast with market-data API)
       const fetchPromises = uncachedSymbols.map(symbol => this.fetchSingleStock(symbol));
       const fetchResults = await Promise.allSettled(fetchPromises);
 
@@ -279,7 +311,7 @@ class BatchMarketService {
   }
 
   /**
-   * Fetch single stock price from Finnhub
+   * Fetch single stock price from market-data API
    */
   private async fetchSingleStock(symbol: string): Promise<BatchAssetData | null> {
     try {

@@ -1831,9 +1831,9 @@ export class AIMarketDataService {
   private static getSources(type: string): string[] {
     switch (type) {
       case 'crypto':
-        return ['CoinMarketCap Pro', 'CoinGecko', 'TradingView'];
+        return ['CoinGecko', 'Binance', 'Gate.io', 'TradingView'];
       case 'stock':
-        return ['Yahoo Finance', 'Finnhub', 'Twelve Data', 'TradingView'];
+        return ['Yahoo Finance', 'Twelve Data', 'TradingView'];
       case 'forex':
         return ['OANDA', 'Forex.com', 'TradingView', 'Central Banks'];
       case 'index':

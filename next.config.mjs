@@ -68,6 +68,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 't2.gstatic.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'assets.aceternity.com',
       },
     ],

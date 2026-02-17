@@ -239,83 +239,106 @@ function getStockFallbackPrice(symbol: string): PriceData | null {
   };
 }
 
-// Fetch stock prices from Yahoo Finance
+// Circuit breaker for Yahoo Finance (shared across batch requests)
+let yahooCircuitOpen = false;
+let yahooCircuitOpenedAt = 0;
+let yahooConsecutiveErrors = 0;
+const YAHOO_CIRCUIT_RESET_MS = 300000; // 5 minutes
+const YAHOO_CIRCUIT_THRESHOLD = 3;
+
+// Fetch stock prices from Yahoo Finance v8/chart API
 async function fetchStockPrices(symbols: string[]): Promise<Record<string, PriceData>> {
   const results: Record<string, PriceData> = {};
   
   if (symbols.length === 0) return results;
-  
-  try {
-    // Batch request to Yahoo Finance
-    const symbolsStr = symbols.join(',');
-    const response = await fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsStr}`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; OmniFolio/1.0)',
-        },
-        next: { revalidate: CACHE_DURATION }
-      }
-    );
-    
-    if (!response.ok) {
-      console.error('Yahoo Finance API error:', response.status);
-      // Return fallback prices for all requested symbols
+
+  // Circuit breaker check
+  const now = Date.now();
+  if (yahooCircuitOpen) {
+    if (now - yahooCircuitOpenedAt > YAHOO_CIRCUIT_RESET_MS) {
+      yahooCircuitOpen = false;
+      yahooConsecutiveErrors = 0;
+      console.log('[batch] Yahoo circuit breaker reset');
+    } else {
+      console.log(`[batch] Yahoo circuit OPEN, returning fallbacks for ${symbols.length} stocks`);
       for (const symbol of symbols) {
         const fallback = getStockFallbackPrice(symbol);
-        if (fallback) {
-          results[symbol.toUpperCase()] = fallback;
-        }
+        if (fallback) results[symbol.toUpperCase()] = fallback;
       }
       return results;
     }
+  }
+
+  // Fetch each symbol via v8/chart API (v7/quote is DEAD)
+  // Process in small batches to avoid overwhelming Yahoo
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < symbols.length; i += BATCH_SIZE) {
+    const batch = symbols.slice(i, i + BATCH_SIZE);
     
-    const data = await response.json();
-    const quotes = data.quoteResponse?.result || [];
-    
-    for (const quote of quotes) {
-      const symbol = quote.symbol;
-      const price = quote.regularMarketPrice || 0;
-      const change = quote.regularMarketChange || 0;
-      const changePercent = quote.regularMarketChangePercent || 0;
-      
-      results[symbol.toUpperCase()] = {
-        symbol: symbol.toUpperCase(),
-        price,
-        change,
-        changePercent,
-        high24h: quote.regularMarketDayHigh,
-        low24h: quote.regularMarketDayLow,
-        volume: quote.regularMarketVolume,
-        marketCap: quote.marketCap,
-        source: 'yahoo',
-        cached: false,
-        timestamp: Date.now(),
-      };
-      
-      // Update cache
-      setCache(symbol, price, change);
-    }
-    
-    // Add fallback for any symbols not found in Yahoo response
-    for (const symbol of symbols) {
-      if (!results[symbol.toUpperCase()]) {
-        const fallback = getStockFallbackPrice(symbol);
-        if (fallback) {
-          results[symbol.toUpperCase()] = fallback;
+    const batchPromises = batch.map(async (symbol) => {
+      try {
+        const response = await fetch(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`,
+          {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; OmniFolio/1.0)',
+            },
+            next: { revalidate: CACHE_DURATION }
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403 || response.status === 429) {
+            yahooConsecutiveErrors++;
+            if (yahooConsecutiveErrors >= YAHOO_CIRCUIT_THRESHOLD) {
+              yahooCircuitOpen = true;
+              yahooCircuitOpenedAt = Date.now();
+              console.error(`[batch] 🔴 Yahoo circuit breaker OPEN!`);
+            }
+          }
+          throw new Error(`Yahoo v8 error: ${response.status}`);
         }
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching stock prices:', error);
-    // Return fallback prices for all requested symbols on error
-    for (const symbol of symbols) {
-      if (!results[symbol.toUpperCase()]) {
+
+        const data = await response.json();
+        const chartResult = data?.chart?.result?.[0];
+        if (!chartResult) throw new Error('No chart data');
+
+        const meta = chartResult.meta;
+        const price = meta.regularMarketPrice || meta.previousClose || 0;
+        const previousClose = meta.chartPreviousClose || meta.previousClose || price;
+        const change = price - previousClose;
+        const changePercent = previousClose ? (change / previousClose) * 100 : 0;
+
+        // Reset errors on success
+        yahooConsecutiveErrors = 0;
+
+        results[symbol.toUpperCase()] = {
+          symbol: symbol.toUpperCase(),
+          price,
+          change,
+          changePercent,
+          high24h: meta.regularMarketDayHigh,
+          low24h: meta.regularMarketDayLow,
+          volume: meta.regularMarketVolume,
+          marketCap: undefined,
+          source: 'yahoo-v8',
+          cached: false,
+          timestamp: Date.now(),
+        };
+
+        setCache(symbol, price, change);
+      } catch (error) {
+        // Use fallback for this symbol
         const fallback = getStockFallbackPrice(symbol);
-        if (fallback) {
-          results[symbol.toUpperCase()] = fallback;
-        }
+        if (fallback) results[symbol.toUpperCase()] = fallback;
       }
+    });
+
+    await Promise.all(batchPromises);
+
+    // Small delay between batches to be respectful
+    if (i + BATCH_SIZE < symbols.length) {
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
   }
   

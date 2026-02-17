@@ -30,7 +30,7 @@ import {
   Building02Icon,
   Coins01Icon
 } from "hugeicons-react";
-import { Lock } from "lucide-react";
+import { Lock, MessageSquare, FileText, Image, Heart } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
 import { Sidebar as SidebarContainer, SidebarBody, SidebarLink } from "../ui/sidebar";
@@ -105,6 +105,13 @@ const realEstateNavigation = [
   { name: "AI Analytics", id: "analytics", icon: AiBrain01Icon },
 ];
 
+const communityNavigation = [
+  { name: "Posts", id: "posts", icon: MessageSquare },
+  { name: "Articles", id: "articles", icon: FileText },
+  { name: "Media", id: "media", icon: Image },
+  { name: "Likes", id: "likes", icon: Heart },
+];
+
 const newsNavigation = [
   { name: "My Holdings", id: "holdings-news", icon: Briefcase02Icon },
   { name: "Stocks", id: "stocks", icon: ChartBreakoutSquareIcon },
@@ -171,6 +178,8 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
     currentNavigation = valuablesNavigation;
   } else if (selectedCategory === "Real Estate") {
     currentNavigation = realEstateNavigation;
+  } else if (selectedCategory === "Community") {
+    currentNavigation = communityNavigation;
   } else {
     currentNavigation = defaultNavigation;
   }

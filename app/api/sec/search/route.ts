@@ -1,15 +1,20 @@
 /**
  * SEC Company Search API
- * Search for companies by name or ticker using SEC EDGAR
+ * Search for companies by name or ticker
+ *
+ * DB-first: searches sec_companies table in Supabase.
+ * Falls back to SEC EDGAR company_tickers.json only if DB is empty,
+ * then populates the DB for future searches.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { secCacheService } from '@/lib/sec-cache-service';
+import { createSECEdgarClient } from '@/lib/api/sec-edgar-api';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
 const SEC_USER_AGENT = process.env.SEC_USER_AGENT || 'OmniFolio contact@omnifolio.com';
-const SEC_BASE_URL = 'https://efts.sec.gov/LATEST/search-index';
 const SEC_COMPANY_TICKERS_URL = 'https://www.sec.gov/files/company_tickers.json';
 
 // Helper to get Supabase Admin client (bypasses RLS)
@@ -42,18 +47,11 @@ interface SearchResult {
   exchange?: string;
 }
 
-// Cache for company tickers (refresh every hour)
-let tickerCache: SearchResult[] | null = null;
-let tickerCacheTime: number = 0;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
-
-async function loadCompanyTickers(): Promise<SearchResult[]> {
-  const now = Date.now();
-  
-  if (tickerCache && (now - tickerCacheTime) < CACHE_DURATION) {
-    return tickerCache;
-  }
-
+/**
+ * Fallback: load from SEC and populate DB (only if sec_companies is empty)
+ * This should almost never be called in production — cron handles it.
+ */
+async function loadAndCacheCompanyTickers(): Promise<SearchResult[]> {
   try {
     const response = await fetch(SEC_COMPANY_TICKERS_URL, {
       headers: {
@@ -68,61 +66,44 @@ async function loadCompanyTickers(): Promise<SearchResult[]> {
 
     const data = await response.json() as Record<string, CompanyTickerEntry>;
     
-    tickerCache = Object.values(data).map((entry) => ({
+    const companies = Object.values(data).map((entry) => ({
       cik: entry.cik_str.toString().padStart(10, '0'),
       ticker: entry.ticker,
       name: entry.title,
     }));
-    
-    tickerCacheTime = now;
-    return tickerCache;
+
+    // Background: populate sec_companies table so future searches are DB-only
+    secCacheService.upsertCompanies(companies).catch(err =>
+      console.warn('[SEC Search] Background company upsert failed:', err)
+    );
+
+    return companies;
   } catch (error) {
     console.error('[SEC Search] Error loading company tickers:', error);
-    return tickerCache || [];
+    return [];
   }
 }
 
-function searchCompanies(companies: SearchResult[], query: string, limit: number = 10): SearchResult[] {
+function searchInMemory(companies: SearchResult[], query: string, limit: number = 10): SearchResult[] {
   const normalizedQuery = query.toLowerCase().trim();
-  
   if (!normalizedQuery) return [];
 
-  // Score each company based on match quality
   const scored = companies.map(company => {
     const tickerLower = company.ticker.toLowerCase();
     const nameLower = company.name.toLowerCase();
     
     let score = 0;
     
-    // Exact ticker match - highest priority
-    if (tickerLower === normalizedQuery) {
-      score = 1000;
-    }
-    // Ticker starts with query
-    else if (tickerLower.startsWith(normalizedQuery)) {
-      score = 500 + (100 - tickerLower.length); // Shorter tickers rank higher
-    }
-    // Ticker contains query
-    else if (tickerLower.includes(normalizedQuery)) {
-      score = 200;
-    }
-    // Name starts with query
-    else if (nameLower.startsWith(normalizedQuery)) {
-      score = 150;
-    }
-    // Name contains query as whole word
-    else if (nameLower.includes(` ${normalizedQuery}`) || nameLower.includes(`${normalizedQuery} `)) {
-      score = 100;
-    }
-    // Name contains query
-    else if (nameLower.includes(normalizedQuery)) {
-      score = 50;
-    }
+    if (tickerLower === normalizedQuery) score = 1000;
+    else if (tickerLower.startsWith(normalizedQuery)) score = 500 + (100 - tickerLower.length);
+    else if (tickerLower.includes(normalizedQuery)) score = 200;
+    else if (nameLower.startsWith(normalizedQuery)) score = 150;
+    else if (nameLower.includes(` ${normalizedQuery}`) || nameLower.includes(`${normalizedQuery} `)) score = 100;
+    else if (nameLower.includes(normalizedQuery)) score = 50;
 
     return { company, score };
   });
 
-  // Filter and sort by score
   return scored
     .filter(item => item.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -148,7 +129,6 @@ export async function GET(request: NextRequest) {
     if (recordSearch && (ticker || query)) {
       const supabase = getSupabaseAdmin();
       
-      // Try to get user ID from session
       let userId = null;
       try {
         const session = await auth.api.getSession({
@@ -174,13 +154,38 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const companies = await loadCompanyTickers();
-    const results = searchCompanies(companies, query || '', Math.min(limit, 50));
+    // ── 1. Try DB search (sec_companies table) ───────────────────
+    const searchQuery = query || '';
+    const cached = await secCacheService.searchCompanies(searchQuery, Math.min(limit, 50));
+
+    if (cached.data.length > 0) {
+      return NextResponse.json({
+        results: cached.data,
+        total: cached.data.length,
+        cached: true,
+        _source: 'db',
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'X-Data-Source': 'cache',
+        },
+      });
+    }
+
+    // ── 2. Fallback: fetch from SEC and populate DB ──────────────
+    // This only happens if sec_companies is empty (first boot)
+    const companies = await loadAndCacheCompanyTickers();
+    const results = searchInMemory(companies, searchQuery, Math.min(limit, 50));
 
     return NextResponse.json({ 
       results,
       total: results.length,
-      cached: tickerCache !== null,
+      cached: false,
+      _source: 'sec-edgar',
+    }, {
+      headers: {
+        'X-Data-Source': 'fresh',
+      },
     });
   } catch (error) {
     console.error('[SEC Search] Error:', error);

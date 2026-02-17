@@ -65,7 +65,6 @@ This document explains the Content Security Policy implementation for the Money 
 - `*.supabase.co` - Database & auth
 - `replicate.delivery` - Replicate AI
 - `api.coingecko.com` - Crypto prices
-- `finnhub.io` - Stock data
 - `query1.finance.yahoo.com` - Stock prices
 - `generativelanguage.googleapis.com` - Gemini AI
 - `*.tradingview.com` - Chart data

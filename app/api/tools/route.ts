@@ -29,24 +29,13 @@ const tools = {
     try {
       console.log(`[TOOL:fetchPrice] Fetching price for ${symbol}`);
       
-      // Try multiple sources for better reliability
-      const apiKey = process.env.FINNHUB_API_KEY;
-      
-      if (!apiKey) {
-        return {
-          success: false,
-          error: 'Price API not configured'
-        };
-      }
-
-      // Determine asset type and fetch accordingly
       const upperSymbol = symbol.toUpperCase();
       
       // Check if it's a crypto symbol
       if (upperSymbol.includes('BTC') || upperSymbol.includes('ETH') || 
           upperSymbol.includes('USDT') || upperSymbol.includes('USDC')) {
         
-        // Use CoinMarketCap or Binance
+        // Use Binance for crypto
         const response = await fetch(
           `https://api.binance.com/api/v3/ticker/price?symbol=${upperSymbol}`
         );
@@ -64,9 +53,10 @@ const tools = {
         }
       }
       
-      // Try Finnhub for stocks
+      // Use internal market-data API for stocks
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const response = await fetch(
-        `https://finnhub.io/api/v1/quote?symbol=${upperSymbol}&token=${apiKey}`
+        `${baseUrl}/api/market-data?symbol=${upperSymbol}&type=stock`
       );
       
       if (!response.ok) {
@@ -82,14 +72,14 @@ const tools = {
         success: true,
         data: {
           symbol: upperSymbol,
-          price: data.c, // Current price
-          change: data.d, // Change
-          changePercent: data.dp, // Change percent
-          high: data.h,
-          low: data.l,
-          open: data.o,
-          previousClose: data.pc,
-          source: 'Finnhub'
+          price: data.currentPrice,
+          change: data.change24h,
+          changePercent: data.changePercent24h,
+          high: data.high,
+          low: data.low,
+          open: data.open,
+          previousClose: data.previousClose,
+          source: data.dataSource || 'Market Data API'
         }
       };
       
