@@ -48,10 +48,47 @@ import {
   Plane,
   GraduationCap,
   Factory,
+  Activity,
+  Eye,
+  ShieldAlert,
+  Zap,
+  ArrowUpRight,
+  ArrowDownRight,
+  Users,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ComposedChart,
+  Line,
+} from "recharts";
 import { cn } from "@/lib/utils";
 import { tickerDomains } from "@/lib/ticker-domains";
 import { motion, AnimatePresence } from "framer-motion";
+
+// ── Stable container size hook — replaces ResponsiveContainer to kill flicker ──
+function useContainerSize(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setSize(prev => (prev.width === Math.round(width) && prev.height === Math.round(height)) ? prev : { width: Math.round(width), height: Math.round(height) });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return size;
+}
 
 // ── Debounce hook ────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -272,6 +309,31 @@ const getScoreColor = (score: number): string => {
   return "text-gray-400";
 };
 
+const getScoreColorHex = (score: number): string => {
+  if (score >= 80) return "#f87171";
+  if (score >= 60) return "#fb923c";
+  if (score >= 40) return "#22d3ee";
+  if (score >= 20) return "#60a5fa";
+  return "#9ca3af";
+};
+
+const getOGIScoreStyle = (score: number) => {
+  if (score >= 80) return { text: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", fill: "#f87171" };
+  if (score >= 60) return { text: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", fill: "#fb923c" };
+  if (score >= 40) return { text: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/20", fill: "#22d3ee" };
+  if (score >= 20) return { text: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", fill: "#60a5fa" };
+  return { text: "text-gray-400", bg: "bg-gray-500/10", border: "border-gray-500/20", fill: "#9ca3af" };
+};
+
+const getSignalInfo = (score: number, trend: string): { signal: string; icon: React.ReactNode; color: string; bgColor: string; borderColor: string; description: string } => {
+  if (score >= 80 && trend === "increasing") return { signal: "HEAVY CONTRACTOR", icon: <ShieldAlert className="w-3.5 h-3.5" />, color: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/30", description: "Surging federal contracts — significant government dependency" };
+  if (score >= 80) return { signal: "MAJOR CONTRACTOR", icon: <Zap className="w-3.5 h-3.5" />, color: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/30", description: "Very high federal contract volume — monitor for budget risk" };
+  if (score >= 60) return { signal: "ELEVATED", icon: <Eye className="w-3.5 h-3.5" />, color: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/30", description: "Above-average federal contracting — notable government presence" };
+  if (score >= 40) return { signal: "MODERATE", icon: <Activity className="w-3.5 h-3.5" />, color: "text-cyan-400", bgColor: "bg-cyan-500/10", borderColor: "border-cyan-500/30", description: "Moderate federal contract activity — standard for sector" };
+  if (score >= 20) return { signal: "LOW", icon: <Minus className="w-3.5 h-3.5" />, color: "text-blue-400", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30", description: "Minimal federal contracting engagement" };
+  return { signal: "NEGLIGIBLE", icon: <Minus className="w-3.5 h-3.5" />, color: "text-gray-400", bgColor: "bg-gray-500/10", borderColor: "border-gray-500/30", description: "Little to no federal contract activity detected" };
+};
+
 const getTrendIcon = (trend: string) => {
   if (trend === "increasing") return <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />;
   if (trend === "decreasing") return <TrendingDown className="w-3.5 h-3.5 text-red-400" />;
@@ -306,80 +368,520 @@ const formatDate = (dateStr: string | null) => {
   }
 };
 
-// ── OGI Score Gauge ──────────────────────────────────────────────────
-const OGIScoreGauge = ({ score, label }: { score: number; label: string }) => {
-  const circumference = 2 * Math.PI * 36;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+// ── OGI Score Gauge — needle style matching Senate Lobbying ─────────
+const OGIScoreGauge = ({ score, label, trend, fiscalYears }: { score: number; label: string; trend: string; fiscalYears?: SpendingFiscalYear[] }) => {
+  const styles = getOGIScoreStyle(score);
+  const rotation = -90 + (score / 100) * 180;
+
+  const sparkData = useMemo(() => {
+    if (!fiscalYears || fiscalYears.length === 0) return [];
+    return fiscalYears
+      .filter(fy => fy.awardCount > 0)
+      .sort((a, b) => a.year - b.year)
+      .slice(-6)
+      .map(fy => fy.ogiScore);
+  }, [fiscalYears]);
 
   return (
-    <div className="relative flex items-center justify-center w-24 h-24">
-      <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 80 80">
-        <circle
-          cx="40" cy="40" r="36"
-          stroke="currentColor" strokeWidth="6" fill="none"
-          className="text-gray-800"
-        />
-        <circle
-          cx="40" cy="40" r="36"
-          stroke="currentColor" strokeWidth="6" fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          className={getScoreColor(score)}
-          style={{ transition: "stroke-dashoffset 1s ease-in-out" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-lg font-bold font-mono", getScoreColor(score))}>
-          {score.toFixed(0)}
-        </span>
-        <span className="text-[8px] text-gray-500 uppercase tracking-wider">{label}</span>
+    <div className="flex flex-col items-center">
+      <div className="relative w-48 h-28 mb-2">
+        <svg viewBox="0 0 200 110" className="w-full h-full">
+          {/* Background Track */}
+          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#262626" strokeWidth="12" strokeLinecap="round" />
+
+          {/* Segments */}
+          <path d="M 20 100 A 80 80 0 0 1 50 38" fill="none" stroke="#9ca3af" strokeWidth="3" strokeOpacity="0.3" />
+          <path d="M 50 38 A 80 80 0 0 1 80 22" fill="none" stroke="#60a5fa" strokeWidth="3" strokeOpacity="0.3" />
+          <path d="M 80 22 A 80 80 0 0 1 120 22" fill="none" stroke="#22d3ee" strokeWidth="3" strokeOpacity="0.3" />
+          <path d="M 120 22 A 80 80 0 0 1 150 38" fill="none" stroke="#fb923c" strokeWidth="3" strokeOpacity="0.3" />
+          <path d="M 150 38 A 80 80 0 0 1 180 100" fill="none" stroke="#f87171" strokeWidth="3" strokeOpacity="0.3" />
+
+          {/* Needle */}
+          <g transform={`rotate(${rotation}, 100, 100)`}>
+            <line x1="100" y1="100" x2="100" y2="30" stroke={styles.fill} strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="100" cy="100" r="5" fill={styles.fill} />
+          </g>
+
+          <text x="15" y="108" fill="#6b7280" fontSize="8" textAnchor="start">0</text>
+          <text x="100" y="12" fill="#6b7280" fontSize="8" textAnchor="middle">50</text>
+          <text x="185" y="108" fill="#6b7280" fontSize="8" textAnchor="end">100</text>
+        </svg>
+      </div>
+
+      <div className={cn("text-3xl font-bold font-mono", styles.text)}>
+        {score.toFixed(0)}
+      </div>
+
+      <div className={cn("mt-1 px-3 py-1 rounded-full text-xs font-semibold border", styles.bg, styles.border, styles.text)}>
+        {label}
+      </div>
+
+      {/* Mini Sparkline for Trend */}
+      {sparkData.length > 1 && (
+        <div className="mt-4 w-32 h-10 opacity-60">
+          <AreaChart width={128} height={40} data={sparkData.map((v, i) => ({ v, i }))}>
+            <defs>
+              <linearGradient id="ogiSpark" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={styles.fill} stopOpacity={0.3}/>
+                <stop offset="95%" stopColor={styles.fill} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey="v"
+              stroke={styles.fill}
+              strokeWidth={1.5}
+              fill="url(#ogiSpark)"
+              dot={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Stable tick renderer — defined OUTSIDE component to prevent remount flicker ──
+const FiscalYearXTick = ({
+  x, y, payload,
+}: any) => {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0} y={0} dy={13}
+        textAnchor="middle"
+        fill="#888"
+        fontSize={12}
+        fontWeight={600}
+      >
+        {payload.value}
+      </text>
+    </g>
+  );
+};
+
+// ── Annual tooltip — defined OUTSIDE ──
+const AnnualSpendTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div className="bg-[#0e0e0e] border border-gray-700/70 rounded-xl p-3 shadow-2xl min-w-[148px] pointer-events-none">
+      <div className="text-xs font-semibold text-white mb-2">{d?.name}</div>
+      <div className="space-y-1.5">
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Total Obligated</span>
+          <span className="font-mono font-bold text-cyan-400">{formatCurrency(d?.spend || 0)}</span>
+        </div>
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">OGI Score</span>
+          <span className={cn("font-mono font-bold", getScoreColor(d?.ogi || 0))}>{d?.ogi?.toFixed(0)}</span>
+        </div>
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Awards</span>
+          <span className="font-mono text-gray-300">{d?.awards}</span>
+        </div>
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Agencies</span>
+          <span className="font-mono text-gray-300">{d?.agencies}</span>
+        </div>
+        {d?.yoy !== null && d?.yoy !== undefined && (
+          <div className="flex justify-between gap-6 text-[11px]">
+            <span className="text-gray-400">YoY</span>
+            <span className={cn("font-mono font-bold", d.yoy > 0 ? "text-emerald-400" : "text-red-400")}>
+              {d.yoy > 0 ? "+" : ""}{d.yoy.toFixed(1)}%
+            </span>
+          </div>
+        )}
+        {d?.isSpikeYear && (
+          <div className="flex items-center gap-1 text-[10px] text-orange-400 pt-1 border-t border-gray-800">
+            <Zap className="w-3 h-3" />
+            <span>Obligation spike</span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// ── Annual Spend Bar Chart ───────────────────────────────────────────
+// ── Custom bar shape ──────────────────────────────────────────────────
+const SpendBarShape = (props: any) => {
+  const { x, y, width, height, payload } = props;
+  if (!width || !height || height <= 0) return null;
+  const fill = payload?.fillColor || 'url(#spendGradFY)';
+  const r = Math.min(4, height / 2);
+  return (
+    <path
+      d={`M${x},${y + r}
+          Q${x},${y} ${x + r},${y}
+          L${x + width - r},${y}
+          Q${x + width},${y} ${x + width},${y + r}
+          L${x + width},${y + height}
+          L${x},${y + height}Z`}
+      fill={fill}
+    />
+  );
+};
+
+// ── Stable prop constants — hoisted to module scope to prevent new references on re-render ──
+const GRID_STROKE = "#222";
+const CURSOR_STYLE = { fill: 'rgba(255,255,255,0.03)' } as const;
+const YAXIS_TICK_DEFAULT = { fontSize: 10, fill: '#525252' } as const;
+const YAXIS_TICK_OGI = { fontSize: 10, fill: '#22d3ee', fillOpacity: 0.55 } as const;
+const OGI_DOMAIN: [number, number] = [0, 100];
+const LINE_DOT = { r: 2.5, fill: '#1A1A1A', stroke: '#22d3ee', strokeWidth: 1.5 } as const;
+const LINE_ACTIVE_DOT = { r: 4, fill: '#22d3ee', stroke: '#1A1A1A', strokeWidth: 2 } as const;
+const CHART_MARGIN = { top: 8, right: 32, left: 8, bottom: 8 };
+const fiscalYearXTickElement = <FiscalYearXTick />;
+const spendBarShapeElement = <SpendBarShape />;
+const annualSpendTooltipElement = <AnnualSpendTooltip />;
+
+// ── Annual Spend Bar Chart — recharts ComposedChart with OGI line ─────
 const AnnualSpendChart = ({ fiscalYears }: { fiscalYears: SpendingFiscalYear[] }) => {
-  const activeYears = fiscalYears
-    .filter(fy => fy.awardCount > 0)
-    .sort((a, b) => a.year - b.year);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartSize = useContainerSize(chartRef);
+
+  const activeYears = useMemo(() =>
+    fiscalYears
+      .filter(fy => fy.awardCount > 0)
+      .sort((a, b) => a.year - b.year),
+    [fiscalYears]
+  );
+
+  const chartData = useMemo(() => {
+    return activeYears.map((fy, i, arr) => {
+      const prev = i > 0 ? arr[i - 1].totalObligated : null;
+      const yoy = prev && prev > 0 ? ((fy.totalObligated - prev) / prev) * 100 : null;
+      return {
+        name: `FY${String(fy.year).slice(-2)}`,
+        year: fy.year,
+        spend: fy.totalObligated,
+        ogi: fy.ogiScore,
+        awards: fy.awardCount,
+        agencies: fy.uniqueAgencies,
+        yoy,
+      };
+    });
+  }, [activeYears]);
+
+  const spikeThreshold = useMemo(() => {
+    const avg = chartData.reduce((s, d) => s + d.spend, 0) / (chartData.length || 1);
+    return avg * 1.5;
+  }, [chartData]);
+
+  const chartDataWithFill = useMemo(() => chartData.map(d => ({
+    ...d,
+    isSpikeYear: d.spend > spikeThreshold,
+    fillColor: d.spend > spikeThreshold ? 'url(#spendGradSpikeFY)' : 'url(#spendGradFY)',
+  })), [chartData, spikeThreshold]);
+
+  const yoyBadge = useMemo(() => {
+    if (chartData.length >= 2) {
+      const last = chartData[chartData.length - 1];
+      const prev = chartData[chartData.length - 2];
+      const change = prev.spend > 0 ? ((last.spend - prev.spend) / prev.spend) * 100 : 0;
+      return { change };
+    }
+    return null;
+  }, [chartData]);
 
   if (activeYears.length === 0) return null;
 
-  const maxSpend = Math.max(...activeYears.map(fy => Math.abs(fy.totalObligated)), 1);
+  const chartHeight = 240;
 
   return (
-    <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-      <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
-        <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
-        Annual Federal Obligations
-      </h4>
-      <div className="flex items-end gap-2 h-28">
-        {activeYears.map((fy) => {
-          const height = Math.max(4, (Math.abs(fy.totalObligated) / maxSpend) * 100);
-          return (
+    <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-cyan-400" />
+            Federal Obligations
+          </h4>
+          <p className="text-xs text-gray-500 mt-0.5">Annual federal contract obligations with OGI influence score</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {yoyBadge && (
+            <div className={cn("flex items-center gap-1 text-[10px] font-mono font-bold", yoyBadge.change > 0 ? "text-emerald-400" : yoyBadge.change < 0 ? "text-red-400" : "text-gray-400")}>
+              {yoyBadge.change > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {yoyBadge.change > 0 ? "+" : ""}{yoyBadge.change.toFixed(1)}% YoY
+            </div>
+          )}
+          {/* Legend */}
+          <div className="flex items-center gap-3 text-[10px] text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-cyan-500/60" />
+              <span>Obligated</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-[2px] bg-cyan-400/80 rounded-full" />
+              <span>OGI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div ref={chartRef} className="w-full" style={{ height: chartHeight }}>
+        {chartSize.width > 0 && (
+          <ComposedChart
+            width={chartSize.width}
+            height={chartHeight}
+            data={chartDataWithFill}
+            margin={CHART_MARGIN}
+            barCategoryGap="32%"
+          >
+            <defs>
+              <linearGradient id="spendGradFY" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.15} />
+              </linearGradient>
+              <linearGradient id="spendGradSpikeFY" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f97316" stopOpacity={0.85} />
+                <stop offset="100%" stopColor="#f97316" stopOpacity={0.2} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+            <XAxis
+              dataKey="name"
+              tick={fiscalYearXTickElement}
+              axisLine={false}
+              tickLine={false}
+              interval={0}
+              height={28}
+            />
+            <YAxis
+              yAxisId="spend"
+              tick={YAXIS_TICK_DEFAULT}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={formatCurrency}
+              width={58}
+            />
+            <YAxis
+              yAxisId="ogi"
+              orientation="right"
+              domain={OGI_DOMAIN}
+              tick={YAXIS_TICK_OGI}
+              axisLine={false}
+              tickLine={false}
+              tickCount={5}
+              width={30}
+            />
+            <RechartsTooltip
+              content={annualSpendTooltipElement}
+              cursor={CURSOR_STYLE}
+              isAnimationActive={false}
+            />
+            <Bar
+              yAxisId="spend"
+              dataKey="spend"
+              maxBarSize={80}
+              isAnimationActive={false}
+              shape={spendBarShapeElement}
+            />
+            <Line
+              yAxisId="ogi"
+              type="monotone"
+              dataKey="ogi"
+              stroke="#22d3ee"
+              strokeWidth={2}
+              dot={LINE_DOT}
+              activeDot={LINE_ACTIVE_DOT}
+              isAnimationActive={false}
+            />
+          </ComposedChart>
+        )}
+      </div>
+
+      {/* Spike annotation */}
+      {chartDataWithFill.some(d => d.isSpikeYear) && (
+        <div className="flex items-center gap-2 mt-3 px-3 py-1.5 bg-orange-500/5 border border-orange-500/10 rounded-lg">
+          <Zap className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
+          <span className="text-[10px] text-orange-400/80">
+            Spike years (orange) exceed {formatCurrency(Math.round(spikeThreshold))} — 1.5× annual avg
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Drilldown Modal ──────────────────────────────────────────────────
+interface DrilldownModalProps {
+  title: string;
+  subtitle: string;
+  awards: SpendingActivityItem[];
+  accentColor: string;
+  onClose: () => void;
+}
+
+const DrilldownModal = ({ title, subtitle, awards, accentColor, onClose }: DrilldownModalProps) => {
+  const totalObligation = awards.reduce((s, a) => s + (a.totalObligation || 0), 0);
+  const uniqueRecipients = new Set(awards.map(a => a.recipientName)).size;
+  const uniqueStates = new Set(awards.map(a => a.performanceState).filter(Boolean)).size;
+
+  const sorted = [...awards].sort((a, b) => (b.totalObligation || 0) - (a.totalObligation || 0));
+
+  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+      onClick={handleBackdrop}
+    >
+      <div
+        className="w-full max-w-4xl max-h-[85vh] bg-[#0e0e0e] border border-gray-800 rounded-2xl flex flex-col shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+          <div>
+            <h3 className={cn("text-base font-bold flex items-center gap-2", accentColor)}>
+              <FileText className="w-4 h-4" />
+              {title}
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          </div>
+          {/* Summary chips */}
+          <div className="flex items-center gap-6 mr-8">
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-cyan-400">{formatCurrency(totalObligation)}</div>
+              <div className="text-[10px] text-gray-600">obligated</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-white">{awards.length}</div>
+              <div className="text-[10px] text-gray-600">awards</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-blue-400">{uniqueRecipients}</div>
+              <div className="text-[10px] text-gray-600">recipients</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-purple-400">{uniqueStates}</div>
+              <div className="text-[10px] text-gray-600">states</div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-800 transition-colors text-gray-500 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Table head */}
+        <div className="grid grid-cols-12 gap-3 px-6 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800/60 flex-shrink-0 bg-[#0a0a0a]">
+          <div className="col-span-1">Date</div>
+          <div className="col-span-1">FY</div>
+          <div className="col-span-3">Recipient</div>
+          <div className="col-span-3">Description</div>
+          <div className="col-span-2">Performance</div>
+          <div className="col-span-1 text-right">Obligation</div>
+          <div className="col-span-1 text-center">Link</div>
+        </div>
+
+        {/* Scrollable rows */}
+        <div className="overflow-y-auto flex-1 custom-scrollbar divide-y divide-gray-800/40">
+          {sorted.map((a, i) => (
             <div
-              key={fy.year}
-              className="flex-1 flex flex-col items-center gap-1 group relative"
+              key={`${a.awardId}-${i}`}
+              className="grid grid-cols-12 gap-3 px-6 py-3 items-start hover:bg-white/[0.02] transition-colors text-xs group"
             >
-              <div
-                className="w-full rounded-t bg-gradient-to-t from-cyan-600/60 to-cyan-400/80 transition-all duration-300 hover:from-cyan-500/70 hover:to-cyan-300/90 min-w-[20px]"
-                style={{ height: `${height}%` }}
-              />
-              <span className="text-[10px] text-gray-500 font-mono">
-                FY{String(fy.year).slice(-2)}
-              </span>
-              {/* Tooltip */}
-              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-[#1A1A1A] border border-gray-700 rounded-lg p-2 text-[10px] z-10 whitespace-nowrap shadow-xl">
-                <div className="font-medium text-white">FY {fy.year}</div>
-                <div className="text-cyan-400">{formatCurrency(fy.totalObligated)}</div>
-                <div className="text-gray-500">{fy.awardCount} awards</div>
-                <div className="text-gray-500">{fy.uniqueAgencies} agencies</div>
+              {/* Date */}
+              <div className="col-span-1">
+                <span className="text-gray-500 font-mono text-[10px]">
+                  {a.actionDate ? new Date(a.actionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—'}
+                </span>
+              </div>
+              {/* FY */}
+              <div className="col-span-1">
+                <span className="text-[10px] font-mono text-gray-300">FY{a.fiscalYear}</span>
+              </div>
+              {/* Recipient */}
+              <div className="col-span-3">
+                <div className="text-[11px] font-medium text-white truncate" title={a.recipientName}>{a.recipientName}</div>
+                {a.recipientParentName && a.recipientParentName !== a.recipientName && (
+                  <div className="text-[10px] text-gray-600 truncate" title={a.recipientParentName}>{a.recipientParentName}</div>
+                )}
+              </div>
+              {/* Description */}
+              <div className="col-span-3">
+                <p className="text-[10px] text-gray-400 line-clamp-3 leading-relaxed" title={a.awardDescription || ''}>
+                  {a.awardDescription || '—'}
+                </p>
+                <span className="inline-block text-[9px] px-1.5 py-0.5 rounded bg-gray-800/60 text-gray-500 mt-0.5 capitalize">
+                  {a.awardType}
+                </span>
+              </div>
+              {/* Performance */}
+              <div className="col-span-2">
+                {a.performanceState && (
+                  <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                    <MapPin className="w-2.5 h-2.5 text-gray-600" />
+                    {a.performanceState}
+                    {a.performanceCity && <span className="text-gray-600">, {a.performanceCity}</span>}
+                  </div>
+                )}
+                {a.performanceStartDate && a.performanceEndDate && (
+                  <div className="text-[9px] text-gray-600 flex items-center gap-1 mt-0.5">
+                    <Calendar className="w-2.5 h-2.5" />
+                    {formatDate(a.performanceStartDate)} – {formatDate(a.performanceEndDate)}
+                  </div>
+                )}
+              </div>
+              {/* Obligation */}
+              <div className="col-span-1 text-right">
+                {a.totalObligation ? (
+                  <span className="font-mono font-semibold text-cyan-400 text-[11px]">{formatCurrency(a.totalObligation)}</span>
+                ) : (
+                  <span className="text-gray-700 text-[10px]">—</span>
+                )}
+              </div>
+              {/* Permalink */}
+              <div className="col-span-1 flex justify-center">
+                {a.permalink ? (
+                  <a
+                    href={a.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-colors text-[9px] font-semibold"
+                    title="Open award on USAspending.gov"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-2.5 h-2.5" />
+                    View
+                  </a>
+                ) : (
+                  <span className="text-gray-700 text-[10px]">—</span>
+                )}
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-800 flex-shrink-0 bg-[#0a0a0a]">
+          <span className="text-[10px] text-gray-600 flex items-center gap-1.5">
+            <Shield className="w-3 h-3" />
+            USAspending.gov · Public federal records
+          </span>
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -661,6 +1163,58 @@ export function USASpendingView() {
   const totalPages = Math.ceil((data?.activities?.length || 0) / itemsPerPage);
   const summary = data?.summary;
 
+  // ── Drilldown modal state ──────────────────────────────────────────
+  const [drilldown, setDrilldown] = useState<{
+    title: string;
+    subtitle: string;
+    awards: SpendingActivityItem[];
+    accentColor: string;
+  } | null>(null);
+
+  const openAgencyDrilldown = useCallback((agencyName: string) => {
+    if (!data?.activities) return;
+    const awards = data.activities.filter(a => a.awardingAgencyName === agencyName);
+    setDrilldown({
+      title: agencyName,
+      subtitle: `${awards.length} awards from this agency`,
+      awards,
+      accentColor: 'text-blue-400',
+    });
+  }, [data?.activities]);
+
+  const openSubAgencyDrilldown = useCallback((subAgencyName: string) => {
+    if (!data?.activities) return;
+    const awards = data.activities.filter(a => a.awardingSubAgencyName === subAgencyName);
+    setDrilldown({
+      title: subAgencyName,
+      subtitle: `${awards.length} awards from this sub-agency`,
+      awards,
+      accentColor: 'text-cyan-400',
+    });
+  }, [data?.activities]);
+
+  const openAwardTypeDrilldown = useCallback((awardType: string) => {
+    if (!data?.activities) return;
+    const awards = data.activities.filter(a => a.awardType === awardType);
+    setDrilldown({
+      title: awardType,
+      subtitle: `${awards.length} awards of this type`,
+      awards,
+      accentColor: 'text-emerald-400',
+    });
+  }, [data?.activities]);
+
+  const openStateDrilldown = useCallback((state: string) => {
+    if (!data?.activities) return;
+    const awards = data.activities.filter(a => a.performanceState === state);
+    setDrilldown({
+      title: `Performance: ${state}`,
+      subtitle: `${awards.length} awards performed in ${state}`,
+      awards,
+      accentColor: 'text-purple-400',
+    });
+  }, [data?.activities]);
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* Header */}
@@ -909,73 +1463,205 @@ export function USASpendingView() {
         {/* Main Content */}
         {data && !error && (
           <>
-            {/* OGI Score + Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {/* OGI Score Card */}
-              <div className="md:col-span-1 bg-[#0D0D0D] rounded-xl border border-gray-800 p-4 flex flex-col items-center justify-center">
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">OGI Score</div>
-                <OGIScoreGauge score={data.currentScore} label={data.currentLabel} />
-                <div className="flex items-center gap-1.5 mt-2">
-                  {getTrendIcon(data.trend)}
-                  <span className="text-[10px] text-gray-500 capitalize">{data.trend}</span>
-                </div>
-              </div>
+            {/* OGI Score + Signal Banner + Summary Cards — unified panel */}
+            {(() => {
+              const sig = getSignalInfo(data.currentScore, data.trend);
+              const scoreStyle = getOGIScoreStyle(data.currentScore);
+              return (
+                <div className="bg-[#0A0A0A] rounded-2xl border border-gray-800/80 overflow-hidden">
+                  {/* Top: Signal Banner */}
+                  <div className={cn("flex items-center gap-3 px-5 py-2.5 border-b", sig.bgColor, sig.borderColor.replace("border-", "border-b-"))}>
+                    <div className={cn("flex items-center gap-2 font-semibold text-xs tracking-wide uppercase", sig.color)}>
+                      {sig.icon}
+                      {sig.signal}
+                    </div>
+                    <div className="w-px h-3.5 bg-gray-700/60" />
+                    <span className="text-xs text-gray-400 leading-none">{sig.description}</span>
+                    <div className="ml-auto flex items-center gap-1.5 text-[10px] text-gray-600">
+                      {getTrendIcon(data.trend)}
+                      <span className="capitalize">{data.trend}</span>
+                    </div>
+                  </div>
 
-              {/* Summary Cards */}
-              <div className="md:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" />
-                    Total Obligated
-                  </div>
-                  <div className="text-lg font-bold text-cyan-400 font-mono">
-                    {formatCurrency(summary?.totalObligated || 0)}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {formatCurrency(summary?.averagePerYear || 0)}/year avg
-                  </div>
-                </div>
+                  {/* Bottom: OGI Gauge + 4 stat cards side-by-side */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-gray-800/60">
+                    {/* OGI Gauge */}
+                    <div className="lg:col-span-3 flex flex-col items-center justify-center py-6 px-4 relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+                      <div className="relative z-10 flex flex-col items-center w-full">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-3 font-medium">OGI Score</span>
+                        <OGIScoreGauge score={data.currentScore} label={data.currentLabel} trend={data.trend} fiscalYears={data.fiscalYears} />
+                      </div>
+                    </div>
 
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    Total Awards
-                  </div>
-                  <div className="text-lg font-bold text-white font-mono">
-                    {summary?.totalAwards || 0}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {summary?.totalFiscalYears || 0} fiscal years
-                  </div>
-                </div>
+                    {/* 4 Stat Cards */}
+                    <div className="lg:col-span-9 grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-800/60">
 
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <Building2 className="w-3 h-3" />
-                    Agencies
-                  </div>
-                  <div className="text-lg font-bold text-blue-400 font-mono">
-                    {summary?.uniqueAgencies || 0}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {summary?.uniqueSubAgencies || 0} sub-agencies
-                  </div>
-                </div>
+                      {/* ── Total Obligated — year-over-year bar sparkline ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Total Obligated</span>
+                          <div className="w-6 h-6 rounded-lg bg-cyan-500/10 border border-cyan-500/10 flex items-center justify-center">
+                            <DollarSign className="w-3 h-3 text-cyan-400" />
+                          </div>
+                        </div>
+                        {/* Mini bar sparkline — annual obligations */}
+                        {summary && summary.spendByYear.length > 0 && (() => {
+                          const years = [...summary.spendByYear].sort((a, b) => a.year - b.year).slice(-5);
+                          const max = Math.max(...years.map(y => Math.abs(y.obligated)), 1);
+                          return (
+                            <div className="flex items-end gap-[3px] h-8 mb-2.5">
+                              {years.map((y, i) => {
+                                const h = Math.max(2, Math.round((Math.abs(y.obligated) / max) * 28));
+                                const isLast = i === years.length - 1;
+                                return (
+                                  <div key={y.year} className="flex-1 flex flex-col items-center gap-0.5" title={`FY${y.year}: ${formatCurrency(y.obligated)}`}>
+                                    <div
+                                      className={cn("w-full rounded-sm transition-all", isLast ? "bg-cyan-400" : "bg-cyan-400/25")}
+                                      style={{ height: h }}
+                                    />
+                                    <span className="text-[7px] text-gray-700 font-mono leading-none">{String(y.year).slice(2)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-cyan-400 font-mono tracking-tight leading-none">
+                            {formatCurrency(summary?.totalObligated || 0)}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {formatCurrency(summary?.averagePerYear || 0)} / yr avg
+                          </div>
+                        </div>
+                      </div>
 
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    Performance
-                  </div>
-                  <div className="text-lg font-bold text-purple-400 font-mono">
-                    {summary?.uniqueStates || 0}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    states with contracts
+                      {/* ── Total Awards — fiscal year activity dot grid ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Awards</span>
+                          <div className="w-6 h-6 rounded-lg bg-white/5 border border-gray-700/30 flex items-center justify-center">
+                            <FileText className="w-3 h-3 text-gray-400" />
+                          </div>
+                        </div>
+                        {/* FY dot grid */}
+                        {data.fiscalYears && data.fiscalYears.length > 0 && (() => {
+                          const sorted = [...data.fiscalYears].sort((a, b) => a.year - b.year).slice(-20);
+                          return (
+                            <div className="flex flex-wrap gap-[3px] mb-2.5">
+                              {sorted.map((fy, i) => (
+                                <div
+                                  key={i}
+                                  title={`FY${fy.year}: ${fy.awardCount} awards`}
+                                  className={cn(
+                                    "w-2.5 h-2.5 rounded-sm",
+                                    fy.awardCount > 100 ? "bg-white/70" :
+                                    fy.awardCount > 30  ? "bg-white/35" :
+                                    fy.awardCount > 0   ? "bg-white/15" :
+                                                          "bg-white/[0.04]"
+                                  )}
+                                />
+                              ))}
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-white font-mono tracking-tight leading-none">
+                            {summary?.totalAwards || 0}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {summary?.totalFiscalYears || 0} fiscal years
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Agencies — agency vs sub-agency ratio bar ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Agencies</span>
+                          <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/10 flex items-center justify-center">
+                            <Building2 className="w-3 h-3 text-blue-400" />
+                          </div>
+                        </div>
+                        {summary && summary.uniqueAgencies > 0 && summary.uniqueSubAgencies > 0 && (() => {
+                          const agencies = summary.uniqueAgencies;
+                          const subAgencies = summary.uniqueSubAgencies;
+                          const total = agencies + subAgencies;
+                          const agencyPct = Math.round((agencies / total) * 100);
+                          return (
+                            <div className="mb-2.5 space-y-1.5">
+                              <div className="flex h-2 rounded-full overflow-hidden gap-px">
+                                <div className="bg-blue-500/60 rounded-l-full" style={{ width: `${agencyPct}%` }} title={`${agencies} agencies`} />
+                                <div className="bg-sky-400/40 rounded-r-full flex-1" title={`${subAgencies} sub-agencies`} />
+                              </div>
+                              <div className="flex items-center justify-between text-[9px] font-mono text-gray-600">
+                                <span className="flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500/60" />{agencies} agencies</span>
+                                <span className="flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400/40" />{subAgencies} sub</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-blue-400 font-mono tracking-tight leading-none">
+                            {summary?.uniqueAgencies || 0}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {summary?.uniqueSubAgencies || 0} sub-agencies
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── States — award type segmented bar ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Reach</span>
+                          <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/10 flex items-center justify-center">
+                            <Globe className="w-3 h-3 text-purple-400" />
+                          </div>
+                        </div>
+                        {summary && summary.awardTypeBreakdown.length > 0 && (() => {
+                          const top = summary.awardTypeBreakdown.slice(0, 5);
+                          const totalCount = top.reduce((s, t) => s + t.count, 0) || 1;
+                          const colors = ["bg-purple-400/70", "bg-purple-400/45", "bg-violet-400/40", "bg-fuchsia-400/35", "bg-gray-500/25"];
+                          return (
+                            <div className="mb-2.5 space-y-1.5">
+                              <div className="flex h-2 rounded-full overflow-hidden gap-px">
+                                {top.map((t, i) => (
+                                  <div
+                                    key={t.type}
+                                    className={cn("rounded-sm first:rounded-l-full last:rounded-r-full", colors[i])}
+                                    style={{ width: `${(t.count / totalCount) * 100}%` }}
+                                    title={`${t.type}: ${t.count} awards`}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {top.slice(0, 3).map((t) => (
+                                  <span key={t.type} className="text-[8px] font-mono text-gray-600 truncate max-w-[56px] capitalize" title={t.type}>
+                                    {t.type}
+                                  </span>
+                                ))}
+                                {top.length > 3 && <span className="text-[8px] font-mono text-gray-700">+{top.length - 3}</span>}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-purple-400 font-mono tracking-tight leading-none">
+                            {summary?.uniqueStates || 0}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {summary?.uniqueSectors || 0} NAICS sectors
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Annual Spend Chart */}
             {data.fiscalYears && data.fiscalYears.length > 0 && (
@@ -984,7 +1670,7 @@ export function USASpendingView() {
 
             {/* Year-by-Year Spend */}
             {summary && summary.spendByYear.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
+              <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5">
                 <h4 className="text-xs font-medium text-gray-400 mb-3">Fiscal Year Breakdown</h4>
                 <div className="space-y-2">
                   {summary.spendByYear.map((yearData) => {
@@ -1012,88 +1698,115 @@ export function USASpendingView() {
               </div>
             )}
 
-            {/* Top Agencies */}
+            {/* Top Agencies — Enhanced with drilldown */}
             {summary && summary.topAgencies.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
+              <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5">
+                <h4 className="text-xs font-medium text-gray-400 mb-4 flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-blue-400" />
                   Top Awarding Agencies
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">{summary.topAgencies.length} tracked</span>
                 </h4>
-                <div className="space-y-2">
-                  {summary.topAgencies.slice(0, 8).map((agency) => (
-                    <div
-                      key={agency.name}
-                      className="flex items-center gap-3 px-3 py-2 bg-[#141414] rounded-lg border border-gray-800/50"
-                    >
-                      <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center">
-                        {getAgencyIcon(agency.name)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-white truncate" title={agency.name}>{agency.name}</div>
-                        <div className="text-[10px] text-gray-600">{agency.awardCount} awards</div>
-                      </div>
-                      <div className="text-xs font-mono text-cyan-400">
-                        {formatCurrency(agency.totalObligated)}
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-1.5">
+                  {summary.topAgencies.slice(0, 8).map((agency, idx) => {
+                    const maxAgencyAmt = Math.max(...summary.topAgencies.slice(0, 8).map(a => a.totalObligated), 1);
+                    const pct = (agency.totalObligated / maxAgencyAmt) * 100;
+                    return (
+                      <button
+                        key={agency.name}
+                        onClick={() => openAgencyDrilldown(agency.name)}
+                        className="flex items-center gap-3 px-3 py-2.5 bg-[#111] rounded-lg border border-gray-800/50 hover:border-blue-500/40 hover:bg-blue-500/[0.03] transition-all relative overflow-hidden group w-full text-left cursor-pointer"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/[0.03] to-transparent" style={{ width: `${pct}%` }} />
+                        <div className="relative w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+                          {getAgencyIcon(agency.name)}
+                        </div>
+                        <div className="relative flex-1 min-w-0">
+                          <div className="text-xs text-white truncate font-medium" title={agency.name}>{agency.name}</div>
+                          <div className="text-[10px] text-gray-600 font-mono">{agency.awardCount} awards</div>
+                        </div>
+                        <div className="relative text-xs font-mono text-cyan-400 font-semibold">
+                          {formatCurrency(agency.totalObligated)}
+                        </div>
+                        <ExternalLink className="relative w-3 h-3 text-gray-700 group-hover:text-blue-400 transition-colors flex-shrink-0" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Award Type Breakdown */}
+            {/* Award Type Breakdown — Enhanced with drilldown */}
             {summary && summary.awardTypeBreakdown.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
+              <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5">
+                <h4 className="text-xs font-medium text-gray-400 mb-4 flex items-center gap-1.5">
                   <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
                   Award Type Breakdown
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">{summary.awardTypeBreakdown.length} types</span>
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {summary.awardTypeBreakdown.map((type) => (
-                    <div
-                      key={type.type}
-                      className="flex items-center gap-3 px-3 py-2 bg-[#141414] rounded-lg border border-gray-800/50"
-                    >
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded capitalize">
-                        {type.type}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-white">{type.count} awards</div>
-                      </div>
-                      <span className="text-xs font-mono text-cyan-400">
-                        {formatCurrency(type.amount)}
-                      </span>
-                    </div>
-                  ))}
+                  {summary.awardTypeBreakdown.map((type, idx) => {
+                    const maxTypeAmt = Math.max(...summary.awardTypeBreakdown.map(t => t.amount), 1);
+                    const pct = (type.amount / maxTypeAmt) * 100;
+                    return (
+                      <button
+                        key={type.type}
+                        onClick={() => openAwardTypeDrilldown(type.type)}
+                        className="flex items-center gap-3 px-3 py-2.5 bg-[#111] rounded-lg border border-gray-800/50 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04] transition-all relative overflow-hidden group text-left w-full cursor-pointer"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/[0.04] to-transparent transition-all duration-500" style={{ width: `${pct}%` }} />
+                        <span className="relative text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-semibold capitalize">
+                          {type.type}
+                        </span>
+                        <div className="relative flex-1 min-w-0">
+                          <div className="text-xs text-white font-medium">{type.count} awards</div>
+                        </div>
+                        {idx === 0 && (
+                          <span className="relative text-[8px] text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">Top</span>
+                        )}
+                        <span className="relative text-xs font-mono text-cyan-400 font-semibold">
+                          {formatCurrency(type.amount)}
+                        </span>
+                        <ExternalLink className="relative w-3 h-3 text-gray-700 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Top Performance States */}
+            {/* Top Performance States — Enhanced with drilldown */}
             {summary && summary.topStates.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
+              <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5">
+                <h4 className="text-xs font-medium text-gray-400 mb-4 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-purple-400" />
                   Contract Performance by State
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">{summary.topStates.length} states</span>
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {summary.topStates.slice(0, 10).map((state) => (
-                    <div
-                      key={state.state}
-                      className="flex items-center gap-3 px-3 py-2 bg-[#141414] rounded-lg border border-gray-800/50"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center">
-                        <Globe className="w-3 h-3 text-purple-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-white">{state.state}</div>
-                        <div className="text-[10px] text-gray-600">{state.awardCount} awards</div>
-                      </div>
-                      <span className="text-xs font-mono text-cyan-400">
-                        {formatCurrency(state.totalObligated)}
-                      </span>
-                    </div>
-                  ))}
+                  {summary.topStates.slice(0, 10).map((state, idx) => {
+                    const maxStateAmt = Math.max(...summary.topStates.slice(0, 10).map(s => s.totalObligated), 1);
+                    const pct = (state.totalObligated / maxStateAmt) * 100;
+                    return (
+                      <button
+                        key={state.state}
+                        onClick={() => openStateDrilldown(state.state)}
+                        className="flex items-center gap-3 px-3 py-2.5 bg-[#111] rounded-lg border border-gray-800/50 hover:border-purple-500/40 hover:bg-purple-500/[0.03] transition-all relative overflow-hidden group w-full text-left cursor-pointer"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/[0.03] to-transparent" style={{ width: `${pct}%` }} />
+                        <div className="relative w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center">
+                          <Globe className="w-3 h-3 text-purple-400" />
+                        </div>
+                        <div className="relative flex-1 min-w-0">
+                          <div className="text-xs text-white font-medium">{state.state}</div>
+                          <div className="text-[10px] text-gray-600 font-mono">{state.awardCount} awards</div>
+                        </div>
+                        <span className="relative text-xs font-mono text-cyan-400 font-semibold">
+                          {formatCurrency(state.totalObligated)}
+                        </span>
+                        <ExternalLink className="relative w-3 h-3 text-gray-700 group-hover:text-purple-400 transition-colors flex-shrink-0" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1259,7 +1972,7 @@ export function USASpendingView() {
 
             {/* No data state */}
             {data.activities.length === 0 && data.summary.totalAwards === 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-12 text-center">
+              <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-12 text-center">
                 <DollarSign className="w-12 h-12 text-gray-700 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-white mb-2">No Federal Contract Data Found</h3>
                 <p className="text-sm text-gray-500 max-w-md mx-auto">
@@ -1287,6 +2000,17 @@ export function USASpendingView() {
           </>
         )}
       </div>
+
+      {/* ── Drilldown Modal ───────────────────────────────── */}
+      {drilldown && (
+        <DrilldownModal
+          title={drilldown.title}
+          subtitle={drilldown.subtitle}
+          awards={drilldown.awards}
+          accentColor={drilldown.accentColor}
+          onClose={() => setDrilldown(null)}
+        />
+      )}
     </div>
   );
 }

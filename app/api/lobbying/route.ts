@@ -157,6 +157,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (
+      error.message?.includes('timed out') ||
+      error.message?.includes('ETIMEDOUT') ||
+      error.message?.includes('ECONNREFUSED') ||
+      error.message?.includes('ENOTFOUND') ||
+      error.message?.includes('fetch failed') ||
+      error.message?.includes('Failed to fetch')
+    ) {
+      return NextResponse.json(
+        {
+          error: 'The Senate LDA database is currently unreachable. This is a temporary issue — please try again in a moment.',
+          detail: error.message,
+          success: false,
+        },
+        { status: 503, headers: { ...limiter.headers, 'Retry-After': '15' } }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to fetch lobbying data',

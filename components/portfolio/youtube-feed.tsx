@@ -5,6 +5,47 @@ import { createPortal } from 'react-dom';
 import { RefreshCw, Clock, ExternalLink, Youtube, Play, TrendingUp, Eye, Search, ListFilter, Calendar, X, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
+// ── Client-side cache ────────────────────────────────────────────────
+// Survives component unmount / re-mount (page navigation) but not a full
+// page reload.  Each unique (timeFilter + searchQuery) gets its own slot.
+const CLIENT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const MAX_CLIENT_CACHE_SLOTS = 8;
+
+interface ClientCacheEntry {
+  videos: YoutubeVideo[];
+  isMock: boolean;
+  timestamp: number;
+}
+
+const clientCache = new Map<string, ClientCacheEntry>();
+
+function getClientCacheKey(timeFilter: string, search: string) {
+  return `${timeFilter}::${search}`;
+}
+
+function getClientCache(key: string): ClientCacheEntry | null {
+  const entry = clientCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CLIENT_CACHE_TTL) {
+    clientCache.delete(key);
+    return null;
+  }
+  return entry;
+}
+
+function setClientCache(key: string, videos: YoutubeVideo[], isMock: boolean) {
+  // Evict oldest if at capacity
+  if (clientCache.size >= MAX_CLIENT_CACHE_SLOTS && !clientCache.has(key)) {
+    let oldest: string | null = null;
+    let oldestTs = Infinity;
+    for (const [k, v] of clientCache) {
+      if (v.timestamp < oldestTs) { oldest = k; oldestTs = v.timestamp; }
+    }
+    if (oldest) clientCache.delete(oldest);
+  }
+  clientCache.set(key, { videos, isMock, timestamp: Date.now() });
+}
+
 
 interface YoutubeVideo {
   id: string;
@@ -270,6 +311,20 @@ export function YoutubeFeed() {
   }, [searchQuery]);
 
   const fetchVideos = useCallback(async (forceRefresh = false) => {
+    const cacheKey = getClientCacheKey(timeFilter, debouncedSearch);
+
+    // ── Check client-side cache first (unless manual refresh) ──
+    if (!forceRefresh) {
+      const cached = getClientCache(cacheKey);
+      if (cached) {
+        setVideos(cached.videos);
+        setIsDataMocked(cached.isMock);
+        setLoading(false);
+        setIsRefreshing(false);
+        return; // Skip API call — data is still fresh
+      }
+    }
+
     try {
         if (forceRefresh) setIsRefreshing(true);
         else setLoading(true);
@@ -285,7 +340,7 @@ export function YoutubeFeed() {
         const params = new URLSearchParams({
             publishedAfter,
             order: 'viewCount', // Viral first
-            maxResults: '20'
+            maxResults: '30'
         });
         
         if (debouncedSearch) {
@@ -293,7 +348,7 @@ export function YoutubeFeed() {
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout (fetches from 26 channels)
 
         const response = await fetch(`/api/youtube?${params.toString()}`, {
             signal: controller.signal
@@ -311,8 +366,9 @@ export function YoutubeFeed() {
         const data = await response.json();
 
         if (data.items && data.items.length > 0) {
-            setIsDataMocked(!!data.isMock);
-            const mappedVideos = data.items.map((item: any) => ({
+            const isMock = !!data.isMock;
+            setIsDataMocked(isMock);
+            const mappedVideos: YoutubeVideo[] = data.items.map((item: any) => ({
                 id: item.id?.videoId || `video-${Math.random()}`,
                 videoId: item.id?.videoId || '',
                 title: item.snippet?.title || 'Untitled',
@@ -324,6 +380,9 @@ export function YoutubeFeed() {
                 thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.high?.url || ''
             }));
             setVideos(mappedVideos);
+
+            // ── Persist to client-side cache ──
+            setClientCache(cacheKey, mappedVideos, isMock);
         } else {
             console.warn('No items found in response', data);
             setIsDataMocked(!!data.isMock);

@@ -507,10 +507,15 @@ class EarningsSurprisesService {
       const recentWithData = sorted.filter(q => q.epsActual !== null);
       const currentScore = recentWithData[0]?.oesScore ?? 0;
       const currentLabel = recentWithData[0]?.surpriseLabel ?? 'In Line';
-      const beatsTotal = recentWithData.filter(q => (q.epsSurprisePct ?? 0) > 0).length;
+      // Beat rate: use epsSurprisePct when available, else YoY growth as proxy
+      const hasEstimates = recentWithData.some(q => q.epsSurprisePct !== null);
+      const beatsTotal = hasEstimates
+        ? recentWithData.filter(q => (q.epsSurprisePct ?? 0) > 0).length
+        : recentWithData.filter(q => (q.epsYoyPct ?? 0) > 0).length;
       const beatRate = recentWithData.length > 0 ? (beatsTotal / recentWithData.length) * 100 : 0;
+      // avgSurprisePct: use epsSurprisePct when available, else epsYoyPct
       const avgSurprise = recentWithData.length > 0
-        ? recentWithData.reduce((s, q) => s + (q.epsSurprisePct ?? 0), 0) / recentWithData.length
+        ? recentWithData.reduce((s, q) => s + (q.epsSurprisePct ?? q.epsYoyPct ?? 0), 0) / recentWithData.length
         : 0;
 
       return {
@@ -821,68 +826,96 @@ class EarningsSurprisesService {
 
     for (let i = 0; i < sorted.length; i++) {
       const q = sorted[i];
-      if (q.epsActual === null || q.epsEstimate === null) {
+      if (q.epsActual === null) {
         q.oesScore = 0;
         q.surpriseLabel = 'N/A';
         continue;
       }
 
-      // ── ESM: EPS Surprise Magnitude (35%) ────────────────
-      // Scale: 0% surprise = 0, ±5% = ±50, ±10%+ = ±100
-      const esm = q.epsSurprisePct !== null
-        ? Math.max(-100, Math.min(100, (q.epsSurprisePct / 10) * 100))
-        : 0;
+      // Determine if we have analyst estimate data
+      const hasEstimate = q.epsEstimate !== null;
 
-      // ── RS: Revenue Surprise (25%) ───────────────────────
-      // Scale: 0% surprise = 0, ±3% = ±50, ±6%+ = ±100
-      const rs = q.revenueSurprisePct !== null
-        ? Math.max(-100, Math.min(100, (q.revenueSurprisePct / 6) * 100))
-        : 0;
+      // ── ESM: EPS Surprise Magnitude (35%) ────────────────
+      // When estimate is available: scale from epsSurprisePct
+      // When no estimate: use YoY EPS growth as a proxy (+20%=+50, -20%=-50, max ±100)
+      let esm = 0;
+      if (hasEstimate && q.epsSurprisePct !== null) {
+        esm = Math.max(-100, Math.min(100, (q.epsSurprisePct / 10) * 100));
+      } else if (q.epsYoyPct !== null) {
+        // Proxy: YoY EPS growth (capped at half weight since it's not a true surprise)
+        esm = Math.max(-100, Math.min(100, (q.epsYoyPct / 20) * 100)) * 0.5;
+      }
+
+      // ── RS: Revenue Surprise / Revenue Growth (25%) ──────
+      // When estimate available: use revenueSurprisePct
+      // When no estimate: use revenueYoyPct as proxy (+10%=+50, -10%=-50)
+      let rs = 0;
+      if (hasEstimate && q.revenueSurprisePct !== null) {
+        rs = Math.max(-100, Math.min(100, (q.revenueSurprisePct / 6) * 100));
+      } else if (q.revenueYoyPct !== null) {
+        rs = Math.max(-100, Math.min(100, (q.revenueYoyPct / 10) * 100)) * 0.7;
+      }
 
       // ── MT: Margin Trend (15%) ───────────────────────────
-      // Compare current margins to previous quarter
+      // Compare current margins to previous quarter (same regardless of estimate)
       let mt = 0;
       if (i > 0) {
         const prev = sorted[i - 1];
         if (q.netMarginPct !== null && prev.netMarginPct !== null) {
           const marginChange = q.netMarginPct - prev.netMarginPct;
-          // Expanding margins = positive, contracting = negative
           mt = Math.max(-100, Math.min(100, marginChange * 10));
+        } else if (q.grossMarginPct !== null && prev.grossMarginPct !== null) {
+          const marginChange = q.grossMarginPct - prev.grossMarginPct;
+          mt = Math.max(-100, Math.min(100, marginChange * 8));
         }
       }
 
       // ── CB: Consistency Bonus (15%) ──────────────────────
-      // Count consecutive beats/misses looking backward
+      // When estimate available: based on beat/miss streak
+      // When no estimate: based on YoY EPS growth streak
       let cb = 0;
       let consecutiveSameDirection = 0;
-      const currentDirection = (q.epsSurprisePct ?? 0) > 0 ? 'beat' : (q.epsSurprisePct ?? 0) < 0 ? 'miss' : 'inline';
+      const currentDirection = hasEstimate
+        ? ((q.epsSurprisePct ?? 0) > 0 ? 'beat' : (q.epsSurprisePct ?? 0) < 0 ? 'miss' : 'inline')
+        : ((q.epsYoyPct ?? 0) > 0 ? 'beat' : (q.epsYoyPct ?? 0) < 0 ? 'miss' : 'inline');
 
       if (currentDirection !== 'inline') {
         for (let j = i - 1; j >= Math.max(0, i - 7); j--) {
-          const prevSurprise = sorted[j].epsSurprisePct ?? 0;
-          const prevDirection = prevSurprise > 0 ? 'beat' : prevSurprise < 0 ? 'miss' : 'inline';
+          const prevQ = sorted[j];
+          const prevVal = hasEstimate ? (prevQ.epsSurprisePct ?? 0) : (prevQ.epsYoyPct ?? 0);
+          const prevDirection = prevVal > 0 ? 'beat' : prevVal < 0 ? 'miss' : 'inline';
           if (prevDirection === currentDirection) {
             consecutiveSameDirection++;
           } else {
             break;
           }
         }
-        // 10 points per consecutive quarter, max 100
         const cbMagnitude = Math.min(consecutiveSameDirection * 10, 100);
         cb = currentDirection === 'beat' ? cbMagnitude : -cbMagnitude;
+        // Reduce CB weight when using proxy signals
+        if (!hasEstimate) cb *= 0.6;
       }
 
       // ── YM: Year-over-Year Momentum (10%) ────────────────
       let ym = 0;
       if (q.epsYoyPct !== null) {
-        // YoY EPS growth: +20% = +100, -20% = -100
         ym = Math.max(-100, Math.min(100, (q.epsYoyPct / 20) * 100));
       }
 
       // ── Composite Score ────────────────────────────────────
-      const oesScore = (esm * 0.35) + (rs * 0.25) + (mt * 0.15) + (cb * 0.15) + (ym * 0.10);
+      // When no estimate: redistribute ESM weight into YM since both use YoY data
+      let oesScore: number;
+      if (hasEstimate) {
+        oesScore = (esm * 0.35) + (rs * 0.25) + (mt * 0.15) + (cb * 0.15) + (ym * 0.10);
+      } else {
+        // No estimate: ESM(proxy)=20%, RS(proxy)=25%, MT=25%, CB(proxy)=10%, YM=20%
+        oesScore = (esm * 0.20) + (rs * 0.25) + (mt * 0.25) + (cb * 0.10) + (ym * 0.20);
+      }
+
       q.oesScore = Math.max(-100, Math.min(100, Math.round(oesScore * 100) / 100));
-      q.surpriseLabel = this.scoreToLabel(q.oesScore);
+      q.surpriseLabel = hasEstimate
+        ? this.scoreToLabel(q.oesScore)
+        : this.scoreToLabel(q.oesScore) + '*'; // asterisk = no analyst estimate
     }
 
     // Copy back to original array
@@ -942,9 +975,9 @@ class EarningsSurprisesService {
    * Compute beat/miss streaks
    */
   private computeStreaks(quarters: EarningsSurpriseQuarter[]): void {
-    // Sort newest first
+    // Sort newest first — include all quarters with epsActual, use YoY as proxy when no estimate
     const sorted = [...quarters]
-      .filter(q => q.epsActual !== null && q.epsEstimate !== null)
+      .filter(q => q.epsActual !== null)
       .sort((a, b) => {
         if (a.fiscalYear !== b.fiscalYear) return b.fiscalYear - a.fiscalYear;
         return b.fiscalQuarter - a.fiscalQuarter;
@@ -952,12 +985,18 @@ class EarningsSurprisesService {
 
     if (sorted.length === 0) return;
 
+    // Determine streak direction: prefer epsSurprisePct, fall back to epsYoyPct
+    const getDirection = (q: EarningsSurpriseQuarter): 'beat_streak' | 'miss_streak' | 'none' => {
+      const val = q.epsSurprisePct ?? q.epsYoyPct ?? 0;
+      return val > 0 ? 'beat_streak' : val < 0 ? 'miss_streak' : 'none';
+    };
+
     // Determine current streak
-    const firstDirection = (sorted[0].epsSurprisePct ?? 0) > 0 ? 'beat_streak' : (sorted[0].epsSurprisePct ?? 0) < 0 ? 'miss_streak' : 'none';
+    const firstDirection = getDirection(sorted[0]);
     let streakLength = 1;
 
     for (let i = 1; i < sorted.length; i++) {
-      const dir = (sorted[i].epsSurprisePct ?? 0) > 0 ? 'beat_streak' : (sorted[i].epsSurprisePct ?? 0) < 0 ? 'miss_streak' : 'none';
+      const dir = getDirection(sorted[i]);
       if (dir === firstDirection && dir !== 'none') {
         streakLength++;
       } else {
@@ -967,8 +1006,8 @@ class EarningsSurprisesService {
 
     // Count beats/misses in last 4 quarters
     const last4 = sorted.slice(0, 4);
-    const beats = last4.filter(q => (q.epsSurprisePct ?? 0) > 0).length;
-    const misses = last4.filter(q => (q.epsSurprisePct ?? 0) < 0).length;
+    const beats = last4.filter(q => getDirection(q) === 'beat_streak').length;
+    const misses = last4.filter(q => getDirection(q) === 'miss_streak').length;
 
     // Apply to all quarters (most recent gets the full streak info)
     for (const q of quarters) {
@@ -1111,13 +1150,50 @@ class EarningsSurprisesService {
 
     const quarters: EarningsSurpriseQuarter[] = cachedRows.map(this.mapDbRowToQuarter);
 
+    // Re-run scoring in case cache has stale scores (e.g. from before algorithm update)
+    // computeComparisons needs all quarters sorted properly first
+    const allRows = await this.supabase
+      .from('earnings_surprises_cache')
+      .select('*')
+      .eq('symbol', symbol)
+      .order('fiscal_year', { ascending: false })
+      .order('fiscal_quarter', { ascending: false })
+      .limit(64);
+    const allQuarters: EarningsSurpriseQuarter[] = (allRows.data || []).map(this.mapDbRowToQuarter);
+    if (allQuarters.length > 0) {
+      this.computeComparisons(allQuarters);
+      this.computeOESScores(allQuarters);
+      this.computeStreaks(allQuarters);
+      // Re-apply scores to our limited set
+      const scoreMap = new Map(allQuarters.map(q => [`${q.fiscalYear}-${q.fiscalQuarter}`, q]));
+      for (const q of quarters) {
+        const updated = scoreMap.get(`${q.fiscalYear}-${q.fiscalQuarter}`);
+        if (updated) {
+          q.oesScore = updated.oesScore;
+          q.surpriseLabel = updated.surpriseLabel;
+          q.beatCountLast4 = updated.beatCountLast4;
+          q.missCountLast4 = updated.missCountLast4;
+          q.streakType = updated.streakType;
+          q.streakLength = updated.streakLength;
+          q.epsYoyPct = updated.epsYoyPct;
+          q.revenueYoyPct = updated.revenueYoyPct;
+          q.epsQoqPct = updated.epsQoqPct;
+          q.revenueQoqPct = updated.revenueQoqPct;
+        }
+      }
+    }
+
     const withData = quarters.filter(q => q.epsActual !== null);
     const currentScore = withData[0]?.oesScore ?? 0;
     const currentLabel = withData[0]?.surpriseLabel ?? 'In Line';
-    const beatsTotal = withData.filter(q => (q.epsSurprisePct ?? 0) > 0).length;
+    // Beat rate: use epsSurprisePct when available, else YoY growth as proxy
+    const hasEstimates = withData.some(q => q.epsSurprisePct !== null);
+    const beatsTotal = hasEstimates
+      ? withData.filter(q => (q.epsSurprisePct ?? 0) > 0).length
+      : withData.filter(q => (q.epsYoyPct ?? 0) > 0).length;
     const beatRate = withData.length > 0 ? (beatsTotal / withData.length) * 100 : 0;
     const avgSurprise = withData.length > 0
-      ? withData.reduce((s, q) => s + (q.epsSurprisePct ?? 0), 0) / withData.length
+      ? withData.reduce((s, q) => s + (q.epsSurprisePct ?? q.epsYoyPct ?? 0), 0) / withData.length
       : 0;
 
     // Get cache metadata

@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getSupabaseAdmin } from '@/lib/supabase/server';
 
+// ─── Server-side image compression with Canvas API (Node 18+) ───────────────
+// Falls back to raw upload if the sharp package isn't available.
+async function compressToWebP(buffer: Uint8Array, mimeType: string): Promise<{ data: Uint8Array; contentType: string }> {
+  try {
+    // Try sharp if installed (add `sharp` to package.json for best results)
+    const sharp = await import('sharp').catch(() => null);
+    if (sharp) {
+      const compressed = await sharp.default(Buffer.from(buffer))
+        .resize({ width: 200, height: 200, fit: 'cover', position: 'centre' })
+        .webp({ quality: 85 })
+        .toBuffer();
+      return { data: new Uint8Array(compressed), contentType: 'image/webp' };
+    }
+  } catch {
+    // sharp not available — fall through to raw upload
+  }
+  return { data: buffer, contentType: mimeType };
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Verify session
@@ -26,25 +45,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit before compression
       return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
     }
 
-    // 3. Upload to Supabase Storage
-    const supabase = getSupabaseAdmin();
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `${session.user.id}/${fileName}`;
-
-    // Convert File to ArrayBuffer for upload
+    // 3. Compress to 200×200 WebP (avatars don't need to be large)
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
+    const rawBuffer = new Uint8Array(arrayBuffer);
+    const { data: compressed, contentType } = await compressToWebP(rawBuffer, file.type);
 
-    const { data, error } = await supabase.storage
+    // 4. Upload to Supabase Storage — one file per user (upsert overwrites the old one)
+    const supabase = getSupabaseAdmin();
+    const ext      = contentType === 'image/webp' ? 'webp' : (file.name.split('.').pop() ?? 'jpg');
+    const filePath = `${session.user.id}/avatar.${ext}`;
+
+    const { error } = await supabase.storage
       .from('avatars')
-      .upload(filePath, buffer, {
-        contentType: file.type,
-        upsert: true,
+      .upload(filePath, compressed, {
+        contentType,
+        upsert: true,          // replaces the previous avatar → no orphaned files
       });
 
     if (error) {
@@ -52,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
     }
 
-    // 4. Get public URL
+    // 5. Return public URL
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath);

@@ -21,6 +21,7 @@ import { newsCacheService } from '@/lib/news-cache-service';
 import { toolsCacheService } from '@/lib/tools-cache-service';
 import { secCacheService } from '@/lib/sec-cache-service';
 import { createSECEdgarClient } from '@/lib/api/sec-edgar-api';
+import { createClient } from '@supabase/supabase-js';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -319,6 +320,28 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
       console.error('[Cron] USA spending error:', error);
       results.usa_spending = { error: error.message };
+    }
+
+    // ==================== STORAGE CLEANUP ====================
+    // Runs the master cleanup function: price snapshots, portfolio dedup,
+    // twitter cap, refresh logs, user_usage aggregation, exchange rates.
+    try {
+      console.log('[Cron] Running storage cleanup...');
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      );
+      const { data: cleanupRows, error: cleanupError } = await supabaseAdmin
+        .rpc('run_storage_cleanup');
+
+      if (cleanupError) throw cleanupError;
+
+      const summary = (cleanupRows as Array<{ step: string; rows_affected: number }> || [])
+        .reduce<Record<string, number>>((acc, r) => { acc[r.step] = r.rows_affected; return acc; }, {});
+      results.storage_cleanup = { success: true, summary };
+    } catch (error: any) {
+      console.error('[Cron] Storage cleanup error:', error);
+      results.storage_cleanup = { error: error.message };
     }
 
     const duration = Date.now() - startTime;

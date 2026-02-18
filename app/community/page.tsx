@@ -269,12 +269,54 @@ export default function CommunityPage() {
     fetchData();
   }, [fetchData]);
 
+  // ── Image compression helper ────────────────────────────────────────────
+  // Resizes any image to max 1080px wide and re-encodes as WebP at 82% quality.
+  // Typical result: 2 MB JPEG → ~120–200 KB WebP (85–90% saving).
+  const compressImage = (file: File): Promise<File> =>
+    new Promise((resolve, reject) => {
+      const MAX_PX   = 1080;   // max width OR height
+      const QUALITY  = 0.82;   // WebP quality (0–1)
+
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+
+        // Compute target dimensions preserving aspect ratio
+        let { width, height } = img;
+        if (width > MAX_PX || height > MAX_PX) {
+          if (width >= height) { height = Math.round((height / width) * MAX_PX); width = MAX_PX; }
+          else                 { width  = Math.round((width / height) * MAX_PX); height = MAX_PX; }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width  = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { reject(new Error('Canvas toBlob failed')); return; }
+            // Use .webp extension for the compressed file
+            const name = file.name.replace(/\.[^.]+$/, '') + '.webp';
+            resolve(new File([blob], name, { type: 'image/webp' }));
+          },
+          'image/webp',
+          QUALITY,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Image load failed')); };
+      img.src = objectUrl;
+    });
+
   // Image handling
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
+      if (file.size > 10 * 1024 * 1024) {          // 10 MB hard cap before compression
+        alert('Image size should be less than 10 MB');
         return;
       }
       setSelectedImage(file);
@@ -308,21 +350,27 @@ export default function CommunityPage() {
       
       let imageUrl = undefined;
       if (selectedImage) {
-        // Upload image
-        const fileExt = selectedImage.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        // Compress before upload: resize to max 1080px, convert to WebP
+        const compressed = await compressImage(selectedImage);
+        console.log(
+          `[post-image] ${selectedImage.name} ${(selectedImage.size / 1024).toFixed(0)} KB` +
+          ` → ${(compressed.size / 1024).toFixed(0)} KB WebP`
+        );
+
+        // Namespace by user ID to keep bucket organised and allow per-user cleanup
+        const userId = user?.id ?? 'anon';
+        const fileName = `${userId}/${Date.now()}.webp`;
 
         const { error: uploadError } = await supabase.storage
           .from('post-images')
-          .upload(filePath, selectedImage);
+          .upload(fileName, compressed, { contentType: 'image/webp', upsert: false });
 
         if (uploadError) throw uploadError;
 
         const { data: publicUrlData } = supabase.storage
           .from('post-images')
-          .getPublicUrl(filePath);
-          
+          .getPublicUrl(fileName);
+
         imageUrl = publicUrlData.publicUrl;
       }
 

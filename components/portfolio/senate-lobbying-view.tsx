@@ -45,10 +45,46 @@ import {
   AlertCircle,
   Tag,
   Briefcase,
+  Activity,
+  Zap,
+  Eye,
+  ShieldAlert,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ComposedChart,
+  Line,
+} from "recharts";
 import { cn } from "@/lib/utils";
 import { tickerDomains } from "@/lib/ticker-domains";
 import { motion, AnimatePresence } from "framer-motion";
+
+// ── Stable container size hook — replaces ResponsiveContainer to kill flicker ──
+function useContainerSize(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setSize(prev => (prev.width === Math.round(width) && prev.height === Math.round(height)) ? prev : { width: Math.round(width), height: Math.round(height) });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return size;
+}
 
 // ── Debounce hook ────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay: number): T {
@@ -265,105 +301,724 @@ const getScoreColor = (score: number): string => {
   return "text-gray-400";
 };
 
+const getScoreColorHex = (score: number): string => {
+  if (score >= 80) return "#f87171";
+  if (score >= 60) return "#fb923c";
+  if (score >= 40) return "#fbbf24";
+  if (score >= 20) return "#60a5fa";
+  return "#9ca3af";
+};
+
+const getScoreBgGlow = (score: number): string => {
+  if (score >= 80) return "shadow-red-500/20";
+  if (score >= 60) return "shadow-orange-500/20";
+  if (score >= 40) return "shadow-amber-500/20";
+  if (score >= 20) return "shadow-blue-500/20";
+  return "shadow-gray-500/10";
+};
+
+const getSignalInfo = (score: number, trend: string): { signal: string; icon: React.ReactNode; color: string; bgColor: string; borderColor: string; description: string } => {
+  if (score >= 80 && trend === "increasing") return { signal: "HEAVY INFLUENCE", icon: <ShieldAlert className="w-3.5 h-3.5" />, color: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/30", description: "Aggressive lobbying surge — high regulatory risk" };
+  if (score >= 80) return { signal: "HIGH INFLUENCE", icon: <Zap className="w-3.5 h-3.5" />, color: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/30", description: "Very high lobbying activity — monitor for policy changes" };
+  if (score >= 60) return { signal: "ELEVATED", icon: <Eye className="w-3.5 h-3.5" />, color: "text-orange-400", bgColor: "bg-orange-500/10", borderColor: "border-orange-500/30", description: "Above-average lobbying presence — notable government engagement" };
+  if (score >= 40) return { signal: "MODERATE", icon: <Activity className="w-3.5 h-3.5" />, color: "text-amber-400", bgColor: "bg-amber-500/10", borderColor: "border-amber-500/30", description: "Moderate lobbying activity — standard for sector" };
+  if (score >= 20) return { signal: "LOW", icon: <Minus className="w-3.5 h-3.5" />, color: "text-blue-400", bgColor: "bg-blue-500/10", borderColor: "border-blue-500/30", description: "Minimal lobbying engagement" };
+  return { signal: "NEGLIGIBLE", icon: <Minus className="w-3.5 h-3.5" />, color: "text-gray-400", bgColor: "bg-gray-500/10", borderColor: "border-gray-500/30", description: "Little to no lobbying activity detected" };
+};
+
+const getOLIScoreStyle = (score: number) => {
+  if (score >= 80) return { text: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", fill: "#f87171" };
+  if (score >= 60) return { text: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20", fill: "#fb923c" };
+  if (score >= 40) return { text: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", fill: "#fbbf24" };
+  if (score >= 20) return { text: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", fill: "#60a5fa" };
+  return { text: "text-gray-400", bg: "bg-gray-500/10", border: "border-gray-500/20", fill: "#9ca3af" };
+};
+
 const getTrendIcon = (trend: string) => {
   if (trend === "increasing") return <TrendingUp className="w-3.5 h-3.5 text-red-400" />;
-  if (trend === "decreasing") return <TrendingDown className="w-3.5 h-3.5 text-green-400" />;
+  if (trend === "decreasing") return <TrendingDown className="w-3.5 h-3.5 text-emerald-400" />;
   return <Minus className="w-3.5 h-3.5 text-gray-400" />;
 };
 
-// ── OLI Score Gauge ──────────────────────────────────────────────────
-const OLIScoreGauge = ({ score, label }: { score: number; label: string }) => {
-  const circumference = 2 * Math.PI * 36;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+// ── OLI Score Gauge — Insider Sentiment Style ──────────────────────────
+const OLIScoreGauge = ({ score, label, trend, quarters }: { score: number; label: string; trend: string; quarters?: LobbyingQuarter[] }) => {
+  const styles = getOLIScoreStyle(score);
+  // Normalize 0-100 score to angle for gauge (-90 to +90 = 180 degrees)
+  const rotation = -90 + (score / 100) * 180;
+  
+  // Calculate change for sparkline visual/color
+  const sparkData = useMemo(() => {
+    if (!quarters || quarters.length === 0) return [];
+    return quarters
+      .filter(q => q.filingCount > 0)
+      .sort((a, b) => a.year !== b.year ? a.year - b.year : a.quarter.localeCompare(b.quarter))
+      .slice(-6)
+      .map(q => q.oliScore);
+  }, [quarters]);
 
   return (
-    <div className="relative flex items-center justify-center w-24 h-24">
-      <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 80 80">
-        <circle
-          cx="40"
-          cy="40"
-          r="36"
-          stroke="currentColor"
-          strokeWidth="6"
-          fill="none"
-          className="text-gray-800"
-        />
-        <circle
-          cx="40"
-          cy="40"
-          r="36"
-          stroke="currentColor"
-          strokeWidth="6"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          className={getScoreColor(score)}
-          style={{ transition: "stroke-dashoffset 1s ease-in-out" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={cn("text-lg font-bold font-mono", getScoreColor(score))}>
-          {score.toFixed(0)}
-        </span>
-        <span className="text-[8px] text-gray-500 uppercase tracking-wider">{label}</span>
+    <div className="flex flex-col items-center">
+      <div className="relative w-48 h-28 mb-2">
+        <svg viewBox="0 0 200 110" className="w-full h-full">
+          {/* Background Track */}
+          <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#262626" strokeWidth="12" strokeLinecap="round" />
+          
+          {/* Segments - 0-20-40-60-80-100 */}
+          {/* 0-20 */}
+          <path d="M 20 100 A 80 80 0 0 1 50 38" fill="none" stroke="#9ca3af" strokeWidth="3" strokeOpacity="0.3" />
+          {/* 20-40 */}
+          <path d="M 50 38 A 80 80 0 0 1 80 22" fill="none" stroke="#60a5fa" strokeWidth="3" strokeOpacity="0.3" />
+          {/* 40-60 */}
+          <path d="M 80 22 A 80 80 0 0 1 120 22" fill="none" stroke="#fbbf24" strokeWidth="3" strokeOpacity="0.3" />
+          {/* 60-80 */}
+          <path d="M 120 22 A 80 80 0 0 1 150 38" fill="none" stroke="#fb923c" strokeWidth="3" strokeOpacity="0.3" />
+          {/* 80-100 */}
+          <path d="M 150 38 A 80 80 0 0 1 180 100" fill="none" stroke="#f87171" strokeWidth="3" strokeOpacity="0.3" />
+          
+          {/* Needle */}
+          <g transform={`rotate(${rotation}, 100, 100)`}>
+            <line x1="100" y1="100" x2="100" y2="30" stroke={styles.fill} strokeWidth="2.5" strokeLinecap="round" />
+            <circle cx="100" cy="100" r="5" fill={styles.fill} />
+          </g>
+
+          <text x="15" y="108" fill="#6b7280" fontSize="8" textAnchor="start">0</text>
+          <text x="100" y="12" fill="#6b7280" fontSize="8" textAnchor="middle">50</text>
+          <text x="185" y="108" fill="#6b7280" fontSize="8" textAnchor="end">100</text>
+        </svg>
+      </div>
+      
+      <div className={cn("text-3xl font-bold font-mono", styles.text)}>
+        {score.toFixed(0)}
+      </div>
+      
+      <div className={cn("mt-1 px-3 py-1 rounded-full text-xs font-semibold border", styles.bg, styles.border, styles.text)}>
+        {label}
+      </div>
+
+      {/* Mini Sparkline for Trend */}
+      {sparkData.length > 1 && (
+        <div className="mt-4 w-32 h-10 opacity-60">
+           <AreaChart width={128} height={40} data={sparkData.map((v, i) => ({ v, i }))}>
+             <defs>
+               <linearGradient id="oliSpark" x1="0" y1="0" x2="0" y2="1">
+                 <stop offset="5%" stopColor={styles.fill} stopOpacity={0.3}/>
+                 <stop offset="95%" stopColor={styles.fill} stopOpacity={0}/>
+               </linearGradient>
+             </defs>
+             <Area 
+               type="monotone" 
+               dataKey="v" 
+               stroke={styles.fill} 
+               strokeWidth={1.5}
+               fill="url(#oliSpark)" 
+               dot={false}
+               isAnimationActive={false}
+             />
+           </AreaChart>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Stable tick renderer — defined OUTSIDE component to prevent remount flicker ──
+const QuarterlyXTick = ({
+  x, y, payload, index,
+  yearBoundarySet, quarterlyData,
+}: any) => {
+  const isYearStart = yearBoundarySet.has(index);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {isYearStart && (
+        <line x1={0} y1={-200} x2={0} y2={0} stroke="#2e2e2e" strokeWidth={1} strokeDasharray="3 3" />
+      )}
+      <text
+        x={0} y={0} dy={13}
+        textAnchor="middle"
+        fill={isYearStart ? '#777' : '#484848'}
+        fontSize={isYearStart ? 11 : 10}
+        fontWeight={isYearStart ? 600 : 400}
+      >
+        {payload.value}
+      </text>
+      {isYearStart && (
+        <text x={0} y={0} dy={25} textAnchor="middle" fill="#3a3a3a" fontSize={9} fontWeight={600}>
+          {quarterlyData[index]?.year}
+        </text>
+      )}
+    </g>
+  );
+};
+
+// ── Quarterly tooltip — defined OUTSIDE to prevent remount on every hover ──
+const QuarterlyTooltip = ({ active, payload, spikeThreshold }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div className="bg-[#0e0e0e] border border-gray-700/70 rounded-xl p-3 shadow-2xl min-w-[164px] pointer-events-none">
+      <div className="text-xs font-semibold text-white mb-2">{d?.fullName}</div>
+      <div className="space-y-1.5">
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Spend</span>
+          <span className="font-mono font-bold text-amber-400">{formatCurrency(d?.spend || 0)}</span>
+        </div>
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">OLI Score</span>
+          <span className={cn("font-mono font-bold", getScoreColor(d?.oli || 0))}>{d?.oli?.toFixed(0)}</span>
+        </div>
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Filings</span>
+          <span className="font-mono text-gray-300">{d?.filings}</span>
+        </div>
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Lobbyists</span>
+          <span className="font-mono text-gray-300">{d?.lobbyists}</span>
+        </div>
+        {d?.spend > spikeThreshold && (
+          <div className="flex items-center gap-1 text-[10px] text-red-400 pt-1 border-t border-gray-800">
+            <Zap className="w-3 h-3" />
+            <span>Spend spike</span>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// ── Spend Bar Chart ──────────────────────────────────────────────────
-const SpendBarChart = ({ quarters }: { quarters: LobbyingQuarter[] }) => {
-  const activeQuarters = quarters
-    .filter(q => q.filingCount > 0)
-    .sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year;
-      return a.quarter.localeCompare(b.quarter);
-    })
-    .slice(-12);
+// ── Annual tooltip — defined OUTSIDE ──
+const AnnualTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div className="bg-[#0e0e0e] border border-gray-700/70 rounded-xl p-3 shadow-2xl min-w-[148px] pointer-events-none">
+      <div className="text-xs font-semibold text-white mb-2">{d?.name}</div>
+      <div className="space-y-1.5">
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Total Spend</span>
+          <span className="font-mono font-bold text-amber-400">{formatCurrency(d?.spend || 0)}</span>
+        </div>
+        <div className="flex justify-between gap-6 text-[11px]">
+          <span className="text-gray-400">Filings</span>
+          <span className="font-mono text-gray-300">{d?.filings}</span>
+        </div>
+        {d?.yoy !== null && d?.yoy !== undefined && (
+          <div className="flex justify-between gap-6 text-[11px]">
+            <span className="text-gray-400">YoY</span>
+            <span className={cn("font-mono font-bold", d.yoy > 0 ? "text-red-400" : "text-green-400")}>
+              {d.yoy > 0 ? "+" : ""}{d.yoy.toFixed(1)}%
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
-  if (activeQuarters.length === 0) return null;
+// ── Custom bar shape — reads fill from datum, avoids Cell flicker ────
+const SpendBarShape = (props: any) => {
+  const { x, y, width, height, payload } = props;
+  if (!width || !height || height <= 0) return null;
+  const fill = payload?.fillColor || 'url(#spendGradQ)';
+  const r = Math.min(4, height / 2);
+  return (
+    <path
+      d={`M${x},${y + r}
+          Q${x},${y} ${x + r},${y}
+          L${x + width - r},${y}
+          Q${x + width},${y} ${x + width},${y + r}
+          L${x + width},${y + height}
+          L${x},${y + height}Z`}
+      fill={fill}
+    />
+  );
+};
 
-  const maxSpend = Math.max(...activeQuarters.map(q => q.totalSpend), 1);
+// ── Stable prop constants — hoisted to module scope to prevent new references on re-render ──
+const GRID_STROKE = "#222";
+const CURSOR_STYLE = { fill: 'rgba(255,255,255,0.03)' } as const;
+const XAXIS_TICK_QUARTERLY = { fontSize: 10, fill: '#525252' } as const;
+const XAXIS_TICK_ANNUAL = { fontSize: 12, fill: '#888', fontWeight: 600 } as const;
+const YAXIS_TICK_DEFAULT = { fontSize: 10, fill: '#525252' } as const;
+const YAXIS_TICK_OLI = { fontSize: 10, fill: '#22d3ee', fillOpacity: 0.55 } as const;
+const OLI_DOMAIN: [number, number] = [0, 100];
+const LINE_DOT = { r: 2.5, fill: '#1A1A1A', stroke: '#22d3ee', strokeWidth: 1.5 } as const;
+const LINE_ACTIVE_DOT = { r: 4, fill: '#22d3ee', stroke: '#1A1A1A', strokeWidth: 2 } as const;
+const ANNUAL_BAR_RADIUS: [number, number, number, number] = [6, 6, 0, 0];
+const QUARTERLY_MARGIN = { top: 8, right: 32, left: 8, bottom: 36 };
+const ANNUAL_MARGIN = { top: 8, right: 12, left: 8, bottom: 8 };
+const spendBarShapeElement = <SpendBarShape />;
+const annualTooltipElement = <AnnualTooltip />;
+
+// ── Spending Chart — quarterly bars + OLI line + year separators ─────
+const SpendBarChart = ({ quarters, spendByYear }: { quarters: LobbyingQuarter[]; spendByYear: { year: number; spend: number; filingCount: number }[] }) => {
+  const [view, setView] = useState<'quarterly' | 'annual'>('quarterly');
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartSize = useContainerSize(chartRef);
+  // ── Quarterly data ──────────────────────────────────────────────────
+  const quarterlyData = useMemo(() => {
+    return quarters
+      .filter(q => q.filingCount > 0)
+      .sort((a, b) => a.year !== b.year ? a.year - b.year : a.quarter.localeCompare(b.quarter))
+      .slice(-16)
+      .map(q => ({
+        name: `${q.quarter} '${String(q.year).slice(2)}`,
+        fullName: `${q.quarter} ${q.year}`,
+        year: q.year,
+        quarter: q.quarter,
+        spend: q.totalSpend,
+        oli: q.oliScore,
+        filings: q.filingCount,
+        lobbyists: q.uniqueLobbyists,
+      }));
+  }, [quarters]);
+
+  // ── Annual data ─────────────────────────────────────────────────────
+  const annualData = useMemo(() => {
+    return [...spendByYear]
+      .sort((a, b) => a.year - b.year)
+      .map((y, i, arr) => {
+        const prev = i > 0 ? arr[i - 1].spend : null;
+        const yoy = prev && prev > 0 ? ((y.spend - prev) / prev) * 100 : null;
+        return { name: String(y.year), year: y.year, spend: y.spend, filings: y.filingCount, yoy };
+      });
+  }, [spendByYear]);
+
+  const avgSpend = quarterlyData.reduce((s, d) => s + d.spend, 0) / (quarterlyData.length || 1);
+  const spikeThreshold = avgSpend * 1.5;
+
+  // Bake fill color into quarterly data so we never need <Cell> children
+  const quarterlyDataWithFill = useMemo(() => {
+    return quarterlyData.map(d => ({
+      ...d,
+      fillColor: d.spend > spikeThreshold ? 'url(#spendGradSpike)' : 'url(#spendGradQ)',
+    }));
+  }, [quarterlyData, spikeThreshold]);
+
+  // Year-boundary indices — stable Set, recomputed only when quarterlyData changes
+  const yearBoundarySet = useMemo(() => {
+    const seen = new Set<number>();
+    const result = new Set<number>();
+    quarterlyData.forEach((d, i) => {
+      if (!seen.has(d.year)) { seen.add(d.year); result.add(i); }
+    });
+    return result;
+  }, [quarterlyData]);
+
+  // Stable tick renderer — passes boundary data via props so the component ref stays the same
+  const renderQuarterlyTick = useCallback((props: any) => (
+    <QuarterlyXTick {...props} yearBoundarySet={yearBoundarySet} quarterlyData={quarterlyData} />
+  ), [yearBoundarySet, quarterlyData]);
+
+  // Stable tooltip renderers — bound spikeThreshold via useCallback
+  const renderQuarterlyTooltip = useCallback((props: any) => (
+    <QuarterlyTooltip {...props} spikeThreshold={spikeThreshold} />
+  ), [spikeThreshold]);
+
+  // YoY badge
+  const yoyBadge = useMemo(() => {
+    if (view === 'annual' && annualData.length >= 2) {
+      const last = annualData[annualData.length - 1];
+      const prev = annualData[annualData.length - 2];
+      const change = prev.spend > 0 ? ((last.spend - prev.spend) / prev.spend) * 100 : 0;
+      return { change };
+    }
+    return null;
+  }, [annualData, view]);
+
+  const chartData = view === 'quarterly' ? quarterlyData : annualData;
+  const chartHeight = view === 'quarterly' ? 230 : 210;
+  const isEmpty = chartData.length === 0;
 
   return (
-    <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-      <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
-        <BarChart3 className="w-3.5 h-3.5 text-amber-400" />
-        Quarterly Spend
-      </h4>
-      <div className="flex items-end gap-1 h-24">
-        {activeQuarters.map((q) => {
-          const height = Math.max(4, (q.totalSpend / maxSpend) * 100);
-          return (
-            <div
-              key={`${q.year}-${q.quarter}`}
-              className="flex-1 flex flex-col items-center gap-1 group relative"
+    <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-amber-400" />
+            Lobbying Spend
+          </h4>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {view === 'quarterly' ? 'Quarterly breakdown with OLI influence score' : 'Annual totals with year-over-year change'}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {yoyBadge && (
+            <div className={cn("flex items-center gap-1 text-[10px] font-mono font-bold", yoyBadge.change > 0 ? "text-red-400" : yoyBadge.change < 0 ? "text-green-400" : "text-gray-400")}>
+              {yoyBadge.change > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {yoyBadge.change > 0 ? "+" : ""}{yoyBadge.change.toFixed(1)}% YoY
+            </div>
+          )}
+          {/* View toggle */}
+          <div className="flex gap-0.5 bg-[#111] rounded-lg p-0.5 border border-gray-800">
+            <button
+              onClick={() => setView('quarterly')}
+              className={cn("px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors", view === 'quarterly' ? "bg-amber-600/15 text-amber-400" : "text-gray-500 hover:text-gray-300")}
             >
-              <div
-                className="w-full rounded-t bg-gradient-to-t from-amber-600/60 to-amber-400/80 transition-all duration-300 hover:from-amber-500/70 hover:to-amber-300/90 min-w-[8px]"
-                style={{ height: `${height}%` }}
-              />
-              <span className="text-[8px] text-gray-600 truncate w-full text-center">
-                {q.quarter}
-              </span>
-              {/* Tooltip */}
-              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-[#1A1A1A] border border-gray-700 rounded-lg p-2 text-[10px] z-10 whitespace-nowrap shadow-xl">
-                <div className="font-medium text-white">{q.quarter} {q.year}</div>
-                <div className="text-amber-400">{formatCurrency(q.totalSpend)}</div>
-                <div className="text-gray-500">{q.filingCount} filings</div>
+              Quarterly
+            </button>
+            <button
+              onClick={() => setView('annual')}
+              className={cn("px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors", view === 'annual' ? "bg-amber-600/15 text-amber-400" : "text-gray-500 hover:text-gray-300")}
+            >
+              Annual
+            </button>
+          </div>
+          {/* Legend — quarterly only */}
+          {view === 'quarterly' && (
+            <div className="flex items-center gap-3 text-[10px] text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-sm bg-amber-500/60" />
+                <span>Spend</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-[2px] bg-cyan-400/80 rounded-full" />
+                <span>OLI</span>
               </div>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
-      <div className="flex justify-between mt-1">
-        <span className="text-[8px] text-gray-600">
-          {activeQuarters[0]?.year}
-        </span>
-        <span className="text-[8px] text-gray-600">
-          {activeQuarters[activeQuarters.length - 1]?.year}
-        </span>
+
+      {/* Chart */}
+      <div ref={chartRef} className="w-full" style={{ height: chartHeight }}>
+        {isEmpty ? (
+          <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">
+            No lobbying data for this time period
+          </div>
+        ) : chartSize.width > 0 && (
+          view === 'quarterly' ? (
+            <ComposedChart
+              width={chartSize.width}
+              height={chartHeight}
+              data={quarterlyDataWithFill}
+              margin={QUARTERLY_MARGIN}
+              barCategoryGap="28%"
+            >
+              <defs>
+                <linearGradient id="spendGradQ" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.15} />
+                </linearGradient>
+                <linearGradient id="spendGradSpike" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.85} />
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity={0.2} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+              <XAxis
+                dataKey="name"
+                tick={renderQuarterlyTick}
+                axisLine={false}
+                tickLine={false}
+                interval={0}
+                height={44}
+              />
+              <YAxis
+                yAxisId="spend"
+                tick={YAXIS_TICK_DEFAULT}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={formatCurrency}
+                width={58}
+              />
+              <YAxis
+                yAxisId="oli"
+                orientation="right"
+                domain={OLI_DOMAIN}
+                tick={YAXIS_TICK_OLI}
+                axisLine={false}
+                tickLine={false}
+                tickCount={5}
+                width={30}
+              />
+              <RechartsTooltip
+                content={renderQuarterlyTooltip}
+                cursor={CURSOR_STYLE}
+                isAnimationActive={false}
+              />
+              <Bar
+                yAxisId="spend"
+                dataKey="spend"
+                maxBarSize={32}
+                isAnimationActive={false}
+                shape={spendBarShapeElement}
+              />
+              <Line
+                yAxisId="oli"
+                type="monotone"
+                dataKey="oli"
+                stroke="#22d3ee"
+                strokeWidth={2}
+                dot={LINE_DOT}
+                activeDot={LINE_ACTIVE_DOT}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
+          ) : (
+            <BarChart
+              width={chartSize.width}
+              height={chartHeight}
+              data={annualData}
+              margin={ANNUAL_MARGIN}
+              barCategoryGap="32%"
+            >
+              <defs>
+                <linearGradient id="annualGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#d97706" stopOpacity={0.3} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+              <XAxis
+                dataKey="name"
+                tick={XAXIS_TICK_ANNUAL}
+                axisLine={false}
+                tickLine={false}
+                dy={8}
+              />
+              <YAxis
+                tick={YAXIS_TICK_DEFAULT}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={formatCurrency}
+                width={58}
+              />
+              <RechartsTooltip
+                content={annualTooltipElement}
+                cursor={CURSOR_STYLE}
+                isAnimationActive={false}
+              />
+              <Bar
+                dataKey="spend"
+                fill="url(#annualGrad)"
+                radius={ANNUAL_BAR_RADIUS}
+                maxBarSize={80}
+                isAnimationActive={false}
+              />
+            </BarChart>
+          )
+        )}
+      </div>
+
+      {/* Spike annotation */}
+      {!isEmpty && view === 'quarterly' && quarterlyData.some(d => d.spend > spikeThreshold) && (
+        <div className="flex items-center gap-2 mt-3 px-3 py-1.5 bg-red-500/5 border border-red-500/10 rounded-lg">
+          <Zap className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+          <span className="text-[10px] text-red-400/80">
+            Spike quarters (red) exceed {formatCurrency(Math.round(spikeThreshold))} — 1.5× quarterly avg
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Drilldown Modal ──────────────────────────────────────────────────
+interface DrilldownModalProps {
+  title: string;
+  subtitle: string;
+  filings: LobbyingActivityItem[];
+  accentColor: string; // tailwind text color class
+  onClose: () => void;
+}
+
+const DrilldownModal = ({ title, subtitle, filings, accentColor, onClose }: DrilldownModalProps) => {
+  const totalSpend = filings.reduce((s, f) => s + (f.amount || 0), 0);
+  const uniqueLobbyists = new Set(filings.flatMap(f => f.lobbyistNames)).size;
+  const uniqueGovEntities = new Set(filings.flatMap(f => f.governmentEntities)).size;
+
+  // Sort by date desc
+  const sorted = [...filings].sort((a, b) => b.filingDate.localeCompare(a.filingDate));
+
+  // Close on backdrop click
+  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+      onClick={handleBackdrop}
+    >
+      <div
+        className="w-full max-w-4xl max-h-[85vh] bg-[#0e0e0e] border border-gray-800 rounded-2xl flex flex-col shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+          <div>
+            <h3 className={cn("text-base font-bold flex items-center gap-2", accentColor)}>
+              <FileText className="w-4 h-4" />
+              {title}
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          </div>
+          {/* Summary chips */}
+          <div className="flex items-center gap-6 mr-8">
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-amber-400">{formatCurrency(totalSpend)}</div>
+              <div className="text-[10px] text-gray-600">total spend</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-white">{filings.length}</div>
+              <div className="text-[10px] text-gray-600">filings</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-blue-400">{uniqueLobbyists}</div>
+              <div className="text-[10px] text-gray-600">lobbyists</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold font-mono text-purple-400">{uniqueGovEntities}</div>
+              <div className="text-[10px] text-gray-600">gov entities</div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-800 transition-colors text-gray-500 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Table head */}
+        <div className="grid grid-cols-12 gap-3 px-6 py-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-800/60 flex-shrink-0 bg-[#0a0a0a]">
+          <div className="col-span-1">Date</div>
+          <div className="col-span-2">Period</div>
+          <div className="col-span-2">Registrant</div>
+          <div className="col-span-3">Issues / Description</div>
+          <div className="col-span-2">Lobbyists</div>
+          <div className="col-span-1 text-right">Amount</div>
+          <div className="col-span-1 text-center">Doc</div>
+        </div>
+
+        {/* Scrollable rows */}
+        <div className="overflow-y-auto flex-1 custom-scrollbar divide-y divide-gray-800/40">
+          {sorted.map((f, i) => (
+            <div
+              key={`${f.filingUuid}-${i}`}
+              className="grid grid-cols-12 gap-3 px-6 py-3 items-start hover:bg-white/[0.02] transition-colors text-xs group"
+            >
+              {/* Date */}
+              <div className="col-span-1">
+                <span className="text-gray-500 font-mono text-[10px]">
+                  {f.filingDate ? new Date(f.filingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : '—'}
+                </span>
+              </div>
+
+              {/* Period */}
+              <div className="col-span-2">
+                <span className="inline-flex flex-col items-start">
+                  <span className="text-[10px] font-mono text-gray-300">{f.filingPeriod}</span>
+                  <span className="text-[9px] font-mono text-gray-600">{f.filingYear} · {f.filingType}</span>
+                </span>
+              </div>
+
+              {/* Registrant */}
+              <div className="col-span-2">
+                <div className="text-[11px] font-medium text-white truncate" title={f.registrantName}>{f.registrantName}</div>
+                <div className="text-[10px] text-gray-600 truncate" title={f.clientName}>{f.clientName}</div>
+              </div>
+
+              {/* Issues / Description */}
+              <div className="col-span-3">
+                {f.specificIssues.length > 0 ? (
+                  <p className="text-[10px] text-gray-400 line-clamp-3 leading-relaxed" title={f.specificIssues.join(' | ')}>
+                    {f.specificIssues[0]}
+                  </p>
+                ) : f.issueDescriptions.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {f.issueDescriptions.slice(0, 3).map((d, j) => (
+                      <span key={j} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800/60 text-gray-400">{d}</span>
+                    ))}
+                    {f.issueDescriptions.length > 3 && (
+                      <span className="text-[9px] text-gray-600">+{f.issueDescriptions.length - 3}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-gray-700 text-[10px]">—</span>
+                )}
+                {/* Gov entities */}
+                {f.governmentEntities.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {f.governmentEntities.slice(0, 2).map((g, j) => (
+                      <span key={j} className="text-[9px] px-1.5 py-0.5 rounded bg-purple-900/20 text-purple-400/70 border border-purple-800/20">{g}</span>
+                    ))}
+                    {f.governmentEntities.length > 2 && (
+                      <span className="text-[9px] text-gray-600">+{f.governmentEntities.length - 2}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Lobbyists */}
+              <div className="col-span-2">
+                {f.lobbyistNames.length > 0 ? (
+                  <div className="space-y-0.5">
+                    {f.lobbyistNames.slice(0, 3).map((name, j) => (
+                      <div key={j} className="text-[10px] text-gray-400 truncate" title={name}>{name}</div>
+                    ))}
+                    {f.lobbyistNames.length > 3 && (
+                      <span className="text-[9px] text-gray-600">+{f.lobbyistNames.length - 3} more</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-gray-700 text-[10px]">—</span>
+                )}
+              </div>
+
+              {/* Amount */}
+              <div className="col-span-1 text-right">
+                {f.amount ? (
+                  <span className="font-mono font-semibold text-amber-400 text-[11px]">{formatCurrency(f.amount)}</span>
+                ) : (
+                  <span className="text-gray-700 text-[10px]">—</span>
+                )}
+              </div>
+
+              {/* Document link */}
+              <div className="col-span-1 flex justify-center">
+                {f.documentUrl ? (
+                  <a
+                    href={f.documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition-colors text-[9px] font-semibold"
+                    title="Open official filing"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-2.5 h-2.5" />
+                    View
+                  </a>
+                ) : (
+                  <span className="text-gray-700 text-[10px]">—</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-800 flex-shrink-0 bg-[#0a0a0a]">
+          <span className="text-[10px] text-gray-600 flex items-center gap-1.5">
+            <Shield className="w-3 h-3" />
+            US Senate LDA Database · Public records
+          </span>
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -405,7 +1060,7 @@ function setClientCache(ticker: string, years: number, data: LobbyingDataRespons
 
 // ── Skeleton Loader ──────────────────────────────────────────────────
 const SkeletonCard = () => (
-  <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4 animate-pulse">
+  <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-4 animate-pulse">
     <div className="h-2.5 bg-gray-800 rounded w-20 mb-3" />
     <div className="h-5 bg-gray-800 rounded w-24 mb-1" />
     <div className="h-2 bg-gray-800/50 rounded w-16" />
@@ -413,31 +1068,31 @@ const SkeletonCard = () => (
 );
 
 const SkeletonGauge = () => (
-  <div className="md:col-span-1 bg-[#0D0D0D] rounded-xl border border-gray-800 p-4 flex flex-col items-center justify-center animate-pulse">
+  <div className="lg:col-span-3 bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5 flex flex-col items-center justify-center animate-pulse">
     <div className="h-2.5 bg-gray-800 rounded w-14 mb-3" />
-    <div className="w-24 h-24 rounded-full border-4 border-gray-800" />
+    <div className="w-32 h-32 rounded-full border-[6px] border-gray-800" />
+    <div className="h-5 bg-gray-800 rounded-full w-24 mt-3" />
     <div className="h-2 bg-gray-800/50 rounded w-16 mt-3" />
   </div>
 );
 
 const LoadingSkeleton = () => (
   <div className="space-y-6 animate-in fade-in duration-300">
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
       <SkeletonGauge />
-      <div className="md:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
-        <SkeletonCard />
+      <div className="lg:col-span-9 space-y-4">
+        <div className="h-10 bg-gray-800/30 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       </div>
     </div>
-    <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4 animate-pulse">
+    <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5 animate-pulse">
       <div className="h-2.5 bg-gray-800 rounded w-28 mb-3" />
-      <div className="flex items-end gap-1 h-24">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex-1 bg-gray-800 rounded-t" style={{ height: `${20 + Math.random() * 60}%` }} />
-        ))}
-      </div>
+      <div className="h-48 bg-gray-800/20 rounded-lg" />
     </div>
   </div>
 );
@@ -529,6 +1184,9 @@ export function SenateLobbyingView() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Abort controller ref — cancelled on unmount or when ticker/years change
+  const abortRef = useRef<AbortController | null>(null);
+
   // Fetch lobbying data with client-side cache
   const fetchLobbyingData = useCallback(
     async (tickerToFetch: string, years: number, forceRefresh = false) => {
@@ -545,6 +1203,11 @@ export function SenateLobbyingView() {
         }
       }
 
+      // Cancel any in-flight request for a previous ticker/years combo
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       setIsLoading(true);
       setError(null);
       try {
@@ -554,7 +1217,6 @@ export function SenateLobbyingView() {
         });
         if (forceRefresh) params.set("refresh", "true");
 
-        const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 55000); // 55s for first-ever lookups (Senate API can be slow)
 
         const response = await fetch(`/api/lobbying?${params}`, {
@@ -567,6 +1229,10 @@ export function SenateLobbyingView() {
           throw new Error(errData.error || `Failed to fetch data (${response.status})`);
         }
         const result: LobbyingDataResponse = await response.json();
+
+        // Guard against stale responses arriving after component unmount
+        if (controller.signal.aborted) return;
+
         setData(result);
         if (result.companyName) {
           setCompanyName(result.companyName);
@@ -574,25 +1240,39 @@ export function SenateLobbyingView() {
         // ── Store in client cache ──
         setClientCache(tickerToFetch.toUpperCase(), years, result);
       } catch (err: unknown) {
+        // Ignore errors from cancelled requests (ticker changed, component unmounted)
         if (err instanceof DOMException && err.name === "AbortError") {
+          if (controller.signal.aborted && abortRef.current !== controller) {
+            // This was an intentional cancellation — silently discard
+            return;
+          }
           setError("The Senate LDA database is slow to respond. This is common for first-time lookups — please try again in a moment.");
         } else {
-          const message = err instanceof Error ? err.message : "An error occurred";
+          let message = err instanceof Error ? err.message : "An error occurred";
+          // Provide a friendlier message for generic network failures
+          if (message === "Failed to fetch" || message === "Load failed") {
+            message = "Unable to reach the lobbying data service. Please check your connection and try again.";
+          }
           console.error("[SenateLobbyingView]", err);
           setError(message);
         }
         // Don't clear existing data on error — keep showing stale results
         setData((prev) => prev ?? null);
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted || abortRef.current === controller) {
+          setIsLoading(false);
+        }
       }
     },
     []
   );
 
-  // Fetch on mount and when ticker/years change
+  // Fetch on mount and when ticker/years change; cancel stale requests on cleanup
   useEffect(() => {
     fetchLobbyingData(ticker, yearsFilter);
+    return () => {
+      abortRef.current?.abort();
+    };
   }, [ticker, yearsFilter, fetchLobbyingData]);
 
   // Reset page when ticker changes
@@ -654,6 +1334,47 @@ export function SenateLobbyingView() {
 
   const summary = data?.summary;
 
+  // ── Drilldown modal state ──────────────────────────────────────────
+  const [drilldown, setDrilldown] = useState<{
+    title: string;
+    subtitle: string;
+    filings: LobbyingActivityItem[];
+    accentColor: string;
+  } | null>(null);
+
+  const openIssueDrilldown = useCallback((issueCode: string, issueName: string) => {
+    if (!data?.activities) return;
+    const filings = data.activities.filter(f => f.issueAreas.includes(issueCode));
+    setDrilldown({
+      title: issueName,
+      subtitle: `${filings.length} filings tagged with issue area "${issueCode}"`,
+      filings,
+      accentColor: 'text-purple-400',
+    });
+  }, [data?.activities]);
+
+  const openFirmDrilldown = useCallback((firmName: string) => {
+    if (!data?.activities) return;
+    const filings = data.activities.filter(f => f.registrantName === firmName);
+    setDrilldown({
+      title: firmName,
+      subtitle: `${filings.length} filings by this lobbying firm`,
+      filings,
+      accentColor: 'text-blue-400',
+    });
+  }, [data?.activities]);
+
+  const openLobbyistDrilldown = useCallback((lobbyistName: string) => {
+    if (!data?.activities) return;
+    const filings = data.activities.filter(f => f.lobbyistNames.includes(lobbyistName));
+    setDrilldown({
+      title: lobbyistName,
+      subtitle: `${filings.length} filings involving this lobbyist`,
+      filings,
+      accentColor: 'text-green-400',
+    });
+  }, [data?.activities]);
+
   return (
     <div className="space-y-6 h-full flex flex-col">
       {/* ── Header ──────────────────────────────────────────── */}
@@ -674,7 +1395,7 @@ export function SenateLobbyingView() {
 
       {/* ── Search Bar with Autocomplete ──────────────────── */}
       <div ref={searchRef} className="relative z-50">
-        <div className="bg-[#0D0D0D] border border-gray-800 rounded-xl p-3">
+        <div className="bg-[#1A1A1A] border border-gray-800 rounded-xl p-3">
           <form onSubmit={handleSearch} className="flex gap-4 items-center">
             <div className="relative flex-1">
               {isSearching ? (
@@ -764,10 +1485,10 @@ export function SenateLobbyingView() {
       </div>
 
       {/* ── Popular Companies Grid ────────────────────────── */}
-      <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-gray-400 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+      <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400" />
             Top Lobbying Companies
           </h3>
         </div>
@@ -802,13 +1523,13 @@ export function SenateLobbyingView() {
 
       {/* ── Recent Lookups ────────────────────────────────── */}
       {recentTickers.length > 0 && (
-        <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-gray-400 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-gray-500" />
+        <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-400" />
               Recent Lookups
             </h3>
-            <span className="text-[10px] text-gray-600">{recentTickers.length} companies</span>
+            <span className="text-xs text-gray-500">{recentTickers.length} companies</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {recentTickers.map((item, index) => (
@@ -915,194 +1636,320 @@ export function SenateLobbyingView() {
         {/* Main Content */}
         {data && !error && (
           <>
-            {/* OLI Score + Summary Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {/* OLI Score Card */}
-              <div className="md:col-span-1 bg-[#0D0D0D] rounded-xl border border-gray-800 p-4 flex flex-col items-center justify-center">
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">OLI Score</div>
-                <OLIScoreGauge score={data.currentScore} label={data.currentLabel} />
-                <div className="flex items-center gap-1.5 mt-2">
-                  {getTrendIcon(data.trend)}
-                  <span className="text-[10px] text-gray-500 capitalize">{data.trend}</span>
-                </div>
-              </div>
+            {/* OLI Score + Signal Banner + Summary Cards — unified panel */}
+            {(() => {
+              const sig = getSignalInfo(data.currentScore, data.trend);
+              const scoreStyle = getOLIScoreStyle(data.currentScore);
+              return (
+                <div className="bg-[#0A0A0A] rounded-2xl border border-gray-800/80 overflow-hidden">
+                  {/* Top: Signal Banner */}
+                  <div className={cn("flex items-center gap-3 px-5 py-2.5 border-b", sig.bgColor, sig.borderColor.replace("border-", "border-b-"))}>
+                    <div className={cn("flex items-center gap-2 font-semibold text-xs tracking-wide uppercase", sig.color)}>
+                      {sig.icon}
+                      {sig.signal}
+                    </div>
+                    <div className="w-px h-3.5 bg-gray-700/60" />
+                    <span className="text-xs text-gray-400 leading-none">{sig.description}</span>
+                    <div className="ml-auto flex items-center gap-1.5 text-[10px] text-gray-600">
+                      {getTrendIcon(data.trend)}
+                      <span className="capitalize">{data.trend}</span>
+                    </div>
+                  </div>
 
-              {/* Summary Cards */}
-              <div className="md:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" />
-                    Total Spend
-                  </div>
-                  <div className="text-lg font-bold text-amber-400 font-mono">
-                    {formatCurrency(summary?.totalSpend || 0)}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {formatCurrency(summary?.averagePerQuarter || 0)}/quarter
+                  {/* Bottom: OLI Gauge + 4 stat cards side-by-side */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-gray-800/60">
+                    {/* OLI Gauge */}
+                    <div className="lg:col-span-3 flex flex-col items-center justify-center py-6 px-4 relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+                      <div className="relative z-10 flex flex-col items-center w-full">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-3 font-medium">OLI Score</span>
+                        <OLIScoreGauge score={data.currentScore} label={data.currentLabel} trend={data.trend} quarters={data.quarters} />
+                      </div>
+                    </div>
+
+                    {/* 4 Stat Cards */}
+                    <div className="lg:col-span-9 grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-800/60">
+
+                      {/* ── Total Spend — year-over-year bar sparkline ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Total Spend</span>
+                          <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/10 flex items-center justify-center">
+                            <DollarSign className="w-3 h-3 text-amber-400" />
+                          </div>
+                        </div>
+                        {/* Mini bar sparkline — annual spend */}
+                        {summary && summary.spendByYear.length > 0 && (() => {
+                          const years = [...summary.spendByYear].sort((a, b) => a.year - b.year).slice(-5);
+                          const max = Math.max(...years.map(y => y.spend), 1);
+                          return (
+                            <div className="flex items-end gap-[3px] h-8 mb-2.5">
+                              {years.map((y, i) => {
+                                const h = Math.max(2, Math.round((y.spend / max) * 28));
+                                const isLast = i === years.length - 1;
+                                return (
+                                  <div key={y.year} className="flex-1 flex flex-col items-center gap-0.5" title={`${y.year}: ${formatCurrency(y.spend)}`}>
+                                    <div
+                                      className={cn("w-full rounded-sm transition-all", isLast ? "bg-amber-400" : "bg-amber-400/25")}
+                                      style={{ height: h }}
+                                    />
+                                    <span className="text-[7px] text-gray-700 font-mono leading-none">{String(y.year).slice(2)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-amber-400 font-mono tracking-tight leading-none">
+                            {formatCurrency(summary?.totalSpend || 0)}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {formatCurrency(summary?.averagePerQuarter || 0)} / qtr avg
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Total Filings — quarter activity dot grid ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Filings</span>
+                          <div className="w-6 h-6 rounded-lg bg-white/5 border border-gray-700/30 flex items-center justify-center">
+                            <FileText className="w-3 h-3 text-gray-400" />
+                          </div>
+                        </div>
+                        {/* Quarter dot grid — each dot = 1 quarter, filled if filings > 0 */}
+                        {data.quarters && data.quarters.length > 0 && (() => {
+                          const sorted = [...data.quarters].sort((a, b) => a.year !== b.year ? a.year - b.year : a.quarter.localeCompare(b.quarter)).slice(-20);
+                          return (
+                            <div className="flex flex-wrap gap-[3px] mb-2.5">
+                              {sorted.map((q, i) => (
+                                <div
+                                  key={i}
+                                  title={`${q.quarter} ${q.year}: ${q.filingCount} filings`}
+                                  className={cn(
+                                    "w-2.5 h-2.5 rounded-sm",
+                                    q.filingCount > 10 ? "bg-white/70" :
+                                    q.filingCount > 4  ? "bg-white/35" :
+                                    q.filingCount > 0  ? "bg-white/15" :
+                                                         "bg-white/[0.04]"
+                                  )}
+                                />
+                              ))}
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-white font-mono tracking-tight leading-none">
+                            {summary?.totalFilings || 0}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {summary?.totalQuarters || 0} active quarters
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Lobbyists — firms vs individuals ratio bar ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Lobbyists</span>
+                          <div className="w-6 h-6 rounded-lg bg-blue-500/10 border border-blue-500/10 flex items-center justify-center">
+                            <Users className="w-3 h-3 text-blue-400" />
+                          </div>
+                        </div>
+                        {/* Ratio bar: firms (blue) vs individuals (cyan) */}
+                        {summary && summary.uniqueRegistrants > 0 && summary.uniqueLobbyists > 0 && (() => {
+                          const firms = summary.uniqueRegistrants;
+                          const people = summary.uniqueLobbyists;
+                          const total = firms + people;
+                          const firmPct = Math.round((firms / total) * 100);
+                          const peoplePct = 100 - firmPct;
+                          return (
+                            <div className="mb-2.5 space-y-1.5">
+                              <div className="flex h-2 rounded-full overflow-hidden gap-px">
+                                <div className="bg-blue-500/60 rounded-l-full" style={{ width: `${firmPct}%` }} title={`${firms} firms`} />
+                                <div className="bg-cyan-400/40 rounded-r-full flex-1" title={`${people} individuals`} />
+                              </div>
+                              <div className="flex items-center justify-between text-[9px] font-mono text-gray-600">
+                                <span className="flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500/60" />{firms} firms</span>
+                                <span className="flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 rounded-full bg-cyan-400/40" />{people} people</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-blue-400 font-mono tracking-tight leading-none">
+                            {summary?.uniqueLobbyists || 0}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {summary?.uniqueRegistrants || 0} lobbying firms
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Gov Reach — issue area horizontal segment bar ── */}
+                      <div className="group flex flex-col justify-between p-5 hover:bg-white/[0.015] transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Gov Reach</span>
+                          <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/10 flex items-center justify-center">
+                            <Globe className="w-3 h-3 text-purple-400" />
+                          </div>
+                        </div>
+                        {/* Top issue areas as segmented bar */}
+                        {summary && summary.topIssueAreas.length > 0 && (() => {
+                          const top = summary.topIssueAreas.slice(0, 5);
+                          const totalCount = top.reduce((s, i) => s + i.count, 0) || 1;
+                          const colors = ["bg-purple-400/70", "bg-purple-400/45", "bg-violet-400/40", "bg-fuchsia-400/35", "bg-gray-500/25"];
+                          return (
+                            <div className="mb-2.5 space-y-1.5">
+                              <div className="flex h-2 rounded-full overflow-hidden gap-px">
+                                {top.map((issue, i) => (
+                                  <div
+                                    key={issue.code}
+                                    className={cn("rounded-sm first:rounded-l-full last:rounded-r-full", colors[i])}
+                                    style={{ width: `${(issue.count / totalCount) * 100}%` }}
+                                    title={`${issue.name}: ${issue.count} filings`}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {top.slice(0, 3).map((issue, i) => (
+                                  <span key={issue.code} className="text-[8px] font-mono text-gray-600 truncate max-w-[56px]" title={issue.name}>
+                                    {issue.code}
+                                  </span>
+                                ))}
+                                {top.length > 3 && <span className="text-[8px] font-mono text-gray-700">+{top.length - 3}</span>}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        <div>
+                          <div className="text-2xl font-bold text-purple-400 font-mono tracking-tight leading-none">
+                            {summary?.uniqueGovEntities || 0}
+                          </div>
+                          <div className="text-[10px] text-gray-600 mt-1.5 font-mono">
+                            {summary?.uniqueIssueAreas || 0} issue areas
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
                   </div>
                 </div>
+              );
+            })()}
 
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    Total Filings
-                  </div>
-                  <div className="text-lg font-bold text-white font-mono">
-                    {summary?.totalFilings || 0}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {summary?.totalQuarters || 0} active quarters
-                  </div>
-                </div>
-
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <Users className="w-3 h-3" />
-                    Lobbyists
-                  </div>
-                  <div className="text-lg font-bold text-blue-400 font-mono">
-                    {summary?.uniqueLobbyists || 0}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {summary?.uniqueRegistrants || 0} lobbying firms
-                  </div>
-                </div>
-
-                <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1">
-                    <Globe className="w-3 h-3" />
-                    Gov Reach
-                  </div>
-                  <div className="text-lg font-bold text-purple-400 font-mono">
-                    {summary?.uniqueGovEntities || 0}
-                  </div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    {summary?.uniqueIssueAreas || 0} issue areas
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quarterly Spend Chart */}
-            {data.quarters && data.quarters.length > 0 && (
-              <SpendBarChart quarters={data.quarters} />
+            {/* Spend Chart — quarterly + annual toggle */}
+            {data.quarters && data.quarters.length > 0 && summary && (
+              <SpendBarChart quarters={data.quarters} spendByYear={summary.spendByYear} />
             )}
 
-            {/* Year-by-Year Spend */}
-            {summary && summary.spendByYear.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                <h4 className="text-xs font-medium text-gray-400 mb-3">Annual Spending</h4>
-                <div className="space-y-2">
-                  {summary.spendByYear.map((yearData) => {
-                    const maxYearSpend = Math.max(...summary.spendByYear.map(y => y.spend), 1);
-                    const pct = (yearData.spend / maxYearSpend) * 100;
+            {/* Top Issue Areas — Enhanced */}
+            {summary && summary.topIssueAreas.length > 0 && (
+              <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5">
+                <h4 className="text-xs font-medium text-gray-400 mb-4 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-purple-400" />
+                  Top Issue Areas
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">{summary.topIssueAreas.length} tracked</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {summary.topIssueAreas.slice(0, 8).map((issue, idx) => {
+                    const maxIssueSpend = Math.max(...summary.topIssueAreas.slice(0, 8).map(i => i.totalSpend), 1);
+                    const pct = (issue.totalSpend / maxIssueSpend) * 100;
                     return (
-                      <div key={yearData.year} className="flex items-center gap-3">
-                        <span className="text-xs font-mono text-gray-400 w-10">{yearData.year}</span>
-                        <div className="flex-1 bg-gray-800/50 rounded-full h-2.5 overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%` }}
-                          />
+                      <button
+                        key={issue.code}
+                        onClick={() => openIssueDrilldown(issue.code, issue.name)}
+                        className="flex items-center gap-3 px-3 py-2.5 bg-[#111] rounded-lg border border-gray-800/50 hover:border-purple-500/40 hover:bg-purple-500/[0.04] transition-all relative overflow-hidden group text-left w-full cursor-pointer"
+                      >
+                        {/* Background fill bar */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/[0.04] to-transparent transition-all duration-500" style={{ width: `${pct}%` }} />
+                        <span className="relative text-[10px] font-mono text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded font-semibold">
+                          {issue.code}
+                        </span>
+                        <div className="relative flex-1 min-w-0">
+                          <div className="text-xs text-white truncate font-medium">{issue.name}</div>
+                          <div className="text-[10px] text-gray-600 font-mono">
+                            {issue.count} filings &bull; {formatCurrency(issue.totalSpend)}
+                          </div>
                         </div>
-                        <span className="text-xs font-mono text-amber-400 w-20 text-right">
-                          {formatCurrency(yearData.spend)}
-                        </span>
-                        <span className="text-[10px] text-gray-600 w-16 text-right">
-                          {yearData.filingCount} filings
-                        </span>
-                      </div>
+                        {idx === 0 && (
+                          <span className="relative text-[8px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">Top</span>
+                        )}
+                        <ExternalLink className="relative w-3 h-3 text-gray-700 group-hover:text-purple-400 transition-colors flex-shrink-0" />
+                      </button>
                     );
                   })}
                 </div>
               </div>
             )}
 
-            {/* Top Issue Areas */}
-            {summary && summary.topIssueAreas.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-purple-400" />
-                  Top Issue Areas
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {summary.topIssueAreas.slice(0, 8).map((issue) => (
-                    <div
-                      key={issue.code}
-                      className="flex items-center gap-3 px-3 py-2 bg-[#141414] rounded-lg border border-gray-800/50"
-                    >
-                      <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                        {issue.code}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-white truncate">{issue.name}</div>
-                        <div className="text-[10px] text-gray-600">
-                          {issue.count} filings &bull; {formatCurrency(issue.totalSpend)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Top Lobbying Firms */}
+            {/* Top Lobbying Firms — Enhanced */}
             {summary && summary.topRegistrants.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
+              <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5">
+                <h4 className="text-xs font-medium text-gray-400 mb-4 flex items-center gap-1.5">
                   <Briefcase className="w-3.5 h-3.5 text-blue-400" />
                   Lobbying Firms
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">{summary.topRegistrants.length} firms</span>
                 </h4>
-                <div className="space-y-2">
-                  {summary.topRegistrants.slice(0, 8).map((reg, idx) => (
-                    <div
-                      key={reg.name}
-                      className="flex items-center gap-3 px-3 py-2 bg-[#141414] rounded-lg border border-gray-800/50"
-                    >
-                      <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center text-[10px] font-bold text-blue-400">
-                        {idx + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-white truncate">{reg.name}</div>
-                        <div className="text-[10px] text-gray-600">{reg.filingCount} filings</div>
-                      </div>
-                      <div className="text-xs font-mono text-amber-400">
-                        {formatCurrency(reg.totalSpend)}
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-1.5">
+                  {summary.topRegistrants.slice(0, 8).map((reg, idx) => {
+                    const maxRegSpend = Math.max(...summary.topRegistrants.slice(0, 8).map(r => r.totalSpend), 1);
+                    const pct = (reg.totalSpend / maxRegSpend) * 100;
+                    return (
+                      <button
+                        key={reg.name}
+                        onClick={() => openFirmDrilldown(reg.name)}
+                        className="flex items-center gap-3 px-3 py-2.5 bg-[#111] rounded-lg border border-gray-800/50 hover:border-blue-500/40 hover:bg-blue-500/[0.03] transition-all relative overflow-hidden group w-full text-left cursor-pointer"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/[0.03] to-transparent" style={{ width: `${pct}%` }} />
+                        <div className="relative w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center text-[10px] font-bold text-blue-400">
+                          {idx + 1}
+                        </div>
+                        <div className="relative flex-1 min-w-0">
+                          <div className="text-xs text-white truncate font-medium">{reg.name}</div>
+                          <div className="text-[10px] text-gray-600 font-mono">{reg.filingCount} filings</div>
+                        </div>
+                        <div className="relative text-xs font-mono text-amber-400 font-semibold">
+                          {formatCurrency(reg.totalSpend)}
+                        </div>
+                        <ExternalLink className="relative w-3 h-3 text-gray-700 group-hover:text-blue-400 transition-colors flex-shrink-0" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Top Lobbyists */}
+            {/* Top Lobbyists — Enhanced */}
             {summary && summary.topLobbyists.length > 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-                <h4 className="text-xs font-medium text-gray-400 mb-3 flex items-center gap-1.5">
+              <div className="bg-[#0A0A0A] rounded-xl border border-gray-800/80 p-5">
+                <h4 className="text-xs font-medium text-gray-400 mb-4 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-green-400" />
                   Active Lobbyists
+                  <span className="ml-auto text-[10px] text-gray-600 font-mono">{summary.topLobbyists.length} people</span>
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {summary.topLobbyists.slice(0, 10).map((lobbyist) => (
-                    <div
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {summary.topLobbyists.slice(0, 10).map((lobbyist, idx) => (
+                    <button
                       key={lobbyist.name}
-                      className="flex items-center gap-3 px-3 py-2 bg-[#141414] rounded-lg border border-gray-800/50"
+                      onClick={() => openLobbyistDrilldown(lobbyist.name)}
+                      className="flex items-center gap-3 px-3 py-2.5 bg-[#111] rounded-lg border border-gray-800/50 hover:border-green-500/40 hover:bg-green-500/[0.03] transition-all group w-full text-left cursor-pointer"
                     >
-                      <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center">
-                        <Users className="w-3 h-3 text-green-400" />
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500/20 to-green-500/5 flex items-center justify-center border border-green-500/20 flex-shrink-0">
+                        <span className="text-[10px] font-bold text-green-400">{lobbyist.name.charAt(0)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs text-white truncate">{lobbyist.name}</div>
+                        <div className="text-xs text-white truncate font-medium">{lobbyist.name}</div>
                         {lobbyist.coveredPosition && (
-                          <div className="text-[10px] text-gray-600 truncate">
-                            {lobbyist.coveredPosition}
-                          </div>
+                          <div className="text-[10px] text-gray-600 truncate">{lobbyist.coveredPosition}</div>
                         )}
                       </div>
-                      <span className="text-[10px] text-gray-500 font-mono">
-                        {lobbyist.filingCount} filings
+                      <span className="text-[10px] text-gray-500 font-mono font-semibold bg-gray-800/50 px-2 py-0.5 rounded">
+                        {lobbyist.filingCount}
                       </span>
-                    </div>
+                      <ExternalLink className="w-3 h-3 text-gray-700 group-hover:text-green-400 transition-colors flex-shrink-0" />
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1280,7 +2127,7 @@ export function SenateLobbyingView() {
 
             {/* No data state */}
             {data.activities.length === 0 && data.summary.totalFilings === 0 && (
-              <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-12 text-center">
+              <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-12 text-center">
                 <Landmark className="w-12 h-12 text-gray-700 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-white mb-2">No Lobbying Data Found</h3>
                 <p className="text-sm text-gray-500 max-w-md mx-auto">
@@ -1308,6 +2155,17 @@ export function SenateLobbyingView() {
           </>
         )}
       </div>
+
+      {/* ── Drilldown Modal ───────────────────────────────── */}
+      {drilldown && (
+        <DrilldownModal
+          title={drilldown.title}
+          subtitle={drilldown.subtitle}
+          filings={drilldown.filings}
+          accentColor={drilldown.accentColor}
+          onClose={() => setDrilldown(null)}
+        />
+      )}
     </div>
   );
 }
