@@ -36,7 +36,6 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend, 
-  ResponsiveContainer,
 } from 'recharts';
 import { 
   Loader2, TrendingUp, TrendingDown, Info, AlertCircle, Search, Target, X, 
@@ -235,6 +234,159 @@ function formatRevenue(val: number | null): string {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// ANTI-FLICKER: stable hook + constants + components
+// ══════════════════════════════════════════════════════════════════
+
+function useContainerSize(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    let ro: ResizeObserver | null = null;
+    let rafId: number;
+
+    const attach = (el: HTMLDivElement) => {
+      const update = () => {
+        const { width, height } = el.getBoundingClientRect();
+        setSize(prev =>
+          prev.width === Math.floor(width) && prev.height === Math.floor(height)
+            ? prev
+            : { width: Math.floor(width), height: Math.floor(height) }
+        );
+      };
+      update();
+      ro = new ResizeObserver(update);
+      ro.observe(el);
+    };
+
+    if (ref.current) {
+      attach(ref.current);
+      return () => ro?.disconnect();
+    }
+
+    // Poll until element mounts (happens after async data load removes loading state)
+    const poll = () => {
+      if (ref.current) {
+        attach(ref.current);
+      } else {
+        rafId = requestAnimationFrame(poll);
+      }
+    };
+    rafId = requestAnimationFrame(poll);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro?.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return size;
+}
+
+const ES_CHART_MARGIN = { top: 20, right: 30, left: 20, bottom: 5 } as const;
+const ES_CURSOR_STYLE = { fill: 'rgba(255,255,255,0.05)', radius: 4 } as const;
+const ES_XAXIS_TICK = { fontSize: 12, fill: '#525252' } as const;
+const ES_YAXIS_TICK = { fontSize: 12, fill: '#525252' } as const;
+const ES_LEGEND_STYLE = { paddingTop: '20px' } as const;
+const ES_BAR_RADIUS: [number, number, number, number] = [4, 4, 0, 0];
+const esYAxisTickFormatter = (value: number) => `$${value}`;
+const ES_GRADIENTS = (
+  <defs>
+    <linearGradient id="esPositiveGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+      <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.2} />
+    </linearGradient>
+    <linearGradient id="esNegativeGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.2} />
+    </linearGradient>
+    <linearGradient id="esEstimateGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#334155" stopOpacity={0.8} />
+      <stop offset="100%" stopColor="#334155" stopOpacity={0.3} />
+    </linearGradient>
+  </defs>
+);
+
+type ESTooltipPayloadEntry = {
+  dataKey?: string;
+  value?: number | null;
+  payload?: {
+    label?: string;
+    surprisePct?: number | null;
+    yoyPct?: number | null;
+    hasEstimate?: boolean;
+  };
+};
+
+const EarningsSurprisesTooltip = ({ active, payload, label }: {
+  active?: boolean;
+  payload?: ESTooltipPayloadEntry[];
+  label?: string;
+}) => {
+  if (!active || !payload || payload.length === 0) return null;
+  const estimate = payload.find(p => p.dataKey === 'estimate');
+  const actualPos = payload.find(p => p.dataKey === 'actualPositive' && p.value != null);
+  const actualNeg = payload.find(p => p.dataKey === 'actualNegative' && p.value != null);
+  const actual = actualPos || actualNeg;
+  const isBeat = !!actualPos;
+  const surprisePct = payload.find(p => p.dataKey === 'surprisePct');
+  const hasEst = payload[0]?.payload?.hasEstimate;
+  const yoyPct = payload[0]?.payload?.yoyPct;
+  return (
+    <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-4 shadow-2xl backdrop-blur-sm">
+      <p className="text-gray-400 text-xs mb-2 font-medium">{label}</p>
+      {estimate && estimate.value != null && (
+        <div className="flex items-center gap-3 mb-1 min-w-[160px]">
+          <div className="w-2 h-2 rounded-full shrink-0 bg-slate-600" />
+          <span className="text-gray-300 text-sm flex-1">Estimate:</span>
+          <span className="text-white font-mono font-bold text-sm">${Number(estimate.value).toFixed(2)}</span>
+        </div>
+      )}
+      {actual && actual.value != null && (
+        <div className="flex items-center gap-3 mb-1 min-w-[160px]">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${isBeat ? 'bg-blue-500' : 'bg-red-500'}`} />
+          <span className="text-gray-300 text-sm flex-1">Actual EPS:</span>
+          <span className="text-white font-mono font-bold text-sm">${Number(actual.value).toFixed(2)}</span>
+        </div>
+      )}
+      {hasEst && surprisePct && surprisePct.value != null && (
+        <div className="mt-2 pt-2 border-t border-gray-700">
+          <span className={cn("text-xs font-mono font-bold", Number(surprisePct.value) >= 0 ? 'text-blue-400' : 'text-red-400')}>
+            {Number(surprisePct.value) > 0 ? '+' : ''}{Number(surprisePct.value).toFixed(2)}% surprise
+          </span>
+        </div>
+      )}
+      {!hasEst && yoyPct != null && (
+        <div className="mt-2 pt-2 border-t border-gray-700">
+          <span className={cn("text-xs font-mono font-bold", yoyPct >= 0 ? 'text-blue-400' : 'text-red-400')}>
+            {yoyPct > 0 ? '+' : ''}{yoyPct.toFixed(2)}% YoY EPS
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+const earningsSurprisesTooltipEl = <EarningsSurprisesTooltip />;
+
+const EarningsSurprisesLegend = ({ hasEstimate }: { hasEstimate?: boolean }) => (
+  <div className="flex justify-center gap-6 pt-4">
+    {hasEstimate && (
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 rounded-full bg-slate-600" />
+        <span className="text-sm text-gray-400">EPS Estimate</span>
+      </div>
+    )}
+    <div className="flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full bg-blue-500" />
+      <span className="text-sm text-gray-400">{hasEstimate ? 'EPS Actual (Beat)' : 'EPS Actual (Growth)'}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full bg-red-500" />
+      <span className="text-sm text-gray-400">{hasEstimate ? 'EPS Actual (Miss)' : 'EPS Actual (Decline)'}</span>
+    </div>
+  </div>
+);
+// Note: legend content needs hasEstimate — we pass it via the component render inside the chart JSX
+
+// ══════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════════
 
@@ -259,6 +411,8 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
   const searchRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const initialLoadDone = useRef(false);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartSize = useContainerSize(chartContainerRef);
 
   // Recent tickers (persisted in localStorage)
   const [recentTickers, setRecentTickers] = useState<{ ticker: string; name: string }[]>([]);
@@ -458,7 +612,10 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
       })
       .slice(-12)
       .map(q => {
-        const isBeat = q.epsEstimate !== null && q.epsActual !== null && q.epsActual >= q.epsEstimate;
+        // Beat = actual > estimate (when available), else positive YoY growth
+        const isBeat = q.epsEstimate !== null
+          ? (q.epsActual !== null && q.epsActual >= q.epsEstimate)
+          : (q.epsYoyPct !== null ? q.epsYoyPct >= 0 : true);
         return {
           label: `Q${q.fiscalQuarter} ${q.fiscalYear}`,
           period: q.periodEndDate || `${q.fiscalYear}-Q${q.fiscalQuarter}`,
@@ -467,7 +624,9 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
           actualNegative: !isBeat ? q.epsActual : null,
           surprise: q.epsSurprise,
           surprisePct: q.epsSurprisePct,
+          yoyPct: q.epsYoyPct,
           oesScore: q.oesScore,
+          hasEstimate: q.epsEstimate !== null,
         };
       });
   }, [data]);
@@ -477,6 +636,18 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
     if (!data?.quarters) return [];
     return data.quarters.filter(q => q.epsActual !== null || q.epsEstimate !== null);
   }, [data]);
+
+  // ── Whether analyst estimate data is available ─────────────────
+  const hasEstimateData = useMemo(() => {
+    if (!data?.quarters) return false;
+    return data.quarters.some(q => q.epsEstimate !== null);
+  }, [data]);
+
+  // Stable legend element — memoized so recharts never creates a new reference on hover
+  const esLegendEl = useMemo(
+    () => <EarningsSurprisesLegend hasEstimate={hasEstimateData} />,
+    [hasEstimateData]
+  );
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -670,7 +841,6 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
               <div className="flex items-center gap-2">
                 {(() => {
                   const badge = getOESBadge(data.currentScore, data.currentLabel);
-                  const Icon = badge.icon;
                   return (
                     <>
                       <span className={cn("text-2xl font-bold font-mono", data.currentScore >= 0 ? 'text-blue-400' : 'text-red-400')}>
@@ -683,22 +853,32 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
                   );
                 })()}
               </div>
+              {!hasEstimateData && (
+                <p className="text-[9px] text-gray-600 mt-1">Based on growth signals</p>
+              )}
             </div>
 
-            {/* Beat Rate */}
+            {/* Beat Rate / Growth Rate */}
             <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Beat Rate</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                {hasEstimateData ? 'Beat Rate' : 'Growth Rate'}
+              </p>
               <div className="flex items-center gap-2">
                 <span className={cn("text-2xl font-bold font-mono", data.beatRate >= 50 ? 'text-emerald-400' : 'text-orange-400')}>
                   {data.beatRate.toFixed(0)}%
                 </span>
                 <Trophy className={cn("w-4 h-4", data.beatRate >= 75 ? 'text-emerald-400' : data.beatRate >= 50 ? 'text-blue-400' : 'text-orange-400')} />
               </div>
+              {!hasEstimateData && (
+                <p className="text-[9px] text-gray-600 mt-1">Qtrs with positive YoY</p>
+              )}
             </div>
 
-            {/* Avg Surprise */}
+            {/* Avg Surprise / Avg YoY */}
             <div className="bg-[#0D0D0D] rounded-xl border border-gray-800 p-4">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Avg Surprise</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                {hasEstimateData ? 'Avg Surprise' : 'Avg YoY EPS'}
+              </p>
               <div className="flex items-center gap-2">
                 <span className={cn("text-2xl font-bold font-mono", data.avgSurprisePct >= 0 ? 'text-blue-400' : 'text-red-400')}>
                   {data.avgSurprisePct > 0 ? '+' : ''}{data.avgSurprisePct.toFixed(2)}%
@@ -713,12 +893,12 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
                 {data.currentStreak.type === 'beat_streak' ? (
                   <>
                     <span className="text-2xl font-bold font-mono text-emerald-400">{data.currentStreak.length}</span>
-                    <span className="text-xs text-emerald-400">consecutive beats</span>
+                    <span className="text-xs text-emerald-400">{hasEstimateData ? 'consecutive beats' : 'qtrs YoY growth'}</span>
                   </>
                 ) : data.currentStreak.type === 'miss_streak' ? (
                   <>
                     <span className="text-2xl font-bold font-mono text-red-400">{data.currentStreak.length}</span>
-                    <span className="text-xs text-red-400">consecutive misses</span>
+                    <span className="text-xs text-red-400">{hasEstimateData ? 'consecutive misses' : 'qtrs YoY decline'}</span>
                   </>
                 ) : (
                   <span className="text-sm text-gray-500">Mixed</span>
@@ -756,115 +936,45 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
           ) : (
             <div className="space-y-6 p-4">
               {/* Chart */}
-              <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%" debounce={50}>
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="esPositiveGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.2} />
-                      </linearGradient>
-                      <linearGradient id="esNegativeGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#ef4444" stopOpacity={0.2} />
-                      </linearGradient>
-                      <linearGradient id="esEstimateGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#334155" stopOpacity={0.8} />
-                        <stop offset="100%" stopColor="#334155" stopOpacity={0.3} />
-                      </linearGradient>
-                    </defs>
+              <div className="h-[350px] w-full" ref={chartContainerRef}>
+                {chartSize.width > 0 && (
+                  <BarChart data={chartData} width={chartSize.width} height={350} margin={ES_CHART_MARGIN}>
+                    {ES_GRADIENTS}
 
                     <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
 
                     <XAxis
                       dataKey="label"
-                      stroke="#525252"
-                      fontSize={12}
+                      tick={ES_XAXIS_TICK}
                       tickLine={false}
                       axisLine={false}
                       dy={10}
                     />
 
                     <YAxis
-                      stroke="#525252"
-                      fontSize={12}
+                      tick={ES_YAXIS_TICK}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => `$${value}`}
+                      tickFormatter={esYAxisTickFormatter}
                       dx={-10}
                     />
 
                     <Tooltip
-                      cursor={{ fill: 'rgba(255, 255, 255, 0.05)', radius: 4 }}
+                      cursor={ES_CURSOR_STYLE}
                       isAnimationActive={false}
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload || payload.length === 0) return null;
-
-                        const estimate = payload.find(p => p.dataKey === 'estimate');
-                        const actualPos = payload.find(p => p.dataKey === 'actualPositive' && p.value != null);
-                        const actualNeg = payload.find(p => p.dataKey === 'actualNegative' && p.value != null);
-                        const actual = actualPos || actualNeg;
-                        const isBeat = !!actualPos;
-                        const surprisePct = payload.find(p => p.dataKey === 'surprisePct');
-
-                        return (
-                          <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-4 shadow-2xl backdrop-blur-sm">
-                            <p className="text-gray-400 text-xs mb-2 font-medium">{label}</p>
-                            {estimate && estimate.value != null && (
-                              <div className="flex items-center gap-3 mb-1 min-w-[160px]">
-                                <div className="w-2 h-2 rounded-full shrink-0 bg-slate-600" />
-                                <span className="text-gray-300 text-sm flex-1">Estimate:</span>
-                                <span className="text-white font-mono font-bold text-sm">
-                                  ${Number(estimate.value).toFixed(2)}
-                                </span>
-                              </div>
-                            )}
-                            {actual && actual.value != null && (
-                              <div className="flex items-center gap-3 mb-1 min-w-[160px]">
-                                <div className={`w-2 h-2 rounded-full shrink-0 ${isBeat ? 'bg-blue-500' : 'bg-red-500'}`} />
-                                <span className="text-gray-300 text-sm flex-1">Actual:</span>
-                                <span className="text-white font-mono font-bold text-sm">
-                                  ${Number(actual.value).toFixed(2)}
-                                </span>
-                              </div>
-                            )}
-                            {surprisePct && surprisePct.value != null && (
-                              <div className="mt-2 pt-2 border-t border-gray-700">
-                                <span className={cn("text-xs font-mono font-bold", Number(surprisePct.value) >= 0 ? 'text-blue-400' : 'text-red-400')}>
-                                  {Number(surprisePct.value) > 0 ? '+' : ''}{Number(surprisePct.value).toFixed(2)}% surprise
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }}
+                      content={earningsSurprisesTooltipEl}
                     />
 
                     <Legend
-                      wrapperStyle={{ paddingTop: '20px' }}
-                      content={() => (
-                        <div className="flex justify-center gap-6 pt-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-slate-600" />
-                            <span className="text-sm text-gray-400">EPS Estimate</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-blue-500" />
-                            <span className="text-sm text-gray-400">EPS Actual (Beat)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500" />
-                            <span className="text-sm text-gray-400">EPS Actual (Miss)</span>
-                          </div>
-                        </div>
-                      )}
+                      wrapperStyle={ES_LEGEND_STYLE}
+                      content={esLegendEl}
                     />
 
-                    <Bar dataKey="estimate" name="EPS Estimate" fill="url(#esEstimateGradient)" radius={[4, 4, 0, 0]} isAnimationActive={false} maxBarSize={60} />
-                    <Bar dataKey="actualPositive" name="EPS Actual (Beat)" fill="url(#esPositiveGradient)" radius={[4, 4, 0, 0]} isAnimationActive={false} maxBarSize={60} legendType="none" />
-                    <Bar dataKey="actualNegative" name="EPS Actual (Miss)" fill="url(#esNegativeGradient)" radius={[4, 4, 0, 0]} isAnimationActive={false} maxBarSize={60} legendType="none" />
+                    <Bar dataKey="estimate" name="EPS Estimate" fill="url(#esEstimateGradient)" radius={ES_BAR_RADIUS} isAnimationActive={false} maxBarSize={60} />
+                    <Bar dataKey="actualPositive" name="EPS Actual (Beat)" fill="url(#esPositiveGradient)" radius={ES_BAR_RADIUS} isAnimationActive={false} maxBarSize={60} legendType="none" />
+                    <Bar dataKey="actualNegative" name="EPS Actual (Miss)" fill="url(#esNegativeGradient)" radius={ES_BAR_RADIUS} isAnimationActive={false} maxBarSize={60} legendType="none" />
                   </BarChart>
-                </ResponsiveContainer>
+                )}
               </div>
 
               {/* Detailed Toggle */}

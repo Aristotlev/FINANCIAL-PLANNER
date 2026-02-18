@@ -9,7 +9,7 @@
  * Copyright OmniFolio. All rights reserved.
  */
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -17,9 +17,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   ReferenceLine,
-  Cell,
 } from "recharts";
 import {
   Loader2,
@@ -263,6 +261,324 @@ function OICGauge({ score, label }: { score: number; label: string }) {
 }
 
 // ====================================================================
+// ANTI-FLICKER: stable hook + constants (same pattern as usa-spending & senate-lobbying)
+// ====================================================================
+
+function useContainerSize(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setSize(prev =>
+        prev.width === Math.round(width) && prev.height === Math.round(height)
+          ? prev
+          : { width: Math.round(width), height: Math.round(height) }
+      );
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return size;
+}
+
+// ── Module-level stable constants — never recreated on re-render ──────
+const IS_CHART_HEIGHT = 280;
+const IS_CHART_MARGIN = { top: 8, right: 12, left: 8, bottom: 8 } as const;
+const IS_CURSOR_STYLE = { fill: 'rgba(255,255,255,0.03)' } as const;
+const IS_GRID_STROKE = "#222";
+const IS_XAXIS_TICK = { fontSize: 10, fill: '#525252' } as const;
+const IS_YAXIS_TICK = { fontSize: 10, fill: '#525252' } as const;
+const IS_OIC_DOMAIN: [number, number] = [-100, 100];
+const IS_OIC_TICKS = [-100, -50, 0, 50, 100];
+const IS_REF_LINE_STROKE = { stroke: '#333', strokeWidth: 1 } as const;
+const IS_REF_LINE_PROPS = { stroke: '#333', strokeWidth: 1 } as const;
+
+// ====================================================================
+// CHART SUB-COMPONENTS
+// ====================================================================
+
+type ChartEntry = {
+  date: string;
+  oicScore: number;
+  netShares: number;
+  netValue: number;
+  buyValue: number;
+  sellValue: number;
+  clusterBuy: boolean;
+  clusterSell: boolean;
+  // Baked fill colors — prevents Cell children and their hover flicker
+  oicFill: string;
+  netFill: string;
+};
+
+// ── Custom bar shapes — read fill from payload.fillColor (no <Cell> children) ──
+// This is the same SpendBarShape pattern from usa-spending/senate-lobbying
+// that eliminates the hover flicker and bar-overflow collision bugs.
+const OICBarShape = (props: any) => {
+  const { x, y, width, height, payload } = props;
+  if (!width || height === undefined || height === null) return null;
+  const fill = payload?.oicFill ?? '#9ca3af';
+  // Recharts passes negative height for bars below baseline — handle both directions
+  const absH = Math.abs(height);
+  if (absH < 1) return null;
+  const top = height < 0 ? y + height : y;
+  const r = Math.min(3, absH / 2);
+  return (
+    <path
+      d={`M${x},${top + r}
+          Q${x},${top} ${x + r},${top}
+          L${x + width - r},${top}
+          Q${x + width},${top} ${x + width},${top + r}
+          L${x + width},${top + absH}
+          L${x},${top + absH}Z`}
+      fill={fill}
+      fillOpacity={0.85}
+    />
+  );
+};
+
+const NetValueBarShape = (props: any) => {
+  const { x, y, width, height, payload } = props;
+  if (!width || height === undefined || height === null) return null;
+  const fill = payload?.netFill ?? '#9ca3af';
+  const absH = Math.abs(height);
+  if (absH < 1) return null;
+  const top = height < 0 ? y + height : y;
+  const r = Math.min(3, absH / 2);
+  return (
+    <path
+      d={`M${x},${top + r}
+          Q${x},${top} ${x + r},${top}
+          L${x + width - r},${top}
+          Q${x + width},${top} ${x + width},${top + r}
+          L${x + width},${top + absH}
+          L${x},${top + absH}Z`}
+      fill={fill}
+      fillOpacity={0.85}
+    />
+  );
+};
+
+// Stable shape element references — never recreated on re-render
+const oicBarShapeElement = <OICBarShape />;
+const netValueBarShapeElement = <NetValueBarShape />;
+
+// ── Tooltip components defined OUTSIDE render — stable references, no flicker ──
+const tooltipBoxClass =
+  "bg-[#0e0e0e] border border-gray-700/70 rounded-xl p-3 shadow-2xl min-w-[140px] pointer-events-none";
+
+const OICTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload as ChartEntry | undefined;
+  if (!d) return null;
+  return (
+    <div className={tooltipBoxClass}>
+      <div className="text-xs font-semibold text-white mb-2">{d.date}</div>
+      <div className="flex justify-between gap-4 text-[11px]">
+        <span className="text-gray-400">OIC Score</span>
+        <span className={cn(
+          "font-mono font-bold",
+          d.oicScore > 0 ? "text-emerald-400" : d.oicScore < 0 ? "text-red-400" : "text-gray-400"
+        )}>
+          {d.oicScore > 0 ? "+" : ""}{d.oicScore.toFixed(1)}
+        </span>
+      </div>
+      {d.clusterBuy && (
+        <div className="text-[10px] text-emerald-400 pt-1 border-t border-gray-800 mt-1">⚡ Cluster buy</div>
+      )}
+      {d.clusterSell && (
+        <div className="text-[10px] text-red-400 pt-1 border-t border-gray-800 mt-1">⚡ Cluster sell</div>
+      )}
+    </div>
+  );
+};
+
+const NetValueTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload as ChartEntry | undefined;
+  if (!d) return null;
+  return (
+    <div className={tooltipBoxClass}>
+      <div className="text-xs font-semibold text-white mb-2">{d.date}</div>
+      <div className="space-y-1.5">
+        <div className="flex justify-between gap-4 text-[11px]">
+          <span className="text-gray-400">Net Value</span>
+          <span className={cn("font-mono font-bold", d.netValue >= 0 ? "text-blue-400" : "text-red-400")}>
+            {formatCurrency(d.netValue)}
+          </span>
+        </div>
+        <div className="flex justify-between gap-4 text-[11px]">
+          <span className="text-emerald-400/70">Buys</span>
+          <span className="text-emerald-400 font-mono">{formatCurrency(d.buyValue)}</span>
+        </div>
+        <div className="flex justify-between gap-4 text-[11px]">
+          <span className="text-red-400/70">Sells</span>
+          <span className="text-red-400 font-mono">{formatCurrency(Math.abs(d.sellValue))}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Stable tooltip element references — defined at module scope
+const oicTooltipElement = <OICTooltip />;
+const netValueTooltipElement = <NetValueTooltip />;
+
+// ── YAxis tick formatter for net value — defined outside render ──────
+const netValueTickFormatter = (v: number) => {
+  if (v === 0) return "$0";
+  const abs = Math.abs(v);
+  if (abs >= 1e9) return `${v < 0 ? "-" : ""}$${(abs / 1e9).toFixed(0)}B`;
+  if (abs >= 1e6) return `${v < 0 ? "-" : ""}$${(abs / 1e6).toFixed(0)}M`;
+  if (abs >= 1e3) return `${v < 0 ? "-" : ""}$${(abs / 1e3).toFixed(0)}K`;
+  return `${v < 0 ? "-" : ""}$${abs.toFixed(0)}`;
+};
+
+// ── XAxis tick formatter — defined outside render ────────────────────
+const oicXTickFormatter = (v: string) => v.substring(2);
+
+/* ── OIC Score History BarChart ───────────────────────────────────── */
+function OICScoreChart({ chartData }: { chartData: ChartEntry[] }) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartSize = useContainerSize(chartRef);
+
+  return (
+    <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-5">
+      <h3 className="text-sm font-semibold text-white mb-0.5 flex items-center gap-2">
+        <Shield className="w-4 h-4 text-blue-400" /> OIC Score History
+      </h3>
+      <p className="text-[10px] text-gray-500 mb-3">OmniFolio Insider Confidence Score (monthly)</p>
+      {/* overflow-hidden prevents bars from painting outside the chart container */}
+      <div ref={chartRef} className="w-full overflow-hidden" style={{ height: IS_CHART_HEIGHT }}>
+        {chartSize.width > 0 && (
+          <BarChart
+            width={chartSize.width}
+            height={IS_CHART_HEIGHT}
+            data={chartData}
+            margin={IS_CHART_MARGIN}
+            barCategoryGap="20%"
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke={IS_GRID_STROKE} vertical={false} />
+            <XAxis
+              dataKey="date"
+              tick={IS_XAXIS_TICK}
+              tickFormatter={oicXTickFormatter}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={IS_YAXIS_TICK}
+              domain={IS_OIC_DOMAIN}
+              ticks={IS_OIC_TICKS}
+              tickLine={false}
+              axisLine={false}
+              width={36}
+            />
+            <Tooltip
+              cursor={IS_CURSOR_STYLE}
+              isAnimationActive={false}
+              content={oicTooltipElement}
+            />
+            <ReferenceLine y={0} {...IS_REF_LINE_PROPS} />
+            {/* shape reads oicFill from payload — no <Cell> children needed */}
+            <Bar
+              dataKey="oicScore"
+              name="OIC Score"
+              maxBarSize={40}
+              isAnimationActive={false}
+              shape={oicBarShapeElement}
+            />
+          </BarChart>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Net Insider Value BarChart ────────────────────────────────────── */
+function NetValueChart({
+  chartData,
+}: {
+  chartData: ChartEntry[];
+}) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartSize = useContainerSize(chartRef);
+
+  // Compute symmetric domain so 0 is always centred — stable inside this component
+  const { netValueDomain, netValueTicks } = useMemo(() => {
+    if (!chartData.length) return { netValueDomain: [-1, 1] as [number, number], netValueTicks: [-1, 0, 1] };
+    const values = chartData.map((d) => d.netValue);
+    const absMax = Math.max(...values.map(Math.abs), 1);
+    const magnitude = Math.pow(10, Math.floor(Math.log10(absMax)));
+    const nice = Math.ceil(absMax / magnitude) * magnitude;
+    const padded = nice * 1.1;
+    return {
+      netValueDomain: [-padded, padded] as [number, number],
+      netValueTicks: [-nice, -nice / 2, 0, nice / 2, nice],
+    };
+  }, [chartData]);
+
+  return (
+    <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-5">
+      <h3 className="text-sm font-semibold text-white mb-0.5 flex items-center gap-2">
+        <Activity className="w-4 h-4 text-purple-400" /> Net Insider Value
+      </h3>
+      <p className="text-[10px] text-gray-500 mb-3">Dollar value of net insider activity (monthly)</p>
+      {/* overflow-hidden prevents bars from painting outside the chart container */}
+      <div ref={chartRef} className="w-full overflow-hidden" style={{ height: IS_CHART_HEIGHT }}>
+        {chartSize.width > 0 && (
+          <BarChart
+            width={chartSize.width}
+            height={IS_CHART_HEIGHT}
+            data={chartData}
+            margin={IS_CHART_MARGIN}
+            barCategoryGap="20%"
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke={IS_GRID_STROKE} vertical={false} />
+            <XAxis
+              dataKey="date"
+              tick={IS_XAXIS_TICK}
+              tickFormatter={oicXTickFormatter}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={IS_YAXIS_TICK}
+              domain={netValueDomain}
+              ticks={netValueTicks}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={netValueTickFormatter}
+              width={52}
+            />
+            <Tooltip
+              cursor={IS_CURSOR_STYLE}
+              isAnimationActive={false}
+              content={netValueTooltipElement}
+            />
+            <ReferenceLine y={0} {...IS_REF_LINE_PROPS} />
+            {/* shape reads netFill from payload — no <Cell> children needed */}
+            <Bar
+              dataKey="netValue"
+              name="Net Value"
+              maxBarSize={40}
+              isAnimationActive={false}
+              shape={netValueBarShapeElement}
+            />
+          </BarChart>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ====================================================================
 // MAIN COMPONENT
 // ====================================================================
 
@@ -305,7 +621,7 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const chartData = useMemo(() => {
+  const chartData = useMemo((): ChartEntry[] => {
     if (!data?.months) return [];
     return [...data.months]
       .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month)
@@ -318,6 +634,9 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
         sellValue: -m.totalSellValue,
         clusterBuy: m.clusterBuyFlag,
         clusterSell: m.clusterSellFlag,
+        // Baked fill colors — eliminates <Cell> children and their hover/overflow bugs
+        oicFill: m.oicScore >= 0 ? "#34d399" : "#f87171",
+        netFill: m.netValue >= 0 ? "#60a5fa" : "#ef4444",
       }));
   }, [data?.months]);
 
@@ -501,109 +820,10 @@ export function InsiderSentiment({ ticker }: InsiderSentimentProps) {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* OIC Score History */}
-            <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-6">
-              <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-blue-400" /> OIC Score History
-              </h3>
-              <p className="text-xs text-gray-500 mb-6">OmniFolio Insider Confidence Score (monthly)</p>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="oicPos" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#34d399" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#34d399" stopOpacity={0.2} />
-                      </linearGradient>
-                      <linearGradient id="oicNeg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f87171" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#f87171" stopOpacity={0.2} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
-                    <XAxis dataKey="date" stroke="#525252" fontSize={11} tickFormatter={(v) => v.substring(2)} tickLine={false} axisLine={false} dy={10} />
-                    <YAxis stroke="#525252" fontSize={11} domain={[-100, 100]} tickLine={false} axisLine={false} dx={-10} />
-                    <Tooltip content={({ active, payload, label }) => {
-                      if (!active || !payload?.length) return null;
-                      const d = payload[0]?.payload;
-                      return (
-                        <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-4 shadow-xl">
-                          <p className="text-gray-400 text-xs mb-2">{label}</p>
-                          <div className="flex justify-between gap-4 text-sm">
-                            <span className="text-gray-300">OIC:</span>
-                            <span className={cn("font-mono font-bold", d?.oicScore > 0 ? "text-emerald-400" : d?.oicScore < 0 ? "text-red-400" : "text-gray-400")}>
-                              {d?.oicScore?.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    }} />
-                    <ReferenceLine y={0} stroke="#333" />
-                    <Bar dataKey="oicScore" name="OIC Score" animationDuration={1500} maxBarSize={50}>
-                      {chartData.map((entry, i) => (
-                        <Cell key={i} fill={entry.oicScore >= 0 ? "url(#oicPos)" : "url(#oicNeg)"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            <OICScoreChart chartData={chartData} />
 
             {/* Net Value Chart */}
-            <div className="bg-[#1A1A1A] rounded-xl border border-gray-800 p-6">
-              <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-purple-400" /> Net Insider Value
-              </h3>
-              <p className="text-xs text-gray-500 mb-6">Dollar value of net insider activity (monthly)</p>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="valPos" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#60a5fa" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.2} />
-                      </linearGradient>
-                      <linearGradient id="valNeg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
-                        <stop offset="100%" stopColor="#ef4444" stopOpacity={0.2} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
-                    <XAxis dataKey="date" stroke="#525252" fontSize={11} tickFormatter={(v) => v.substring(2)} tickLine={false} axisLine={false} dy={10} />
-                    <YAxis stroke="#525252" fontSize={11} tickLine={false} axisLine={false} dx={-10}
-                      tickFormatter={(v) => Math.abs(v) >= 1e6 ? `$${(v/1e6).toFixed(0)}M` : Math.abs(v) >= 1e3 ? `$${(v/1e3).toFixed(0)}K` : `$${v}`} />
-                    <Tooltip content={({ active, payload, label }) => {
-                      if (!active || !payload?.length) return null;
-                      const d = payload[0]?.payload;
-                      return (
-                        <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-4 shadow-xl">
-                          <p className="text-gray-400 text-xs mb-2">{label}</p>
-                          <div className="flex justify-between gap-4 text-sm">
-                            <span className="text-gray-300">Net:</span>
-                            <span className={cn("font-mono font-bold", d?.netValue > 0 ? "text-blue-400" : "text-red-400")}>
-                              {formatCurrency(d?.netValue)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between gap-4 text-xs mt-1">
-                            <span className="text-emerald-400/60">Buys:</span>
-                            <span className="text-emerald-400 font-mono">{formatCurrency(d?.buyValue)}</span>
-                          </div>
-                          <div className="flex justify-between gap-4 text-xs">
-                            <span className="text-red-400/60">Sells:</span>
-                            <span className="text-red-400 font-mono">{formatCurrency(Math.abs(d?.sellValue || 0))}</span>
-                          </div>
-                        </div>
-                      );
-                    }} />
-                    <ReferenceLine y={0} stroke="#333" />
-                    <Bar dataKey="netValue" name="Net Value" animationDuration={1500} maxBarSize={50}>
-                      {chartData.map((entry, i) => (
-                        <Cell key={i} fill={entry.netValue >= 0 ? "url(#valPos)" : "url(#valNeg)"} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            <NetValueChart chartData={chartData} />
           </div>
 
           {/* Insider Role Breakdown */}
