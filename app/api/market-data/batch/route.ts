@@ -243,7 +243,7 @@ function getStockFallbackPrice(symbol: string): PriceData | null {
 let yahooCircuitOpen = false;
 let yahooCircuitOpenedAt = 0;
 let yahooConsecutiveErrors = 0;
-const YAHOO_CIRCUIT_RESET_MS = 300000; // 5 minutes
+const YAHOO_CIRCUIT_RESET_MS = 120000; // 2 minutes (was 5 — faster recovery)
 const YAHOO_CIRCUIT_THRESHOLD = 3;
 
 // Fetch stock prices from Yahoo Finance v8/chart API

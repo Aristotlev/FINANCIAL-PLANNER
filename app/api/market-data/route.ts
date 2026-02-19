@@ -23,7 +23,7 @@ const STALE_CACHE_DURATION = 3600000; // 1 hour
 let yahooCircuitOpen = false;
 let yahooCircuitOpenedAt = 0;
 let yahooConsecutiveErrors = 0;
-const YAHOO_CIRCUIT_RESET_MS = 300000; // 5 minutes
+const YAHOO_CIRCUIT_RESET_MS = 120000; // 2 minutes (was 5 — faster recovery)
 const YAHOO_CIRCUIT_THRESHOLD = 3;
 
 // Fallback stock prices for when ALL providers fail

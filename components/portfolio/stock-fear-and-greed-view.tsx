@@ -3,58 +3,58 @@
 import { useEffect, useState } from "react";
 import { InfoIcon } from "lucide-react";
 
-interface FearGreedComponents {
+interface StockFearGreedComponents {
   price_momentum: number;
-  volatility: number;
-  dominance: number;
-  volume_surge: number;
+  vix_level: number;
   market_breadth: number;
+  volume_surge: number;
   rsi_signal: number;
+  safe_haven: number;
 }
 
-interface FearAndGreedData {
+interface StockFearAndGreedData {
   value: number;
   value_classification: string;
   timestamp: string;
   time_until_update?: string;
-  components?: FearGreedComponents;
+  components?: StockFearGreedComponents;
 }
 
-const SIGNALS: { key: keyof FearGreedComponents; label: string; description: string }[] = [
+const SIGNALS: { key: keyof StockFearGreedComponents; label: string; description: string }[] = [
   {
     key: "price_momentum",
     label: "Price Momentum",
-    description: "BTC 30-day price change vs baseline",
+    description: "SPY 30-day trend vs 90-day baseline",
   },
   {
-    key: "volatility",
-    label: "Volatility",
-    description: "Current 24 h spread vs 7-day average",
-  },
-  {
-    key: "dominance",
-    label: "BTC Dominance",
-    description: "Dominance shift — rising = fear, falling = greed",
-  },
-  {
-    key: "volume_surge",
-    label: "Volume Surge",
-    description: "Today's BTC volume vs 7-day average",
+    key: "vix_level",
+    label: "Volatility (VIX)",
+    description: "CBOE VIX fear gauge — inverted",
   },
   {
     key: "market_breadth",
     label: "Market Breadth",
-    description: "% of top-10 alts outperforming BTC",
+    description: "% of S&P sector ETFs outperforming SPY",
+  },
+  {
+    key: "volume_surge",
+    label: "Volume Surge",
+    description: "SPY daily volume vs 20-day average",
   },
   {
     key: "rsi_signal",
     label: "RSI Signal",
-    description: "14-period Wilder RSI on daily BTC (inverted)",
+    description: "14-period Wilder RSI on SPY daily closes (inverted)",
+  },
+  {
+    key: "safe_haven",
+    label: "Safe Haven Demand",
+    description: "TLT (20Y Treasuries) vs SPY relative flow",
   },
 ];
 
-export function FearAndGreedView() {
-  const [data, setData] = useState<FearAndGreedData | null>(null);
+export function StockFearAndGreedView() {
+  const [data, setData] = useState<StockFearAndGreedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,30 +62,24 @@ export function FearAndGreedView() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch("/api/market-data/fear-and-greed");
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch data: ${response.status}`);
-      }
-
+      const response = await fetch("/api/market-data/stock-fear-and-greed");
+      if (!response.ok) throw new Error(`Failed to fetch data: ${response.status}`);
       const result = await response.json();
-
       if (result.error) throw new Error(result.error);
-
       if (result.data) {
         setData({
-          value: Math.round(result.data.value),
+          value:                Math.round(result.data.value),
           value_classification: result.data.value_classification,
-          timestamp: result.data.timestamp,
-          time_until_update: result.data.time_until_update,
-          components: result.data.components,
+          timestamp:            result.data.timestamp,
+          time_until_update:    result.data.time_until_update,
+          components:           result.data.components,
         });
       } else {
         throw new Error("Invalid data format received");
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Failed to load Fear & Greed Index");
+      setError(err.message || "Failed to load Stock Fear & Greed Index");
     } finally {
       setLoading(false);
     }
@@ -120,11 +114,11 @@ export function FearAndGreedView() {
   };
 
   const getDescription = (score: number) => {
-    if (score < 20) return "Extreme Fear — investors are highly risk-averse. Historically a buying opportunity.";
-    if (score < 40) return "Fear — the market is skewed bearish. Potential undervaluation.";
-    if (score < 60) return "Neutral — no clear directional conviction in the market.";
-    if (score < 80) return "Greed — bullish momentum building. Watch for overextension.";
-    return "Extreme Greed — the market is overheating. Correction risk is elevated.";
+    if (score < 20) return "Extreme Fear — equity investors are highly risk-averse. Historically a long-term buying opportunity.";
+    if (score < 40) return "Fear — the market is skewed bearish. Watch for oversold conditions across indices.";
+    if (score < 60) return "Neutral — no clear directional conviction. Awaiting a catalyst.";
+    if (score < 80) return "Greed — equity appetite is elevated. Watch for sector rotation and stretched valuations.";
+    return "Extreme Greed — the US equity market is overheating. Elevated correction risk near-term.";
   };
 
   if (loading) {
@@ -158,16 +152,24 @@ export function FearAndGreedView() {
 
   return (
     <div className="space-y-6">
+
+      {/* Index label */}
+      <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">S&amp;P 500 Fear &amp; Greed Index</h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Proprietary composite of 6 US equity market signals
+          </p>
+        </div>
+        <span className="ml-auto text-[10px] font-semibold tracking-widest uppercase text-blue-400/70 border border-blue-400/20 rounded-full px-2 py-0.5 whitespace-nowrap">
+          OmniFolio Engine
+        </span>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* ── Gauge Card ─────────────────────────────────────────── */}
+        {/* ── Gauge Card ───────────────────────────────────────── */}
         <div className="rounded-3xl bg-[#0D0D0D] border border-white/10 p-8 flex flex-col items-center justify-center min-h-[400px]">
-          <div className="w-full flex justify-between items-start mb-4">
-            <h2 className="text-xl font-bold">Fear & Greed Index</h2>
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-blue-400/70 border border-blue-400/20 rounded-full px-2 py-0.5">
-              OmniFolio Engine
-            </span>
-          </div>
 
           {/* Gauge */}
           <div className="relative w-64 h-32 mt-8 mb-12">
@@ -183,7 +185,7 @@ export function FearAndGreedView() {
                 strokeWidth="15"
                 strokeLinecap="round"
               />
-              {/* Zone gradient segments (decorative, behind active arc) */}
+              {/* Zone tint segments */}
               <path d="M 10 100 A 90 90 0 0 1 56.7 28.4" fill="none" stroke="#ef4444" strokeWidth="6" strokeLinecap="butt" opacity="0.25" />
               <path d="M 56.7 28.4 A 90 90 0 0 1 100 10"  fill="none" stroke="#f97316" strokeWidth="6" strokeLinecap="butt" opacity="0.25" />
               <path d="M 100 10 A 90 90 0 0 1 143.3 28.4" fill="none" stroke="#facc15" strokeWidth="6" strokeLinecap="butt" opacity="0.25" />
@@ -210,7 +212,7 @@ export function FearAndGreedView() {
               </div>
             </div>
 
-            {/* Score */}
+            {/* Score label */}
             <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center">
               <span className={`text-6xl font-bold transition-colors duration-500 ${getScoreColor(score)}`}>
                 {Math.round(score)}
@@ -224,9 +226,17 @@ export function FearAndGreedView() {
           <div className="mt-8 text-center max-w-sm">
             <p className="text-gray-400 text-sm leading-relaxed">{getDescription(score)}</p>
           </div>
+
+          {/* Ticker context */}
+          <div className="mt-6 flex items-center gap-4 text-xs text-gray-600">
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">SPY</span>
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">^VIX</span>
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">TLT</span>
+            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">XL* Sectors</span>
+          </div>
         </div>
 
-        {/* ── Right column ───────────────────────────────────────── */}
+        {/* ── Right column ─────────────────────────────────────── */}
         <div className="space-y-4">
 
           {/* Signal Breakdown */}
@@ -252,10 +262,7 @@ export function FearAndGreedView() {
                       <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-700"
-                          style={{
-                            width: `${val}%`,
-                            backgroundColor: getScoreColorHex(val),
-                          }}
+                          style={{ width: `${val}%`, backgroundColor: getScoreColorHex(val) }}
                         />
                       </div>
                     </div>
@@ -265,7 +272,7 @@ export function FearAndGreedView() {
             </div>
           )}
 
-          {/* About */}
+          {/* Methodology */}
           <div className="rounded-3xl bg-[#0D0D0D] border border-white/10 p-6">
             <h3 className="text-sm font-semibold mb-4 flex items-center gap-2 text-white/80 uppercase tracking-wider">
               <InfoIcon size={14} className="text-blue-400" />
@@ -273,24 +280,24 @@ export function FearAndGreedView() {
             </h3>
             <div className="space-y-3 text-xs text-gray-400 leading-relaxed">
               <p>
-                The OmniFolio Fear &amp; Greed Index is a proprietary composite built from
-                six independently computed market signals, each scored 0–100 and averaged
-                with equal weight.
+                The OmniFolio S&amp;P 500 Fear &amp; Greed Index is a proprietary composite
+                built from six independently computed US equity market signals, each scored
+                0–100 and averaged with equal weight.
               </p>
               <ul className="space-y-1 pl-3 border-l border-white/5">
-                <li><span className="text-white/60">Price Momentum</span> — 30-day BTC trend</li>
-                <li><span className="text-white/60">Volatility</span> — high/low spread vs baseline</li>
-                <li><span className="text-white/60">BTC Dominance</span> — capital rotation signal</li>
-                <li><span className="text-white/60">Volume Surge</span> — demand vs 7-day average</li>
-                <li><span className="text-white/60">Market Breadth</span> — altcoin relative strength</li>
-                <li><span className="text-white/60">RSI Signal</span> — 14-period Wilder RSI (inverted)</li>
+                <li><span className="text-white/60">Price Momentum</span> — SPY 30-day trend vs 90-day baseline</li>
+                <li><span className="text-white/60">Volatility (VIX)</span> — CBOE ^VIX level, inverted scale</li>
+                <li><span className="text-white/60">Market Breadth</span> — 11 sector ETFs vs SPY 24 h performance</li>
+                <li><span className="text-white/60">Volume Surge</span> — SPY daily volume vs 20-day average</li>
+                <li><span className="text-white/60">RSI Signal</span> — 14-period Wilder RSI on SPY, inverted</li>
+                <li><span className="text-white/60">Safe Haven Demand</span> — TLT vs SPY relative daily flow</li>
               </ul>
               <div className="pt-3 border-t border-white/5 text-[10px] text-gray-600 space-y-0.5">
                 <p>Last computed: {new Date(data.timestamp).toLocaleString()}</p>
                 {data.time_until_update && (
                   <p>Refreshes in ~{Math.round(parseInt(data.time_until_update) / 60)} minutes</p>
                 )}
-                <p className="mt-2 text-blue-400/50">Powered by OmniFolio Engine v1</p>
+                <p className="mt-2 text-blue-400/50">Powered by OmniFolio Stock Engine v1</p>
               </div>
             </div>
           </div>

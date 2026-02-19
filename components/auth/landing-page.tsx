@@ -373,11 +373,6 @@ export function LandingPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                      <div className="bg-[#15161A] p-4 rounded-xl border border-white/5">
-                        <File01Icon className="w-6 h-6 text-cyan-400 mb-2" />
-                        <h4 className="text-white font-medium">SEC Edgar Scraper</h4>
-                        <p className="text-gray-500 text-sm mt-1">Instant filing analysis</p>
-                     </div>
-                     <div className="bg-[#15161A] p-4 rounded-xl border border-white/5">
                         <BankIcon className="w-6 h-6 text-cyan-400 mb-2" />
                         <h4 className="text-white font-medium">Senate Lobbying</h4>
                         <p className="text-gray-500 text-sm mt-1">Track political influence</p>

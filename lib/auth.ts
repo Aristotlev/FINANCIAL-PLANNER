@@ -1,6 +1,11 @@
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 import { Pool } from "pg";
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+} from "@/lib/email/email-service";
 
 // Create PostgreSQL pool for Better Auth
 // IMPORTANT: Cloud Run requires SSL but Supabase uses self-signed certs
@@ -67,6 +72,25 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    sendResetPassword: async (data: { user: { email: string; name?: string | null }; url: string }) => {
+      await sendPasswordResetEmail({
+        to: data.user.email,
+        name: data.user.name ?? undefined,
+        resetUrl: data.url,
+      });
+    },
+  },
+
+  // Email verification (separate top-level config in Better Auth)
+  emailVerification: {
+    sendVerificationEmail: async (data: { user: { email: string; name?: string | null }; url: string }) => {
+      await sendVerificationEmail({
+        to: data.user.email,
+        name: data.user.name ?? undefined,
+        verificationUrl: data.url,
+      });
+    },
+    sendOnSignUp: true,
   },
 
   socialProviders: {
@@ -134,16 +158,28 @@ export const auth = betterAuth({
         const newSession = ctx.context.newSession;
         if (newSession?.user) {
           try {
-            // The user's profile picture should already be set from Google's userinfo
-            // But we can update it if needed
             console.log("✅ Google OAuth callback completed for user:", newSession.user.email);
-            
-            // If the user has an image from Google, it's already saved
             if (newSession.user.image) {
-              console.log("� User image from Google:", newSession.user.image);
+              console.log("🖼 User image from Google:", newSession.user.image);
             }
           } catch (error) {
             console.error("❌ Error in OAuth callback hook:", error);
+          }
+        }
+      }
+
+      // Send welcome email on first sign-up (any provider)
+      if (ctx.path === "/sign-up/email") {
+        const newSession = ctx.context.newSession;
+        if (newSession?.user) {
+          try {
+            await sendWelcomeEmail({
+              to: newSession.user.email,
+              name: newSession.user.name ?? undefined,
+            });
+          } catch (error) {
+            // Non-fatal — don't block sign-up if email fails
+            console.error("❌ Failed to send welcome email:", error);
           }
         }
       }

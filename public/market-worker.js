@@ -15,8 +15,12 @@ const errorCounts = new Map(); // key -> consecutive error count
 const CONFIG = {
   reconnectDelay: 5000,
   maxReconnectAttempts: 5,
-  basePollingInterval: 30000,  // 30 seconds base
-  maxPollingInterval: 300000,  // 5 minutes max backoff
+  // Stocks: 5-minute default polling (matches CDN cache, keeps Yahoo rate-limit safe)
+  // Crypto: 30s via Binance WebSocket, falls back to same 5 min if WS fails
+  basePollingInterval: 300000, // 5 minutes — commercial-safe for Yahoo/Finnhub
+  stockPollingInterval: 300000, // 5 minutes for stocks
+  cryptoFallbackInterval: 30000, // 30s fallback for crypto if WS fails
+  maxPollingInterval: 600000,  // 10 minutes max backoff
   maxConsecutiveErrors: 10,    // After this many errors, use max interval
 };
 
@@ -145,8 +149,9 @@ function connect(key, symbol, type) {
     }
 
     // Stocks/Forex: Polling
-    // console.log(`⚠️ Worker: Polling for ${symbol}`);
-    useFallbackPolling(key, symbol, type, 30000); // Poll every 30s for faster updates
+    // Stock interval: 5 minutes — safe for commercial use with Yahoo/Finnhub free tiers
+    const pollInterval = type === 'stock' ? CONFIG.stockPollingInterval : CONFIG.cryptoFallbackInterval;
+    useFallbackPolling(key, symbol, type, pollInterval);
 
   } catch (error) {
     console.error(`Worker: Connection failed for ${key}`, error);
@@ -169,89 +174,103 @@ function handleBinanceMessage(key, symbol, data) {
   }
 }
 
-function useFallbackPolling(key, symbol, type, intervalMs = 30000) {
+/**
+ * Polling for stocks: uses the new /api/stock-prices endpoint (multi-provider waterfall).
+ * Polling for crypto fallback: uses /api/market-data (CoinGecko/Binance).
+ *
+ * Default stock interval: 5 minutes — safe for Yahoo Finance + Finnhub free tiers
+ * at commercial scale without getting rate-banned.
+ */
+function useFallbackPolling(key, symbol, type, intervalMs) {
+  // Choose sensible default interval by type
+  if (intervalMs === undefined) {
+    intervalMs = (type === 'stock') ? CONFIG.stockPollingInterval : CONFIG.cryptoFallbackInterval;
+  }
+
   // Clear existing if any
   if (pollingIntervals.has(key)) {
     clearInterval(pollingIntervals.get(key));
   }
 
-  // Calculate interval with exponential backoff based on error count
+  // Exponential backoff helper
   function getPollingInterval() {
     const errors = errorCounts.get(key) || 0;
     if (errors === 0) return intervalMs;
-    // Exponential backoff: 30s, 60s, 120s, 240s, capped at 300s
-    const backoff = Math.min(
-      intervalMs * Math.pow(2, errors),
-      CONFIG.maxPollingInterval
-    );
+    const backoff = Math.min(intervalMs * Math.pow(2, errors), CONFIG.maxPollingInterval);
     return backoff;
   }
 
   const poll = async () => {
     try {
-      const response = await fetch(`/api/market-data?symbol=${symbol}&type=${type}&live=true`);
-      
-      if (!response.ok) {
-        // Track errors for backoff
-        const currentErrors = (errorCounts.get(key) || 0) + 1;
-        errorCounts.set(key, currentErrors);
-        
-        // If we're getting errors, slow down polling
-        if (currentErrors >= 2) {
-          const newInterval = getPollingInterval();
-          // console.log(`Worker: Backing off ${key} to ${newInterval/1000}s (${currentErrors} errors)`);
-          clearInterval(pollingIntervals.get(key));
-          const interval = setInterval(poll, newInterval);
-          pollingIntervals.set(key, interval);
+      let data = null;
+
+      if (type === 'stock') {
+        // ── NEW: Use the dedicated stock-prices endpoint ──────────────────
+        // Returns { prices: { SYMBOL: { price, change, changePercent, source, stale } } }
+        const response = await fetch(`/api/stock-prices?symbols=${symbol}`);
+        if (!response.ok) throw new Error(`stock-prices HTTP ${response.status}`);
+        const body = await response.json();
+        const priceObj = body.prices && body.prices[symbol.toUpperCase()];
+        if (priceObj && priceObj.price) {
+          data = {
+            price: priceObj.price,
+            change: priceObj.change || 0,
+            changePercent: priceObj.changePercent || 0,
+          };
         }
-        return;
+      } else {
+        // ── Crypto / forex: use the existing market-data route ────────────
+        const response = await fetch(`/api/market-data?symbol=${symbol}&type=${type}&live=true`);
+        if (!response.ok) throw new Error(`market-data HTTP ${response.status}`);
+        const body = await response.json();
+        // Normalise both field shapes (currentPrice or price)
+        if (body) {
+          const price = body.currentPrice ?? body.price ?? 0;
+          if (price) {
+            data = {
+              price,
+              change: body.change24h ?? body.change ?? 0,
+              changePercent: body.changePercent24h ?? body.changePercent ?? 0,
+            };
+          }
+        }
       }
 
-      const data = await response.json();
+      if (data) {
+        errorCounts.set(key, 0); // reset on success
 
-      if (data && data.currentPrice) {
-        // Reset error count on success
-        errorCounts.set(key, 0);
-        
-        const update = {
-          symbol,
-          price: data.currentPrice,
-          change: data.change24h || 0,
-          changePercent: data.changePercent24h || 0,
-          timestamp: Date.now(),
-        };
-        processAndNotify(key, symbol, update);
-
-        // If we were backed off, restore normal interval
-        const currentErrors = errorCounts.get(key) || 0;
-        if (currentErrors === 0) {
-          clearInterval(pollingIntervals.get(key));
-          const interval = setInterval(poll, intervalMs);
-          pollingIntervals.set(key, interval);
-        }
-      } else if (data && data.price) {
-        // Handle fallback-format responses (price instead of currentPrice)
-        errorCounts.set(key, 0);
         const update = {
           symbol,
           price: data.price,
-          change: data.change24h || data.change || 0,
-          changePercent: data.changePercent24h || data.changePercent || 0,
+          change: data.change,
+          changePercent: data.changePercent,
           timestamp: Date.now(),
         };
         processAndNotify(key, symbol, update);
+
+        // Restore normal interval if we were backed off
+        const newInterval = getPollingInterval();
+        if (newInterval !== intervalMs) {
+          clearInterval(pollingIntervals.get(key));
+          const id = setInterval(poll, intervalMs);
+          pollingIntervals.set(key, id);
+        }
       }
     } catch (error) {
       const currentErrors = (errorCounts.get(key) || 0) + 1;
       errorCounts.set(key, currentErrors);
-      // console.error(`Worker: Polling error for ${key} (attempt ${currentErrors})`);
+      if (currentErrors >= 2) {
+        // Slow down polling on repeated errors
+        const newInterval = getPollingInterval();
+        clearInterval(pollingIntervals.get(key));
+        const id = setInterval(poll, newInterval);
+        pollingIntervals.set(key, id);
+      }
     }
   };
 
-  // Poll immediately first to get data ASAP
+  // Poll immediately to get data ASAP, then on interval
   poll();
-
-  // Then continue polling at the specified interval
   const interval = setInterval(poll, intervalMs);
   pollingIntervals.set(key, interval);
 }

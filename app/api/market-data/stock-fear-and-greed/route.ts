@@ -1,18 +1,21 @@
 /**
- * OmniFolio Fear & Greed Index API
+ * OmniFolio Stock Market Fear & Greed Index API
  *
- * Proprietary composite sentiment engine — no third-party index data.
+ * Proprietary composite sentiment engine for the S&P 500 / US equity market.
+ * Zero third-party index dependencies — all signals derived from publicly
+ * available free market data.
  *
- * Signals (6 equally weighted components, each scored 0–100):
- *   1. Price Momentum   — BTC 30-day price change vs 90-day baseline
- *   2. Volatility       — BTC 24h high/low spread vs 7-day average spread
- *   3. Market Dominance — BTC dominance shift (high dominance → fear, falling → greed)
- *   4. Volume Surge     — BTC 24h volume vs 7-day average volume
- *   5. Market Breadth   — % of top-10 alts gaining vs BTC in the last 24 h
- *   6. RSI Signal       — 14-period RSI on daily BTC closes (Wilder smoothing)
+ * Signals (6 equally weighted, each scored 0–100):
+ *   1. Price Momentum   — SPY 30-day price change vs 90-day baseline
+ *   2. Volatility (VIX) — VIX level (inverted: high VIX = fear = low score)
+ *   3. Market Breadth   — % of S&P sector ETFs outperforming SPY in 24 h
+ *   4. Volume Surge     — SPY 1-day vs 20-day average volume
+ *   5. RSI Signal       — 14-period Wilder RSI on SPY daily closes (inverted)
+ *   6. Safe Haven Demand — TLT (20Y Treasury) vs SPY relative flow proxy
  *
- * All raw data comes from Binance public API (no API key, no ToS restrictions
- * for non-brokerage informational use) and CoinGecko free tier.
+ * Data sources:
+ *   - Yahoo Finance (public quote endpoint, no key required)
+ *   - All requests are server-side; no CORS or ToS concerns
  *
  * DB-first caching pattern:
  *   1. Server in-memory cache (instant)
@@ -29,25 +32,25 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // TYPES
 // ══════════════════════════════════════════════════════════════════
 
-interface FearGreedComponents {
-  price_momentum: number;      // 0–100
-  volatility: number;          // 0–100
-  dominance: number;           // 0–100
-  volume_surge: number;        // 0–100
-  market_breadth: number;      // 0–100
-  rsi_signal: number;          // 0–100
+interface StockFearGreedComponents {
+  price_momentum: number;    // SPY 30-day vs 90-day baseline
+  vix_level: number;         // VIX fear gauge (inverted)
+  market_breadth: number;    // Sector ETF breadth
+  volume_surge: number;      // SPY volume vs 20-day avg
+  rsi_signal: number;        // 14-period RSI on SPY (inverted)
+  safe_haven: number;        // TLT vs SPY relative demand
 }
 
-interface FearGreedData {
+interface StockFearGreedData {
   value: number;
   value_classification: string;
   timestamp: string;
   time_until_update: string;
-  components?: FearGreedComponents;
+  components?: StockFearGreedComponents;
 }
 
 interface MemoryCacheEntry {
-  data: FearGreedData;
+  data: StockFearGreedData;
   storedAt: number;
   ttlMs: number;
 }
@@ -57,15 +60,15 @@ interface MemoryCacheEntry {
 // ══════════════════════════════════════════════════════════════════
 
 let _memoryCache: MemoryCacheEntry | null = null;
-let _fetchLock: Promise<FearGreedData | null> | null = null;
+let _fetchLock: Promise<StockFearGreedData | null> | null = null;
 let _lastComputeMs = 0;
 
-const MEMORY_CACHE_TTL_MS   = 10 * 60 * 1000;  // 10 minutes
-const REFRESH_COOLDOWN_MS   = 15 * 60 * 1000;  // 15 min between computes
-const MAX_CACHE_AGE_MS      = 24 * 60 * 60 * 1000; // 24 hours absolute max
-const NEXT_UPDATE_SECONDS   = '900';            // ~15 min cadence
+const MEMORY_CACHE_TTL_MS = 15 * 60 * 1000;  // 15 minutes
+const REFRESH_COOLDOWN_MS = 20 * 60 * 1000;  // 20 min between computes
+const MAX_CACHE_AGE_MS    = 24 * 60 * 60 * 1000;
+const NEXT_UPDATE_SECONDS = '1200';           // 20-min cadence
 
-function getFromMemoryCache(): FearGreedData | null {
+function getFromMemoryCache(): StockFearGreedData | null {
   if (!_memoryCache) return null;
   if (Date.now() - _memoryCache.storedAt > _memoryCache.ttlMs) {
     _memoryCache = null;
@@ -74,7 +77,7 @@ function getFromMemoryCache(): FearGreedData | null {
   return _memoryCache.data;
 }
 
-function setInMemoryCache(data: FearGreedData, ttlMs = MEMORY_CACHE_TTL_MS): void {
+function setInMemoryCache(data: StockFearGreedData, ttlMs = MEMORY_CACHE_TTL_MS): void {
   _memoryCache = { data, storedAt: Date.now(), ttlMs };
 }
 
@@ -116,35 +119,62 @@ function isCacheFresh(entry: any): { fresh: boolean; stale: boolean; expired: bo
 }
 
 // ══════════════════════════════════════════════════════════════════
-// BINANCE HELPERS
+// YAHOO FINANCE HELPER
 // ══════════════════════════════════════════════════════════════════
 
-async function binanceFetch<T>(path: string): Promise<T | null> {
+async function yahooFetch(symbol: string, range: string, interval: string): Promise<any[] | null> {
   try {
-    const res = await fetch(`https://api.binance.com${path}`, {
-      headers: { 'Accept': 'application/json' },
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}&includePrePost=false`;
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+      },
       cache: 'no-store',
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
-    return res.json() as Promise<T>;
+    const json = await res.json();
+    const closes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
+    const volumes = json?.chart?.result?.[0]?.indicators?.quote?.[0]?.volume;
+    if (!closes) return null;
+    // Return array of { close, volume } objects, filtering nulls
+    return closes
+      .map((c: number | null, i: number) => ({ close: c, volume: volumes?.[i] ?? null }))
+      .filter((d: any) => d.close !== null && d.close !== undefined);
   } catch {
     return null;
   }
 }
 
-async function coinGeckoFetch<T>(path: string): Promise<T | null> {
+async function yahooQuote(symbol: string): Promise<{ price: number; changePercent: number } | null> {
   try {
-    const res = await fetch(`https://api.coingecko.com${path}`, {
-      headers: { 'Accept': 'application/json' },
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=1d`;
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
       cache: 'no-store',
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
-    return res.json() as Promise<T>;
+    const json = await res.json();
+    const result = json?.chart?.result?.[0];
+    const meta = result?.meta;
+    if (!meta) return null;
+    const price = meta.regularMarketPrice ?? meta.previousClose ?? 0;
+    const prev  = meta.chartPreviousClose ?? meta.previousClose ?? price;
+    const changePercent = prev > 0 ? ((price - prev) / prev) * 100 : 0;
+    return { price, changePercent };
   } catch {
     return null;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════════
+
+function clamp(v: number, lo = 0, hi = 100): number {
+  return Math.max(lo, Math.min(hi, v));
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -152,119 +182,58 @@ async function coinGeckoFetch<T>(path: string): Promise<T | null> {
 // ══════════════════════════════════════════════════════════════════
 
 /**
- * Clamp helper
- */
-function clamp(v: number, lo = 0, hi = 100): number {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-/**
  * SIGNAL 1 — Price Momentum
- * Compare BTC 30-day change to a 0-baseline.
- * +50 % → score 100  |  -50 % → score 0  |  flat → 50
+ * SPY 30-day close change. +30% → 100, -30% → 0, flat → 50.
  */
 async function scorePriceMomentum(): Promise<number> {
-  // Binance klines: 1d, last 31 candles
-  const klines = await binanceFetch<any[]>(
-    '/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=31'
-  );
-  if (!klines || klines.length < 2) return 50;
+  const data = await yahooFetch('SPY', '3mo', '1d');
+  if (!data || data.length < 2) return 50;
 
-  const oldest  = parseFloat(klines[0][4]);   // close 30 days ago
-  const current = parseFloat(klines[klines.length - 1][4]); // latest close
-  const pct     = ((current - oldest) / oldest) * 100;      // −100 … +∞
+  const oldest  = data[0].close;
+  const current = data[data.length - 1].close;
+  const pct     = ((current - oldest) / oldest) * 100;
 
-  // Map pct in range [−50, +50] → [0, 100]
-  return clamp(50 + pct);
+  // Map pct in [−30, +30] → [0, 100]
+  return clamp(50 + (pct * (50 / 30)));
 }
 
 /**
- * SIGNAL 2 — Volatility
- * Current 24 h high-low spread vs 7-day average spread.
- * High volatility = Fear (low score).  Low volatility = Greed (high score).
+ * SIGNAL 2 — VIX Level (inverted)
+ * VIX ≥ 40 → score 0 (extreme fear), VIX ≤ 12 → score 100 (extreme greed).
+ * Linear mapping between those bounds.
  */
-async function scoreVolatility(): Promise<number> {
-  const klines = await binanceFetch<any[]>(
-    '/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=8'
-  );
-  if (!klines || klines.length < 2) return 50;
+async function scoreVIX(): Promise<number> {
+  const quote = await yahooQuote('^VIX');
+  if (!quote) return 50;
 
-  const spreads = klines.map(k => parseFloat(k[2]) - parseFloat(k[3])); // high − low
-  const avgSpread  = spreads.slice(0, -1).reduce((a, b) => a + b, 0) / (spreads.length - 1);
-  const curSpread  = spreads[spreads.length - 1];
-
-  // ratio > 1 means MORE volatile than usual → fear
-  const ratio = avgSpread > 0 ? curSpread / avgSpread : 1;
-
-  // ratio 0 → 100, ratio 1 → 50, ratio 2+ → 0
-  return clamp(100 - (ratio * 50));
+  const vix = quote.price;
+  // Linear: vix 12 → 100, vix 40 → 0
+  const score = ((40 - vix) / (40 - 12)) * 100;
+  return clamp(score);
 }
 
 /**
- * SIGNAL 3 — Dominance
- * BTC dominance falling (alts pumping) → Greed.
- * BTC dominance rising (flight to safety) → Fear.
- * Uses CoinGecko global endpoint.
- */
-async function scoreDominance(): Promise<number> {
-  const global = await coinGeckoFetch<any>('/api/v3/global');
-  if (!global?.data?.market_cap_percentage?.btc) return 50;
-
-  const dom = global.data.market_cap_percentage.btc as number;
-  // dom around 40 % = neutral (50), 60 %+ = extreme fear (0), <30 % = extreme greed (100)
-  // linear mapping: 60 → 0, 40 → 50, 20 → 100
-  return clamp(150 - (dom * 2.5));
-}
-
-/**
- * SIGNAL 4 — Volume Surge
- * Today's volume vs 7-day average.
- * Surge > baseline → Greed.  Drought → Fear.
- */
-async function scoreVolumeSurge(): Promise<number> {
-  const klines = await binanceFetch<any[]>(
-    '/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=8'
-  );
-  if (!klines || klines.length < 2) return 50;
-
-  const volumes  = klines.map(k => parseFloat(k[5]));  // base volume
-  const avgVol   = volumes.slice(0, -1).reduce((a, b) => a + b, 0) / (volumes.length - 1);
-  const curVol   = volumes[volumes.length - 1];
-
-  const ratio = avgVol > 0 ? curVol / avgVol : 1;
-
-  // ratio 0 → 0, 1 → 50, 2 → 100
-  return clamp(ratio * 50);
-}
-
-/**
- * SIGNAL 5 — Market Breadth
- * % of top-10 altcoins that are up vs BTC in the past 24 h.
- * 100 % up = 100 (extreme greed).  0 % up = 0 (extreme fear).
+ * SIGNAL 3 — Market Breadth
+ * % of major S&P 500 sector ETFs that outperformed SPY in the last day.
+ * 100% outperforming → score 100 (broad greed), 0% → score 0 (fear).
  */
 async function scoreMarketBreadth(): Promise<number> {
-  const alts = ['ETHUSDT','BNBUSDT','XRPUSDT','SOLUSDT','ADAUSDT',
-                 'AVAXUSDT','DOGEUSDT','LINKUSDT','DOTUSDT','MATICUSDT'];
+  const sectors = ['XLK', 'XLV', 'XLF', 'XLY', 'XLP', 'XLE', 'XLI', 'XLB', 'XLU', 'XLRE', 'XLC'];
 
-  // Fetch BTC change first
-  const btcTicker = await binanceFetch<any>('/api/v3/ticker/24hr?symbol=BTCUSDT');
-  const btcPct = btcTicker ? parseFloat(btcTicker.priceChangePercent) : 0;
+  const [spyQuote, ...sectorQuotes] = await Promise.all([
+    yahooQuote('SPY'),
+    ...sectors.map(s => yahooQuote(s)),
+  ]);
 
-  // Fetch all alts in parallel
-  const results = await Promise.allSettled(
-    alts.map(sym => binanceFetch<any>(`/api/v3/ticker/24hr?symbol=${sym}`))
-  );
+  const spyChange = spyQuote?.changePercent ?? 0;
 
   let gainers = 0;
   let total   = 0;
 
-  for (const r of results) {
-    if (r.status === 'fulfilled' && r.value) {
-      const pct = parseFloat(r.value.priceChangePercent);
-      if (!isNaN(pct)) {
-        total++;
-        if (pct > btcPct) gainers++;  // outperforming BTC = bullish breadth
-      }
+  for (const q of sectorQuotes) {
+    if (q) {
+      total++;
+      if (q.changePercent > spyChange) gainers++;
     }
   }
 
@@ -272,26 +241,38 @@ async function scoreMarketBreadth(): Promise<number> {
 }
 
 /**
- * SIGNAL 6 — RSI Signal
- * 14-period Wilder RSI on daily BTC closes.
- * RSI > 70 → overbought → Fear/sell signal → low score.
- * RSI < 30 → oversold  → Greed/buy signal → high score.
- * Scores are intentionally INVERTED relative to RSI:
- *   RSI 100 → score 0  |  RSI 50 → score 50  |  RSI 0 → score 100
+ * SIGNAL 4 — Volume Surge
+ * SPY today's volume vs 20-day average. Surge → greed, drought → fear.
+ */
+async function scoreVolumeSurge(): Promise<number> {
+  const data = await yahooFetch('SPY', '1mo', '1d');
+  if (!data || data.length < 5) return 50;
+
+  const volumes  = data.map(d => d.volume).filter((v): v is number => v !== null);
+  const curVol   = volumes[volumes.length - 1];
+  const avgVol   = volumes.slice(0, -1).reduce((a, b) => a + b, 0) / (volumes.length - 1);
+  const ratio    = avgVol > 0 ? curVol / avgVol : 1;
+
+  // ratio 0 → 0, 1 → 50, 2 → 100
+  return clamp(ratio * 50);
+}
+
+/**
+ * SIGNAL 5 — RSI Signal (inverted)
+ * 14-period Wilder RSI on SPY daily closes.
+ * RSI > 70 → overbought → score low (fear of correction).
+ * RSI < 30 → oversold  → score high (bargain opportunity).
  */
 async function scoreRSI(): Promise<number> {
-  const klines = await binanceFetch<any[]>(
-    '/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=30'
-  );
-  if (!klines || klines.length < 15) return 50;
+  const data = await yahooFetch('SPY', '3mo', '1d');
+  if (!data || data.length < 15) return 50;
 
-  const closes = klines.map(k => parseFloat(k[4]));
+  const closes  = data.map(d => d.close);
   const changes = closes.slice(1).map((c, i) => c - closes[i]);
 
-  // Wilder smoothing — seed with simple average of first 14 changes
-  const seed = changes.slice(0, 14);
-  let avgGain = seed.filter(c => c > 0).reduce((a, b) => a + b, 0) / 14;
-  let avgLoss = seed.filter(c => c < 0).reduce((a, b) => a + Math.abs(b), 0) / 14;
+  const seed   = changes.slice(0, 14);
+  let avgGain  = seed.filter(c => c > 0).reduce((a, b) => a + b, 0) / 14;
+  let avgLoss  = seed.filter(c => c < 0).reduce((a, b) => a + Math.abs(b), 0) / 14;
 
   for (const c of changes.slice(14)) {
     const gain = c > 0 ? c : 0;
@@ -303,8 +284,34 @@ async function scoreRSI(): Promise<number> {
   const rs  = avgLoss === 0 ? 100 : avgGain / avgLoss;
   const rsi = 100 - (100 / (1 + rs));
 
-  // Invert: high RSI (overbought) = Fear, low RSI (oversold) = Greed
+  // Invert: RSI 100 → score 0, RSI 0 → score 100
   return clamp(100 - rsi);
+}
+
+/**
+ * SIGNAL 6 — Safe Haven Demand
+ * TLT (20Y Treasury Bond ETF) relative strength vs SPY.
+ * When money flows INTO bonds (TLT up vs SPY) → fear → low score.
+ * When money flows OUT of bonds (TLT down vs SPY) → greed → high score.
+ */
+async function scoreSafeHaven(): Promise<number> {
+  const [tltQuote, spyQuote] = await Promise.all([
+    yahooQuote('TLT'),
+    yahooQuote('SPY'),
+  ]);
+
+  if (!tltQuote || !spyQuote) return 50;
+
+  const tltPct = tltQuote.changePercent;
+  const spyPct = spyQuote.changePercent;
+
+  // Relative flow = SPY change - TLT change
+  // Positive = equity preferred over bonds → greed
+  // Negative = bonds preferred → fear
+  const relativeFlow = spyPct - tltPct;
+
+  // Map [-5, +5] pct difference → [0, 100]
+  return clamp(50 + (relativeFlow * 10));
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -320,42 +327,41 @@ function classify(score: number): string {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ENGINE — compute score from all 6 signals
+// ENGINE
 // ══════════════════════════════════════════════════════════════════
 
-async function computeFearGreed(): Promise<FearGreedData | null> {
+async function computeStockFearGreed(): Promise<StockFearGreedData | null> {
   const now = Date.now();
   if (now - _lastComputeMs < REFRESH_COOLDOWN_MS) {
-    console.log(`[OmniFolio FG] Cooldown active (${Math.round((REFRESH_COOLDOWN_MS - (now - _lastComputeMs)) / 1000)}s remaining)`);
+    console.log(`[OmniFolio StockFG] Cooldown active (${Math.round((REFRESH_COOLDOWN_MS - (now - _lastComputeMs)) / 1000)}s remaining)`);
     return null;
   }
   _lastComputeMs = now;
 
-  console.log('[OmniFolio FG] 🧮 Computing proprietary Fear & Greed score…');
+  console.log('[OmniFolio StockFG] 🧮 Computing S&P 500 Fear & Greed score…');
 
-  const [momentum, volatility, dominance, volume, breadth, rsi] = await Promise.all([
+  const [momentum, vix, breadth, volume, rsi, safeHaven] = await Promise.all([
     scorePriceMomentum(),
-    scoreVolatility(),
-    scoreDominance(),
-    scoreVolumeSurge(),
+    scoreVIX(),
     scoreMarketBreadth(),
+    scoreVolumeSurge(),
     scoreRSI(),
+    scoreSafeHaven(),
   ]);
 
-  const components: FearGreedComponents = {
-    price_momentum:  Math.round(momentum),
-    volatility:      Math.round(volatility),
-    dominance:       Math.round(dominance),
-    volume_surge:    Math.round(volume),
-    market_breadth:  Math.round(breadth),
-    rsi_signal:      Math.round(rsi),
+  const components: StockFearGreedComponents = {
+    price_momentum: Math.round(momentum),
+    vix_level:      Math.round(vix),
+    market_breadth: Math.round(breadth),
+    volume_surge:   Math.round(volume),
+    rsi_signal:     Math.round(rsi),
+    safe_haven:     Math.round(safeHaven),
   };
 
-  // Equal-weight composite
   const composite = Object.values(components).reduce((a, b) => a + b, 0) / 6;
   const value = Math.round(composite);
 
-  console.log(`[OmniFolio FG] ✅ Score: ${value} (${classify(value)})`, components);
+  console.log(`[OmniFolio StockFG] ✅ Score: ${value} (${classify(value)})`, components);
 
   return {
     value,
@@ -370,27 +376,24 @@ async function computeFearGreed(): Promise<FearGreedData | null> {
 // COMPUTE + DB STORE
 // ══════════════════════════════════════════════════════════════════
 
-async function computeAndStore(supabase: SupabaseClient | null): Promise<FearGreedData | null> {
-  const freshData = await computeFearGreed();
+async function computeAndStore(supabase: SupabaseClient | null): Promise<StockFearGreedData | null> {
+  const freshData = await computeStockFearGreed();
   if (!freshData) return null;
 
   if (supabase) {
     const { error } = await supabase
-      .from('crypto_fear_and_greed')
+      .from('stock_fear_and_greed')
       .insert({
-        value:               freshData.value,
+        value:                freshData.value,
         value_classification: freshData.value_classification,
-        timestamp:           freshData.timestamp,
-        time_until_update:   freshData.time_until_update,
-        components:          freshData.components ?? null,
-        source:              'omnifolio-engine-v1',
+        timestamp:            freshData.timestamp,
+        time_until_update:    freshData.time_until_update,
+        components:           freshData.components ?? null,
+        source:               'omnifolio-stock-engine-v1',
       });
 
-    if (error) {
-      console.error('[OmniFolio FG] DB insert error:', error);
-    } else {
-      console.log('[OmniFolio FG] ✅ Stored in DB');
-    }
+    if (error) console.error('[OmniFolio StockFG] DB insert error:', error);
+    else console.log('[OmniFolio StockFG] ✅ Stored in DB');
   }
 
   setInMemoryCache(freshData);
@@ -406,14 +409,14 @@ function refreshInBackground(supabase: SupabaseClient | null): void {
 // RESPONSE BUILDER
 // ══════════════════════════════════════════════════════════════════
 
-function buildResponse(data: FearGreedData, source: string): NextResponse {
+function buildResponse(data: StockFearGreedData, source: string): NextResponse {
   return NextResponse.json(
     { data },
     {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
         'X-Data-Source':  source,
-        'X-Engine':       'omnifolio-v1',
+        'X-Engine':       'omnifolio-stock-v1',
       },
     }
   );
@@ -425,7 +428,7 @@ function buildResponse(data: FearGreedData, source: string): NextResponse {
 
 export async function GET() {
   try {
-    // ── 1. In-memory cache (instant, ~0ms) ─────────────────────
+    // ── 1. In-memory cache ─────────────────────────────────────
     const memoryCached = getFromMemoryCache();
     if (memoryCached) return buildResponse(memoryCached, 'memory-cache');
 
@@ -435,7 +438,7 @@ export async function GET() {
 
     if (supabase) {
       const { data, error: dbError } = await supabase
-        .from('crypto_fear_and_greed')
+        .from('stock_fear_and_greed')
         .select('*')
         .order('timestamp', { ascending: false })
         .limit(1)
@@ -446,7 +449,7 @@ export async function GET() {
 
     if (latestEntry) {
       const freshness = isCacheFresh(latestEntry);
-      const dbData: FearGreedData = {
+      const dbData: StockFearGreedData = {
         value:                latestEntry.value,
         value_classification: latestEntry.value_classification,
         timestamp:            latestEntry.timestamp,
@@ -463,7 +466,6 @@ export async function GET() {
         refreshInBackground(supabase);
         return buildResponse(dbData, 'db-cache-stale');
       }
-      // Expired — serve stale, refresh in background
       setInMemoryCache(dbData, 2 * 60 * 1000);
       refreshInBackground(supabase);
       return buildResponse(dbData, 'db-cache-expired');
@@ -481,15 +483,14 @@ export async function GET() {
 
     // ── 4. Complete failure ─────────────────────────────────────
     return NextResponse.json(
-      { error: 'Fear & Greed data unavailable. Please try again shortly.' },
+      { error: 'Stock Fear & Greed data unavailable. Please try again shortly.' },
       { status: 503, headers: { 'Retry-After': '60' } }
     );
   } catch (error: any) {
-    console.error('[OmniFolio FG] Unexpected error:', error);
+    console.error('[OmniFolio StockFG] Unexpected error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to compute Fear & Greed Index' },
+      { error: error.message || 'Failed to compute Stock Fear & Greed Index' },
       { status: 500 }
     );
   }
 }
-

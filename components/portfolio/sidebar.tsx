@@ -30,7 +30,7 @@ import {
   Building02Icon,
   Coins01Icon
 } from "hugeicons-react";
-import { Lock, MessageSquare, FileText, Image, Heart } from "lucide-react";
+import { Lock } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { OmnifolioLogo, OmnifolioIcon } from "../ui/omnifolio-logo";
 import { Sidebar as SidebarContainer, SidebarBody, SidebarLink } from "../ui/sidebar";
@@ -82,6 +82,7 @@ const stocksNavigation = [
   { name: "Projections", id: "projections", icon: Telescope01Icon },
   { name: "Transactions", id: "transactions", icon: Exchange02Icon },
   { name: "Analytics", id: "analytics", icon: AnalyticsUpIcon },
+  { name: "Fear & Greed", id: "stock-fear-and-greed", icon: ChartLineData01Icon },
 ];
 
 const expensesNavigation = [
@@ -103,13 +104,6 @@ const realEstateNavigation = [
   { name: "Breakdown", id: "breakdown", icon: PieChartIcon },
   { name: "Activity", id: "activity", icon: Clock01Icon },
   { name: "AI Analytics", id: "analytics", icon: AiBrain01Icon },
-];
-
-const communityNavigation = [
-  { name: "Posts", id: "posts", icon: MessageSquare },
-  { name: "Articles", id: "articles", icon: FileText },
-  { name: "Media", id: "media", icon: Image },
-  { name: "Likes", id: "likes", icon: Heart },
 ];
 
 const newsNavigation = [
@@ -178,8 +172,6 @@ export function Sidebar({ activeTab, onTabChange, selectedCategory }: SidebarPro
     currentNavigation = valuablesNavigation;
   } else if (selectedCategory === "Real Estate") {
     currentNavigation = realEstateNavigation;
-  } else if (selectedCategory === "Community") {
-    currentNavigation = communityNavigation;
   } else {
     currentNavigation = defaultNavigation;
   }

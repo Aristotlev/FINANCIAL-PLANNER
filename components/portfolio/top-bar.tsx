@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Settings, Bell, LogOut, ChevronDown, User, CreditCard, Shield, Users, FileText, Building, Gem, Banknote, Bitcoin, TrendingUp } from "lucide-react";
+import { Search, Settings, Bell, LogOut, ChevronDown, User, CreditCard, Shield, Building, Gem, Banknote, Bitcoin, TrendingUp } from "lucide-react";
 import { useBetterAuth } from "../../contexts/better-auth-context";
 import { PortfolioCurrencySelector } from "./currency-selector";
 import { usePortfolioContext } from "../../contexts/portfolio-context";
@@ -122,24 +122,6 @@ export function TopBar({ onOpenSettings, onNavigate }: TopBarProps) {
 
         <div className="hidden xl:block">
             <Dock direction="middle" className="border-none bg-transparent p-0 h-auto">
-                <DockIcon>
-                    <Link 
-                    href="/community" 
-                    className="flex h-full w-full items-center justify-center rounded-full bg-black border border-gray-800 text-gray-300 hover:text-white hover:border-gray-600 transition-colors"
-                    title="Community"
-                    >
-                    <Users className="w-5 h-5" />
-                    </Link>
-                </DockIcon>
-                <DockIcon>
-                    <Link 
-                    href="/markets/sec" 
-                    className="flex h-full w-full items-center justify-center rounded-full bg-black border border-gray-800 text-gray-300 hover:text-white hover:border-gray-600 transition-colors"
-                    title="SEC Edgar Scraper"
-                    >
-                    <FileText className="w-5 h-5" />
-                    </Link>
-                </DockIcon>
                 <DockIcon>
                      <div className="h-full w-full flex items-center justify-center rounded-full bg-black border border-gray-800">
                          <PortfolioCurrencySelector iconOnly />

@@ -134,51 +134,40 @@ class PriceService {
 
   async fetchStockPrices(symbols: string[]): Promise<AssetPrice[]> {
     try {
-      // Use our API route to avoid CORS issues
+      // Use the new multi-provider stock-prices endpoint (Yahoo → Finnhub → AV → stale cache → fallback)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const response = await fetch('/api/yahoo-finance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ symbols }),
-        signal: controller.signal,
-        cache: 'no-store',
-      });
+      const response = await fetch(
+        `/api/stock-prices?symbols=${symbols.map(s => encodeURIComponent(s)).join(',')}`,
+        { signal: controller.signal, cache: 'no-store' }
+      );
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch stock prices from API');
+        throw new Error(`stock-prices API returned ${response.status}`);
       }
 
       const data = await response.json();
-      
-      // Map the results, using fallback for failed symbols
+
       return symbols.map(symbol => {
-        const result = data.results.find((r: any) => r.symbol === symbol.toUpperCase());
-        
-        if (result && result.success) {
+        const upper = symbol.toUpperCase();
+        const result = data.prices?.[upper];
+        if (result && result.price) {
           return {
-            symbol: result.symbol,
+            symbol: upper,
             price: result.price,
-            change24h: result.change24h,
-            changePercent24h: result.changePercent24h,
-            lastUpdated: result.lastUpdated
+            change24h: result.change ?? 0,
+            changePercent24h: result.changePercent ?? 0,
+            lastUpdated: result.updatedAt ?? Date.now(),
           };
-        } else {
-          // Silently use fallback for failed symbols
-          return this.getFallbackStockPrice(symbol);
         }
+        return this.getFallbackStockPrice(symbol);
       });
     } catch (error: any) {
-      // Only log if it's not an abort error or network failure (which are expected during development)
       if (error?.name !== 'AbortError' && !error?.message?.includes('Failed to fetch')) {
         console.error('Error fetching stock prices:', error);
-      } else if (process.env.NODE_ENV === 'development') {
-        console.debug('Stock price fetch failed, using fallback:', error?.message);
       }
       return this.getFallbackStockPrices(symbols);
     }

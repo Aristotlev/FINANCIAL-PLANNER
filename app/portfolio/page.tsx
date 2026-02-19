@@ -38,6 +38,7 @@ import { ValuablesAIAnalyticsView } from '../../components/portfolio/valuables/v
 import { CryptoProjectionsView } from '../../components/portfolio/crypto-projections-view';
 import { StockProjectionsView } from '../../components/portfolio/stock-projections-view';
 import { FearAndGreedView } from '../../components/portfolio/fear-and-greed-view';
+import { StockFearAndGreedView } from '../../components/portfolio/stock-fear-and-greed-view';
 import { usePortfolioContext, CryptoHolding, StockHolding } from '../../contexts/portfolio-context';
 import { SupabaseDataService } from '../../lib/supabase/supabase-data-service';
 import { useAssetPrices } from '../../hooks/use-price';
@@ -570,6 +571,8 @@ export default function PortfolioPage() {
         return <OverviewView selectedCategory={selectedCategory} />;
       case 'fear-and-greed':
         return <FearAndGreedView />;
+      case 'stock-fear-and-greed':
+        return <StockFearAndGreedView />;
       case 'projections':
         if (selectedCategory === "Crypto") {
             return <CryptoProjectionsView />;
