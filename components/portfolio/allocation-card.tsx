@@ -137,18 +137,39 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
 				<div className="relative h-64 w-64 flex-shrink-0">
 					<ResponsiveContainer width="100%" height="100%">
 						<PieChart>
+							{/* Background track */}
 							<Pie
-								data={chartData}
+								data={[{ value: 100 }]}
 								cx="50%"
 								cy="50%"
 								innerRadius={80}
 								outerRadius={100}
-								paddingAngle={2}
 								dataKey="value"
 								stroke="none"
-                                cornerRadius={4}
+								isAnimationActive={false}
+								tabIndex={-1}
 							>
-								{chartData.map((entry, index) => (
+								<Cell fill="rgba(255,255,255,0.05)" />
+							</Pie>
+							{/* Data ring */}
+							<Pie
+								data={chartData.length > 0 ? chartData : [{ name: 'N/A', value: 100, color: '#333', amount: 0 }]}
+								cx="50%"
+								cy="50%"
+								innerRadius={80}
+								outerRadius={100}
+								paddingAngle={chartData.length > 1 ? 2 : 0}
+								dataKey="value"
+								stroke="none"
+								cornerRadius={chartData.length > 1 ? 4 : 0}
+								startAngle={90}
+								endAngle={-270}
+								isAnimationActive={true}
+								animationBegin={0}
+								animationDuration={400}
+								animationEasing="ease-out"
+							>
+								{(chartData.length > 0 ? chartData : [{ name: 'N/A', value: 100, color: '#333', amount: 0 }]).map((entry, index) => (
 									<Cell key={`cell-${index}`} fill={entry.color} />
 								))}
 							</Pie>
@@ -180,9 +201,9 @@ export function AllocationCard({ selectedCategory }: AllocationCardProps = {}) {
 
 				{/* Legend */}
 				<div className="flex-1 w-full space-y-3">
-					{chartData.map((item) => (
+					{chartData.map((item, index) => (
 						<div
-							key={item.name}
+							key={`${item.name}-${index}`}
 							className="flex items-center justify-between group p-2 rounded-xl hover:bg-white/5 transition-colors cursor-default"
 						>
 							<div className="flex items-center gap-3">

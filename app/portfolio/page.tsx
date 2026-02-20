@@ -26,7 +26,8 @@ import { AddExpenseCategoryModal, ExpenseCategory } from '../../components/portf
 import { AddCashAccountModal, CashAccount } from '../../components/portfolio/modals/add-cash-account-modal';
 import { AddIncomeModal, IncomeSource } from '../../components/portfolio/modals/add-income-modal';
 import { AddGoalModal, SavingsGoal } from '../../components/portfolio/modals/add-goal-modal';
-import { ImprovedTaxProfileModal } from '../../components/financial/improved-tax-profile-modal';
+import { SmartTaxProfileModal } from '../../components/financial/smart-tax-profile-modal';
+import { TaxDashboard } from '../../components/portfolio/taxes/tax-dashboard';
 import { TaxProfile } from '../../lib/types/tax-profile';
 import { CryptoTransactionsView } from '../../components/portfolio/crypto-transactions-view';
 import { StockTransactionsView } from '../../components/portfolio/stock-transactions-view';
@@ -165,6 +166,7 @@ export default function PortfolioPage() {
   const [isAddIncomeModalOpen, setIsAddIncomeModalOpen] = useState(false);
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
   const [isAddTaxProfileModalOpen, setIsAddTaxProfileModalOpen] = useState(false);
+  const [editingTaxProfile, setEditingTaxProfile] = useState<TaxProfile | null>(null);
   
   const { cryptoHoldings, setCryptoHoldings, stockHoldings, setStockHoldings } = usePortfolioContext();
   const symbols = cryptoHoldings.map(h => h.symbol);
@@ -553,7 +555,12 @@ export default function PortfolioPage() {
         }
         return <CryptoTransactionsView />;
       case 'analytics':
-        if (selectedCategory === "Crypto") {
+        if (selectedCategory === "Taxes") {
+          return <TaxDashboard
+            onAddProfile={() => setIsAddTaxProfileModalOpen(true)}
+            onEditProfile={(p) => { setEditingTaxProfile(p); setIsAddTaxProfileModalOpen(true); }}
+          />;
+        } else if (selectedCategory === "Crypto") {
            return <CryptoAIAnalyticsView />;
         } else if (selectedCategory === "Stocks") {
             return <StockAIAnalyticsView />;
@@ -818,10 +825,11 @@ export default function PortfolioPage() {
         onAdd={handleAddGoal}
       />
 
-      <ImprovedTaxProfileModal 
-        isOpen={isAddTaxProfileModalOpen} 
-        onClose={() => setIsAddTaxProfileModalOpen(false)} 
+      <SmartTaxProfileModal
+        isOpen={isAddTaxProfileModalOpen}
+        onClose={() => { setIsAddTaxProfileModalOpen(false); setEditingTaxProfile(null); }}
         onSave={handleAddTaxProfile}
+        profile={editingTaxProfile}
       />
 
       <AIChatAssistant theme="portfolio" />

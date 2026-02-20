@@ -700,6 +700,21 @@ function CryptoModalContent() {
                       {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
+                            {/* Background track */}
+                            <Pie
+                              data={[{ value: 100 }]}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={55}
+                              outerRadius={70}
+                              dataKey="value"
+                              stroke="none"
+                              isAnimationActive={false}
+                              tabIndex={-1}
+                            >
+                              <Cell fill="rgba(255,255,255,0.05)" />
+                            </Pie>
+                            {/* Data ring */}
                             <Pie
                               data={pieChartData}
                               cx="50%"
@@ -707,14 +722,15 @@ function CryptoModalContent() {
                               labelLine={false}
                               label={false}
                               outerRadius={70}
-                              innerRadius={0}
+                              innerRadius={55}
                               fill="#8884d8"
                               dataKey="value"
-                              isAnimationActive={false}
-                              animationDuration={0}
+                              isAnimationActive={true}
                               animationBegin={0}
-                              animationEasing="linear"
-                              paddingAngle={0}
+                              animationDuration={400}
+                              animationEasing="ease-out"
+                              paddingAngle={pieChartData.length > 1 ? 2 : 0}
+                              cornerRadius={pieChartData.length > 1 ? 4 : 0}
                               startAngle={90}
                               endAngle={-270}
                               activeShape={false as any}
@@ -723,8 +739,7 @@ function CryptoModalContent() {
                                 <Cell
                                   key={`cell-${entry.id}`}
                                   fill={entry.color}
-                                  stroke={pieChartData.length > 1 ? "#fff" : "none"}
-                                  strokeWidth={pieChartData.length > 1 ? 2 : 0}
+                                  stroke="none"
                                 />
                               ))}
                             </Pie>

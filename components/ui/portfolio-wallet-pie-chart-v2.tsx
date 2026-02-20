@@ -125,6 +125,21 @@ export function PortfolioWalletPieChartV2({ holdings, prices }: PortfolioWalletP
           {({ PieChart, Pie, Cell, Tooltip, ResponsiveContainer }) => (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+                {/* Background track */}
+                <Pie
+                  data={[{ value: 100 }]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={42}
+                  outerRadius={60}
+                  dataKey="value"
+                  stroke="none"
+                  isAnimationActive={false}
+                  tabIndex={-1}
+                >
+                  <Cell fill="rgba(255,255,255,0.05)" />
+                </Pie>
+                {/* Data ring */}
                 <Pie 
                   data={displayWalletData} 
                   dataKey="value" 
@@ -132,24 +147,25 @@ export function PortfolioWalletPieChartV2({ holdings, prices }: PortfolioWalletP
                   cx="50%" 
                   cy="50%"
                   outerRadius={60} 
-                  innerRadius={0} 
-                  paddingAngle={0}
-                  strokeWidth={displayWalletData.length > 1 ? 2 : 0} 
-                  stroke="#ffffff" 
-                  isAnimationActive={false}
-                  animationDuration={0}
+                  innerRadius={42} 
+                  paddingAngle={displayWalletData.length > 1 ? 2 : 0}
+                  strokeWidth={0}
+                  stroke="none"
+                  isAnimationActive={true}
                   animationBegin={0}
-                  animationEasing="linear"
+                  animationDuration={400}
+                  animationEasing="ease-out"
                   startAngle={90}
                   endAngle={-270}
+                  cornerRadius={displayWalletData.length > 1 ? 3 : 0}
                   activeShape={false as any}
                 >
                   {displayWalletData.map((entry, index) => (
                     <Cell 
                       key={'cell-' + index} 
                       fill={entry.color}
-                      stroke={displayWalletData.length > 1 ? "#ffffff" : "none"}
-                      strokeWidth={displayWalletData.length > 1 ? 2 : 0}
+                      stroke="none"
+                      strokeWidth={0}
                     />
                   ))}
                 </Pie>

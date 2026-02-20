@@ -121,7 +121,7 @@ export function TopBar({ onOpenSettings, onNavigate }: TopBarProps) {
       <div className="flex items-center gap-6">
 
         <div className="hidden xl:block">
-            <Dock direction="middle" className="border-none bg-transparent p-0 h-auto">
+            <Dock direction="middle" className="border-none !bg-transparent !backdrop-blur-none !supports-backdrop-blur:bg-transparent !supports-backdrop-blur:dark:bg-transparent p-0 h-auto shadow-none">
                 <DockIcon>
                      <div className="h-full w-full flex items-center justify-center rounded-full bg-black border border-gray-800">
                          <PortfolioCurrencySelector iconOnly />

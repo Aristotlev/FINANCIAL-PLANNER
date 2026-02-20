@@ -214,8 +214,8 @@ export function ImprovedTaxProfileModal({
         <div className="flex items-center justify-between mb-8">
           <div>
             <h3 className="text-xl font-bold text-white flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Sparkles className="w-5 h-5 text-blue-500" />
+              <div className="p-2 bg-cyan-500/20 rounded-lg">
+                <Sparkles className="w-5 h-5 text-cyan-500" />
               </div>
               {profile ? 'Edit Tax Profile' : 'Create Tax Profile'}
             </h3>
@@ -237,7 +237,7 @@ export function ImprovedTaxProfileModal({
             {/* Connecting Line */}
             <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-0.5 bg-white/10 -z-10 rounded-full" />
             <div 
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 h-0.5 bg-blue-500 transition-all duration-500 rounded-full"
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 h-0.5 bg-cyan-500 transition-all duration-500 rounded-full"
               style={{ 
                 width: currentStep === 'basic' ? '0%' : currentStep === 'income' ? '50%' : '100%' 
               }} 
@@ -270,7 +270,7 @@ export function ImprovedTaxProfileModal({
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                     isCurrent 
-                      ? 'bg-blue-500 border-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-110' 
+                      ? 'bg-cyan-500 border-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.5)] scale-110' 
                       : isCompleted
                       ? 'bg-emerald-500 border-emerald-500 text-white'
                       : 'bg-[#1A1A1A] border-white/10 text-gray-500'
@@ -306,7 +306,7 @@ export function ImprovedTaxProfileModal({
                   type="text"
                   value={profileName}
                   onChange={(e) => setProfileName(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-600 transition-all font-medium"
+                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-white placeholder-gray-600 transition-all font-medium"
                   placeholder="e.g., 2026 Tax Profile"
                   required
                 />
@@ -322,7 +322,7 @@ export function ImprovedTaxProfileModal({
                   onClick={() => setCountrySearchOpen(!countrySearchOpen)}
                   className={`w-full px-4 py-3 border rounded-xl focus:outline-none transition-all duration-300 flex items-center justify-between group-hover:bg-white/5 ${
                     countrySearchOpen 
-                      ? 'bg-[#1A1A1A] border-blue-500/50 ring-2 ring-blue-500/20' 
+                      ? 'bg-[#1A1A1A] border-cyan-500/50 ring-2 ring-cyan-500/20' 
                       : 'bg-[#1A1A1A] border-white/10'
                   }`}
                 >
@@ -352,7 +352,7 @@ export function ImprovedTaxProfileModal({
                           value={countrySearchQuery}
                           onChange={(e) => setCountrySearchQuery(e.target.value)}
                           placeholder="Search countries..."
-                          className="w-full pl-10 pr-4 py-2 text-sm border border-white/10 rounded-lg bg-black/20 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-transparent outline-none"
+                          className="w-full pl-10 pr-4 py-2 text-sm border border-white/10 rounded-lg bg-black/20 text-white focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent outline-none"
                           autoFocus
                         />
                         <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
@@ -373,7 +373,7 @@ export function ImprovedTaxProfileModal({
                             }}
                             className={`w-full p-3 text-left rounded-lg flex items-center gap-3 transition-all duration-200 ${
                               isSelected 
-                                ? 'bg-blue-500/20 border border-blue-500/30' 
+                                ? 'bg-cyan-500/20 border border-cyan-500/30' 
                                 : 'hover:bg-white/5 border border-transparent'
                             }`}
                           >
@@ -381,14 +381,14 @@ export function ImprovedTaxProfileModal({
                               {getCountryFlag(c)}
                             </span>
                             <div className="flex-1">
-                              <div className={`font-medium ${isSelected ? 'text-blue-400' : 'text-white'}`}>
+                              <div className={`font-medium ${isSelected ? 'text-cyan-400' : 'text-white'}`}>
                                 {c}
                               </div>
                               <div className="text-xs text-gray-500">
                                 {config.currency} • {config.currencySymbol}
                               </div>
                             </div>
-                            {isSelected && <Check className="w-4 h-4 text-blue-500" />}
+                            {isSelected && <Check className="w-4 h-4 text-cyan-500" />}
                           </button>
                         );
                       })}
@@ -420,13 +420,13 @@ export function ImprovedTaxProfileModal({
                         onClick={() => setEmploymentStatus(status)}
                         className={`p-4 rounded-xl border transition-all text-left ${
                           isSelected
-                            ? 'border-blue-500/50 bg-blue-500/10'
+                            ? 'border-cyan-500/50 bg-cyan-500/10'
                             : 'border-white/10 bg-[#1A1A1A] hover:bg-white/5'
                         }`}
                       >
                         <div className="text-2xl mb-2">{labels[status].icon}</div>
                         <div className={`text-sm font-medium ${
-                          isSelected ? 'text-blue-400' : 'text-white'
+                          isSelected ? 'text-cyan-400' : 'text-white'
                         }`}>
                           {labels[status].label}
                         </div>
@@ -468,14 +468,14 @@ export function ImprovedTaxProfileModal({
                         onClick={() => setCompanyType(type)}
                         className={`w-full p-4 rounded-xl border transition-all text-left ${
                           isSelected
-                            ? 'border-blue-500/50 bg-blue-500/10'
+                            ? 'border-cyan-500/50 bg-cyan-500/10'
                             : 'border-white/10 bg-[#1A1A1A] hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className={`font-semibold mb-1 ${
-                              isSelected ? 'text-blue-400' : 'text-white'
+                              isSelected ? 'text-cyan-400' : 'text-white'
                             }`}>
                               {rules.displayName}
                             </div>
@@ -490,7 +490,7 @@ export function ImprovedTaxProfileModal({
                               ))}
                             </div>
                           </div>
-                          {isSelected && <Check className="w-5 h-5 text-blue-500 flex-shrink-0 ml-2" />}
+                          {isSelected && <Check className="w-5 h-5 text-cyan-500 flex-shrink-0 ml-2" />}
                         </div>
                       </button>
                     );
@@ -503,14 +503,14 @@ export function ImprovedTaxProfileModal({
           {/* Step 2: Income Details */}
           {currentStep === 'income' && (
             <div className="space-y-6 animate-fade-in">
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+              <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <Info className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-sm font-medium text-blue-400 mb-1">
+                    <div className="text-sm font-medium text-cyan-400 mb-1">
                       Enter your annual income
                     </div>
-                    <div className="text-xs text-blue-400/70">
+                    <div className="text-xs text-cyan-400/70">
                       All amounts should be in {countryRules.currency} ({countryRules.currencySymbol}). Enter 0 for categories that don't apply.
                     </div>
                   </div>
@@ -549,7 +549,7 @@ export function ImprovedTaxProfileModal({
                           )}
                         </label>
                         <div className="relative group">
-                          <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
+                          <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-cyan-500 transition-colors" />
                           <input
                             type="number"
                             value={incomeData[field.id] || ''}
@@ -566,7 +566,7 @@ export function ImprovedTaxProfileModal({
                             onBlur={(e) => {
                               if (e.target.value === '') setIncomeData({...incomeData, [field.id]: 0});
                             }}
-                            className="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-600 transition-all font-mono font-medium"
+                            className="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-white placeholder-gray-600 transition-all font-mono font-medium"
                             placeholder={field.placeholder || "0.00"}
                             step="0.01"
                             min="0"
@@ -591,8 +591,8 @@ export function ImprovedTaxProfileModal({
                 
                 <div className="flex items-center justify-between mb-6 relative z-10">
                   <div className="flex items-center gap-2">
-                    <div className="p-2 bg-blue-500/20 rounded-lg">
-                      <Calculator className="w-5 h-5 text-blue-500" />
+                    <div className="p-2 bg-cyan-500/20 rounded-lg">
+                      <Calculator className="w-5 h-5 text-cyan-500" />
                     </div>
                     <h4 className="font-bold text-white">Tax Preview</h4>
                   </div>
@@ -622,7 +622,7 @@ export function ImprovedTaxProfileModal({
                   </div>
                   <div className="bg-[#0D0D0D] rounded-xl p-4 border border-white/5">
                     <div className="text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Tax Rate</div>
-                    <div className="text-base font-bold text-blue-400 font-mono truncate">
+                    <div className="text-base font-bold text-cyan-400 font-mono truncate">
                       {taxPreview.effectiveRate.toFixed(1)}%
                     </div>
                   </div>
@@ -716,7 +716,7 @@ export function ImprovedTaxProfileModal({
                       </div>
                       <div>
                         <div className="text-xs text-gray-500 mb-1">Effective Rate</div>
-                        <div className="text-sm font-bold text-blue-400 font-mono">
+                        <div className="text-sm font-bold text-cyan-400 font-mono">
                           {taxPreview.effectiveRate.toFixed(2)}%
                         </div>
                       </div>
@@ -751,7 +751,7 @@ export function ImprovedTaxProfileModal({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-600 transition-all font-medium resize-none"
+                  className="w-full px-4 py-3 bg-[#1A1A1A] border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-white placeholder-gray-600 transition-all font-medium resize-none"
                   rows={3}
                   placeholder="Add any notes about this tax profile..."
                 />
@@ -759,7 +759,7 @@ export function ImprovedTaxProfileModal({
               
               {/* Active Toggle */}
               <div className="flex items-center gap-3 bg-[#1A1A1A] rounded-xl p-4 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => setIsActive(!isActive)}>
-                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isActive ? 'bg-blue-500 border-blue-500' : 'border-gray-600'}`}>
+                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isActive ? 'bg-cyan-500 border-cyan-500' : 'border-gray-600'}`}>
                   {isActive && <Check className="w-3 h-3 text-white" />}
                 </div>
                 <label className="text-sm font-medium text-white cursor-pointer select-none">
@@ -790,7 +790,7 @@ export function ImprovedTaxProfileModal({
                     setCurrentStep(steps[currentIndex - 1]);
                   }
                 }}
-                className="px-6 py-3 rounded-xl border border-blue-500/30 text-blue-400 font-medium hover:bg-blue-500/10 transition-colors flex items-center gap-2"
+                className="px-6 py-3 rounded-xl border border-cyan-500/30 text-cyan-400 font-medium hover:bg-cyan-500/10 transition-colors flex items-center gap-2"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Back

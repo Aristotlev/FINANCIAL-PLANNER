@@ -79,13 +79,25 @@ export function clearCsrfToken(): void {
   csrfTokenExpiry = 0;
 }
 
+/** Network error messages that are transient and should not be logged */
+const TRANSIENT_NETWORK_ERRORS = ['Failed to fetch', 'fetch failed', 'Load failed'];
+
+function isTransientNetworkError(message?: string): boolean {
+  if (!message) return false;
+  return TRANSIENT_NETWORK_ERRORS.some(m => message.toLowerCase().includes(m.toLowerCase()));
+}
+
 /**
  * Fetch data from a table through the secure API
  */
 export async function fetchData<T = any>(table: DataTable): Promise<T | null> {
+  // Guard: this function is client-side only
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   try {
-    // Construct full URL
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const baseUrl = window.location.origin;
     const url = `${baseUrl}/api/data?table=${table}`;
 
     // Retry logic
@@ -101,19 +113,25 @@ export async function fetchData<T = any>(table: DataTable): Promise<T | null> {
             // User not authenticated - return null silently
             return null;
           }
-          const error = await response.json();
-          console.error(`Error fetching ${table}:`, error.message);
+          let errorMessage = `HTTP ${response.status}`;
+          try {
+            const error = await response.json();
+            errorMessage = error.message || error.error || errorMessage;
+          } catch {
+            // ignore JSON parse error
+          }
+          console.error(`Error fetching ${table}:`, errorMessage);
           return null;
         }
 
         const result: ApiResponse<T> = await response.json();
         return result.data ?? null;
       } catch (error: any) {
-        // Don't log network errors like "Failed to fetch" - these are common during dev/page transitions
-        if (error?.message !== 'Failed to fetch') {
+        // Don't log transient network errors - these are common during dev/page transitions
+        if (!isTransientNetworkError(error?.message)) {
           console.error(`Error fetching ${table}:`, error);
         }
-        
+
         // Retry on network error
         if (attempt < 2) {
           await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
@@ -202,8 +220,8 @@ export async function saveData<T = any>(table: DataTable, data: T): Promise<T | 
     
     throw lastError;
   } catch (error: any) {
-    // Don't log network errors like "Failed to fetch" - these are common during dev/page transitions
-    if (error?.message !== 'Failed to fetch') {
+    // Don't log transient network errors - these are common during dev/page transitions
+    if (!isTransientNetworkError(error?.message)) {
       console.error(`Error saving to ${table}:`, error);
     }
     return null;
@@ -271,8 +289,8 @@ export async function deleteData(table: DataTable, id: string): Promise<boolean>
     
     return false;
   } catch (error: any) {
-    // Don't log network errors like "Failed to fetch"
-    if (error?.message !== 'Failed to fetch') {
+    // Don't log transient network errors
+    if (!isTransientNetworkError(error?.message)) {
       console.error(`Error deleting from ${table}:`, error);
     }
     return false;

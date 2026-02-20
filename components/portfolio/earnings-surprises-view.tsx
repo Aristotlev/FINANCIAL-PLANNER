@@ -660,7 +660,7 @@ export function EarningsSurprisesView({ initialTicker = 'AAPL' }: EarningsSurpri
           </h2>
           <div className="flex gap-3 text-sm mt-1 text-gray-400 items-center">
             <Database className="w-3.5 h-3.5 text-emerald-500" />
-            Proprietary — SEC EDGAR XBRL · DB Cached · No IP Bans
+            Actual vs. estimated EPS pulled from SEC EDGAR filings — cached for instant loads
           </div>
         </div>
       </div>
