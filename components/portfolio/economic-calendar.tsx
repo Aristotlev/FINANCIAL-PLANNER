@@ -102,20 +102,16 @@ export function EconomicCalendar() {
   const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Date Range ──────────────────────────────────────
-  const dateRange = useMemo(() => {
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(weekStart.getDate() + (weekOffset * 7) - 1);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 9);
-    return { from: fmtDate(weekStart), to: fmtDate(weekEnd) };
-  }, [weekOffset]);
-
   const weekDates = useMemo(() => {
     const center = new Date();
     center.setDate(center.getDate() + (weekOffset * 7));
     return getWeekDates(center);
   }, [weekOffset]);
+
+  const dateRange = useMemo(() => {
+    if (weekDates.length === 0) return { from: fmtDate(new Date()), to: fmtDate(new Date()) };
+    return { from: weekDates[0], to: weekDates[weekDates.length - 1] };
+  }, [weekDates]);
 
   // ── Data Fetching ───────────────────────────────────
   const fetchEvents = useCallback(async (showLoadingState = true) => {
